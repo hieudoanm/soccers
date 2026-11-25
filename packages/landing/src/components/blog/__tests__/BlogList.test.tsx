@@ -39,5 +39,28 @@ describe('BlogList', () => {
     expect(
       screen.getByRole('link', { name: /Post post-11/ })
     ).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '← Previous' }));
+    expect(screen.getByText('Page 1 of 2')).toBeInTheDocument();
+  });
+
+  it('omits optional post fields', () => {
+    render(
+      <BlogList
+        posts={[
+          {
+            slug: 'minimal',
+            title: 'Minimal post',
+            tags: [],
+            content: '# Minimal post',
+          },
+        ]}
+      />
+    );
+
+    expect(
+      screen.getByRole('link', { name: /Minimal post/ })
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/·/)).not.toBeInTheDocument();
+    expect(screen.queryByText('football')).not.toBeInTheDocument();
   });
 });

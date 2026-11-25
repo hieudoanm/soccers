@@ -24,6 +24,49 @@ export type SearchResult = {
 
 const postsDirectory = path.join(process.cwd(), 'md', 'posts');
 const postFilePattern = /^[a-z0-9-]+\.md$/i;
+const blockScalarPattern = /^([^:]+):\s*([|>])[+-]?\d*\s*(?:#.*)?$/;
+
+const leadingWhitespace = (line: string): number =>
+  line.length - line.trimStart().length;
+
+const normalizeBlockLines = (lines: string[]): string[] => {
+  const contentLines = lines.filter((line) => line.trim() !== '');
+  if (contentLines.length === 0) return [];
+  const indent = Math.min(...contentLines.map(leadingWhitespace));
+  return lines.map((line) =>
+    line.trim() === ''
+      ? ''
+      : line.slice(Math.min(indent, leadingWhitespace(line)))
+  );
+};
+
+const foldBlockLines = (lines: string[]): string => {
+  let result = '';
+  for (const [index, line] of lines.entries()) {
+    if (index === 0) {
+      result += line;
+      continue;
+    }
+    const previous = lines[index - 1];
+    if (
+      line !== '' &&
+      previous !== '' &&
+      !line.startsWith(' ') &&
+      !previous.startsWith(' ')
+    ) {
+      result += ' ';
+    } else if (line === '' || previous !== '') {
+      result += '\n';
+    }
+    result += line;
+  }
+  return result;
+};
+
+const parseBlockScalar = (lines: string[], style: '|' | '>'): string => {
+  const normalized = normalizeBlockLines(lines);
+  return style === '|' ? normalized.join('\n') : foldBlockLines(normalized);
+};
 
 const parseFrontmatter = (
   raw: string
@@ -41,9 +84,31 @@ const parseFrontmatter = (
   const frontmatter = parts[1];
   const body = parts.slice(2).join('---').replace(/^\n+/, '');
   const data: Record<string, string> = {};
-  for (const line of frontmatter.split('\n')) {
+  const lines = frontmatter.split('\n');
+  for (let index = 0; index < lines.length; index++) {
+    const line = lines[index];
     const trimmed = line.trim();
     if (!trimmed || trimmed.startsWith('#')) continue;
+
+    const blockScalar = trimmed.match(blockScalarPattern);
+    if (blockScalar) {
+      const blockLines: string[] = [];
+      let cursor = index + 1;
+      while (cursor < lines.length) {
+        const candidate = lines[cursor];
+        if (candidate.trim() !== '' && !/^\s/.test(candidate)) break;
+        blockLines.push(candidate);
+        cursor++;
+      }
+      index = cursor - 1;
+      const value = parseBlockScalar(
+        blockLines,
+        blockScalar[2] as '|' | '>'
+      ).trim();
+      data[blockScalar[1].trim()] = value.replace(/^['"]|['"]$/g, '');
+      continue;
+    }
+
     const idx = trimmed.indexOf(':');
     if (idx === -1) continue;
     const key = trimmed.slice(0, idx).trim();

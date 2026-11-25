@@ -40,38 +40,6 @@ jobs:
         run: pnpm test
       - name: Build
         run: pnpm build
-
-  landing-build:
-    name: Landing - Build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7.0.1
-
-      - name: Set up pnpm
-        uses: pnpm/action-setup@v6.1.1
-        with:
-          version: 12.23.0
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v7.1.0
-        with:
-          node-version-file: .nvmrc
-          cache: pnpm
-          cache-dependency-path: pnpm-lock.yaml
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Typecheck landing
-        run: pnpm --filter @soccers/landing run typecheck
-
-      - name: Lint landing
-        run: pnpm --filter @soccers/landing run lint
-
-      - name: Build landing (Next.js static export)
-        run: pnpm --filter @soccers/landing run build
-
       - name: Upload Pages artifact
         if: github.ref == 'refs/heads/master'
         uses: actions/upload-pages-artifact@v5.0.0
@@ -80,7 +48,7 @@ jobs:
 
   landing-deploy:
     name: Landing - Deploy
-    needs: landing-build
+    needs: quality
     if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     permissions:

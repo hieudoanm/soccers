@@ -28,4 +28,22 @@ describe('CTA', () => {
       screen.getByRole('link', { name: 'Star on GitHub' })
     ).toHaveAttribute('href', 'https://github.com/hieudoanm/soccers');
   });
+
+  it('renders a hash CTA and omits the secondary action', () => {
+    render(
+      <CTA
+        title="Jump"
+        description="Anchor link"
+        primary={{ label: 'Jump to top', href: '#top' }}
+      />
+    );
+
+    expect(screen.getByRole('link', { name: 'Jump to top' })).toHaveAttribute(
+      'href',
+      '#top'
+    );
+    expect(
+      screen.queryByRole('link', { name: 'Star on GitHub' })
+    ).not.toBeInTheDocument();
+  });
 });

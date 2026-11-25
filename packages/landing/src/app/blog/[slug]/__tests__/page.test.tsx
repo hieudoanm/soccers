@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import BlogPostPage, { generateStaticParams } from '../page';
+import BlogPostPage, { generateMetadata, generateStaticParams } from '../page';
 
 const renderPost = async (slug: string) =>
   render(await BlogPostPage({ params: Promise.resolve({ slug }) }));
@@ -25,5 +25,11 @@ describe('BlogPostPage', () => {
     expect(
       screen.getByRole('link', { name: /Welcome to soccers/ })
     ).toHaveAttribute('href', '/blog/welcome-to-soccers');
+  });
+
+  it('returns empty metadata for a missing post', async () => {
+    await expect(
+      generateMetadata({ params: Promise.resolve({ slug: 'missing' }) })
+    ).resolves.toEqual({});
   });
 });

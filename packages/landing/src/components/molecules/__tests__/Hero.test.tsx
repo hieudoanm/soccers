@@ -45,4 +45,12 @@ describe('Hero', () => {
     render(<Hero {...PROPS} secondary={undefined} />);
     expect(screen.queryByRole('link', { name: 'GitHub' })).toBeNull();
   });
+
+  it('renders hash CTAs as anchors', () => {
+    render(<Hero {...PROPS} primary={{ label: 'Jump', href: '#match' }} />);
+    expect(screen.getByRole('link', { name: 'Jump' })).toHaveAttribute(
+      'href',
+      '#match'
+    );
+  });
 });

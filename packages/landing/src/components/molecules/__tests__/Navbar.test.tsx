@@ -63,4 +63,30 @@ describe('Navbar', () => {
       '/schedule/vietnam'
     );
   });
+
+  it('closes a dropdown when its button is clicked again', async () => {
+    const user = userEvent.setup();
+    render(<Navbar {...PROPS} />);
+    const foods = screen.getByRole('button', { name: 'Foods' });
+    await user.click(foods);
+    expect(screen.getByRole('link', { name: 'Wheel' })).toBeInTheDocument();
+    await user.click(foods);
+    expect(
+      screen.queryByRole('link', { name: 'Wheel' })
+    ).not.toBeInTheDocument();
+  });
+
+  it('renders external flat links', () => {
+    render(
+      <Navbar
+        {...PROPS}
+        groups={[]}
+        links={[{ label: 'Site', href: 'https://example.com' }]}
+      />
+    );
+    expect(screen.getByRole('link', { name: 'Site' })).toHaveAttribute(
+      'href',
+      'https://example.com'
+    );
+  });
 });
