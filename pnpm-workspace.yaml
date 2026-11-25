@@ -1,0 +1,13 @@
+packages:
+  - packages/**
+
+minimumReleaseAge: 0
+
+allowBuilds:
+  esbuild: true
+
+permissions:
+  '@prisma/orm-sqlite':
+    skills: true
+  prisma:
+    skills: true

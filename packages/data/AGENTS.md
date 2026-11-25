@@ -1,0 +1,9 @@
+# Project notes
+
+- Prisma 8 ORM project (SQLite via `@prisma/orm-sqlite`). Data contract lives in `src/prisma/contract.prisma`; never edit `contract.json` / `contract.d.ts` by hand. Storage names are snake_case via `@map`/`@@map` on every field/model.
+- Accessors: ORM lane uses model names and field names (`db.orm.Match`, `externalId`); SQL lane uses storage names (`db.sql.match`, `external_id`).
+- Workflow: edit `contract.prisma` → `pnpm prisma contract emit` → `pnpm prisma db update` (or `migration plan` / `db migrate` for migration-based changes) → `pnpm dbml` regenerates all of them (`schema/schema.{dbml,svg,png}` via `scripts/contract-to-dbml.ts`).
+- Helper scripts live in `scripts/` and are written in TypeScript (`.ts`), run directly with `node` (Node ≥22.6 type stripping; project uses Node 26).
+- Database file: `dev.db` (gitignored), path from `DATABASE_URL` in `.env`.
+- Data import: `node scripts/import-football-data.ts [--leagues E0,SP1] [--seasons N] [--from YYYY] [--to YYYY] [--dry-run]` imports football-data.co.uk CSVs — mmz4281 league files plus `/new/<CODE>.csv` single-file countries (ARG, AUT, BRA, CHN, DNK, FIN, IRL, JPN, MEX, NOR, POL, ROU, RUS, SWE, SWZ, USA; league names embedded per row, results+odds only). Idempotent via `Match.externalId`; `pnpm export:csv` dumps all tables to `csv/<table>.csv` (gitignored).
+- StatsBomb import: `pnpm import:statsbomb [--competitions 2,11] [--dry-run]` streams the hudl/open-data repo tarball once (~1.3 GB) and fills player-level tables (Player, MatchLineup, Goal, MatchEvent, PlayerMatchStat, MatchTeamStat xG, Manager, TeamManager, Venue) plus matches/standings for ~24 competitions incl. World Cups, Euros, Champions League. Matches overlapping football-data leagues (E0/SP1/I1/D1/F1) link to existing Match rows by season+teams+date; team names are fuzzy-matched via `normTeamName`, so some fixtures may still duplicate when names differ (e.g. "Man United" vs "Manchester United").

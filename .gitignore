@@ -1,0 +1,13 @@
+.turbo/
+node_modules/
+zip/
+crates/target/
+
+# macOS
+.DS_Store
+
+# browser extension wasm bundle (generated)
+packages/extensions/browser/pkg/
+.tracers-cache/
+.tracers/cache/
+packages/landing/mars/posts/**/data/

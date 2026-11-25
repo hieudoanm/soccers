@@ -1,0 +1,50 @@
+{
+  "name": "@soccers/data",
+  "version": "1.0.0",
+  "description": "Football/soccer historical data platform (Prisma 8 + SQLite)",
+  "license": "MIT",
+  "author": {
+    "name": "Hieu Doan",
+    "email": "hieu.doan.professional@gmail.com",
+    "url": "https://hieudoanm.github.io"
+  },
+  "scripts": {
+    "build": "prisma contract emit && node scripts/contract-to-dbml.ts",
+    "format": "prisma contract format && prettier --cache --write .",
+    "format:check": "prettier --check .",
+    "lint": "prettier --check .",
+    "postinstall": "prisma skills sync || exit 0",
+    "test": "node --test",
+    "typecheck": "tsc --noEmit",
+    "db": "sqlite3 dev.db",
+    "db:web": "kill-port 8001 && datasette dev.db",
+    "contract:emit": "prisma contract emit",
+    "dbml": "node scripts/contract-to-dbml.ts",
+    "export:csv": "node scripts/export-csv.ts",
+    "import:football-data": "node scripts/import-football-data.ts",
+    "import:statsbomb": "node --max-old-space-size=8192 scripts/import-statsbomb.ts",
+    "sizes": "node scripts/file-sizes.ts"
+  },
+  "keywords": [],
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "12.23.0",
+      "onFail": "download"
+    }
+  },
+  "packageManager": "pnpm@12.23.0",
+  "type": "module",
+  "devDependencies": {
+    "@prisma/cli-engine": "0.10.4",
+    "@prisma/orm-sqlite": "8.0.0-rc.25",
+    "@resvg/resvg-js": "2.6.2",
+    "@types/node": "26.6.10",
+    "dbml-to-svg": "1.0.0",
+    "dotenv": "18.0.10",
+    "kill-port": "2.0.1",
+    "prettier": "3.10.1",
+    "prisma": "8.0.0-rc.35",
+    "typescript": "7.0.2"
+  }
+}
