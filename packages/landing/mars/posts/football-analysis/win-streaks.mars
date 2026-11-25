@@ -27,7 +27,7 @@
       "outputs": [
         {
           "type": "text",
-          "text": "loaded 301352 rows × 11 cols | schema: [\"303764\", \"International\", \"FIFA World Cup\", \"1958\", \"1958-06-24T18:00:00.000Z\", \"1678\", \"1717\", \"Brazil\", \"France\", \"5\", \"2\"]\n"
+          "text": "loaded 301353 rows × 11 cols | schema: [\"id\", \"country\", \"league\", \"season\", \"date\", \"hid\", \"aid\", \"home\", \"away\", \"hg\", \"ag\"]\n"
         }
       ]
     },
@@ -43,17 +43,11 @@
       "cell_type": "code",
       "source": "\n// pull columns into plain Rust vectors (null-safe)\nlet s = |name: &str| df.column(name).unwrap_or_else(|_| panic!(\"missing {name}\")).clone();\nlet col_str = |name: &str| -> Vec<String> {\n    s(name).str().unwrap().iter().map(|o| o.unwrap_or(\"\").to_string()).collect()\n};\nlet col_i64 = |name: &str| -> Vec<i64> {\n    let c = s(name);\n    let c = if c.dtype() == &DataType::Null { c.cast(&DataType::Int64).unwrap() } else { c };\n    c.i64().unwrap().iter().map(|o| o.unwrap_or(0)).collect()\n};\nlet league_v = col_str(\"league\");\nlet hid_v = col_i64(\"hid\");\nlet aid_v = col_i64(\"aid\");\nlet home_v = col_str(\"home\");\nlet away_v = col_str(\"away\");\nlet hg_v = col_i64(\"hg\");\nlet ag_v = col_i64(\"ag\");\nlet date_v = col_str(\"date\");\nlet n = df.height();\nprintln!(\"extracted {n} matches\");\n\nuse std::collections::HashMap;\n\n// team display names: first name seen for each team id\nlet mut names: HashMap<i64, String> = HashMap::new();\nfor i in 0..n {\n    names.entry(hid_v[i]).or_insert_with(|| home_v[i].clone());\n    names.entry(aid_v[i]).or_insert_with(|| away_v[i].clone());\n}\n\n// (tid, date, result: 1=W 0=D -1=L, league)\nlet mut tm: Vec<(i64, String, i8, String)> = Vec::with_capacity(n * 2);\nfor i in 0..n {\n    if league_v[i].to_lowercase().contains(\"friend\") {\n        continue;\n    }\n    let (hg, ag) = (hg_v[i], ag_v[i]);\n    let (hw, aw) = if hg > ag {\n        (1i8, -1i8)\n    } else if hg == ag {\n        (0i8, 0i8)\n    } else {\n        (-1i8, 1i8)\n    };\n    tm.push((hid_v[i], date_v[i].clone(), hw, league_v[i].clone()));\n    tm.push((aid_v[i], date_v[i].clone(), aw, league_v[i].clone()));\n}\ntm.sort_by(|a, b| (a.0, &a.1).cmp(&(b.0, &b.1)));\nprintln!(\"team-match rows: {}\", tm.len());",
       "metadata": {},
-      "execution_count": 1,
+      "execution_count": 2,
       "outputs": [
         {
           "type": "text",
-          "text": "loaded 301352 rows × 11 cols | schema: [\"303764\", \"International\", \"FIFA World Cup\", \"1958\", \"1958-06-24T18:00:00.000Z\", \"1678\", \"1717\", \"Brazil\", \"France\", \"5\", \"2\"]\n"
-        },
-        {
-          "type": "error",
-          "name": "RuntimeError",
-          "message": "\nthread 'main' (1694309) panicked at src/main.rs:187:61 [mars:cell=2285648181,line=3]:\nmissing league\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\n",
-          "traceback": []
+          "text": "loaded 301353 rows × 11 cols | schema: [\"id\", \"country\", \"league\", \"season\", \"date\", \"hid\", \"aid\", \"home\", \"away\", \"hg\", \"ag\"]\nextracted 301353 matches\nteam-match rows: 602706\n"
         }
       ]
     },
@@ -69,14 +63,440 @@
       "cell_type": "code",
       "source": "#[derive(Clone)]\nstruct Streak {\n    tid: i64,\n    len: usize,\n    league: String,\n    start: String,\n    end: String,\n}\n\nlet mut streaks: Vec<Streak> = Vec::new();\nlet mut cur_tid: i64 = -1;\nlet mut run = 0usize;\nlet mut run_start = String::new();\nlet mut run_league = String::new();\nlet mut prev_date = String::new();\n\nfor (tid, date, res, league) in tm.iter() {\n    if *tid != cur_tid {\n        if run >= 5 {\n            streaks.push(Streak { tid: cur_tid, len: run, league: run_league.clone(), start: run_start.clone(), end: prev_date.clone() });\n        }\n        cur_tid = *tid;\n        run = 0;\n    }\n    if *res == 1 {\n        if run == 0 { run_start = date.clone(); run_league = league.clone(); }\n        run += 1;\n    } else if run >= 5 {\n        streaks.push(Streak { tid: cur_tid, len: run, league: run_league.clone(), start: run_start.clone(), end: prev_date.clone() });\n        run = 0;\n    } else {\n        run = 0;\n    }\n    prev_date = date.clone();\n}\nif run >= 5 {\n    streaks.push(Streak { tid: cur_tid, len: run, league: run_league.clone(), start: run_start.clone(), end: prev_date.clone() });\n}\n\nprintln!(\"total streaks ≥5: {}\", streaks.len());\n\n// length distribution: buckets 5,6,7,8,9,10+\nlet max_len = streaks.iter().map(|s| s.len).max().unwrap_or(0);\nlet buckets = [\"5\", \"6\", \"7\", \"8\", \"9\", \"10+\"];\nlet mut dist: Vec<usize> = vec![0; buckets.len()];\nfor s in &streaks {\n    let idx = if s.len >= 10 { 5 } else { s.len - 5 };\n    dist[idx] += 1;\n}\nlet dist_rows: Vec<Vec<String>> = buckets\n    .iter()\n    .zip(dist.iter())\n    .map(|(b, c)| vec![b.to_string(), c.to_string()])\n    .collect();\nprintln!(\"longest streak found: {} matches\", max_len);\nmars_table(&[\"streak length\", \"count\"], &dist_rows);\n\n// teams with the most 5+ streaks\nlet mut per_team: HashMap<i64, usize> = HashMap::new();\nfor s in &streaks {\n    *per_team.entry(s.tid).or_insert(0) += 1;\n}\nlet mut tt: Vec<(i64, usize)> = per_team.into_iter().collect();\ntt.sort_by(|a, b| b.1.cmp(&a.1));\nlet team_rows: Vec<Vec<String>> = tt\n    .iter()\n    .take(15)\n    .map(|(tid, c)| vec![names.get(tid).cloned().unwrap_or_else(|| tid.to_string()), c.to_string()])\n    .collect();\nmars_table(&[\"team\", \"streaks ≥5\"], &team_rows);\n\n// longest streaks on record\nlet mut by_len = streaks.clone();\nby_len.sort_by(|a, b| b.len.cmp(&a.len).then(a.end.cmp(&b.end)));\nlet long_rows: Vec<Vec<String>> = by_len\n    .iter()\n    .take(15)\n    .map(|s| {\n        vec![\n            names.get(&s.tid).cloned().unwrap_or_else(|| s.tid.to_string()),\n            s.len.to_string(),\n            s.league.clone(),\n            format!(\"{} → {}\", &s.start[..10.min(s.start.len())], &s.end[..10.min(s.end.len())]),\n        ]\n    })\n    .collect();\nmars_table(&[\"team\", \"length\", \"league\", \"period\"], &long_rows);",
       "metadata": {},
-      "outputs": []
+      "execution_count": 3,
+      "outputs": [
+        {
+          "type": "text",
+          "text": "loaded 301353 rows × 11 cols | schema: [\"id\", \"country\", \"league\", \"season\", \"date\", \"hid\", \"aid\", \"home\", \"away\", \"hg\", \"ag\"]\nextracted 301353 matches\nteam-match rows: 602706\ntotal streaks ≥5: 4110\nlongest streak found: 25 matches\n"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "streak length",
+            "count"
+          ],
+          "rows": [
+            [
+              "5",
+              "1974"
+            ],
+            [
+              "6",
+              "988"
+            ],
+            [
+              "7",
+              "456"
+            ],
+            [
+              "8",
+              "274"
+            ],
+            [
+              "9",
+              "155"
+            ],
+            [
+              "10+",
+              "263"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "team",
+            "streaks ≥5"
+          ],
+          "rows": [
+            [
+              "Barcelona",
+              "72"
+            ],
+            [
+              "Celtic",
+              "64"
+            ],
+            [
+              "Real Madrid",
+              "60"
+            ],
+            [
+              "Porto",
+              "59"
+            ],
+            [
+              "Bayern Munich",
+              "53"
+            ],
+            [
+              "Ajax",
+              "50"
+            ],
+            [
+              "Olympiakos",
+              "50"
+            ],
+            [
+              "Rangers",
+              "49"
+            ],
+            [
+              "PSV Eindhoven",
+              "48"
+            ],
+            [
+              "Benfica",
+              "46"
+            ],
+            [
+              "Man United",
+              "44"
+            ],
+            [
+              "Juventus",
+              "43"
+            ],
+            [
+              "Fenerbahce",
+              "40"
+            ],
+            [
+              "Club Brugge",
+              "40"
+            ],
+            [
+              "Galatasaray",
+              "38"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "team",
+            "length",
+            "league",
+            "period"
+          ],
+          "rows": [
+            [
+              "Celtic",
+              "25",
+              "Scottish Premiership",
+              "2003-08-16 → 2004-02-29"
+            ],
+            [
+              "Celtic",
+              "22",
+              "Scottish Premiership",
+              "2016-09-24 → 2017-03-01"
+            ],
+            [
+              "Barcelona",
+              "21",
+              "Spanish La Liga",
+              "2010-10-16 → 2011-02-05"
+            ],
+            [
+              "Barcelona",
+              "20",
+              "Spanish La Liga",
+              "2012-10-20 → 2013-01-13"
+            ],
+            [
+              "Ajax",
+              "19",
+              "Dutch Eredivisie",
+              "1995-04-09 → 1995-10-28"
+            ],
+            [
+              "Bayern Munich",
+              "19",
+              "German Bundesliga",
+              "2013-10-19 → 2014-03-25"
+            ],
+            [
+              "Barcelona",
+              "18",
+              "Spanish La Liga",
+              "2005-10-22 → 2006-01-29"
+            ],
+            [
+              "Barcelona",
+              "18",
+              "Spanish La Liga",
+              "2017-04-15 → 2017-10-01"
+            ],
+            [
+              "Man City",
+              "18",
+              "English Premier League",
+              "2017-08-26 → 2017-12-27"
+            ],
+            [
+              "Liverpool",
+              "18",
+              "English Premier League",
+              "2019-03-10 → 2019-10-05"
+            ],
+            [
+              "Liverpool",
+              "18",
+              "English Premier League",
+              "2019-10-27 → 2020-02-24"
+            ],
+            [
+              "PSV Eindhoven",
+              "18",
+              "Dutch Eredivisie",
+              "2023-05-28 → 2024-01-13"
+            ],
+            [
+              "Gretna",
+              "17",
+              "Scottish League Two",
+              "2005-01-29 → 2005-08-20"
+            ],
+            [
+              "Inter",
+              "17",
+              "Italian Serie A",
+              "2006-10-25 → 2007-02-25"
+            ],
+            [
+              "Celtic",
+              "17",
+              "Scottish Premiership",
+              "2011-11-06 → 2012-02-25"
+            ]
+          ]
+        }
+      ]
     },
     {
       "id": "772d1ae1-f4d6-488a-9bf6-19da6dbfad8f",
       "cell_type": "code",
       "source": "use plotters::prelude::*;\n\nlet labels = vec![\"5\", \"6\", \"7\", \"8\", \"9\", \"10+\"];\nlet counts: Vec<f64> = dist.iter().map(|c| *c as f64).collect();\nlet ymax = counts.iter().cloned().fold(1.0_f64, f64::max) * 1.15;\n\nlet figure = plotters::evcxr::evcxr_figure((720, 400), |root| {\n    root.fill(&WHITE)?;\n    let mut chart = ChartBuilder::on(&root)\n        .caption(\"Winning streaks of length ≥ 5 — how many teams did it\", (\"sans-serif\", 20))\n        .margin(10)\n        .x_label_area_size(30)\n        .y_label_area_size(45)\n        .build_cartesian_2d(-0.5_f64..5.5, 0.0_f64..ymax)?;\n    chart.configure_mesh().x_labels(6).x_label_formatter(&|x: &f64| labels[*x as usize].to_string()).draw()?;\n    chart.draw_series((0..6).map(|i| {\n        Rectangle::new([(i as f64 - 0.3, 0.0), (i as f64 + 0.3, counts[i])], BLUE.filled())\n    }))?;\n    chart.configure_series_labels().draw()?;\n    Ok(())\n});\nfigure.evcxr_display();",
       "metadata": {},
-      "outputs": []
+      "execution_count": 4,
+      "outputs": [
+        {
+          "type": "text",
+          "text": "loaded 301353 rows × 11 cols | schema: [\"id\", \"country\", \"league\", \"season\", \"date\", \"hid\", \"aid\", \"home\", \"away\", \"hg\", \"ag\"]\nextracted 301353 matches\nteam-match rows: 602706\ntotal streaks ≥5: 4110\nlongest streak found: 25 matches\n"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "streak length",
+            "count"
+          ],
+          "rows": [
+            [
+              "5",
+              "1974"
+            ],
+            [
+              "6",
+              "988"
+            ],
+            [
+              "7",
+              "456"
+            ],
+            [
+              "8",
+              "274"
+            ],
+            [
+              "9",
+              "155"
+            ],
+            [
+              "10+",
+              "263"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "team",
+            "streaks ≥5"
+          ],
+          "rows": [
+            [
+              "Barcelona",
+              "72"
+            ],
+            [
+              "Celtic",
+              "64"
+            ],
+            [
+              "Real Madrid",
+              "60"
+            ],
+            [
+              "Porto",
+              "59"
+            ],
+            [
+              "Bayern Munich",
+              "53"
+            ],
+            [
+              "Ajax",
+              "50"
+            ],
+            [
+              "Olympiakos",
+              "50"
+            ],
+            [
+              "Rangers",
+              "49"
+            ],
+            [
+              "PSV Eindhoven",
+              "48"
+            ],
+            [
+              "Benfica",
+              "46"
+            ],
+            [
+              "Man United",
+              "44"
+            ],
+            [
+              "Juventus",
+              "43"
+            ],
+            [
+              "Club Brugge",
+              "40"
+            ],
+            [
+              "Fenerbahce",
+              "40"
+            ],
+            [
+              "Galatasaray",
+              "38"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "team",
+            "length",
+            "league",
+            "period"
+          ],
+          "rows": [
+            [
+              "Celtic",
+              "25",
+              "Scottish Premiership",
+              "2003-08-16 → 2004-02-29"
+            ],
+            [
+              "Celtic",
+              "22",
+              "Scottish Premiership",
+              "2016-09-24 → 2017-03-01"
+            ],
+            [
+              "Barcelona",
+              "21",
+              "Spanish La Liga",
+              "2010-10-16 → 2011-02-05"
+            ],
+            [
+              "Barcelona",
+              "20",
+              "Spanish La Liga",
+              "2012-10-20 → 2013-01-13"
+            ],
+            [
+              "Ajax",
+              "19",
+              "Dutch Eredivisie",
+              "1995-04-09 → 1995-10-28"
+            ],
+            [
+              "Bayern Munich",
+              "19",
+              "German Bundesliga",
+              "2013-10-19 → 2014-03-25"
+            ],
+            [
+              "Barcelona",
+              "18",
+              "Spanish La Liga",
+              "2005-10-22 → 2006-01-29"
+            ],
+            [
+              "Barcelona",
+              "18",
+              "Spanish La Liga",
+              "2017-04-15 → 2017-10-01"
+            ],
+            [
+              "Man City",
+              "18",
+              "English Premier League",
+              "2017-08-26 → 2017-12-27"
+            ],
+            [
+              "Liverpool",
+              "18",
+              "English Premier League",
+              "2019-03-10 → 2019-10-05"
+            ],
+            [
+              "Liverpool",
+              "18",
+              "English Premier League",
+              "2019-10-27 → 2020-02-24"
+            ],
+            [
+              "PSV Eindhoven",
+              "18",
+              "Dutch Eredivisie",
+              "2023-05-28 → 2024-01-13"
+            ],
+            [
+              "Gretna",
+              "17",
+              "Scottish League Two",
+              "2005-01-29 → 2005-08-20"
+            ],
+            [
+              "Inter",
+              "17",
+              "Italian Serie A",
+              "2006-10-25 → 2007-02-25"
+            ],
+            [
+              "Celtic",
+              "17",
+              "Scottish Premiership",
+              "2011-11-06 → 2012-02-25"
+            ]
+          ]
+        },
+        {
+          "type": "mime_bundle",
+          "data": {
+            "image/svg+xml": "<svg width=\"720\" height=\"400\" viewBox=\"0 0 720 400\" xmlns=\"http://www.w3.org/2000/svg\">\n<rect x=\"0\" y=\"0\" width=\"720\" height=\"400\" opacity=\"1\" fill=\"#FFFFFF\" stroke=\"none\"/>\n<text x=\"360\" y=\"15\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"16.129032258064516\" opacity=\"1\" fill=\"#000000\">\nWinning streaks of length ≥ 5 — how many teams did it\n</text>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"359\" x2=\"65\" y2=\"36\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"87\" y1=\"359\" x2=\"87\" y2=\"36\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"109\" y1=\"359\" x2=\"109\" y2=\"36\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"131\" y1=\"359\" x2=\"131\" y2=\"36\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"153\" y1=\"359\" x2=\"153\" y2=\"36\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"174\" y1=\"359\" x2=\"174\" y2=\"36\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"196\" y1=\"359\" x2=\"196\" y2=\"36\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"218\" y1=\"359\" x2=\"218\" y2=\"36\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"240\" y1=\"359\" x2=\"240\" y2=\"36\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"262\" y1=\"359\" x2=\"262\" y2=\"36\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"283\" y1=\"359\" x2=\"283\" y2=\"36\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"305\" y1=\"359\" x2=\"305\" y2=\"36\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"327\" y1=\"359\" x2=\"327\" y2=\"36\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"349\" y1=\"359\" x2=\"349\" y2=\"36\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"371\" y1=\"359\" x2=\"371\" y2=\"36\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"392\" y1=\"359\" x2=\"392\" y2=\"36\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"414\" y1=\"359\" x2=\"414\" y2=\"36\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"436\" y1=\"359\" x2=\"436\" y2=\"36\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"458\" y1=\"359\" x2=\"458\" y2=\"36\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"480\" y1=\"359\" x2=\"480\" y2=\"36\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"501\" y1=\"359\" x2=\"501\" y2=\"36\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"523\" y1=\"359\" x2=\"523\" y2=\"36\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"545\" y1=\"359\" x2=\"545\" y2=\"36\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"567\" y1=\"359\" x2=\"567\" y2=\"36\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"589\" y1=\"359\" x2=\"589\" y2=\"36\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"610\" y1=\"359\" x2=\"610\" y2=\"36\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"632\" y1=\"359\" x2=\"632\" y2=\"36\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"654\" y1=\"359\" x2=\"654\" y2=\"36\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"676\" y1=\"359\" x2=\"676\" y2=\"36\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"359\" x2=\"709\" y2=\"359\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"352\" x2=\"709\" y2=\"352\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"345\" x2=\"709\" y2=\"345\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"338\" x2=\"709\" y2=\"338\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"331\" x2=\"709\" y2=\"331\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"324\" x2=\"709\" y2=\"324\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"317\" x2=\"709\" y2=\"317\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"310\" x2=\"709\" y2=\"310\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"303\" x2=\"709\" y2=\"303\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"295\" x2=\"709\" y2=\"295\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"288\" x2=\"709\" y2=\"288\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"281\" x2=\"709\" y2=\"281\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"274\" x2=\"709\" y2=\"274\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"267\" x2=\"709\" y2=\"267\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"260\" x2=\"709\" y2=\"260\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"253\" x2=\"709\" y2=\"253\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"246\" x2=\"709\" y2=\"246\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"239\" x2=\"709\" y2=\"239\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"231\" x2=\"709\" y2=\"231\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"224\" x2=\"709\" y2=\"224\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"217\" x2=\"709\" y2=\"217\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"210\" x2=\"709\" y2=\"210\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"203\" x2=\"709\" y2=\"203\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"196\" x2=\"709\" y2=\"196\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"189\" x2=\"709\" y2=\"189\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"182\" x2=\"709\" y2=\"182\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"175\" x2=\"709\" y2=\"175\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"167\" x2=\"709\" y2=\"167\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"160\" x2=\"709\" y2=\"160\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"153\" x2=\"709\" y2=\"153\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"146\" x2=\"709\" y2=\"146\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"139\" x2=\"709\" y2=\"139\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"132\" x2=\"709\" y2=\"132\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"125\" x2=\"709\" y2=\"125\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"118\" x2=\"709\" y2=\"118\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"111\" x2=\"709\" y2=\"111\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"103\" x2=\"709\" y2=\"103\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"96\" x2=\"709\" y2=\"96\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"89\" x2=\"709\" y2=\"89\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"82\" x2=\"709\" y2=\"82\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"75\" x2=\"709\" y2=\"75\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"68\" x2=\"709\" y2=\"68\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"61\" x2=\"709\" y2=\"61\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"54\" x2=\"709\" y2=\"54\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"46\" x2=\"709\" y2=\"46\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"39\" x2=\"709\" y2=\"39\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"109\" y1=\"359\" x2=\"109\" y2=\"36\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"218\" y1=\"359\" x2=\"218\" y2=\"36\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"327\" y1=\"359\" x2=\"327\" y2=\"36\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"436\" y1=\"359\" x2=\"436\" y2=\"36\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"545\" y1=\"359\" x2=\"545\" y2=\"36\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"654\" y1=\"359\" x2=\"654\" y2=\"36\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"359\" x2=\"709\" y2=\"359\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"288\" x2=\"709\" y2=\"288\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"217\" x2=\"709\" y2=\"217\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"146\" x2=\"709\" y2=\"146\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"75\" x2=\"709\" y2=\"75\"/>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"54,36 54,359 \"/>\n<text x=\"45\" y=\"359\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n0.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"49,359 54,359 \"/>\n<text x=\"45\" y=\"288\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n500.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"49,288 54,288 \"/>\n<text x=\"45\" y=\"217\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n1000.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"49,217 54,217 \"/>\n<text x=\"45\" y=\"146\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n1500.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"49,146 54,146 \"/>\n<text x=\"45\" y=\"75\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n2000.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"49,75 54,75 \"/>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"55,360 709,360 \"/>\n<text x=\"109\" y=\"370\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n5\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"109,360 109,365 \"/>\n<text x=\"218\" y=\"370\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n6\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"218,360 218,365 \"/>\n<text x=\"327\" y=\"370\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n7\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"327,360 327,365 \"/>\n<text x=\"436\" y=\"370\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n8\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"436,360 436,365 \"/>\n<text x=\"545\" y=\"370\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n9\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"545,360 545,365 \"/>\n<text x=\"654\" y=\"370\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n10+\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"654,360 654,365 \"/>\n<rect x=\"76\" y=\"79\" width=\"66\" height=\"280\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"185\" y=\"219\" width=\"66\" height=\"140\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"294\" y=\"295\" width=\"66\" height=\"64\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"403\" y=\"321\" width=\"66\" height=\"38\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"512\" y=\"337\" width=\"66\" height=\"22\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"621\" y=\"322\" width=\"66\" height=\"37\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n</svg>",
+            "text/plain": "Figure (SVG)"
+          },
+          "metadata": {}
+        }
+      ]
     }
   ]
 }
