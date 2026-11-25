@@ -1,0 +1,488 @@
+// Generated from src/prisma/contract.json — do not edit by hand.
+// Regenerate: pnpm prisma contract emit && node scripts/contract-to-dbml.ts
+
+enum CompetitionType {
+  LEAGUE
+  CUP
+  INTERNATIONAL
+  FRIENDLY
+}
+
+enum EventType {
+  YELLOW_CARD
+  SECOND_YELLOW
+  RED_CARD
+  SUBSTITUTION
+  VAR_REVIEW
+  INJURY
+  TIME_WASTING
+}
+
+enum Foot {
+  LEFT
+  RIGHT
+  BOTH
+}
+
+enum GoalType {
+  OPEN_PLAY
+  PENALTY
+  PENALTY_MISS
+  OWN_GOAL
+  FREE_KICK
+  CORNER
+  THROW_IN
+  VOLLEY
+  HEADER
+  PENALTY_SHOOTOUT
+}
+
+enum LineupStatus {
+  STARTER
+  BENCH
+  NOT_IN_SQUAD
+}
+
+enum MatchStatus {
+  SCHEDULED
+  LIVE
+  HALFTIME
+  FINISHED
+  EXTRA_TIME
+  PENALTIES
+  POSTPONED
+  CANCELLED
+  ABANDONED
+}
+
+enum PlayerPosition {
+  GOALKEEPER
+  DEFENDER
+  MIDFIELDER
+  FORWARD
+  SWEEPER
+  CENTER_BACK
+  FULL_BACK
+  DEFENSIVE_MIDFIELD
+  CENTRAL_MIDFIELD
+  ATTACKING_MIDFIELD
+  WINGER
+  STRIKER
+  SECOND_STRIKER
+}
+
+Table country {
+  code text [unique, not null]
+  created_at datetime [not null, default: `now()`]
+  flag_url text
+  id int [pk, not null, default: `autoincrement()`]
+  name text [unique, not null]
+  updated_at datetime [not null]
+}
+
+Table goal {
+  added_minute int
+  assist_id int
+  created_at datetime [not null, default: `now()`]
+  description text
+  id int [pk, not null, default: `autoincrement()`]
+  match_id int [not null]
+  minute int [not null]
+  scorer_id int
+  team_id int [not null]
+  type GoalType [not null, default: 'OPEN_PLAY']
+  updated_at datetime [not null]
+
+  indexes {
+    ("assist_id") [name: 'goal_assist_id_idx_cef1e8fa']
+    ("match_id") [name: 'goal_match_id_idx_105a9a80']
+    ("scorer_id") [name: 'goal_scorer_id_idx_cc5e9ce0']
+    ("team_id") [name: 'goal_team_id_idx_d177da93']
+  }
+}
+
+Table injury {
+  created_at datetime [not null, default: `now()`]
+  end_date datetime
+  id int [pk, not null, default: `autoincrement()`]
+  player_id int [not null]
+  reason text
+  start_date datetime
+  status text [not null, default: 'ACTIVE']
+  team_id int
+  type text
+  updated_at datetime [not null]
+
+  indexes {
+    ("player_id") [name: 'injury_player_id_idx_9eca16c7']
+    ("team_id") [name: 'injury_team_id_idx_d177da93']
+  }
+}
+
+Table league {
+  code text [unique, not null]
+  country_id int
+  created_at datetime [not null, default: `now()`]
+  external_id text [unique]
+  id int [pk, not null, default: `autoincrement()`]
+  logo_url text
+  name text [not null]
+  type CompetitionType [not null, default: 'LEAGUE']
+  updated_at datetime [not null]
+
+  indexes {
+    ("country_id") [name: 'league_country_id_idx_30642658']
+  }
+}
+
+Table manager {
+  created_at datetime [not null, default: `now()`]
+  date_of_birth datetime
+  id int [pk, not null, default: `autoincrement()`]
+  name text [not null]
+  nationality_id int
+  photo_url text
+  updated_at datetime [not null]
+
+  indexes {
+    ("nationality_id") [name: 'manager_nationality_id_idx_50fcbab0']
+  }
+}
+
+Table match {
+  away_et_score int
+  away_ht_score int
+  away_pen_score int
+  away_score int
+  away_team_id int [not null]
+  created_at datetime [not null, default: `now()`]
+  date datetime [not null]
+  elapsed_minute int
+  external_id text [unique]
+  home_et_score int
+  home_ht_score int
+  home_pen_score int
+  home_score int
+  home_team_id int [not null]
+  id int [pk, not null, default: `autoincrement()`]
+  matchday int
+  referee_id int
+  round text
+  season_id int [not null]
+  status MatchStatus [not null, default: 'SCHEDULED']
+  updated_at datetime [not null]
+  venue_id int
+
+  indexes {
+    ("away_team_id") [name: 'match_away_team_id_idx_4b1cbb44']
+    ("date") [name: 'match_date_idx_b4ca319c']
+    ("home_team_id", "away_team_id") [name: 'match_home_team_id_away_team_id_idx_8d0aae30']
+    ("home_team_id") [name: 'match_home_team_id_idx_254cedb3']
+    ("referee_id") [name: 'match_referee_id_idx_7b3289c2']
+    ("season_id") [name: 'match_season_id_idx_b4a5a2c6']
+    ("venue_id") [name: 'match_venue_id_idx_7506cf3f']
+  }
+}
+
+Table match_event {
+  added_minute int
+  created_at datetime [not null, default: `now()`]
+  detail text
+  id int [pk, not null, default: `autoincrement()`]
+  match_id int [not null]
+  minute int [not null]
+  player_id int
+  related_player_id int
+  team_id int
+  type EventType [not null]
+  updated_at datetime [not null]
+
+  indexes {
+    ("match_id") [name: 'match_event_match_id_idx_105a9a80']
+    ("player_id") [name: 'match_event_player_id_idx_9eca16c7']
+    ("related_player_id") [name: 'match_event_related_player_id_idx_178e6310']
+    ("team_id") [name: 'match_event_team_id_idx_d177da93']
+  }
+}
+
+Table match_lineup {
+  captain boolean [not null, default: false]
+  created_at datetime [not null, default: `now()`]
+  formation_x int
+  formation_y int
+  id int [pk, not null, default: `autoincrement()`]
+  match_id int [not null]
+  minutes_played int
+  player_id int [not null]
+  position PlayerPosition
+  rating float
+  shirt_number int
+  status LineupStatus [not null, default: 'NOT_IN_SQUAD']
+  team_id int [not null]
+  updated_at datetime [not null]
+
+  indexes {
+    ("match_id", "player_id") [name: 'match_lineup_match_id_player_id_key', unique]
+    ("match_id") [name: 'match_lineup_match_id_idx_105a9a80']
+    ("match_id", "team_id") [name: 'match_lineup_match_id_team_id_idx_c5c6f751']
+    ("player_id") [name: 'match_lineup_player_id_idx_9eca16c7']
+    ("team_id") [name: 'match_lineup_team_id_idx_d177da93']
+  }
+}
+
+Table match_team_stat {
+  corners int
+  created_at datetime [not null, default: `now()`]
+  expected_goals float
+  fouls int
+  id int [pk, not null, default: `autoincrement()`]
+  match_id int [not null]
+  offsides int
+  pass_accuracy float
+  passes int
+  possession float
+  red_cards int
+  shots int
+  shots_blocked int
+  shots_off_target int
+  shots_on_target int
+  team_id int [not null]
+  updated_at datetime [not null]
+  yellow_cards int
+
+  indexes {
+    ("match_id", "team_id") [name: 'match_team_stat_match_id_team_id_key', unique]
+    ("match_id") [name: 'match_team_stat_match_id_idx_105a9a80']
+    ("team_id") [name: 'match_team_stat_team_id_idx_d177da93']
+  }
+}
+
+Table player {
+  created_at datetime [not null, default: `now()`]
+  current_team_id int
+  date_of_birth datetime
+  external_id text [unique]
+  first_name text
+  height_cm int
+  id int [pk, not null, default: `autoincrement()`]
+  last_name text
+  name text [not null]
+  nationality_id int
+  photo_url text
+  position PlayerPosition
+  preferred_foot Foot
+  shirt_number int
+  updated_at datetime [not null]
+  weight_kg int
+
+  indexes {
+    ("current_team_id") [name: 'player_current_team_id_idx_644aa24d']
+    ("nationality_id") [name: 'player_nationality_id_idx_50fcbab0']
+  }
+}
+
+Table player_match_stat {
+  assists int
+  created_at datetime [not null, default: `now()`]
+  duels_lost int
+  duels_won int
+  fouls_committed int
+  fouls_drawn int
+  goals int
+  goals_conceded int
+  id int [pk, not null, default: `autoincrement()`]
+  interceptions int
+  key_passes int
+  match_id int [not null]
+  minutes_played int
+  pass_accuracy float
+  passes int
+  player_id int [not null]
+  rating float
+  red_cards int
+  saves int
+  shots int
+  shots_on_target int
+  tackles int
+  team_id int [not null]
+  updated_at datetime [not null]
+  yellow_cards int
+
+  indexes {
+    ("match_id", "player_id") [name: 'player_match_stat_match_id_player_id_key', unique]
+    ("match_id") [name: 'player_match_stat_match_id_idx_105a9a80']
+    ("player_id") [name: 'player_match_stat_player_id_idx_9eca16c7']
+    ("team_id") [name: 'player_match_stat_team_id_idx_d177da93']
+  }
+}
+
+Table referee {
+  country_id int
+  created_at datetime [not null, default: `now()`]
+  id int [pk, not null, default: `autoincrement()`]
+  name text [not null]
+  photo_url text
+  updated_at datetime [not null]
+
+  indexes {
+    ("country_id") [name: 'referee_country_id_idx_30642658']
+  }
+}
+
+Table season {
+  created_at datetime [not null, default: `now()`]
+  current boolean [not null, default: false]
+  end_date datetime
+  id int [pk, not null, default: `autoincrement()`]
+  league_id int [not null]
+  name text [not null]
+  start_date datetime
+  updated_at datetime [not null]
+  year int [not null]
+
+  indexes {
+    ("league_id", "year") [name: 'season_league_id_year_key', unique]
+    ("league_id") [name: 'season_league_id_idx_62f1be40']
+  }
+}
+
+Table standing {
+  created_at datetime [not null, default: `now()`]
+  drawn int [not null, default: '0']
+  form text
+  goal_diff int [not null, default: '0']
+  goals_against int [not null, default: '0']
+  goals_for int [not null, default: '0']
+  id int [pk, not null, default: `autoincrement()`]
+  league_id int [not null]
+  lost int [not null, default: '0']
+  played int [not null, default: '0']
+  points int [not null, default: '0']
+  position int
+  season_id int [not null]
+  team_id int [not null]
+  updated_at datetime [not null]
+  won int [not null, default: '0']
+
+  indexes {
+    ("season_id", "team_id") [name: 'standing_season_id_team_id_key', unique]
+    ("league_id") [name: 'standing_league_id_idx_62f1be40']
+    ("season_id") [name: 'standing_season_id_idx_b4a5a2c6']
+    ("team_id") [name: 'standing_team_id_idx_d177da93']
+  }
+}
+
+Table team {
+  code text
+  country_id int
+  created_at datetime [not null, default: `now()`]
+  external_id text [unique]
+  founded_year int
+  id int [pk, not null, default: `autoincrement()`]
+  logo_url text
+  name text [not null]
+  primary_color text
+  short_name text
+  updated_at datetime [not null]
+  venue_id int
+
+  indexes {
+    ("name", "country_id") [name: 'team_name_country_id_key', unique]
+    ("country_id") [name: 'team_country_id_idx_30642658']
+    ("venue_id") [name: 'team_venue_id_idx_7506cf3f']
+  }
+}
+
+Table team_manager {
+  created_at datetime [not null, default: `now()`]
+  end_date datetime
+  id int [pk, not null, default: `autoincrement()`]
+  manager_id int [not null]
+  start_date datetime
+  team_id int [not null]
+  updated_at datetime [not null]
+
+  indexes {
+    ("team_id", "manager_id", "start_date") [name: 'team_manager_team_id_manager_id_start_date_key', unique]
+    ("manager_id") [name: 'team_manager_manager_id_idx_c3dee277']
+    ("team_id") [name: 'team_manager_team_id_idx_d177da93']
+  }
+}
+
+Table transfer {
+  created_at datetime [not null, default: `now()`]
+  currency text
+  date datetime [not null]
+  fee float
+  from_team_id int
+  id int [pk, not null, default: `autoincrement()`]
+  player_id int [not null]
+  to_team_id int [not null]
+  type text
+  updated_at datetime [not null]
+
+  indexes {
+    ("from_team_id") [name: 'transfer_from_team_id_idx_d830a9f7']
+    ("player_id") [name: 'transfer_player_id_idx_9eca16c7']
+    ("to_team_id") [name: 'transfer_to_team_id_idx_fe368448']
+  }
+}
+
+Table venue {
+  capacity int
+  city text
+  country_id int
+  created_at datetime [not null, default: `now()`]
+  id int [pk, not null, default: `autoincrement()`]
+  latitude float
+  longitude float
+  name text [not null]
+  surface text
+  updated_at datetime [not null]
+
+  indexes {
+    ("name", "city") [name: 'venue_name_city_key', unique]
+    ("country_id") [name: 'venue_country_id_idx_30642658']
+  }
+}
+
+ref: "goal"."match_id" > "match"."id"
+ref: "goal"."team_id" > "team"."id"
+ref: "goal"."scorer_id" > "player"."id"
+ref: "goal"."assist_id" > "player"."id"
+ref: "injury"."player_id" > "player"."id"
+ref: "injury"."team_id" > "team"."id"
+ref: "league"."country_id" > "country"."id"
+ref: "manager"."nationality_id" > "country"."id"
+ref: "match"."venue_id" > "venue"."id"
+ref: "match"."referee_id" > "referee"."id"
+ref: "match"."season_id" > "season"."id"
+ref: "match"."home_team_id" > "team"."id"
+ref: "match"."away_team_id" > "team"."id"
+ref: "match_event"."match_id" > "match"."id"
+ref: "match_event"."team_id" > "team"."id"
+ref: "match_event"."player_id" > "player"."id"
+ref: "match_event"."related_player_id" > "player"."id"
+ref: "match_lineup"."match_id" > "match"."id"
+ref: "match_lineup"."team_id" > "team"."id"
+ref: "match_lineup"."player_id" > "player"."id"
+ref: "match_team_stat"."match_id" > "match"."id"
+ref: "match_team_stat"."team_id" > "team"."id"
+ref: "player"."nationality_id" > "country"."id"
+ref: "player"."current_team_id" > "team"."id"
+ref: "player_match_stat"."match_id" > "match"."id"
+ref: "player_match_stat"."player_id" > "player"."id"
+ref: "player_match_stat"."team_id" > "team"."id"
+ref: "referee"."country_id" > "country"."id"
+ref: "season"."league_id" > "league"."id"
+ref: "standing"."season_id" > "season"."id"
+ref: "standing"."league_id" > "league"."id"
+ref: "standing"."team_id" > "team"."id"
+ref: "team"."country_id" > "country"."id"
+ref: "team"."venue_id" > "venue"."id"
+ref: "team_manager"."team_id" > "team"."id"
+ref: "team_manager"."manager_id" > "manager"."id"
+ref: "transfer"."player_id" > "player"."id"
+ref: "transfer"."from_team_id" > "team"."id"
+ref: "transfer"."to_team_id" > "team"."id"
+ref: "venue"."country_id" > "country"."id"
