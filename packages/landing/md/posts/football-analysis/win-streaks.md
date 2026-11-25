@@ -1,10 +1,10 @@
 ---
 title: 'Five in a row: how common are winning streaks?'
-description:
+description: |
   'How rare is a five-match winning streak? A run-length analysis of 602k
   team-matches — the record books belong to Celtic and Barcelona.'
 author: 'hieudoan'
-date: '2026-11-25'
+date: '2026-11-25T09:30'
 order: 4
 tags: ['football', 'analysis', 'streaks', 'mars', 'sqlite']
 ---

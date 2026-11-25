@@ -4,7 +4,7 @@ description: |
   'A guided tour of the 17 tables in the soccers SQLite database — what each one
   stores and how they connect.'
 author: 'hieudoan'
-date: '2026-11-25'
+date: '2026-11-25T08:30'
 order: 2
 tags: ['schema', 'sqlite', 'prisma', 'data-model']
 ---

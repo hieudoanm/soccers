@@ -52,7 +52,11 @@ export const viewport: Viewport = {
 
 const inter = Inter({ subsets: ['latin'] });
 
-const NAV_LINKS = [{ label: 'Blog', href: '/blog/' }];
+const NAV_LINKS = [
+  { label: 'Blog', href: '/blog/' },
+  { label: 'Fantasy', href: '/fantasy/' },
+  { label: 'Tournaments', href: '/touraments/' },
+];
 
 const RootLayout: FC<{ children: ReactNode }> = ({ children }) => (
   <html lang="en" data-theme="soccers" className={inter.className}>

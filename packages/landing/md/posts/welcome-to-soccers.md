@@ -4,7 +4,7 @@ description: |
   'What this project is, where the data comes from, and what kind of football
   analysis to expect here.'
 author: 'hieudoan'
-date: '2026-11-25'
+date: '2026-11-25T08:00'
 order: 1
 tags: ['intro', 'football', 'data', 'sqlite', 'prisma']
 ---

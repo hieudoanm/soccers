@@ -17,8 +17,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  quality:
-    name: Quality
+  landing-build:
+    name: Landing - Build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -48,7 +48,7 @@ jobs:
 
   landing-deploy:
     name: Landing - Deploy
-    needs: quality
+    needs: landing-build
     if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     permissions:

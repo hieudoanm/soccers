@@ -14,7 +14,7 @@ describe('BlogPage', () => {
   it('lists posts', () => {
     render(<BlogPage />);
     expect(
-      screen.getByRole('link', { name: /Welcome to soccers/ })
-    ).toHaveAttribute('href', '/blog/welcome-to-soccers');
+      screen.getByRole('link', { name: /The Fixture Congestion Effect/ })
+    ).toHaveAttribute('href', '/blog/fixture-congestion');
   });
 });

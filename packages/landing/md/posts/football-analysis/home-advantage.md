@@ -4,7 +4,7 @@ description: |
   'Does playing at home still matter? A Mars notebook analysis of 301,353
   matches — home win rates, league edges, and the modern parity trend.'
 author: 'hieudoan'
-date: '2026-11-25'
+date: '2026-11-25T09:00'
 order: 3
 tags: ['football', 'analysis', 'home-advantage', 'mars', 'sqlite']
 ---

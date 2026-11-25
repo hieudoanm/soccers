@@ -1,10 +1,10 @@
 ---
 title: 'Two-goal lead: is 2–0 the most dangerous lead?'
-description:
+description: |
   'Replaying 3,703 matches goal-by-goal: the 2–0 "dangerous lead" is a myth —
   the margin matters, not the scoreline shape.'
 author: 'hieudoan'
-date: '2026-11-25'
+date: '2026-11-25T10:00'
 order: 5
 tags: ['football', 'analysis', 'comebacks', 'mars', 'sqlite']
 ---

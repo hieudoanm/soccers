@@ -1,10 +1,10 @@
 ---
 title: 'Giant-killing: teams that beat stronger opponents'
-description:
+description: |
   'An Elo sweep over 301k matches: upset win rates fall with the rating gap —
   and the best giant-killers are elite teams in down cycles.'
 author: 'hieudoan'
-date: '2026-11-25'
+date: '2026-11-25T11:00'
 order: 7
 tags: ['football', 'analysis', 'underdogs', 'elo', 'mars', 'sqlite']
 ---

@@ -185,12 +185,14 @@ export const getPosts = (): Post[] => {
   return getPostFiles(postsDirectory)
     .map(readPost)
     .sort((left, right) => {
+      if (left.date && right.date) return right.date.localeCompare(left.date);
+      if (left.date) return -1;
+      if (right.date) return 1;
       if (left.order !== undefined && right.order !== undefined) {
         return left.order - right.order;
       }
       if (left.order !== undefined) return -1;
       if (right.order !== undefined) return 1;
-      if (left.date && right.date) return left.date.localeCompare(right.date);
       return left.title.localeCompare(right.title, undefined, {
         numeric: true,
       });

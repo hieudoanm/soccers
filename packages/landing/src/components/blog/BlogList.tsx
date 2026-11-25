@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { formatPostDate } from '@/lib/format';
 import type { Post } from '@/lib/blog';
 
 const POSTS_PER_PAGE = 10;
@@ -29,7 +30,7 @@ export default function BlogList({ posts }: BlogListProps) {
               className="card border-base-300 bg-base-100 hover:border-primary/60 group flex h-full flex-col border p-5 transition">
               <div className="text-base-content/50 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
                 {post.date ? (
-                  <time dateTime={post.date}>{post.date}</time>
+                  <time dateTime={post.date}>{formatPostDate(post.date)}</time>
                 ) : null}
                 {post.author ? <span>· {post.author}</span> : null}
               </div>

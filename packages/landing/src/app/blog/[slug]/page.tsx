@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import Markdown from '@/components/shared/Markdown';
+import { formatPostDate } from '@/lib/format';
 import { getPost, getPosts } from '@/lib/blog';
 import { siteName, siteUrl } from '@/lib/site';
 
@@ -77,7 +78,7 @@ const BlogPostPage = async ({ params }: BlogPostPageProps) => {
         {post.date ? (
           <>
             <span aria-hidden="true">·</span>
-            <time dateTime={post.date}>{post.date}</time>
+            <time dateTime={post.date}>{formatPostDate(post.date)}</time>
           </>
         ) : null}
         {post.author ? (

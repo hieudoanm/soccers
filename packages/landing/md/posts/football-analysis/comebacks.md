@@ -1,10 +1,10 @@
 ---
 title: 'Comebacks: turning losing positions into victories'
-description:
+description: |
   '57% of team-matches see a side trail — but only 10.5% end in a comeback win,
   and almost none from three down.'
 author: 'hieudoan'
-date: '2026-11-25'
+date: '2026-11-25T10:30'
 order: 6
 tags: ['football', 'analysis', 'comebacks', 'mars', 'sqlite']
 ---

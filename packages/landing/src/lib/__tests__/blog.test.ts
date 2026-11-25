@@ -1,10 +1,11 @@
 import { getPost, getPosts } from '@/lib/blog';
 
 describe('getPosts', () => {
-  it('returns the markdown posts sorted by order', () => {
+  it('returns the markdown posts sorted by date, latest first', () => {
     const posts = getPosts();
     expect(posts.length).toBeGreaterThan(0);
-    expect(posts[0].slug).toBe('welcome-to-soccers');
+    expect(posts[0].slug).toBe('manager-debut');
+    expect(posts[posts.length - 1].slug).toBe('welcome-to-soccers');
   });
 
   it('parses front matter', () => {

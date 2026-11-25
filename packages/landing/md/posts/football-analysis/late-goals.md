@@ -1,10 +1,10 @@
 ---
 title: 'Death by a thousand cuts: the dying minutes'
-description:
+description: |
   '23% of all goals arrive after minute 76 — and tournament football is decided
   late far more often than league football.'
 author: 'hieudoan'
-date: '2026-11-25'
+date: '2026-11-25T11:30'
 order: 8
 tags: ['football', 'analysis', 'late-goals', 'mars', 'sqlite']
 ---

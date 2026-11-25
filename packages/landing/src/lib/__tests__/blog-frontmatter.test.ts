@@ -101,7 +101,7 @@ describe('post fallbacks', () => {
 });
 
 describe('getPosts sorting', () => {
-  it('sorts by order, then date, then title', () => {
+  it('sorts by date descending, then order, then title', () => {
     const names = ['b.md', 'a.md', 'c.md', 'd.md', 'e.md'];
     fsMock.readdirSync.mockReturnValue(names.map(fileEntry));
     const contents: Record<string, string> = {
@@ -117,6 +117,6 @@ describe('getPosts sorting', () => {
 
     const posts = getPosts();
 
-    expect(posts.map((post) => post.slug)).toEqual(['c', 'b', 'a', 'd', 'e']);
+    expect(posts.map((post) => post.slug)).toEqual(['d', 'a', 'c', 'b', 'e']);
   });
 });
