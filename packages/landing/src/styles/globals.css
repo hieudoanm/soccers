@@ -1,0 +1,77 @@
+@import 'tailwindcss';
+@import 'highlight.js/styles/github-dark.min.css';
+@plugin '@tailwindcss/typography';
+
+@media print {
+  body {
+    height: auto;
+    overflow: visible;
+  }
+  .print-pitch {
+    width: 100%;
+    max-width: 100%;
+  }
+  .print-pitch [data-testid='pitch'] {
+    width: 100%;
+  }
+}
+
+@plugin 'daisyui' {
+  themes: soccers --default;
+}
+
+@plugin 'daisyui/theme' {
+  name: 'soccers';
+  default: true;
+  prefersdark: false;
+  color-scheme: 'light';
+  --color-base-100: #ffffff;
+  --color-base-200: #f5f5f4;
+  --color-base-300: #e7e5e4;
+  --color-base-content: #1c1917;
+  --color-primary: #dc2626;
+  --color-primary-content: #ffffff;
+  --color-secondary: #991b1b;
+  --color-secondary-content: #ffffff;
+  --color-accent: #ef4444;
+  --color-accent-content: #ffffff;
+  --color-neutral: #334155;
+  --color-neutral-content: #ffffff;
+  --color-info: #2563eb;
+  --color-info-content: #ffffff;
+  --color-success: #16a34a;
+  --color-success-content: #ffffff;
+  --color-warning: #d97706;
+  --color-warning-content: #ffffff;
+  --color-error: #dc2626;
+  --color-error-content: #ffffff;
+  --radius-selector: 0.5rem;
+  --radius-field: 0.25rem;
+  --radius-box: 0.5rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 1;
+  --noise: 0;
+}
+
+/* ---------- docs prose (Tailwind Typography, literal theme values) ---------- */
+
+.prose {
+  --tw-prose-body: var(--color-base-content);
+  --tw-prose-headings: var(--color-base-content);
+  --tw-prose-lead: #6b7280;
+  --tw-prose-links: var(--color-primary);
+  --tw-prose-bold: var(--color-base-content);
+  --tw-prose-counters: #6b7280;
+  --tw-prose-bullets: var(--color-base-300);
+  --tw-prose-hr: var(--color-base-300);
+  --tw-prose-quotes: #6b7280;
+  --tw-prose-quote-borders: var(--color-primary);
+  --tw-prose-captions: #6b7280;
+  --tw-prose-code: var(--color-base-content);
+  --tw-prose-pre-code: #e8e8e8;
+  --tw-prose-pre-bg: #111827;
+  --tw-prose-th-borders: var(--color-base-300);
+  --tw-prose-td-borders: var(--color-base-300);
+}
