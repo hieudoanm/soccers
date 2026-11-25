@@ -3,6 +3,7 @@ import path from 'node:path';
 
 export type Post = {
   slug: string;
+  series?: string;
   title: string;
   description?: string;
   author?: string;
@@ -139,6 +140,9 @@ const parseTags = (value: string | undefined): string[] => {
 const readPost = (filePath: string): Post => {
   const fileName = path.basename(filePath);
   const slug = fileName.replace(/\.md$/i, '');
+  const relativeDir = path.relative(postsDirectory, path.dirname(filePath));
+  const series =
+    relativeDir === '' ? undefined : relativeDir.split(path.sep)[0];
   const raw = fs.readFileSync(filePath, 'utf8');
   const { data, body } = parseFrontmatter(raw);
   const heading = body.match(/^#\s+(.+)$/m)?.[1]?.trim();
@@ -154,6 +158,7 @@ const readPost = (filePath: string): Post => {
 
   return {
     slug,
+    series,
     title,
     description: data.description,
     author: data.author,

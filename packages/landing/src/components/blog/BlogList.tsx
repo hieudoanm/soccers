@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { formatPostDate } from '@/lib/format';
 import type { Post } from '@/lib/blog';
+import { seriesTitle } from '@/lib/series-meta';
 
 const POSTS_PER_PAGE = 10;
 
@@ -41,6 +42,11 @@ export default function BlogList({ posts }: BlogListProps) {
                 <p className="text-base-content/60 mt-1 line-clamp-3 text-sm">
                   {post.description}
                 </p>
+              ) : null}
+              {post.series ? (
+                <span className="badge badge-primary badge-sm mt-3 w-fit">
+                  {seriesTitle(post.series)}
+                </span>
               ) : null}
               {post.tags.length > 0 ? (
                 <div className="mt-3 flex flex-wrap gap-1.5">

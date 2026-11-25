@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import Markdown from '@/components/shared/Markdown';
 import { formatPostDate } from '@/lib/format';
 import { getPost, getPosts } from '@/lib/blog';
+import { seriesTitle } from '@/lib/series-meta';
 import { siteName, siteUrl } from '@/lib/site';
 
 export const dynamicParams = false;
@@ -85,6 +86,16 @@ const BlogPostPage = async ({ params }: BlogPostPageProps) => {
           <>
             <span aria-hidden="true">·</span>
             <span>{post.author}</span>
+          </>
+        ) : null}
+        {post.series ? (
+          <>
+            <span aria-hidden="true">·</span>
+            <Link
+              href={`/blog/series#${post.series}`}
+              className="hover:text-primary">
+              {seriesTitle(post.series)}
+            </Link>
           </>
         ) : null}
       </nav>

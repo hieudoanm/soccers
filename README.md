@@ -19,6 +19,7 @@ all stored in SQLite via Prisma 8, and analysed with
 | Feature                | Route                           | What it does                                                                               |
 | ---------------------- | ------------------------------- | ------------------------------------------------------------------------------------------ |
 | **Blog**               | `/blog/`                        | Football data-analysis posts, each backed by a runnable `.mars` notebook                   |
+| **Series**             | `/blog/series/`                 | Posts grouped into Match Analysis, Management, and Record Books series                     |
 | **Home Advantage**     | `/blog/home-advantage/`         | Home vs away win rates across 301k matches — the modern parity trend                       |
 | **Win Streaks**        | `/blog/win-streaks/`            | How rare is five-in-a-row? 4,110 streaks ≥5 — Celtic's 25 is the record                    |
 | **Two-Goal Lead**      | `/blog/two-goal-lead/`          | Is 2–0 the most dangerous lead? Goal-by-goal replay of 3,703 matches                       |
@@ -99,10 +100,14 @@ Every blog post is generated from a **Mars notebook** (`.mars`, Rust
 runtime) living next to its exported Markdown:
 
 ```text
-mars/posts/football-analysis/home-advantage.mars   # the analysis
-mars/posts/football-analysis/home-advantage.md     # exported output
-md/posts/football-analysis/home-advantage.md       # blog source
+mars/posts/record-books/best-of-premier-league.mars   # the analysis
+mars/posts/record-books/best-of-premier-league.md     # exported output
+md/posts/record-books/best-of-premier-league.md       # blog source
 ```
+
+Posts are organised into **series** by directory — `match-analysis`,
+`management`, and `record-books` — surfaced at `/blog/series` (series
+metadata lives in `src/lib/series-meta.ts`).
 
 Workflow: edit cells → `mars notebook run <file>.mars` (~1 min; deps are
 pinned in notebook `cargo_lock`) → `mars notebook export <file>.mars md
@@ -116,7 +121,7 @@ To regenerate the analysis inputs from `dev.db`:
 
 ```bash
 cd packages/data
-sqlite3 -header -csv dev.db "SELECT ..." > ../landing/mars/posts/football-analysis/data/matches_full.csv
+sqlite3 -header -csv dev.db "SELECT ..." > ../landing/mars/posts/data/matches_full.csv
 ```
 
 (see each notebook's intro cell for the exact query)
@@ -151,8 +156,9 @@ pnpm --filter @soccers/data sizes                  # CSV/DB file sizes
 
 ## Adding a blog post
 
-Drop a `.md` file into `packages/landing/md/posts/` (subdirectories are
-fine) with front matter:
+Drop a `.md` file into `packages/landing/md/posts/` — the top-level
+directory becomes the post's **series** (see `/blog/series`); files at
+the root are uncategorised. Front matter:
 
 ```markdown
 ---

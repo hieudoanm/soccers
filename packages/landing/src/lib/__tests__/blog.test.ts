@@ -1,4 +1,5 @@
 import { getPost, getPosts } from '@/lib/blog';
+import { getSeries } from '@/lib/series';
 
 describe('getPosts', () => {
   it('returns the markdown posts sorted by date, latest first', () => {
@@ -14,6 +15,26 @@ describe('getPosts', () => {
     expect(post?.author).toBe('hieudoan');
     expect(post?.tags).toContain('intro');
     expect(post?.content).toContain('# Welcome to soccers');
+  });
+
+  it('assigns posts to series by directory', () => {
+    const post = getPosts().find((p) => p.slug === 'best-of-premier-league');
+    expect(post?.series).toBe('record-books');
+    const root = getPosts().find((p) => p.slug === 'welcome-to-soccers');
+    expect(root?.series).toBeUndefined();
+  });
+});
+
+describe('getSeries', () => {
+  it('groups posts into ordered series', () => {
+    const series = getSeries();
+    expect(series.map((s) => s.slug)).toEqual([
+      'match-analysis',
+      'management',
+      'record-books',
+    ]);
+    expect(series[2].posts.length).toBe(16);
+    expect(series.every((s) => s.posts.length > 0)).toBe(true);
   });
 });
 

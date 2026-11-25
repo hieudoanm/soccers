@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import BlogList from '@/components/blog/BlogList';
 import { getPosts } from '@/lib/blog';
 import { siteName, siteUrl } from '@/lib/site';
@@ -34,7 +35,10 @@ export default function BlogPage() {
           Mars.
         </p>
         <p className="text-base-content/50 mt-1 text-sm">
-          {posts.length} {posts.length === 1 ? 'post' : 'posts'}
+          {posts.length} {posts.length === 1 ? 'post' : 'posts'} ·{' '}
+          <Link href="/blog/series" className="hover:text-primary">
+            Browse series →
+          </Link>
         </p>
       </div>
 
