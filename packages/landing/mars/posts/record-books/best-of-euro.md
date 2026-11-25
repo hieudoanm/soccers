@@ -533,8 +533,8 @@ unbeaten champions: 2
 | Germany vs Scotland (2024)    | 5-1   | 6           |
 | Netherlands vs Ukraine (2020) | 3-2   | 5           |
 | Russia vs Denmark (2020)      | 1-4   | 5           |
-| Sweden vs Poland (2020)       | 3-2   | 5           |
 | Slovakia vs Spain (2020)      | 0-5   | 5           |
+| Sweden vs Poland (2020)       | 3-2   | 5           |
 
 | record                | champion edition | record   | gf/ga | gd  |
 | --------------------- | ---------------- | -------- | ----- | --- |
@@ -653,8 +653,8 @@ unbeaten champions: 2
 | Germany vs Scotland (2024)    | 5-1   | 6           |
 | Netherlands vs Ukraine (2020) | 3-2   | 5           |
 | Russia vs Denmark (2020)      | 1-4   | 5           |
-| Sweden vs Poland (2020)       | 3-2   | 5           |
 | Slovakia vs Spain (2020)      | 0-5   | 5           |
+| Sweden vs Poland (2020)       | 3-2   | 5           |
 
 | record                | champion edition | record   | gf/ga | gd  |
 | --------------------- | ---------------- | -------- | ----- | --- |

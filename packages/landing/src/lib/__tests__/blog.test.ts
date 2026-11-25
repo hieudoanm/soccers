@@ -5,7 +5,7 @@ describe('getPosts', () => {
   it('returns the markdown posts sorted by date, latest first', () => {
     const posts = getPosts();
     expect(posts.length).toBeGreaterThan(0);
-    expect(posts[0].slug).toBe('best-of-copa-america');
+    expect(posts[0].slug).toBe('best-of-afc-champions-league-elite');
     expect(posts[posts.length - 1].slug).toBe('welcome-to-soccers');
   });
 
@@ -33,7 +33,7 @@ describe('getSeries', () => {
       'management',
       'record-books',
     ]);
-    expect(series[2].posts.length).toBe(16);
+    expect(series[2].posts.length).toBe(20);
     expect(series.every((s) => s.posts.length > 0)).toBe(true);
   });
 });

@@ -32,7 +32,7 @@ all stored in SQLite via Prisma 8, and analysed with
 | **Fixture Congestion** | `/blog/fixture-congestion/`     | Does short rest hurt? The effect is real but marginal                                      |
 | **New Manager Bounce** | `/blog/manager-change/`         | 43 EPL managerial changes — the bounce is real but oversold                                |
 | **Best Debut Season**  | `/blog/manager-debut/`          | 80 first seasons ranked vs club expectations — pre-season hires win                        |
-| **Record Books**       | `/blog/best-of-premier-league/` | 16 "Best of" competitions — league titles, tournament records, unbeaten sides, top scorers |
+| **Record Books**       | `/blog/best-of-premier-league/` | 20 "Best of" competitions — league titles, tournament records, unbeaten sides, top scorers |
 
 ## Monorepo layout
 

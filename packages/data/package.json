@@ -22,6 +22,7 @@
     "dbml": "node scripts/contract-to-dbml.ts",
     "export:csv": "node scripts/export-csv.ts",
     "import:football-data": "node scripts/import-football-data.ts",
+    "import:espn": "node scripts/import-espn.ts",
     "import:statsbomb": "node --max-old-space-size=8192 scripts/import-statsbomb.ts",
     "sizes": "node scripts/file-sizes.ts"
   },
