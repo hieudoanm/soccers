@@ -48,7 +48,7 @@
     "dotenv": "18.0.10",
     "kill-port": "2.0.1",
     "prettier": "3.10.1",
-    "prisma": "8.0.0-rc.35",
+    "prisma": "8.0.0-rc.36",
     "typescript": "7.0.2"
   }
 }
