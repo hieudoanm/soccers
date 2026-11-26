@@ -32,6 +32,8 @@ all stored in SQLite via Prisma 8, and analysed with
 | **Fixture Congestion** | `/blog/fixture-congestion/`     | Does short rest hurt? The effect is real but marginal                                      |
 | **New Manager Bounce** | `/blog/manager-change/`         | 43 EPL managerial changes — the bounce is real but oversold                                |
 | **Best Debut Season**  | `/blog/manager-debut/`          | 80 first seasons ranked vs club expectations — pre-season hires win                        |
+| **Attack vs Defence**  | `/blog/attack-vs-defence/`      | 33 EPL seasons — attack predicts position better; titles go to balanced teams              |
+| **Unbeaten Seasons**   | `/blog/unbeaten-seasons/`       | 10 unbeaten team-seasons in 592 league-seasons — a gradient tail, not a special category   |
 | **Record Books**       | `/blog/best-of-premier-league/` | 20 "Best of" competitions — league titles, tournament records, unbeaten sides, top scorers |
 
 ## Monorepo layout
