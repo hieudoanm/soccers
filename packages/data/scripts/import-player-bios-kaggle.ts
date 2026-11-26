@@ -17,7 +17,7 @@ import { resolve } from 'node:path';
 const dryRun = process.argv.includes('--dry-run');
 const fileArg = process.argv.includes('--file')
   ? process.argv[process.argv.indexOf('--file') + 1]
-  : resolve('scripts/.cache/soccer-kaggle.sqlite');
+  : resolve('import/soccer-kaggle.sqlite');
 
 const dbPath = resolve(process.env['DATABASE_URL'] ?? './dev.db');
 const db = new DatabaseSync(dbPath);

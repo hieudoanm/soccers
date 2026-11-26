@@ -59,7 +59,7 @@ pnpm --filter @soccers/data sizes
 - Scripts in `packages/*/scripts/` are TypeScript (`.ts`) executed directly by
   Node — never add a transpile step.
 - Generated artefacts (`contract.json`, `contract.d.ts`, `schema/schema.*`,
-  `csv/`, `dev.db`) are produced by scripts; edit sources, not outputs.
+  `export/`, `dev.db`) are produced by scripts; edit sources, not outputs.
 - Commit messages follow conventional commits (enforced by commitlint).
 
 ## Definition of done

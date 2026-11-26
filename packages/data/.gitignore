@@ -19,5 +19,6 @@ dist/
 .cursor
 .devin
 
-# importer caches
-scripts/.cache/
+# raw source downloads & importer caches
+import/*
+!import/.gitkeep

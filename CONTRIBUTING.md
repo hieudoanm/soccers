@@ -28,7 +28,7 @@ pnpm build
 
 - Work happens inside `packages/*`; read the package's `AGENTS.md` first.
 - Scripts are TypeScript run natively by Node — do not add a transpile step.
-- Never edit generated artefacts (`contract.json`, `schema/schema.*`, `csv/`,
+- Never edit generated artefacts (`contract.json`, `schema/schema.*`, `export/`,
   `dev.db`); change the source and regenerate.
 - Commit messages must follow conventional commits (commitlint enforced).
 
@@ -40,5 +40,5 @@ re-run:
 ```bash
 pnpm --filter @soccers/data import:football-data   # football-data.co.uk CSVs
 pnpm --filter @soccers/data import:statsbomb       # StatsBomb open data (~1.3 GB stream)
-pnpm --filter @soccers/data export:csv             # dump tables to csv/
+pnpm --filter @soccers/data export:csv             # dump tables to export/
 ```

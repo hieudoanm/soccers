@@ -3,8 +3,8 @@
 // on Hugging Face (ngeorgea/transfermarkt-player-scores), plus injury/suspension
 // lists scraped live from transfermarkt.com club pages.
 //
-// CSVs are cached under scripts/.cache/tm-*.csv; injury pages under
-// scripts/.cache/injuries/. Reruns are idempotent: transfers dedupe on
+// CSVs are cached under import/tm-*.csv; injury pages under
+// import/injuries/. Reruns are idempotent: transfers dedupe on
 // (player, date, teams), injuries on (player, reason, start date), and player
 // bio/photo fields are only filled when NULL.
 //
@@ -20,7 +20,7 @@ import { fileURLToPath } from 'node:url';
 const dryRun = process.argv.includes('--dry-run');
 const noInjuries = process.argv.includes('--no-injuries');
 
-const CACHE_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '.cache');
+const CACHE_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '..', 'import');
 const INJURY_DIR = resolve(CACHE_DIR, 'injuries');
 mkdirSync(INJURY_DIR, { recursive: true });
 

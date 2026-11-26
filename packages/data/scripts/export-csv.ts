@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Exports every contract table to CSV files under csv/.
+// Exports every contract table to CSV files under export/.
 // Usage: node scripts/export-csv.ts [output-dir]
 
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -8,7 +8,7 @@ import { dirname, resolve } from 'node:path';
 import { db } from '../src/prisma/db.ts';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const outDir = resolve(root, process.argv[2] ?? 'csv');
+const outDir = resolve(root, process.argv[2] ?? 'export');
 mkdirSync(outDir, { recursive: true });
 
 const contract = JSON.parse(readFileSync(resolve(root, 'src/prisma/contract.json'), 'utf8')) as {

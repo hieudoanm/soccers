@@ -20,7 +20,7 @@ const countryArg = process.argv.includes('--country')
 const dbPath = resolve(process.env['DATABASE_URL'] ?? './dev.db');
 const db = new DatabaseSync(dbPath);
 
-const CACHE_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '.cache');
+const CACHE_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '..', 'import');
 mkdirSync(CACHE_DIR, { recursive: true });
 const COUNTRY_CACHE = resolve(CACHE_DIR, 'country-qids.json');
 const SEARCH_CACHE = resolve(CACHE_DIR, 'player-searches.jsonl');

@@ -56,7 +56,8 @@ all stored in SQLite via Prisma 8, and analysed with
 │   │   ├── scripts/            # import-football-data, import-statsbomb,
 │   │   │                       # export-csv, contract-to-dbml, file-sizes
 │   │   ├── schema/             # generated schema.dbml/.svg/.png diagrams
-│   │   ├── csv/                # generated CSV exports (gitignored)
+│   │   ├── export/              # generated CSV exports
+│   │   ├── import/               # raw source downloads & importer caches (gitignored)
 │   │   └── dev.db              # SQLite database (gitignored, reproducible)
 │   └── landing/                # @soccers/landing — Next.js blog + marketing site
 │       ├── md/posts/           # blog post sources (Markdown + front matter)
@@ -80,7 +81,7 @@ and `dev.db` is a plain SQLite file (~178 MB, fully reproducible).
 - **Schema diagram:** `pnpm dbml` regenerates `schema/schema.{dbml,svg,png}`.
 - **Browse the data:** `pnpm db` opens `sqlite3 dev.db`;
   `pnpm db:web` serves it read-only in Datasette at `localhost:8001`.
-- **CSV export:** `pnpm export:csv` dumps every table to `csv/`.
+- **CSV export:** `pnpm export:csv` dumps every table to `export/`.
 
 ### Data sources
 
