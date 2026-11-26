@@ -275,20 +275,22 @@ function tokEq(a: string, b: string): boolean {
   return m >= 4 && (a.startsWith(b) || b.startsWith(a));
 }
 
-function pickTeam(scored: Map<number, number>): number | null {
+// scored: team id → (coverage ratio of our name tokens, absolute covered count)
+function pickTeam(scored: Map<number, [number, number]>): number | null {
   if (scored.size === 0) return null;
   let best: number | null = null;
-  let bestScore = -1;
-  let bestWeight = -1;
-  for (const [id, score] of scored) {
+  let bestKey: [number, number, number] | null = null;
+  for (const [id, [ratio, count]] of scored) {
     const w = teamWeight.get(id) ?? 0;
-    if (
-      score > bestScore ||
-      (score === bestScore && w > bestWeight) ||
-      (score === bestScore && w === bestWeight && best !== null && id < best)
-    ) {
-      bestScore = score;
-      bestWeight = w;
+    const better =
+      bestKey === null ||
+      ratio > bestKey[0] ||
+      (ratio === bestKey[0] &&
+        (count > bestKey[1] ||
+          (count === bestKey[1] &&
+            (w > bestKey[2] || (w === bestKey[2] && best !== null && id < best)))));
+    if (better) {
+      bestKey = [ratio, count, w];
       best = id;
     }
   }
@@ -301,18 +303,23 @@ function matchTeam(tmName: string): number | null {
   const key = tokens.join(' ');
   const direct = teamByTokens.get(key);
   if (direct && direct.length === 1) return direct[0];
-  // Score each candidate team by how many of its name tokens match TM tokens;
-  // require full containment of the smaller side so unrelated clubs can't win
-  // on a single shared token (e.g Biology ~ Biology? no — e.g. "Inter" alone
-  // must not match every club containing "Inter").
-  const scored = new Map<number, number>();
+  // Score each candidate by coverage ratio of OUR name tokens (then absolute
+  // count, then match weight). Ratio-first stops longer unrelated names from
+  // winning on partial overlap — TM "Arsenal FC" must prefer our "Arsenal"
+  // (1/1 tokens) over "FC Arsenal Tula" (2/3 tokens).
+  const scored = new Map<number, [number, number]>();
   for (const [k, ids] of teamByTokens) {
     const kt = k.split(' ');
     const ktCovered = kt.filter((t) => tokens.some((x) => tokEq(t, x))).length;
     const tmCovered = tokens.filter((t) => kt.some((x) => tokEq(t, x))).length;
-    const contained = ktCovered === kt.length || tmCovered === tokens.length;
-    if (!contained) continue;
-    for (const id of ids) scored.set(id, Math.max(scored.get(id) ?? 0, ktCovered));
+    if (ktCovered !== kt.length && tmCovered !== tokens.length) continue;
+    const ratio = ktCovered / kt.length;
+    for (const id of ids) {
+      const prev = scored.get(id);
+      if (!prev || ratio > prev[0] || (ratio === prev[0] && ktCovered > prev[1])) {
+        scored.set(id, [ratio, ktCovered]);
+      }
+    }
   }
   return pickTeam(scored);
 }

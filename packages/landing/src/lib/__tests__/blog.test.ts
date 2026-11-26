@@ -5,7 +5,7 @@ describe('getPosts', () => {
   it('returns the markdown posts sorted by date, latest first', () => {
     const posts = getPosts();
     expect(posts.length).toBeGreaterThan(0);
-    expect(posts[0].slug).toBe('first-half-table');
+    expect(posts[0].slug).toBe('transfer-flows');
     expect(posts[posts.length - 1].slug).toBe('welcome-to-soccers');
   });
 
@@ -32,8 +32,10 @@ describe('getSeries', () => {
       'match-analysis',
       'management',
       'record-books',
+      'transfers',
     ]);
     expect(series[2].posts.length).toBe(20);
+    expect(series[3].posts.length).toBe(3);
     expect(series.every((s) => s.posts.length > 0)).toBe(true);
   });
 });

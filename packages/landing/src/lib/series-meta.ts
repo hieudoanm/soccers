@@ -17,6 +17,11 @@ export const SERIES_META: Record<
     description:
       'Best-of record books for leagues and tournaments — titles, records, unbeaten sides and top scorers.',
   },
+  transfers: {
+    title: 'Transfers',
+    description:
+      'The transfer market in data: deadline-day timing, fee inflation and the pipelines that move players and money between leagues.',
+  },
 };
 
 export const seriesTitle = (slug: string | undefined): string | undefined =>

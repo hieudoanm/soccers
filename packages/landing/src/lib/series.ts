@@ -8,7 +8,12 @@ export type Series = {
   posts: Post[];
 };
 
-const SERIES_ORDER = ['match-analysis', 'management', 'record-books'];
+const SERIES_ORDER = [
+  'match-analysis',
+  'management',
+  'record-books',
+  'transfers',
+];
 
 export const getSeries = (): Series[] => {
   const posts = getPosts();
