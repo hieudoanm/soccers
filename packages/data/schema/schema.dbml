@@ -1,6 +1,12 @@
 // Generated from src/prisma/contract.json — do not edit by hand.
 // Regenerate: pnpm prisma contract emit && node scripts/contract-to-dbml.ts
 
+enum AwardCategory {
+  PLAYER
+  TEAM
+  MANAGER
+}
+
 enum CompetitionType {
   LEAGUE
   CUP
@@ -69,6 +75,39 @@ enum PlayerPosition {
   WINGER
   STRIKER
   SECOND_STRIKER
+}
+
+Table award {
+  category AwardCategory [not null]
+  created_at datetime [not null, default: `now()`]
+  description text
+  external_id text [unique]
+  id int [pk, not null, default: `autoincrement()`]
+  name text [unique, not null]
+  updated_at datetime [not null]
+}
+
+Table award_winner {
+  award_id int [not null]
+  created_at datetime [not null, default: `now()`]
+  external_id text [unique]
+  id int [pk, not null, default: `autoincrement()`]
+  manager_id int
+  place int [not null, default: '1']
+  player_id int
+  points float
+  season text
+  team_id int
+  updated_at datetime [not null]
+  year int [not null]
+
+  indexes {
+    ("award_id") [name: 'award_winner_award_id_idx_2eb6dc92']
+    ("award_id", "year") [name: 'award_winner_award_id_year_idx_83c1d56f']
+    ("manager_id") [name: 'award_winner_manager_id_idx_c3dee277']
+    ("player_id") [name: 'award_winner_player_id_idx_9eca16c7']
+    ("team_id") [name: 'award_winner_team_id_idx_d177da93']
+  }
 }
 
 Table country {
@@ -446,6 +485,10 @@ Table venue {
   }
 }
 
+ref: "award_winner"."award_id" > "award"."id"
+ref: "award_winner"."player_id" > "player"."id"
+ref: "award_winner"."team_id" > "team"."id"
+ref: "award_winner"."manager_id" > "manager"."id"
 ref: "goal"."match_id" > "match"."id"
 ref: "goal"."team_id" > "team"."id"
 ref: "goal"."scorer_id" > "player"."id"

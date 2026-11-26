@@ -4,6 +4,14 @@
   "target": "sqlite",
   "profileHash": "260b8608d1aacaf1f690779a6cff39a12947c599597c5ba464ca75b9e775df53",
   "roots": {
+    "award": {
+      "model": "Award",
+      "namespace": "__unbound__"
+    },
+    "award_winner": {
+      "model": "AwardWinner",
+      "namespace": "__unbound__"
+    },
     "country": {
       "model": "Country",
       "namespace": "__unbound__"
@@ -81,6 +89,23 @@
     "namespaces": {
       "__unbound__": {
         "enum": {
+          "AwardCategory": {
+            "codecId": "sqlite/text@1",
+            "members": [
+              {
+                "name": "PLAYER",
+                "value": "PLAYER"
+              },
+              {
+                "name": "TEAM",
+                "value": "TEAM"
+              },
+              {
+                "name": "MANAGER",
+                "value": "MANAGER"
+              }
+            ]
+          },
           "CompetitionType": {
             "codecId": "sqlite/text@1",
             "members": [
@@ -314,6 +339,285 @@
           }
         },
         "models": {
+          "Award": {
+            "fields": {
+              "category": {
+                "nullable": false,
+                "type": {
+                  "codecId": "sqlite/text@1",
+                  "kind": "scalar"
+                },
+                "valueSet": {
+                  "entityKind": "enum",
+                  "entityName": "AwardCategory",
+                  "namespaceId": "__unbound__",
+                  "plane": "domain"
+                }
+              },
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "sqlite/datetime@1",
+                  "kind": "scalar"
+                }
+              },
+              "description": {
+                "nullable": true,
+                "type": {
+                  "codecId": "sqlite/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "externalId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "sqlite/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "sqlite/integer@1",
+                  "kind": "scalar"
+                }
+              },
+              "name": {
+                "nullable": false,
+                "type": {
+                  "codecId": "sqlite/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "updatedAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "sqlite/datetime@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "winners": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": ["id"],
+                  "targetFields": ["awardId"]
+                },
+                "to": {
+                  "model": "AwardWinner",
+                  "namespace": "__unbound__"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "category": {
+                  "column": "category"
+                },
+                "createdAt": {
+                  "column": "created_at"
+                },
+                "description": {
+                  "column": "description"
+                },
+                "externalId": {
+                  "column": "external_id"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "name": {
+                  "column": "name"
+                },
+                "updatedAt": {
+                  "column": "updated_at"
+                }
+              },
+              "namespaceId": "__unbound__",
+              "table": "award"
+            }
+          },
+          "AwardWinner": {
+            "fields": {
+              "awardId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "sqlite/integer@1",
+                  "kind": "scalar"
+                }
+              },
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "sqlite/datetime@1",
+                  "kind": "scalar"
+                }
+              },
+              "externalId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "sqlite/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "sqlite/integer@1",
+                  "kind": "scalar"
+                }
+              },
+              "managerId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "sqlite/integer@1",
+                  "kind": "scalar"
+                }
+              },
+              "place": {
+                "nullable": false,
+                "type": {
+                  "codecId": "sqlite/integer@1",
+                  "kind": "scalar"
+                }
+              },
+              "playerId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "sqlite/integer@1",
+                  "kind": "scalar"
+                }
+              },
+              "points": {
+                "nullable": true,
+                "type": {
+                  "codecId": "sqlite/real@1",
+                  "kind": "scalar"
+                }
+              },
+              "season": {
+                "nullable": true,
+                "type": {
+                  "codecId": "sqlite/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "teamId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "sqlite/integer@1",
+                  "kind": "scalar"
+                }
+              },
+              "updatedAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "sqlite/datetime@1",
+                  "kind": "scalar"
+                }
+              },
+              "year": {
+                "nullable": false,
+                "type": {
+                  "codecId": "sqlite/integer@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "award": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": ["awardId"],
+                  "targetFields": ["id"]
+                },
+                "to": {
+                  "model": "Award",
+                  "namespace": "__unbound__"
+                }
+              },
+              "manager": {
+                "cardinality": "N:1",
+                "nullable": true,
+                "on": {
+                  "localFields": ["managerId"],
+                  "targetFields": ["id"]
+                },
+                "to": {
+                  "model": "Manager",
+                  "namespace": "__unbound__"
+                }
+              },
+              "player": {
+                "cardinality": "N:1",
+                "nullable": true,
+                "on": {
+                  "localFields": ["playerId"],
+                  "targetFields": ["id"]
+                },
+                "to": {
+                  "model": "Player",
+                  "namespace": "__unbound__"
+                }
+              },
+              "team": {
+                "cardinality": "N:1",
+                "nullable": true,
+                "on": {
+                  "localFields": ["teamId"],
+                  "targetFields": ["id"]
+                },
+                "to": {
+                  "model": "Team",
+                  "namespace": "__unbound__"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "awardId": {
+                  "column": "award_id"
+                },
+                "createdAt": {
+                  "column": "created_at"
+                },
+                "externalId": {
+                  "column": "external_id"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "managerId": {
+                  "column": "manager_id"
+                },
+                "place": {
+                  "column": "place"
+                },
+                "playerId": {
+                  "column": "player_id"
+                },
+                "points": {
+                  "column": "points"
+                },
+                "season": {
+                  "column": "season"
+                },
+                "teamId": {
+                  "column": "team_id"
+                },
+                "updatedAt": {
+                  "column": "updated_at"
+                },
+                "year": {
+                  "column": "year"
+                }
+              },
+              "namespaceId": "__unbound__",
+              "table": "award_winner"
+            }
+          },
           "Country": {
             "fields": {
               "code": {
@@ -948,6 +1252,17 @@
               }
             },
             "relations": {
+              "awardWinners": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": ["id"],
+                  "targetFields": ["managerId"]
+                },
+                "to": {
+                  "model": "AwardWinner",
+                  "namespace": "__unbound__"
+                }
+              },
               "nationality": {
                 "cardinality": "N:1",
                 "nullable": true,
@@ -2073,6 +2388,17 @@
               }
             },
             "relations": {
+              "awardWinners": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": ["id"],
+                  "targetFields": ["playerId"]
+                },
+                "to": {
+                  "model": "AwardWinner",
+                  "namespace": "__unbound__"
+                }
+              },
               "currentTeam": {
                 "cardinality": "N:1",
                 "nullable": true,
@@ -3044,6 +3370,17 @@
               }
             },
             "relations": {
+              "awardWinners": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": ["id"],
+                  "targetFields": ["teamId"]
+                },
+                "to": {
+                  "model": "AwardWinner",
+                  "namespace": "__unbound__"
+                }
+              },
               "awayMatches": {
                 "cardinality": "1:N",
                 "on": {
@@ -3642,6 +3979,250 @@
       "__unbound__": {
         "entries": {
           "table": {
+            "award": {
+              "columns": {
+                "category": {
+                  "codecId": "sqlite/text@1",
+                  "dataType": "sqlite/text",
+                  "nullable": false,
+                  "valueSet": {
+                    "entityKind": "valueSet",
+                    "entityName": "AwardCategory",
+                    "namespaceId": "__unbound__",
+                    "plane": "storage"
+                  }
+                },
+                "created_at": {
+                  "codecId": "sqlite/datetime@1",
+                  "dataType": "sqlite/datetime",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nullable": false
+                },
+                "description": {
+                  "codecId": "sqlite/text@1",
+                  "dataType": "sqlite/text",
+                  "nullable": true
+                },
+                "external_id": {
+                  "codecId": "sqlite/text@1",
+                  "dataType": "sqlite/text",
+                  "nullable": true
+                },
+                "id": {
+                  "codecId": "sqlite/integer@1",
+                  "dataType": "sqlite/integer",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nullable": false
+                },
+                "name": {
+                  "codecId": "sqlite/text@1",
+                  "dataType": "sqlite/text",
+                  "nullable": false
+                },
+                "updated_at": {
+                  "codecId": "sqlite/datetime@1",
+                  "dataType": "sqlite/datetime",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [],
+              "indexes": [],
+              "primaryKey": {
+                "columns": ["id"]
+              },
+              "uniques": [
+                {
+                  "columns": ["name"]
+                },
+                {
+                  "columns": ["external_id"]
+                }
+              ]
+            },
+            "award_winner": {
+              "columns": {
+                "award_id": {
+                  "codecId": "sqlite/integer@1",
+                  "dataType": "sqlite/integer",
+                  "nullable": false
+                },
+                "created_at": {
+                  "codecId": "sqlite/datetime@1",
+                  "dataType": "sqlite/datetime",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nullable": false
+                },
+                "external_id": {
+                  "codecId": "sqlite/text@1",
+                  "dataType": "sqlite/text",
+                  "nullable": true
+                },
+                "id": {
+                  "codecId": "sqlite/integer@1",
+                  "dataType": "sqlite/integer",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nullable": false
+                },
+                "manager_id": {
+                  "codecId": "sqlite/integer@1",
+                  "dataType": "sqlite/integer",
+                  "nullable": true
+                },
+                "place": {
+                  "codecId": "sqlite/integer@1",
+                  "dataType": "sqlite/integer",
+                  "default": {
+                    "kind": "literal",
+                    "value": "1"
+                  },
+                  "nullable": false
+                },
+                "player_id": {
+                  "codecId": "sqlite/integer@1",
+                  "dataType": "sqlite/integer",
+                  "nullable": true
+                },
+                "points": {
+                  "codecId": "sqlite/real@1",
+                  "dataType": "sqlite/real",
+                  "nullable": true
+                },
+                "season": {
+                  "codecId": "sqlite/text@1",
+                  "dataType": "sqlite/text",
+                  "nullable": true
+                },
+                "team_id": {
+                  "codecId": "sqlite/integer@1",
+                  "dataType": "sqlite/integer",
+                  "nullable": true
+                },
+                "updated_at": {
+                  "codecId": "sqlite/datetime@1",
+                  "dataType": "sqlite/datetime",
+                  "nullable": false
+                },
+                "year": {
+                  "codecId": "sqlite/integer@1",
+                  "dataType": "sqlite/integer",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "index": {
+                    "name": "award_winner_award_id_idx_2eb6dc92"
+                  },
+                  "source": {
+                    "columns": ["award_id"],
+                    "namespaceId": "__unbound__",
+                    "tableName": "award_winner"
+                  },
+                  "target": {
+                    "columns": ["id"],
+                    "namespaceId": "__unbound__",
+                    "tableName": "award"
+                  }
+                },
+                {
+                  "index": {
+                    "name": "award_winner_player_id_idx_9eca16c7"
+                  },
+                  "source": {
+                    "columns": ["player_id"],
+                    "namespaceId": "__unbound__",
+                    "tableName": "award_winner"
+                  },
+                  "target": {
+                    "columns": ["id"],
+                    "namespaceId": "__unbound__",
+                    "tableName": "player"
+                  }
+                },
+                {
+                  "index": {
+                    "name": "award_winner_team_id_idx_d177da93"
+                  },
+                  "source": {
+                    "columns": ["team_id"],
+                    "namespaceId": "__unbound__",
+                    "tableName": "award_winner"
+                  },
+                  "target": {
+                    "columns": ["id"],
+                    "namespaceId": "__unbound__",
+                    "tableName": "team"
+                  }
+                },
+                {
+                  "index": {
+                    "name": "award_winner_manager_id_idx_c3dee277"
+                  },
+                  "source": {
+                    "columns": ["manager_id"],
+                    "namespaceId": "__unbound__",
+                    "tableName": "award_winner"
+                  },
+                  "target": {
+                    "columns": ["id"],
+                    "namespaceId": "__unbound__",
+                    "tableName": "manager"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": ["award_id"],
+                  "name": "award_winner_award_id_idx_2eb6dc92",
+                  "prefix": "award_winner_award_id_idx",
+                  "unique": false
+                },
+                {
+                  "columns": ["award_id", "year"],
+                  "name": "award_winner_award_id_year_idx_83c1d56f",
+                  "prefix": "award_winner_award_id_year_idx",
+                  "unique": false
+                },
+                {
+                  "columns": ["manager_id"],
+                  "name": "award_winner_manager_id_idx_c3dee277",
+                  "prefix": "award_winner_manager_id_idx",
+                  "unique": false
+                },
+                {
+                  "columns": ["player_id"],
+                  "name": "award_winner_player_id_idx_9eca16c7",
+                  "prefix": "award_winner_player_id_idx",
+                  "unique": false
+                },
+                {
+                  "columns": ["team_id"],
+                  "name": "award_winner_team_id_idx_d177da93",
+                  "prefix": "award_winner_team_id_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": ["id"]
+              },
+              "uniques": [
+                {
+                  "columns": ["external_id"]
+                }
+              ]
+            },
             "country": {
               "columns": {
                 "code": {
@@ -6120,6 +6701,10 @@
             }
           },
           "valueSet": {
+            "AwardCategory": {
+              "kind": "valueSet",
+              "values": ["PLAYER", "TEAM", "MANAGER"]
+            },
             "CompetitionType": {
               "kind": "valueSet",
               "values": ["LEAGUE", "CUP", "INTERNATIONAL", "FRIENDLY"]
@@ -6196,12 +6781,64 @@
         "id": "__unbound__"
       }
     },
-    "storageHash": "d46f9dc5b9bdf45457c850fb6f0303a7ad4f935077142380dea326d513379bef"
+    "storageHash": "8f2b6f8034a6c42b40689b7c9e9c0e3d1e855cb16877061e1fe3118fa30cdac4"
   },
   "execution": {
-    "executionHash": "a13b563e611cfccda84d61a01ba59083e38e5f3bc80d7192768278508c1e0cc1",
+    "executionHash": "0a210cc50870aa9742fe9bda18b3e2bdb5de1059049f40be896be756e814baa0",
     "mutations": {
       "defaults": [
+        {
+          "onCreate": {
+            "id": "timestampNow",
+            "kind": "generator"
+          },
+          "ref": {
+            "entry": "award",
+            "field": "created_at",
+            "namespace": "__unbound__"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "timestampNow",
+            "kind": "generator"
+          },
+          "onUpdate": {
+            "id": "timestampNow",
+            "kind": "generator"
+          },
+          "ref": {
+            "entry": "award",
+            "field": "updated_at",
+            "namespace": "__unbound__"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "timestampNow",
+            "kind": "generator"
+          },
+          "ref": {
+            "entry": "award_winner",
+            "field": "created_at",
+            "namespace": "__unbound__"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "timestampNow",
+            "kind": "generator"
+          },
+          "onUpdate": {
+            "id": "timestampNow",
+            "kind": "generator"
+          },
+          "ref": {
+            "entry": "award_winner",
+            "field": "updated_at",
+            "namespace": "__unbound__"
+          }
+        },
         {
           "onCreate": {
             "id": "timestampNow",

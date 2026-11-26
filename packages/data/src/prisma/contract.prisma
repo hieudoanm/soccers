@@ -72,6 +72,12 @@ enum Foot {
   BOTH
 }
 
+enum AwardCategory {
+  PLAYER
+  TEAM
+  MANAGER
+}
+
 model Country {
   id        Int                @id @default(autoincrement()) @map("id")
   name      String             @unique @map("name")
@@ -166,6 +172,7 @@ model Team {
   transfersIn  Transfer[]         @relation("TransferTo")
   transfersOut Transfer[]         @relation("TransferFrom")
   managers     TeamManager[]
+  awardWinners AwardWinner[]
   createdAt    DateTime           @default(now()) @onCreate(now()) @map("created_at")
   updatedAt    temporal.UpdatedAt @map("updated_at")
 
@@ -196,6 +203,7 @@ model Player {
   events        MatchEvent[]       @relation("EventPlayer")
   matchStats    PlayerMatchStat[]
   transfersIn   Transfer[]         @relation("PlayerTransfersIn")
+  awardWinners  AwardWinner[]
   createdAt     DateTime           @default(now()) @onCreate(now()) @map("created_at")
   updatedAt     temporal.UpdatedAt @map("updated_at")
 
@@ -211,6 +219,7 @@ model Manager {
   nationalityId Int?               @map("nationality_id")
   photoUrl      String?            @map("photo_url")
   teams         TeamManager[]
+  awardWinners  AwardWinner[]
   createdAt     DateTime           @default(now()) @onCreate(now()) @map("created_at")
   updatedAt     temporal.UpdatedAt @map("updated_at")
 
@@ -475,4 +484,41 @@ model Injury {
 
   @@index([playerId])
   @@map("injury")
+}
+
+model Award {
+  id          Int            @id @default(autoincrement()) @map("id")
+  name        String         @unique @map("name")
+  category    AwardCategory  @map("category")
+  description String?        @map("description")
+  externalId  String?        @unique @map("external_id")
+  winners     AwardWinner[]
+  createdAt   DateTime       @default(now()) @onCreate(now()) @map("created_at")
+  updatedAt   temporal.UpdatedAt @map("updated_at")
+
+  @@map("award")
+}
+
+model AwardWinner {
+  id         Int                @id @default(autoincrement()) @map("id")
+  award      Award              @relation(fields: [awardId], references: [id])
+  awardId    Int                @map("award_id")
+  year       Int                @map("year")
+  season     String?            @map("season")
+  place      Int                @default(1) @map("place")
+  points     Float?             @map("points")
+  player     Player?            @relation(fields: [playerId], references: [id])
+  playerId   Int?               @map("player_id")
+  team       Team?              @relation(fields: [teamId], references: [id])
+  teamId     Int?               @map("team_id")
+  manager    Manager?           @relation(fields: [managerId], references: [id])
+  managerId  Int?               @map("manager_id")
+  externalId String?            @unique @map("external_id")
+  createdAt  DateTime           @default(now()) @onCreate(now()) @map("created_at")
+  updatedAt  temporal.UpdatedAt @map("updated_at")
+
+  @@index([awardId, year])
+  @@index([playerId])
+  @@index([teamId])
+  @@map("award_winner")
 }

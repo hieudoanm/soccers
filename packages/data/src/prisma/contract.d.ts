@@ -16,9 +16,9 @@ import type {
 } from '@prisma/orm-sqlite/contract-types';
 
 export type StorageHash =
-  StorageHashBase<'d46f9dc5b9bdf45457c850fb6f0303a7ad4f935077142380dea326d513379bef'>;
+  StorageHashBase<'8f2b6f8034a6c42b40689b7c9e9c0e3d1e855cb16877061e1fe3118fa30cdac4'>;
 export type ExecutionHash =
-  ExecutionHashBase<'a13b563e611cfccda84d61a01ba59083e38e5f3bc80d7192768278508c1e0cc1'>;
+  ExecutionHashBase<'0a210cc50870aa9742fe9bda18b3e2bdb5de1059049f40be896be756e814baa0'>;
 export type ProfileHash =
   ProfileHashBase<'260b8608d1aacaf1f690779a6cff39a12947c599597c5ba464ca75b9e775df53'>;
 
@@ -182,6 +182,12 @@ type ParameterizedOutputTypeFunctions = never;
 type FieldTypeOverrides = {
   readonly __unbound__: {
     readonly models: {
+      readonly Award: {
+        readonly category: {
+          readonly output: 'PLAYER' | 'TEAM' | 'MANAGER';
+          readonly input: 'PLAYER' | 'TEAM' | 'MANAGER';
+        };
+      };
       readonly Goal: {
         readonly type: {
           readonly output:
@@ -351,6 +357,12 @@ export type FieldInputTypes = FieldTypesFromDomain<
 >;
 type ColumnTypeOverrides = {
   readonly __unbound__: {
+    readonly award: {
+      readonly category: {
+        readonly output: 'PLAYER' | 'TEAM' | 'MANAGER';
+        readonly input: 'PLAYER' | 'TEAM' | 'MANAGER';
+      };
+    };
     readonly goal: {
       readonly type: {
         readonly output:
@@ -517,6 +529,36 @@ export type StorageColumnInputTypes = ColumnTypesFromStorage<
 >;
 
 export namespace Models {
+  export type Award = {
+    category: FieldOutputTypes['__unbound__']['Award']['category'];
+    createdAt: FieldOutputTypes['__unbound__']['Award']['createdAt'];
+    description: FieldOutputTypes['__unbound__']['Award']['description'];
+    externalId: FieldOutputTypes['__unbound__']['Award']['externalId'];
+    id: FieldOutputTypes['__unbound__']['Award']['id'];
+    name: FieldOutputTypes['__unbound__']['Award']['name'];
+    updatedAt: FieldOutputTypes['__unbound__']['Award']['updatedAt'];
+    winners: AwardWinner[];
+    readonly [RelationKeys]?: 'winners';
+  };
+  export type AwardWinner = {
+    awardId: FieldOutputTypes['__unbound__']['AwardWinner']['awardId'];
+    createdAt: FieldOutputTypes['__unbound__']['AwardWinner']['createdAt'];
+    externalId: FieldOutputTypes['__unbound__']['AwardWinner']['externalId'];
+    id: FieldOutputTypes['__unbound__']['AwardWinner']['id'];
+    managerId: FieldOutputTypes['__unbound__']['AwardWinner']['managerId'];
+    place: FieldOutputTypes['__unbound__']['AwardWinner']['place'];
+    playerId: FieldOutputTypes['__unbound__']['AwardWinner']['playerId'];
+    points: FieldOutputTypes['__unbound__']['AwardWinner']['points'];
+    season: FieldOutputTypes['__unbound__']['AwardWinner']['season'];
+    teamId: FieldOutputTypes['__unbound__']['AwardWinner']['teamId'];
+    updatedAt: FieldOutputTypes['__unbound__']['AwardWinner']['updatedAt'];
+    year: FieldOutputTypes['__unbound__']['AwardWinner']['year'];
+    award: Award;
+    manager: Manager | null;
+    player: Player | null;
+    team: Team | null;
+    readonly [RelationKeys]?: 'award' | 'manager' | 'player' | 'team';
+  };
   export type Country = {
     code: FieldOutputTypes['__unbound__']['Country']['code'];
     createdAt: FieldOutputTypes['__unbound__']['Country']['createdAt'];
@@ -587,9 +629,10 @@ export namespace Models {
     nationalityId: FieldOutputTypes['__unbound__']['Manager']['nationalityId'];
     photoUrl: FieldOutputTypes['__unbound__']['Manager']['photoUrl'];
     updatedAt: FieldOutputTypes['__unbound__']['Manager']['updatedAt'];
+    awardWinners: AwardWinner[];
     nationality: Country | null;
     teams: TeamManager[];
-    readonly [RelationKeys]?: 'nationality' | 'teams';
+    readonly [RelationKeys]?: 'awardWinners' | 'nationality' | 'teams';
   };
   export type Match = {
     awayEtScore: FieldOutputTypes['__unbound__']['Match']['awayEtScore'];
@@ -714,6 +757,7 @@ export namespace Models {
     shirtNumber: FieldOutputTypes['__unbound__']['Player']['shirtNumber'];
     updatedAt: FieldOutputTypes['__unbound__']['Player']['updatedAt'];
     weightKg: FieldOutputTypes['__unbound__']['Player']['weightKg'];
+    awardWinners: AwardWinner[];
     currentTeam: Team | null;
     events: MatchEvent[];
     goalsAssisted: Goal[];
@@ -723,6 +767,7 @@ export namespace Models {
     nationality: Country | null;
     transfersIn: Transfer[];
     readonly [RelationKeys]?:
+      | 'awardWinners'
       | 'currentTeam'
       | 'events'
       | 'goalsAssisted'
@@ -824,6 +869,7 @@ export namespace Models {
     shortName: FieldOutputTypes['__unbound__']['Team']['shortName'];
     updatedAt: FieldOutputTypes['__unbound__']['Team']['updatedAt'];
     venueId: FieldOutputTypes['__unbound__']['Team']['venueId'];
+    awardWinners: AwardWinner[];
     awayMatches: Match[];
     country: Country | null;
     goals: Goal[];
@@ -838,6 +884,7 @@ export namespace Models {
     transfersOut: Transfer[];
     venue: Venue | null;
     readonly [RelationKeys]?:
+      | 'awardWinners'
       | 'awayMatches'
       | 'country'
       | 'goals'
@@ -899,6 +946,8 @@ export namespace Models {
 }
 
 export declare const models: {
+  Award: Models.Award;
+  AwardWinner: Models.AwardWinner;
   Country: Models.Country;
   Goal: Models.Goal;
   Injury: Models.Injury;
@@ -937,6 +986,233 @@ type ContractBase = Omit<
         readonly kind: 'sqlite-namespace';
         readonly entries: {
           readonly table: {
+            readonly award: {
+              columns: {
+                readonly category: {
+                  readonly dataType: 'sqlite/text';
+                  readonly codecId: 'sqlite/text@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly created_at: {
+                  readonly dataType: 'sqlite/datetime';
+                  readonly codecId: 'sqlite/datetime@1';
+                  readonly nullable: false;
+                  readonly default: { readonly kind: 'function'; readonly expression: 'now()' };
+                  readonly many: false;
+                };
+                readonly description: {
+                  readonly dataType: 'sqlite/text';
+                  readonly codecId: 'sqlite/text@1';
+                  readonly nullable: true;
+                  readonly many: false;
+                };
+                readonly external_id: {
+                  readonly dataType: 'sqlite/text';
+                  readonly codecId: 'sqlite/text@1';
+                  readonly nullable: true;
+                  readonly many: false;
+                };
+                readonly id: {
+                  readonly dataType: 'sqlite/integer';
+                  readonly codecId: 'sqlite/integer@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'function';
+                    readonly expression: 'autoincrement()';
+                  };
+                  readonly many: false;
+                };
+                readonly name: {
+                  readonly dataType: 'sqlite/text';
+                  readonly codecId: 'sqlite/text@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly updated_at: {
+                  readonly dataType: 'sqlite/datetime';
+                  readonly codecId: 'sqlite/datetime@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+              };
+              primaryKey: { readonly columns: readonly ['id'] };
+              uniques: readonly [
+                { readonly columns: readonly ['name'] },
+                { readonly columns: readonly ['external_id'] },
+              ];
+              indexes: readonly [];
+              foreignKeys: readonly [];
+            };
+            readonly award_winner: {
+              columns: {
+                readonly award_id: {
+                  readonly dataType: 'sqlite/integer';
+                  readonly codecId: 'sqlite/integer@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly created_at: {
+                  readonly dataType: 'sqlite/datetime';
+                  readonly codecId: 'sqlite/datetime@1';
+                  readonly nullable: false;
+                  readonly default: { readonly kind: 'function'; readonly expression: 'now()' };
+                  readonly many: false;
+                };
+                readonly external_id: {
+                  readonly dataType: 'sqlite/text';
+                  readonly codecId: 'sqlite/text@1';
+                  readonly nullable: true;
+                  readonly many: false;
+                };
+                readonly id: {
+                  readonly dataType: 'sqlite/integer';
+                  readonly codecId: 'sqlite/integer@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'function';
+                    readonly expression: 'autoincrement()';
+                  };
+                  readonly many: false;
+                };
+                readonly manager_id: {
+                  readonly dataType: 'sqlite/integer';
+                  readonly codecId: 'sqlite/integer@1';
+                  readonly nullable: true;
+                  readonly many: false;
+                };
+                readonly place: {
+                  readonly dataType: 'sqlite/integer';
+                  readonly codecId: 'sqlite/integer@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'sqlite/integer@1', '1'>;
+                  };
+                  readonly many: false;
+                };
+                readonly player_id: {
+                  readonly dataType: 'sqlite/integer';
+                  readonly codecId: 'sqlite/integer@1';
+                  readonly nullable: true;
+                  readonly many: false;
+                };
+                readonly points: {
+                  readonly dataType: 'sqlite/real';
+                  readonly codecId: 'sqlite/real@1';
+                  readonly nullable: true;
+                  readonly many: false;
+                };
+                readonly season: {
+                  readonly dataType: 'sqlite/text';
+                  readonly codecId: 'sqlite/text@1';
+                  readonly nullable: true;
+                  readonly many: false;
+                };
+                readonly team_id: {
+                  readonly dataType: 'sqlite/integer';
+                  readonly codecId: 'sqlite/integer@1';
+                  readonly nullable: true;
+                  readonly many: false;
+                };
+                readonly updated_at: {
+                  readonly dataType: 'sqlite/datetime';
+                  readonly codecId: 'sqlite/datetime@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly year: {
+                  readonly dataType: 'sqlite/integer';
+                  readonly codecId: 'sqlite/integer@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+              };
+              primaryKey: { readonly columns: readonly ['id'] };
+              uniques: readonly [{ readonly columns: readonly ['external_id'] }];
+              indexes: readonly [
+                {
+                  readonly name: 'award_winner_award_id_idx_2eb6dc92';
+                  readonly prefix: 'award_winner_award_id_idx';
+                  readonly columns: readonly ['award_id'];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: 'award_winner_award_id_year_idx_83c1d56f';
+                  readonly prefix: 'award_winner_award_id_year_idx';
+                  readonly columns: readonly ['award_id', 'year'];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: 'award_winner_manager_id_idx_c3dee277';
+                  readonly prefix: 'award_winner_manager_id_idx';
+                  readonly columns: readonly ['manager_id'];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: 'award_winner_player_id_idx_9eca16c7';
+                  readonly prefix: 'award_winner_player_id_idx';
+                  readonly columns: readonly ['player_id'];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: 'award_winner_team_id_idx_d177da93';
+                  readonly prefix: 'award_winner_team_id_idx';
+                  readonly columns: readonly ['team_id'];
+                  readonly unique: false;
+                },
+              ];
+              foreignKeys: readonly [
+                {
+                  readonly source: {
+                    readonly namespaceId: '__unbound__' & NamespaceId;
+                    readonly tableName: 'award_winner';
+                    readonly columns: readonly ['award_id'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: '__unbound__' & NamespaceId;
+                    readonly tableName: 'award';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+                {
+                  readonly source: {
+                    readonly namespaceId: '__unbound__' & NamespaceId;
+                    readonly tableName: 'award_winner';
+                    readonly columns: readonly ['player_id'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: '__unbound__' & NamespaceId;
+                    readonly tableName: 'player';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+                {
+                  readonly source: {
+                    readonly namespaceId: '__unbound__' & NamespaceId;
+                    readonly tableName: 'award_winner';
+                    readonly columns: readonly ['team_id'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: '__unbound__' & NamespaceId;
+                    readonly tableName: 'team';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+                {
+                  readonly source: {
+                    readonly namespaceId: '__unbound__' & NamespaceId;
+                    readonly tableName: 'award_winner';
+                    readonly columns: readonly ['manager_id'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: '__unbound__' & NamespaceId;
+                    readonly tableName: 'manager';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+              ];
+            };
             readonly country: {
               columns: {
                 readonly code: {
@@ -3330,6 +3606,10 @@ type ContractBase = Omit<
             };
           };
           readonly valueSet: {
+            readonly AwardCategory: {
+              readonly kind: 'valueSet';
+              readonly values: readonly ['PLAYER', 'TEAM', 'MANAGER'];
+            };
             readonly CompetitionType: {
               readonly kind: 'valueSet';
               readonly values: readonly ['LEAGUE', 'CUP', 'INTERNATIONAL', 'FRIENDLY'];
@@ -3412,6 +3692,11 @@ type ContractBase = Omit<
   readonly target: 'sqlite';
   readonly targetFamily: 'sql';
   readonly roots: {
+    readonly award: { readonly namespace: '__unbound__' & NamespaceId; readonly model: 'Award' };
+    readonly award_winner: {
+      readonly namespace: '__unbound__' & NamespaceId;
+      readonly model: 'AwardWinner';
+    };
     readonly country: {
       readonly namespace: '__unbound__' & NamespaceId;
       readonly model: 'Country';
@@ -3465,6 +3750,184 @@ type ContractBase = Omit<
     readonly namespaces: {
       readonly __unbound__: {
         readonly models: {
+          readonly Award: {
+            readonly fields: {
+              readonly category: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'sqlite/text@1' };
+              };
+              readonly createdAt: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'sqlite/datetime@1' };
+              };
+              readonly description: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'sqlite/text@1' };
+              };
+              readonly externalId: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'sqlite/text@1' };
+              };
+              readonly id: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'sqlite/integer@1' };
+              };
+              readonly name: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'sqlite/text@1' };
+              };
+              readonly updatedAt: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'sqlite/datetime@1' };
+              };
+            };
+            readonly relations: {
+              readonly winners: {
+                readonly to: {
+                  readonly namespace: '__unbound__' & NamespaceId;
+                  readonly model: 'AwardWinner';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['awardId'];
+                };
+              };
+            };
+            readonly storage: {
+              readonly table: 'award';
+              readonly namespaceId: '__unbound__';
+              readonly fields: {
+                readonly category: { readonly column: 'category' };
+                readonly createdAt: { readonly column: 'created_at' };
+                readonly description: { readonly column: 'description' };
+                readonly externalId: { readonly column: 'external_id' };
+                readonly id: { readonly column: 'id' };
+                readonly name: { readonly column: 'name' };
+                readonly updatedAt: { readonly column: 'updated_at' };
+              };
+            };
+          };
+          readonly AwardWinner: {
+            readonly fields: {
+              readonly awardId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'sqlite/integer@1' };
+              };
+              readonly createdAt: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'sqlite/datetime@1' };
+              };
+              readonly externalId: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'sqlite/text@1' };
+              };
+              readonly id: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'sqlite/integer@1' };
+              };
+              readonly managerId: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'sqlite/integer@1' };
+              };
+              readonly place: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'sqlite/integer@1' };
+              };
+              readonly playerId: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'sqlite/integer@1' };
+              };
+              readonly points: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'sqlite/real@1' };
+              };
+              readonly season: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'sqlite/text@1' };
+              };
+              readonly teamId: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'sqlite/integer@1' };
+              };
+              readonly updatedAt: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'sqlite/datetime@1' };
+              };
+              readonly year: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'sqlite/integer@1' };
+              };
+            };
+            readonly relations: {
+              readonly award: {
+                readonly to: {
+                  readonly namespace: '__unbound__' & NamespaceId;
+                  readonly model: 'Award';
+                };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['awardId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+              readonly manager: {
+                readonly to: {
+                  readonly namespace: '__unbound__' & NamespaceId;
+                  readonly model: 'Manager';
+                };
+                readonly cardinality: 'N:1';
+                readonly nullable: true;
+                readonly on: {
+                  readonly localFields: readonly ['managerId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+              readonly player: {
+                readonly to: {
+                  readonly namespace: '__unbound__' & NamespaceId;
+                  readonly model: 'Player';
+                };
+                readonly cardinality: 'N:1';
+                readonly nullable: true;
+                readonly on: {
+                  readonly localFields: readonly ['playerId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+              readonly team: {
+                readonly to: {
+                  readonly namespace: '__unbound__' & NamespaceId;
+                  readonly model: 'Team';
+                };
+                readonly cardinality: 'N:1';
+                readonly nullable: true;
+                readonly on: {
+                  readonly localFields: readonly ['teamId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+            };
+            readonly storage: {
+              readonly table: 'award_winner';
+              readonly namespaceId: '__unbound__';
+              readonly fields: {
+                readonly awardId: { readonly column: 'award_id' };
+                readonly createdAt: { readonly column: 'created_at' };
+                readonly externalId: { readonly column: 'external_id' };
+                readonly id: { readonly column: 'id' };
+                readonly managerId: { readonly column: 'manager_id' };
+                readonly place: { readonly column: 'place' };
+                readonly playerId: { readonly column: 'player_id' };
+                readonly points: { readonly column: 'points' };
+                readonly season: { readonly column: 'season' };
+                readonly teamId: { readonly column: 'team_id' };
+                readonly updatedAt: { readonly column: 'updated_at' };
+                readonly year: { readonly column: 'year' };
+              };
+            };
+          };
           readonly Country: {
             readonly fields: {
               readonly code: {
@@ -3886,6 +4349,17 @@ type ContractBase = Omit<
               };
             };
             readonly relations: {
+              readonly awardWinners: {
+                readonly to: {
+                  readonly namespace: '__unbound__' & NamespaceId;
+                  readonly model: 'AwardWinner';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['managerId'];
+                };
+              };
               readonly nationality: {
                 readonly to: {
                   readonly namespace: '__unbound__' & NamespaceId;
@@ -4588,6 +5062,17 @@ type ContractBase = Omit<
               };
             };
             readonly relations: {
+              readonly awardWinners: {
+                readonly to: {
+                  readonly namespace: '__unbound__' & NamespaceId;
+                  readonly model: 'AwardWinner';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['playerId'];
+                };
+              };
               readonly currentTeam: {
                 readonly to: {
                   readonly namespace: '__unbound__' & NamespaceId;
@@ -5211,6 +5696,17 @@ type ContractBase = Omit<
               };
             };
             readonly relations: {
+              readonly awardWinners: {
+                readonly to: {
+                  readonly namespace: '__unbound__' & NamespaceId;
+                  readonly model: 'AwardWinner';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['teamId'];
+                };
+              };
               readonly awayMatches: {
                 readonly to: {
                   readonly namespace: '__unbound__' & NamespaceId;
@@ -5643,6 +6139,14 @@ type ContractBase = Omit<
           };
         };
         readonly enum: {
+          readonly AwardCategory: {
+            readonly codecId: 'sqlite/text@1';
+            readonly members: readonly [
+              { readonly name: 'PLAYER'; readonly value: 'PLAYER' },
+              { readonly name: 'TEAM'; readonly value: 'TEAM' },
+              { readonly name: 'MANAGER'; readonly value: 'MANAGER' },
+            ];
+          };
           readonly CompetitionType: {
             readonly codecId: 'sqlite/text@1';
             readonly members: readonly [
@@ -5729,6 +6233,11 @@ type ContractBase = Omit<
           };
         };
         readonly enumMemberTypes?: {
+          readonly AwardCategory: readonly [
+            { readonly name: 'PLAYER'; readonly value: 'PLAYER' },
+            { readonly name: 'TEAM'; readonly value: 'TEAM' },
+            { readonly name: 'MANAGER'; readonly value: 'MANAGER' },
+          ];
           readonly CompetitionType: readonly [
             { readonly name: 'LEAGUE'; readonly value: 'LEAGUE' },
             { readonly name: 'CUP'; readonly value: 'CUP' },
@@ -5815,6 +6324,40 @@ type ContractBase = Omit<
     readonly executionHash: ExecutionHash;
     readonly mutations: {
       readonly defaults: readonly [
+        {
+          readonly onCreate: { readonly id: 'timestampNow'; readonly kind: 'generator' };
+          readonly ref: {
+            readonly entry: 'award';
+            readonly field: 'created_at';
+            readonly namespace: '__unbound__';
+          };
+        },
+        {
+          readonly onCreate: { readonly id: 'timestampNow'; readonly kind: 'generator' };
+          readonly onUpdate: { readonly id: 'timestampNow'; readonly kind: 'generator' };
+          readonly ref: {
+            readonly entry: 'award';
+            readonly field: 'updated_at';
+            readonly namespace: '__unbound__';
+          };
+        },
+        {
+          readonly onCreate: { readonly id: 'timestampNow'; readonly kind: 'generator' };
+          readonly ref: {
+            readonly entry: 'award_winner';
+            readonly field: 'created_at';
+            readonly namespace: '__unbound__';
+          };
+        },
+        {
+          readonly onCreate: { readonly id: 'timestampNow'; readonly kind: 'generator' };
+          readonly onUpdate: { readonly id: 'timestampNow'; readonly kind: 'generator' };
+          readonly ref: {
+            readonly entry: 'award_winner';
+            readonly field: 'updated_at';
+            readonly namespace: '__unbound__';
+          };
+        },
         {
           readonly onCreate: { readonly id: 'timestampNow'; readonly kind: 'generator' };
           readonly ref: {
