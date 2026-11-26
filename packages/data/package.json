@@ -23,6 +23,8 @@
     "export:csv": "node scripts/export-csv.ts",
     "import:football-data": "node scripts/import-football-data.ts",
     "import:player-bios": "node scripts/import-player-bios.ts",
+    "import:player-bios-kaggle": "node scripts/import-player-bios-kaggle.ts",
+    "import:transfermarkt": "node scripts/import-transfermarkt.ts",
     "import:espn": "node scripts/import-espn.ts",
     "import:statsbomb": "node --max-old-space-size=8192 scripts/import-statsbomb.ts",
     "sizes": "node scripts/file-sizes.ts"
