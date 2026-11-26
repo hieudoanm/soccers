@@ -16,26 +16,27 @@ all stored in SQLite via Prisma 8, and analysed with
 
 ## Features
 
-| Feature                | Route                           | What it does                                                                                    |
-| ---------------------- | ------------------------------- | ----------------------------------------------------------------------------------------------- |
-| **Blog**               | `/blog/`                        | Football data-analysis posts, each backed by a runnable `.mars` notebook                        |
-| **Series**             | `/blog/series/`                 | Posts grouped into Match Analysis, Management, and Record Books series                          |
-| **Home Advantage**     | `/blog/home-advantage/`         | Home vs away win rates across 301k matches — the modern parity trend                            |
-| **Win Streaks**        | `/blog/win-streaks/`            | How rare is five-in-a-row? 4,110 streaks ≥5 — Celtic's 25 is the record                         |
-| **Two-Goal Lead**      | `/blog/two-goal-lead/`          | Is 2–0 the most dangerous lead? Goal-by-goal replay of 3,703 matches                            |
-| **Comebacks**          | `/blog/comebacks/`              | Who erases deficits? 57% trail, 10.5% recover, zero 3+-goal comebacks                           |
-| **Underdogs**          | `/blog/underdogs/`              | Elo sweep over 301k matches — who beats stronger opponents?                                     |
-| **Dying Minutes**      | `/blog/late-goals/`             | 23% of all goals arrive after minute 76                                                         |
-| **Away Days**          | `/blog/away-day/`               | Home/away win-rate splits — Meppen's +38pt gap is the extreme                                   |
-| **Opening Goal**       | `/blog/opening-goal/`           | Scoring first wins 71.2% — best protectors and recoverers                                       |
-| **Draw Specialists**   | `/blog/draw-specialists/`       | Marseille draws 45% of the time — who are the draw merchants?                                   |
-| **Fixture Congestion** | `/blog/fixture-congestion/`     | Does short rest hurt? The effect is real but marginal                                           |
-| **New Manager Bounce** | `/blog/manager-change/`         | 43 EPL managerial changes — the bounce is real but oversold                                     |
-| **Best Debut Season**  | `/blog/manager-debut/`          | 80 first seasons ranked vs club expectations — pre-season hires win                             |
-| **Attack vs Defence**  | `/blog/attack-vs-defence/`      | 33 EPL seasons — attack predicts position better; titles go to balanced teams                   |
-| **Unbeaten Seasons**   | `/blog/unbeaten-seasons/`       | 10 unbeaten team-seasons in 592 league-seasons — a gradient tail, not a special category        |
-| **Possession**         | `/blog/possession/`             | 111k matches with ESPN stats — possession predicts winning at ρ=0.12; shots do it twice as well |
-| **Record Books**       | `/blog/best-of-premier-league/` | 20 "Best of" competitions — league titles, tournament records, unbeaten sides, top scorers      |
+| Feature                | Route                           | What it does                                                                                         |
+| ---------------------- | ------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| **Blog**               | `/blog/`                        | Football data-analysis posts, each backed by a runnable `.mars` notebook                             |
+| **Series**             | `/blog/series/`                 | Posts grouped into Match Analysis, Management, and Record Books series                               |
+| **Home Advantage**     | `/blog/home-advantage/`         | Home vs away win rates across 301k matches — the modern parity trend                                 |
+| **Win Streaks**        | `/blog/win-streaks/`            | How rare is five-in-a-row? 4,110 streaks ≥5 — Celtic's 25 is the record                              |
+| **Two-Goal Lead**      | `/blog/two-goal-lead/`          | Is 2–0 the most dangerous lead? Goal-by-goal replay of 3,703 matches                                 |
+| **Comebacks**          | `/blog/comebacks/`              | Who erases deficits? 57% trail, 10.5% recover, zero 3+-goal comebacks                                |
+| **Underdogs**          | `/blog/underdogs/`              | Elo sweep over 301k matches — who beats stronger opponents?                                          |
+| **Dying Minutes**      | `/blog/late-goals/`             | 23% of all goals arrive after minute 76                                                              |
+| **Away Days**          | `/blog/away-day/`               | Home/away win-rate splits — Meppen's +38pt gap is the extreme                                        |
+| **Opening Goal**       | `/blog/opening-goal/`           | Scoring first wins 71.2% — best protectors and recoverers                                            |
+| **Draw Specialists**   | `/blog/draw-specialists/`       | Marseille draws 45% of the time — who are the draw merchants?                                        |
+| **Fixture Congestion** | `/blog/fixture-congestion/`     | Does short rest hurt? The effect is real but marginal                                                |
+| **New Manager Bounce** | `/blog/manager-change/`         | 43 EPL managerial changes — the bounce is real but oversold                                          |
+| **Best Debut Season**  | `/blog/manager-debut/`          | 80 first seasons ranked vs club expectations — pre-season hires win                                  |
+| **Attack vs Defence**  | `/blog/attack-vs-defence/`      | 33 EPL seasons — attack predicts position better; titles go to balanced teams                        |
+| **Unbeaten Seasons**   | `/blog/unbeaten-seasons/`       | 10 unbeaten team-seasons in 592 league-seasons — a gradient tail, not a special category             |
+| **Possession**         | `/blog/possession/`             | 111k matches with ESPN stats — possession predicts winning at ρ=0.12; shots do it twice as well      |
+| **Corners**            | `/blog/corners/`                | 166k matches — corner share predicts winning at ρ=0.05 in the EPL; a team marker, not a match winner |
+| **Record Books**       | `/blog/best-of-premier-league/` | 20 "Best of" competitions — league titles, tournament records, unbeaten sides, top scorers           |
 
 ## Monorepo layout
 
