@@ -13,6 +13,7 @@ const SERIES_ORDER = [
   'management',
   'record-books',
   'transfers',
+  'awards',
 ];
 
 export const getSeries = (): Series[] => {

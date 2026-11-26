@@ -20,7 +20,12 @@ export const SERIES_META: Record<
   transfers: {
     title: 'Transfers',
     description:
-      'The transfer market in data: deadline-day timing, fee inflation and the pipelines that move players and money between leagues.',
+      'The transfer market in data: deadline-day timing, fee inflation, money-vs-output and the pipelines that move players and money between leagues.',
+  },
+  awards: {
+    title: 'Awards',
+    description:
+      'Football’s individual honours in data: Ballon d’Or, FIFA awards, Golden Shoe and the players who own the cabinets.',
   },
 };
 
