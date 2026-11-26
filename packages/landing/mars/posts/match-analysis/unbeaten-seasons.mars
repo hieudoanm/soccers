@@ -12,9 +12,23 @@
   },
   "cells": [
     {
-      "id": "3c2fe8aa-88a5-43e6-b6cb-a2eca877cf35",
+      "id": "9aaf4947-37a4-4f43-bd8f-5bcb2e5152b1",
       "cell_type": "markdown",
-      "source": "## Are unbeaten seasons really that impressive?\n\nThe romantic claim: *an unbeaten league season is the ultimate proof of\ndominance.* This notebook tests it across **every top-flight league in\nthe dataset** — 28 competitions, 592 league-seasons and 9,917 team-seasons, from the Premier\nLeague to the J1 League, all computed from `data/matches_full.csv`.\n\n**The uncomfortable fact up front:** the Premier League has exactly **one**\nunbeaten season in history — Arsenal 2003/04. Across all covered leagues\nthere are only ~10 unbeaten champions and a handful of unbeaten\nnon-champions. So the real question isn't \"unbeaten vs dominant\" — it's\n**whether zero defeats is a discontinuity or just the tail of a\nconsistency gradient**.\n\n**Method.** Every team-season is bucketed by its number of defeats\n(0, 1, 2, 3, 4–6, 7+) and measured on points, ppg, goal difference,\nwin/draw rates and clean sheets — overall and restricted to title\ncontenders (top-4 finishes) to control for the trivial fact that bad\nteams lose more *and* score less. Champions are compared separately:\nunbeaten champions vs ordinary champions vs the biggest points-margin\nchampions. xG is unavailable for most of this history, so everything is\nactual outcomes — stated throughout as a limitation.",
+      "source": "## Abstract\n\nAre unbeaten seasons really that impressive? This study answers it using hundreds of thousands of matches drawn from the Soccers football database. Unbeaten teams don't \"play not to lose\" — they win *more*. All computation runs in Rust inside a `.mars` notebook (polars + plotters — charts as inline SVG), and every table and figure is generated from the extracted CSVs.\n\n## Keywords\n\n**Keywords:** football, analysis, records, mars, sqlite\n\n## Table of contents\n\n- [Abstract](#abstract)\n- [Keywords](#keywords)\n- [Introduction](#introduction)\n- [Methods](#methods)\n- [Results](#results)\n  - [The unbeaten roll call](#the-unbeaten-roll-call)\n  - [The defeats gradient](#the-defeats-gradient)\n  - [Unbeaten champions vs the most dominant champions](#unbeaten-champions-vs-the-most-dominant-champions)\n  - [The price of invincibility](#the-price-of-invincibility)\n  - [Rarity and parity](#rarity-and-parity)\n  - [The picture](#the-picture)\n- [Discussion](#discussion)\n- [Conclusion](#conclusion)\n\n## Introduction\n\nThe romantic claim: *an unbeaten league season is the ultimate proof of\ndominance.* This notebook tests it across **every top-flight league in\nthe dataset** — 28 competitions, 592 league-seasons and 9,917 team-seasons, from the Premier\nLeague to the J1 League, all computed from `data/matches_full.csv`.\n\n**The uncomfortable fact up front:** the Premier League has exactly **one**\nunbeaten season in history — Arsenal 2003/04. Across all covered leagues\nthere are only ~10 unbeaten champions and a handful of unbeaten\nnon-champions. So the real question isn't \"unbeaten vs dominant\" — it's\n**whether zero defeats is a discontinuity or just the tail of a\nconsistency gradient**.\n\n**Method.** Every team-season is bucketed by its number of defeats\n(0, 1, 2, 3, 4–6, 7+) and measured on points, ppg, goal difference,\nwin/draw rates and clean sheets — overall and restricted to title\ncontenders (top-4 finishes) to control for the trivial fact that bad\nteams lose more *and* score less. Champions are compared separately:\nunbeaten champions vs ordinary champions vs the biggest points-margin\nchampions. xG is unavailable for most of this history, so everything is\nactual outcomes — stated throughout as a limitation.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "701e615d-6b41-427c-a3e2-55d1ccaaee4c",
+      "cell_type": "markdown",
+      "source": "## Methods\n\nData were extracted from the Soccers football database (`packages/data`) as CSV snapshots: `matches_full`.\n\nThe analysis runs entirely in Rust inside the notebook: **polars** handles table scans, joins and aggregations; **plotters** renders figures as inline SVG; `mars_table` renders result tables.\n\nEach code cell is kept to a single output so results can be read top to bottom.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "0d27ddc9-efc7-4c68-adfd-458f68ce714e",
+      "cell_type": "markdown",
+      "source": "## Results\n\nAll figures and tables below are computed directly from the extracted data. Each code cell produces one output — a table, a chart, or a short text summary.\n",
       "metadata": {},
       "outputs": []
     },
@@ -32,9 +46,9 @@
       ]
     },
     {
-      "id": "6b70d0cf-ecf4-4be3-94fc-402d65930678",
+      "id": "3cfc9156-ca61-4284-921b-8a79cc5a0c65",
       "cell_type": "markdown",
-      "source": "## The unbeaten roll call\n\nEvery team-season in the dataset with **zero defeats** (minimum 25\nmatches played, complete league-seasons only). Each is checked against\nthe league table: champion or merely unbeaten?",
+      "source": "### The unbeaten roll call\n\nEvery team-season in the dataset with **zero defeats** (minimum 25\nmatches played, complete league-seasons only). Each is checked against\nthe league table: champion or merely unbeaten?\n",
       "metadata": {},
       "outputs": []
     },
@@ -167,9 +181,9 @@
       ]
     },
     {
-      "id": "9bc60377-0b0f-4eda-8c08-572a2d3ec197",
+      "id": "03ad0a70-5b36-405f-8ede-a6c76a2f8741",
       "cell_type": "markdown",
-      "source": "## The defeats gradient\n\nIf \"unbeaten\" is genuinely special, the curve of performance vs defeats\nshould show a **jump at zero**. If it's just the tail of a smooth\ngradient, consistency is continuous and the romance is marketing.\n\nTwo views: all team-seasons, and only title contenders (top-4 finishes)\n— because the raw correlation is trivially contaminated by bad teams\nlosing more *and* scoring less.",
+      "source": "### The defeats gradient\n\nIf \"unbeaten\" is genuinely special, the curve of performance vs defeats\nshould show a **jump at zero**. If it's just the tail of a smooth\ngradient, consistency is continuous and the romance is marketing.\n\nTwo views: all team-seasons, and only title contenders (top-4 finishes)\n— because the raw correlation is trivially contaminated by bad teams\nlosing more *and* scoring less.\n",
       "metadata": {},
       "outputs": []
     },
@@ -384,9 +398,9 @@
       ]
     },
     {
-      "id": "632e3c49-ac4a-4633-8bb8-7ec79a5f7d5f",
+      "id": "e79341e5-2273-4286-9842-96109774067d",
       "cell_type": "markdown",
-      "source": "## Unbeaten champions vs the most dominant champions\n\nThree groups of title winners across all leagues:\n\n- **Unbeaten champions** — zero defeats (the romantic archetype)\n- **Ordinary champions** — everyone else who won\n- **Margin champions** — the biggest points-gap winners (≥10 clear)\n\nIf invincibility signals *superiority*, unbeaten champions should beat\nmargin champions on underlying metrics. If it signals *risk\nmanagement*, they'll lag on attack and goal difference.",
+      "source": "### Unbeaten champions vs the most dominant champions\n\nThree groups of title winners across all leagues:\n\n- **Unbeaten champions** — zero defeats (the romantic archetype)\n- **Ordinary champions** — everyone else who won\n- **Margin champions** — the biggest points-gap winners (≥10 clear)\n\nIf invincibility signals *superiority*, unbeaten champions should beat\nmargin champions on underlying metrics. If it signals *risk\nmanagement*, they'll lag on attack and goal difference.\n",
       "metadata": {},
       "outputs": []
     },
@@ -1004,9 +1018,9 @@
       ]
     },
     {
-      "id": "fd6c6ce4-020f-4109-8dcb-bce9b6dc11aa",
+      "id": "28d550c8-41f2-41b7-911c-3f63a8d62ca1",
       "cell_type": "markdown",
-      "source": "## The price of invincibility\n\nThe romantic version says unbeaten teams *choose* to avoid defeat —\nmeaning more draws, fewer wins, points dropped through stalemates.\nThe data version: does the win/draw/loss mix actually shift as defeats\napproach zero, or do unbeaten teams simply win almost everything?",
+      "source": "### The price of invincibility\n\nThe romantic version says unbeaten teams *choose* to avoid defeat —\nmeaning more draws, fewer wins, points dropped through stalemates.\nThe data version: does the win/draw/loss mix actually shift as defeats\napproach zero, or do unbeaten teams simply win almost everything?\n",
       "metadata": {},
       "outputs": []
     },
@@ -1419,9 +1433,9 @@
       ]
     },
     {
-      "id": "d6076220-eba2-4736-8298-c4133a59484e",
+      "id": "7024d641-416a-4067-8c84-178b0d44882e",
       "cell_type": "markdown",
-      "source": "## Rarity and parity\n\nTwo questions: is the unbeaten season actually *rare*, and does league\nparity predict it? For each league we count seasons covered, unbeaten\ncampaigns, champion concentration (did one club win everything?) and\nthe average points margin between 1st and 2nd — the parity proxy.",
+      "source": "### Rarity and parity\n\nTwo questions: is the unbeaten season actually *rare*, and does league\nparity predict it? For each league we count seasons covered, unbeaten\ncampaigns, champion concentration (did one club win everything?) and\nthe average points margin between 1st and 2nd — the parity proxy.\n",
       "metadata": {},
       "outputs": []
     },
@@ -2725,9 +2739,9 @@
       ]
     },
     {
-      "id": "310c58b0-df10-4424-9f26-bee9c8a1cc0e",
+      "id": "920694bf-ad18-40c3-855d-9679230232ab",
       "cell_type": "markdown",
-      "source": "## The picture\n\nTwo views: the defeats-gradient curve (does performance jump at zero\nor slide smoothly?), and the unbeaten champions against the most\ndominant champions on the underlying metrics.",
+      "source": "### The picture\n\nTwo views: the defeats-gradient curve (does performance jump at zero\nor slide smoothly?), and the unbeaten champions against the most\ndominant champions on the underlying metrics.\n",
       "metadata": {},
       "outputs": []
     },
@@ -4758,9 +4772,16 @@
       ]
     },
     {
-      "id": "d3395315-fbbf-4c79-b3eb-aafa1dc301f2",
+      "id": "3473cefe-f73a-4640-93b0-f90f754d9430",
       "cell_type": "markdown",
-      "source": "## What the data says\n\n**The unbeaten season is real but rare — and it's the *tail* of a\nconsistency gradient, not a separate category.**\n\n**1. Zero defeats is not special — it's just the end of a smooth\ncurve.** Mean points per game by defeats: 2.58 (0), 2.51 (1), 2.40\n(2), 2.28 (3), 2.05 (4–6), 1.28 (7+). The gap between unbeaten and\none-defeat (0.07 ppg) is *smaller* than between one and two defeats\n(0.11). There is no discontinuity at zero — consistency is continuous.\n\n**2. Unbeaten teams don't \"play not to lose\" — they win *more*.**\nDraw rates by defeats: 21.5% (0), 20.3% (1), 21.0% (2), 22.3% (3),\n24.3% (4–6), 26.0% (7+). The romantic hypothesis predicted unbeaten\nteams would settle for draws; they actually draw *less* than average\nand post the highest win rate of any bucket (78.5%).\n\n**3. Unbeaten champions ARE the most dominant champions — barely.**\nNine unbeaten champions across 576 title winners: 2.60 ppg, 80% wins,\n0.58 goals conceded per game — better than both margin champions\n(≥10pts, n=163: 2.35 ppg, 0.79 ga/g) and ordinary champions (2.17 ppg,\n0.87 ga/g). But their average margin (14.6 pts) is *identical* to the\nmargin champions'. Porto 2012/13 went unbeaten by **one point**; Juventus\n2011/12 by four. Invincibility and dominance are correlated, not\nsynonymous.\n\n**4. The counterexamples prove the distinction.** Benfica 2025/26 went\nunbeaten and finished **third**. PAOK 2018/19 went unbeaten and won by\n10 — in a league where Olympiacos had won 6 of the previous 7 titles.\n\n**5. Rarity**: 10 unbeaten team-seasons in 592 league-seasons (~1.7%\nof team-seasons, ~0.1% of all team-seasons). By decade: 1 (1990s), 1\n(2000s), 5 (2010s), 3 (2020s so far) — possibly *more* common recently,\nthough n is tiny. Portugal (3) and Scotland (2) dominate the list;\n20 of 28 leagues have never produced one.\n\n**Verdict.** An unbeaten season is a genuine achievement — the nine\nunbeaten champions are statistically the most dominant title winners —\nbut it is not a *different kind* of achievement. It is what the best\nteams look like when variance breaks their way: the same teams that\npost 100+ point seasons also post the occasional unbeaten one. The\ncliché survives only in its weakest form: unbeaten champions concede\nfewer goals (0.58/g) than any other champion group — defence still\nmatters — but they don't win more, draw more, or win by more than the\nbiggest-margin champions.\n\n*Caveats: n=9 unbeaten champions means the champion comparison is\ndescriptive, not inferential; league formats differ (30–38 games);\nrepeated clubs (Porto ×2, Celtic/Rangers) cluster the sample; xG\nunavailable; association is not causation.*\n\n*Source: 176,903 deduplicated top-flight matches across 28 leagues,\n592 complete league-seasons, 1990s → 2026.*",
+      "source": "## Discussion\n\n**The unbeaten season is real but rare — and it's the *tail* of a\nconsistency gradient, not a separate category.**\n\n**1. Zero defeats is not special — it's just the end of a smooth\ncurve.** Mean points per game by defeats: 2.58 (0), 2.51 (1), 2.40\n(2), 2.28 (3), 2.05 (4–6), 1.28 (7+). The gap between unbeaten and\none-defeat (0.07 ppg) is *smaller* than between one and two defeats\n(0.11). There is no discontinuity at zero — consistency is continuous.\n\n**2. Unbeaten teams don't \"play not to lose\" — they win *more*.**\nDraw rates by defeats: 21.5% (0), 20.3% (1), 21.0% (2), 22.3% (3),\n24.3% (4–6), 26.0% (7+). The romantic hypothesis predicted unbeaten\nteams would settle for draws; they actually draw *less* than average\nand post the highest win rate of any bucket (78.5%).\n\n**3. Unbeaten champions ARE the most dominant champions — barely.**\nNine unbeaten champions across 576 title winners: 2.60 ppg, 80% wins,\n0.58 goals conceded per game — better than both margin champions\n(≥10pts, n=163: 2.35 ppg, 0.79 ga/g) and ordinary champions (2.17 ppg,\n0.87 ga/g). But their average margin (14.6 pts) is *identical* to the\nmargin champions'. Porto 2012/13 went unbeaten by **one point**; Juventus\n2011/12 by four. Invincibility and dominance are correlated, not\nsynonymous.\n\n**4. The counterexamples prove the distinction.** Benfica 2025/26 went\nunbeaten and finished **third**. PAOK 2018/19 went unbeaten and won by\n10 — in a league where Olympiacos had won 6 of the previous 7 titles.\n\n**5. Rarity**: 10 unbeaten team-seasons in 592 league-seasons (~1.7%\nof team-seasons, ~0.1% of all team-seasons). By decade: 1 (1990s), 1\n(2000s), 5 (2010s), 3 (2020s so far) — possibly *more* common recently,\nthough n is tiny. Portugal (3) and Scotland (2) dominate the list;\n20 of 28 leagues have never produced one.\n\n**Verdict.** An unbeaten season is a genuine achievement — the nine\nunbeaten champions are statistically the most dominant title winners —\nbut it is not a *different kind* of achievement. It is what the best\nteams look like when variance breaks their way: the same teams that\npost 100+ point seasons also post the occasional unbeaten one. The\ncliché survives only in its weakest form: unbeaten champions concede\nfewer goals (0.58/g) than any other champion group — defence still\nmatters — but they don't win more, draw more, or win by more than the\nbiggest-margin champions.\n\n*Caveats: n=9 unbeaten champions means the champion comparison is\ndescriptive, not inferential; league formats differ (30–38 games);\nrepeated clubs (Porto ×2, Celtic/Rangers) cluster the sample; xG\nunavailable; association is not causation.*\n\n*Source: 176,903 deduplicated top-flight matches across 28 leagues,\n592 complete league-seasons, 1990s → 2026.*\n\n**Limitations.** The analysis is limited to the competitions present in the database; player-level metrics exist only for StatsBomb-covered tournaments, and underlying event data may contain errors.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "c9d9045f-393a-48e8-a66f-bd3fe2ae7d4f",
+      "cell_type": "markdown",
+      "source": "## Conclusion\n\nUnbeaten teams don't \"play not to lose\" — they win *more*. Together these results answer the research question posed in the Introduction and quantify the pattern across hundreds of thousands of matches. The notebook provides a fully reproducible pipeline from raw CSV extracts to published figures.\n",
       "metadata": {},
       "outputs": []
     }

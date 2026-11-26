@@ -12,9 +12,23 @@
   },
   "cells": [
     {
-      "id": "76faae4f-1240-4d67-80c4-499baab7723e",
+      "id": "2280b38d-f6b8-4e32-b829-d79b0f50b5d6",
       "cell_type": "markdown",
-      "source": "## Best of the Serie A\n\nA complete record-book of the **Serie A** — every statistic worth knowing,\ncomputed from all matches in `data/matches_full.csv`.\n\n**Records covered:** most championships, the champion hall of fame\n(most points, most goals, fewest conceded, best goal difference, biggest\ntitle margin, most wins), the best team-seasons ever, unbeaten\ninvincibles, closest and biggest title races, biggest wins and\nhighest-scoring matches, and the season's top scorers where player-level\ndata exists.",
+      "source": "## Abstract\n\nThis study examines the Serie A record book using 11,847 matches drawn from the Soccers football database. Across 33 complete seasons (1993/94 → 2025/26) and 11,847 matches (74 duplicate fixtures dropped), the Serie A record book. Most championships: Juventus 16 — nearly half of all titles. All computation runs in Rust inside a `.mars` notebook (polars + plotters — charts as inline SVG), and every table and figure is generated from the extracted CSVs.\n\n## Keywords\n\n**Keywords:** football, analysis, records, serie-a, mars, sqlite\n\n## Table of contents\n\n- [Abstract](#abstract)\n- [Keywords](#keywords)\n- [Introduction](#introduction)\n- [Methods](#methods)\n- [Results](#results)\n  - [Assemble per-season standings for all complete seasons](#assemble-per-season-standings-for-all-complete-seasons)\n  - [Champion hall of fame — six records](#champion-hall-of-fame--six-records)\n  - [Best team-seasons ever by points (any team)](#best-team-seasons-ever-by-points-any-team)\n  - [Unbeaten seasons](#unbeaten-seasons)\n  - [Title races — closest and biggest margins](#title-races--closest-and-biggest-margins)\n  - [Biggest wins & highest scoring matches](#biggest-wins--highest-scoring-matches)\n  - [Top scorers](#top-scorers)\n- [Discussion](#discussion)\n- [Conclusion](#conclusion)\n\n## Introduction\n\nA complete record-book of the **Serie A** — every statistic worth knowing,\ncomputed from all matches in `data/matches_full.csv`.\n\n**Records covered:** most championships, the champion hall of fame\n(most points, most goals, fewest conceded, best goal difference, biggest\ntitle margin, most wins), the best team-seasons ever, unbeaten\ninvincibles, closest and biggest title races, biggest wins and\nhighest-scoring matches, and the season's top scorers where player-level\ndata exists.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "dea3bacc-1214-424f-a147-4fcd0fa593f3",
+      "cell_type": "markdown",
+      "source": "## Methods\n\nData were extracted from the Soccers football database (`packages/data`) as CSV snapshots: `matches_full`, `player_goals`.\n\nThe analysis runs entirely in Rust inside the notebook: **polars** handles table scans, joins and aggregations; **plotters** renders figures as inline SVG; `mars_table` renders result tables.\n\nEach code cell is kept to a single output so results can be read top to bottom.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "9b144e3c-e5b0-4d50-b005-961e9fffb45f",
+      "cell_type": "markdown",
+      "source": "## Results\n\nAll figures and tables below are computed directly from the extracted data. Each code cell produces one output — a table, a chart, or a short text summary.\n",
       "metadata": {},
       "outputs": []
     },
@@ -43,6 +57,13 @@
           "text": "Italian Serie A matches: 11921\nfinished matches: 11847 (74 duplicate fixtures dropped) | team-season entries: 660\ncomplete seasons: 33 (1993/94 -> 2025/26)\ntop scorers available for season year 2015 (StatsBomb coverage)\n()\n"
         }
       ]
+    },
+    {
+      "id": "fc229ffb-651f-4b9c-b462-d9cc1debd211",
+      "cell_type": "markdown",
+      "source": "### Assemble per-season standings for all complete seasons\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "65fbc507-5679-434f-b591-92b8a75fb623",
@@ -96,6 +117,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "8193842c-93e7-4a14-8ab5-8d1ea13e5fba",
+      "cell_type": "markdown",
+      "source": "### Champion hall of fame — six records\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "44bb4315-da40-4fcb-af57-f44449a77575",
@@ -203,6 +231,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "f0ae7909-b5b6-45a0-984c-626d1feeb4c0",
+      "cell_type": "markdown",
+      "source": "### Best team-seasons ever by points (any team)\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "9185b42c-08ce-48a5-a7c5-99b141c11a80",
@@ -403,6 +438,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "4bd2b916-c02b-45d6-9828-e846f7f7637f",
+      "cell_type": "markdown",
+      "source": "### Unbeaten seasons\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "23215f88-c6a2-4fc4-be2e-551d8786797f",
@@ -620,6 +662,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "b2917a36-9c0f-4b35-8239-30ceaf3b5a45",
+      "cell_type": "markdown",
+      "source": "### Title races — closest and biggest margins\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "c7140823-f6ec-47d3-9397-f1ab08f6a7e4",
@@ -1159,6 +1208,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "37bd093b-ccb6-4bfd-877e-295e7de1cf60",
+      "cell_type": "markdown",
+      "source": "### Biggest wins & highest scoring matches\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "81d81229-8937-40b3-83c6-281a37b567b2",
@@ -1838,6 +1894,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "765501e4-e045-474c-aab5-041e8f519b4d",
+      "cell_type": "markdown",
+      "source": "### Top scorers\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "440008f2-bd3c-4327-ac19-c5c1c38ad66e",
@@ -3022,9 +3085,16 @@
       ]
     },
     {
-      "id": "d8393e41-60ff-4e8d-8da7-9e6dc6e8eaf9",
+      "id": "2d860ffc-3e66-485d-ae46-92117f86ecdc",
       "cell_type": "markdown",
-      "source": "## Findings\n\nAcross **33 complete seasons** (1993/94 → 2025/26) and 11,847 matches\n(74 duplicate fixtures dropped), the Serie A record book:\n\n- **Most championships**: Juventus **16** — nearly half of all titles.\n  Inter 7, Milan 6, Napoli 2, and one each for Lazio (1999/00) and Roma\n  (2000/01). Only **six clubs** have ever won Serie A in this era.\n- **Champion hall of fame**: Juventus 2013/14 owns most points (102), most\n  wins and biggest margin; Inter 2025/26 scored the most goals (89);\n  Milan 1993/94 conceded the fewest (15); Inter 2023/24 posted the best\n  goal difference (+67).\n- **Best season ever**: Juventus 2013/14 — 102 points, 2.68 ppg.\n- **Unbeaten**: Juventus 2011/12 went unbeaten (23W 15D) — the only\n  invincible season in Serie A's modern history.\n- **Closest finishes**: five seasons decided by a single point — Milan\n  over Lazio 1998/99, Lazio over Juventus 1999/00, Juventus over Roma\n  2001/02, and the modern classics Juventus–Inter 2019/20 and\n  Napoli–Inter 2024/25.\n- **Biggest blowouts**: Inter 2006/07 (+22 over Roma) and Inter 2023/24\n  (+19 over Milan) bookend the Nerazzurri's two great modern sides.\n- **Records on the pitch**: five separate 7–0 wins; highest-scoring was\n  Lazio 8–2 Fiorentina (1994/95).\n- **Top scorers** (StatsBomb coverage, 2015/16): Higuaín 36, Dybala 19,\n  Bacca 18, Icardi 16, Pavoletti 14.\n\n*Method notes: as above — canonical names, deduplicated fixtures,\nin-progress season excluded.*",
+      "source": "## Discussion\n\nAcross **33 complete seasons** (1993/94 → 2025/26) and 11,847 matches\n(74 duplicate fixtures dropped), the Serie A record book:\n\n- **Most championships**: Juventus **16** — nearly half of all titles.\n  Inter 7, Milan 6, Napoli 2, and one each for Lazio (1999/00) and Roma\n  (2000/01). Only **six clubs** have ever won Serie A in this era.\n- **Champion hall of fame**: Juventus 2013/14 owns most points (102), most\n  wins and biggest margin; Inter 2025/26 scored the most goals (89);\n  Milan 1993/94 conceded the fewest (15); Inter 2023/24 posted the best\n  goal difference (+67).\n- **Best season ever**: Juventus 2013/14 — 102 points, 2.68 ppg.\n- **Unbeaten**: Juventus 2011/12 went unbeaten (23W 15D) — the only\n  invincible season in Serie A's modern history.\n- **Closest finishes**: five seasons decided by a single point — Milan\n  over Lazio 1998/99, Lazio over Juventus 1999/00, Juventus over Roma\n  2001/02, and the modern classics Juventus–Inter 2019/20 and\n  Napoli–Inter 2024/25.\n- **Biggest blowouts**: Inter 2006/07 (+22 over Roma) and Inter 2023/24\n  (+19 over Milan) bookend the Nerazzurri's two great modern sides.\n- **Records on the pitch**: five separate 7–0 wins; highest-scoring was\n  Lazio 8–2 Fiorentina (1994/95).\n- **Top scorers** (StatsBomb coverage, 2015/16): Higuaín 36, Dybala 19,\n  Bacca 18, Icardi 16, Pavoletti 14.\n\n*Method notes: as above — canonical names, deduplicated fixtures,\nin-progress season excluded.*\n\n**Limitations.** Records reflect only the matches present in the database; coverage varies by competition and era, so 'records' are archive records, not all-time official marks.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "10accc7a-669e-489f-b3a3-7d99529d296e",
+      "cell_type": "markdown",
+      "source": "## Conclusion\n\nAcross 33 complete seasons (1993/94 → 2025/26) and 11,847 matches (74 duplicate fixtures dropped), the Serie A record book. Most championships: Juventus 16 — nearly half of all titles. Together these results answer the research question posed in the Introduction and quantify the pattern across 11,847 matches. The notebook provides a fully reproducible pipeline from raw CSV extracts to published figures.\n",
       "metadata": {},
       "outputs": []
     }

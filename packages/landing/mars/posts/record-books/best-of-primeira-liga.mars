@@ -12,9 +12,23 @@
   },
   "cells": [
     {
-      "id": "a0a930b5-545d-416b-a138-15022f849444",
+      "id": "52d0eccb-029a-4000-8a84-8aa124969626",
       "cell_type": "markdown",
-      "source": "## Best of the Primeira Liga\n\nA complete record-book of the **Primeira Liga** — every statistic worth knowing,\ncomputed from all matches in `data/matches_full.csv`.\n\n**Records covered:** most championships, the champion hall of fame\n(most points, most goals, fewest conceded, best goal difference, biggest\ntitle margin, most wins), the best team-seasons ever, unbeaten\ninvincibles, closest and biggest title races, biggest wins and\nhighest-scoring matches, and the season's top scorers where player-level\ndata exists.",
+      "source": "## Abstract\n\nThis study examines the Primeira Liga record book using 9,362 matches drawn from the Soccers football database. The Primeira Liga record book — with the mislabeled 1993/94 season excluded — - Most championships: Porto 18, Benfica 8, Sporting Lisbon (\"Sp Lisbon\") 5, Boavista 1. All computation runs in Rust inside a `.mars` notebook (polars + plotters — charts as inline SVG), and every table and figure is generated from the extracted CSVs.\n\n## Keywords\n\n**Keywords:** football, analysis, records, primeira-liga, mars, sqlite\n\n## Table of contents\n\n- [Abstract](#abstract)\n- [Keywords](#keywords)\n- [Introduction](#introduction)\n- [Methods](#methods)\n- [Results](#results)\n  - [Assemble per-season standings for all complete seasons](#assemble-per-season-standings-for-all-complete-seasons)\n  - [Champion hall of fame — six records](#champion-hall-of-fame--six-records)\n  - [Best team-seasons ever by points (any team)](#best-team-seasons-ever-by-points-any-team)\n  - [Unbeaten seasons](#unbeaten-seasons)\n  - [Title races — closest and biggest margins](#title-races--closest-and-biggest-margins)\n  - [Biggest wins & highest scoring matches](#biggest-wins--highest-scoring-matches)\n  - [Top scorers](#top-scorers)\n- [Discussion](#discussion)\n- [Conclusion](#conclusion)\n\n## Introduction\n\nA complete record-book of the **Primeira Liga** — every statistic worth knowing,\ncomputed from all matches in `data/matches_full.csv`.\n\n**Records covered:** most championships, the champion hall of fame\n(most points, most goals, fewest conceded, best goal difference, biggest\ntitle margin, most wins), the best team-seasons ever, unbeaten\ninvincibles, closest and biggest title races, biggest wins and\nhighest-scoring matches, and the season's top scorers where player-level\ndata exists.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "0781fed5-0dde-416b-b46b-c7ec004f6f1a",
+      "cell_type": "markdown",
+      "source": "## Methods\n\nData were extracted from the Soccers football database (`packages/data`) as CSV snapshots: `matches_full`, `player_goals`.\n\nThe analysis runs entirely in Rust inside the notebook: **polars** handles table scans, joins and aggregations; **plotters** renders figures as inline SVG; `mars_table` renders result tables.\n\nEach code cell is kept to a single output so results can be read top to bottom.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "98025bf1-d67d-4264-8f3f-a07e0ca55a7d",
+      "cell_type": "markdown",
+      "source": "## Results\n\nAll figures and tables below are computed directly from the extracted data. Each code cell produces one output — a table, a chart, or a short text summary.\n",
       "metadata": {},
       "outputs": []
     },
@@ -43,6 +57,13 @@
           "text": "Portuguese Liga Portugal matches: 9742\nfinished matches: 9362 (0 duplicate fixtures dropped) | team-season entries: 578\ncomplete seasons: 32 (1994/95 -> 2025/26)\nno player-level scorer data for this competition\n()\n"
         }
       ]
+    },
+    {
+      "id": "f23451fd-a765-4739-b488-d8b199196bf4",
+      "cell_type": "markdown",
+      "source": "### Assemble per-season standings for all complete seasons\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "0520e439-2066-4737-88f6-0f610b06cded",
@@ -86,6 +107,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "f50cabd5-7271-4352-b1f6-5ffbea6cb537",
+      "cell_type": "markdown",
+      "source": "### Champion hall of fame — six records\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "689ea27b-6d75-4604-a19e-aead25d3c287",
@@ -183,6 +211,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "c2317441-cc17-4eab-ad7f-c2d86ebfd92b",
+      "cell_type": "markdown",
+      "source": "### Best team-seasons ever by points (any team)\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "176835fc-dc8f-4c4e-89fe-49ac57e8c92b",
@@ -373,6 +408,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "c74dac6b-efef-4b03-b8de-ac563d61d4a5",
+      "cell_type": "markdown",
+      "source": "### Unbeaten seasons\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "5ab2c795-93d0-432a-92f3-1609bee0fef7",
@@ -592,6 +634,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "30f18e33-0828-45b7-8687-68829b9cf2cd",
+      "cell_type": "markdown",
+      "source": "### Title races — closest and biggest margins\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "ed0069d6-3c6d-408f-98a0-b0d952ad2b82",
@@ -1135,6 +1184,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "5a2e6da9-df9c-487c-8a2b-86e3dc980914",
+      "cell_type": "markdown",
+      "source": "### Biggest wins & highest scoring matches\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "1287a8c3-6f9d-4e57-8588-0c00d53fa6db",
@@ -1818,6 +1874,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "fcc426ad-f33d-4a7a-9209-3a77f50c8f57",
+      "cell_type": "markdown",
+      "source": "### Top scorers\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "f98dffd4-3eff-4a54-973e-975cd0b9365d",
@@ -2921,9 +2984,16 @@
       ]
     },
     {
-      "id": "6066a783-3ce0-4abb-ac02-cf50e94e993c",
+      "id": "6aae5a2c-f7de-4ed2-8aa0-775a198cb019",
       "cell_type": "markdown",
-      "source": "## Findings\n\nAcross **32 complete seasons** (1994/95 → 2025/26) and 9,362 matches —\nwith the 1993/94 season excluded because the source data labels it with\nLa Liga fixtures — the Primeira Liga record book:\n\n- **Most championships**: Porto **18**, Benfica 8, Sporting Lisbon (\"Sp\n  Lisbon\") 5, Boavista 1. Only **four clubs** have ever won the title —\n  the most concentrated championship history of any league studied.\n- **Champion hall of fame**: Porto 2021/22 owns most points (91) and best\n  ppg; Benfica 2018/19 scored the most goals (103) and posted the best\n  goal difference (+72); Porto 2007/08 conceded the fewest (13).\n- **Best seasons ever**: Porto 2021/22 and Porto 1994/95 both finished on\n  **91 points** — the two best ppg seasons (2.68) belong to Porto.\n- **Invincibles**: **three** unbeaten seasons — Porto 2010/11 (27W 3D),\n  Porto 2012/13 and Benfica 2025/26 — the most of any league here.\n- **Closest finishes**: Boavista's 2000/01 miracle title was won by **one\n  point** over Porto; three more one-point deciders since.\n- **Biggest blowouts**: Porto 2010/11 (+21) and Porto 2007/08 (+20) — the\n  Dragons put together the two most dominant sides in Portuguese history.\n- **Records on the pitch**: Benfica 10–0 Nacional (2018/19) is both the\n  biggest win and highest-scoring match; Sporting's 8–0 over Casa Pia\n  (2023/24) the only other rout.\n- No player-level scoring data for the Primeira Liga in the StatsBomb\n  subset.\n\n*Method notes: 1993/94 excluded (mislabeled La Liga fixtures); canonical\nnames merged; 2026/27 excluded.*",
+      "source": "## Discussion\n\nAcross **32 complete seasons** (1994/95 → 2025/26) and 9,362 matches —\nwith the 1993/94 season excluded because the source data labels it with\nLa Liga fixtures — the Primeira Liga record book:\n\n- **Most championships**: Porto **18**, Benfica 8, Sporting Lisbon (\"Sp\n  Lisbon\") 5, Boavista 1. Only **four clubs** have ever won the title —\n  the most concentrated championship history of any league studied.\n- **Champion hall of fame**: Porto 2021/22 owns most points (91) and best\n  ppg; Benfica 2018/19 scored the most goals (103) and posted the best\n  goal difference (+72); Porto 2007/08 conceded the fewest (13).\n- **Best seasons ever**: Porto 2021/22 and Porto 1994/95 both finished on\n  **91 points** — the two best ppg seasons (2.68) belong to Porto.\n- **Invincibles**: **three** unbeaten seasons — Porto 2010/11 (27W 3D),\n  Porto 2012/13 and Benfica 2025/26 — the most of any league here.\n- **Closest finishes**: Boavista's 2000/01 miracle title was won by **one\n  point** over Porto; three more one-point deciders since.\n- **Biggest blowouts**: Porto 2010/11 (+21) and Porto 2007/08 (+20) — the\n  Dragons put together the two most dominant sides in Portuguese history.\n- **Records on the pitch**: Benfica 10–0 Nacional (2018/19) is both the\n  biggest win and highest-scoring match; Sporting's 8–0 over Casa Pia\n  (2023/24) the only other rout.\n- No player-level scoring data for the Primeira Liga in the StatsBomb\n  subset.\n\n*Method notes: 1993/94 excluded (mislabeled La Liga fixtures); canonical\nnames merged; 2026/27 excluded.*\n\n**Limitations.** Records reflect only the matches present in the database; coverage varies by competition and era, so 'records' are archive records, not all-time official marks.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "80e523dd-a5eb-4e43-b585-e1406b16b69f",
+      "cell_type": "markdown",
+      "source": "## Conclusion\n\n62 matches — with the 1993/94 season excluded because the source data labels it with La Liga fixtures — the Primeira Liga record book. Most championships: Porto 18, Benfica 8, Sporting Lisbon (\"Sp Lisbon\") 5, Boavista 1. Together these results answer the research question posed in the Introduction and quantify the pattern across 9,362 matches. The notebook provides a fully reproducible pipeline from raw CSV extracts to published figures.\n",
       "metadata": {},
       "outputs": []
     }

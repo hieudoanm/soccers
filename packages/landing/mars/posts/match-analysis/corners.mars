@@ -12,9 +12,23 @@
   },
   "cells": [
     {
-      "id": "19eef7f7-4ab2-4702-9b21-64dc81ad1de5",
+      "id": "a343bb5b-81e0-4002-bb34-3a2796d14b86",
       "cell_type": "markdown",
-      "source": "## Do more corners actually help you win?\n\nThe assumption: *more corners = more pressure = more likely to win.* This\nnotebook tests it on every match in the dataset where corner counts exist\n— sourced from football-data.co.uk (back to 2000/01 for the English\nleagues) and enriched by ESPN stats (`import-espn-stats.ts`) for the big\nEuropean leagues and MLS.\n\n**Data caveats up front:**\n\n- Corner *volume* is well covered — ~166k matches across ~35 leagues —\n  but corner *outcomes* are not: the dataset has no event-level corner\n  data, so **goals from corners and corner conversion rates cannot be\n  measured**. Where relevant, set-piece-adjacent proxies are flagged.\n- Corners are a match-total stat: a team chasing a game legitimately wins\n  more of them. We cannot see *when* corners happen, so \"corners while\n  losing\" is untestable — noted where it matters.\n- `expected_goals` exists only for a small StatsBomb-covered subset, so\n  the \"beyond xG\" comparison reduces to shots.",
+      "source": "## Abstract\n\nDo more corners actually help you win? This study answers it using hundreds of thousands of matches drawn from the Soccers football database. The gradient is the weakest of the attacking stats. All computation runs in Rust inside a `.mars` notebook (polars + plotters — charts as inline SVG), and every table and figure is generated from the extracted CSVs.\n\n## Keywords\n\n**Keywords:** football, analysis, corners, mars, sqlite\n\n## Table of contents\n\n- [Abstract](#abstract)\n- [Keywords](#keywords)\n- [Introduction](#introduction)\n- [Methods](#methods)\n- [Results](#results)\n  - [Coverage](#coverage)\n  - [The band test: does winning more corners mean more wins?](#the-band-test-does-winning-more-corners-mean-more-wins)\n  - [Is the relationship linear — or is there a sweet spot?](#is-the-relationship-linear--or-is-there-a-sweet-spot)\n  - [Quantity vs quality: is corner share just a proxy?](#quantity-vs-quality-is-corner-share-just-a-proxy)\n  - [The paradox cases: corner dominance without victory](#the-paradox-cases-corner-dominance-without-victory)\n  - [Context: home advantage and opponent strength](#context-home-advantage-and-opponent-strength)\n  - [The season-level view and the historical trend](#the-season-level-view-and-the-historical-trend)\n- [Discussion](#discussion)\n- [Conclusion](#conclusion)\n\n## Introduction\n\nThe assumption: *more corners = more pressure = more likely to win.* This\nnotebook tests it on every match in the dataset where corner counts exist\n— sourced from football-data.co.uk (back to 2000/01 for the English\nleagues) and enriched by ESPN stats (`import-espn-stats.ts`) for the big\nEuropean leagues and MLS.\n\n**Data caveats up front:**\n\n- Corner *volume* is well covered — ~166k matches across ~35 leagues —\n  but corner *outcomes* are not: the dataset has no event-level corner\n  data, so **goals from corners and corner conversion rates cannot be\n  measured**. Where relevant, set-piece-adjacent proxies are flagged.\n- Corners are a match-total stat: a team chasing a game legitimately wins\n  more of them. We cannot see *when* corners happen, so \"corners while\n  losing\" is untestable — noted where it matters.\n- `expected_goals` exists only for a small StatsBomb-covered subset, so\n  the \"beyond xG\" comparison reduces to shots.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "42e66d32-244b-4962-ba73-378882f83010",
+      "cell_type": "markdown",
+      "source": "## Methods\n\nData were extracted from the Soccers football database (`packages/data`) as CSV snapshots: `match_team_stat`, `matches_full`.\n\nThe analysis runs entirely in Rust inside the notebook: **polars** handles table scans, joins and aggregations; **plotters** renders figures as inline SVG; `mars_table` renders result tables.\n\nStatistical summaries include Pearson correlations.\n\nEach code cell is kept to a single output so results can be read top to bottom.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "06529d2d-b53a-4c76-9b28-4316c7a5e8ce",
+      "cell_type": "markdown",
+      "source": "## Results\n\nAll figures and tables below are computed directly from the extracted data. Each code cell produces one output — a table, a chart, or a short text summary.\n",
       "metadata": {},
       "outputs": []
     },
@@ -117,9 +131,9 @@
       ]
     },
     {
-      "id": "43f37812-c7f1-4c12-a59d-0f7c9cb644ce",
+      "id": "a781328f-c956-4b71-9777-546d86d03113",
       "cell_type": "markdown",
-      "source": "## Coverage\n\nCorners exist for both football-data leagues (English pyramid back to\n2000/01) and ESPN-covered leagues (~2004 onward). The Premier League is\nthe primary lens; every covered league is pooled as a robustness check.\nOnly matches where **both** teams have a recorded corner count are used —\na genuine 0–0 corner count is rare but possible and is kept.",
+      "source": "### Coverage\n\nCorners exist for both football-data leagues (English pyramid back to\n2000/01) and ESPN-covered leagues (~2004 onward). The Premier League is\nthe primary lens; every covered league is pooled as a robustness check.\nOnly matches where **both** teams have a recorded corner count are used —\na genuine 0–0 corner count is rare but possible and is kept.\n",
       "metadata": {},
       "outputs": []
     },
@@ -339,9 +353,9 @@
       ]
     },
     {
-      "id": "2ee318e0-b4f3-4f87-8d55-a52bfc01e30f",
+      "id": "2ead49b8-756d-460b-89cc-a37b3ba7c47c",
       "cell_type": "markdown",
-      "source": "## The band test: does winning more corners mean more wins?\n\nRaw corner counts aren't comparable across matches — a 0–0 corner-fest\nand a 14–12 shootout are different sports. The fair unit is **corner\nshare**: the team's corners as a percentage of the match total. Bands are\nthe team-perspective share, pooled across both teams per match.",
+      "source": "### The band test: does winning more corners mean more wins?\n\nRaw corner counts aren't comparable across matches — a 0–0 corner-fest\nand a 14–12 shootout are different sports. The fair unit is **corner\nshare**: the team's corners as a percentage of the match total. Bands are\nthe team-perspective share, pooled across both teams per match.\n",
       "metadata": {},
       "outputs": []
     },
@@ -1676,9 +1690,9 @@
       ]
     },
     {
-      "id": "7d8c2368-06f4-4071-8727-2fdf31fed7bb",
+      "id": "6733e9c2-6752-47a6-bd23-4451c560348e",
       "cell_type": "markdown",
-      "source": "## Is the relationship linear — or is there a sweet spot?\n\nBin matches by **corner differential** (home corners minus away corners)\nand look at the home win rate. If corners drive results the curve should\nclimb steadily; a plateau or dip at the extreme would mean corner\ndominance stops paying (or turns into sterile possession).",
+      "source": "### Is the relationship linear — or is there a sweet spot?\n\nBin matches by **corner differential** (home corners minus away corners)\nand look at the home win rate. If corners drive results the curve should\nclimb steadily; a plateau or dip at the extreme would mean corner\ndominance stops paying (or turns into sterile possession).\n",
       "metadata": {},
       "outputs": []
     },
@@ -2744,9 +2758,9 @@
       ]
     },
     {
-      "id": "2f0b0203-4913-4daa-b52c-4addac0b55c8",
+      "id": "0e22d958-3041-4a27-81ae-a1500f9a430c",
       "cell_type": "markdown",
-      "source": "## Quantity vs quality: is corner share just a proxy?\n\nCorners correlate with shots, which correlate with goals — so corner share\nmay predict wins only because it tracks general attacking pressure.\nCompare how well **corner share, shot share and possession share** each\npredict the home win, on identical matches. Shots-on-target is included\nas the quality-weighted attacking measure.",
+      "source": "### Quantity vs quality: is corner share just a proxy?\n\nCorners correlate with shots, which correlate with goals — so corner share\nmay predict wins only because it tracks general attacking pressure.\nCompare how well **corner share, shot share and possession share** each\npredict the home win, on identical matches. Shots-on-target is included\nas the quality-weighted attacking measure.\n",
       "metadata": {},
       "outputs": []
     },
@@ -3314,9 +3328,9 @@
       ]
     },
     {
-      "id": "127c862a-7b60-4d7e-a876-793bd066322e",
+      "id": "a45fee45-a5c5-4098-ad6b-2559451556c3",
       "cell_type": "markdown",
-      "source": "## The paradox cases: corner dominance without victory\n\nTwo failure modes worth counting: teams that **win despite a low corner\nshare** (<35%) and teams that **lose despite a high corner share**\n(>65%). If corner dominance were destiny both would be rare. The team\ntables show who lives in each tail.",
+      "source": "### The paradox cases: corner dominance without victory\n\nTwo failure modes worth counting: teams that **win despite a low corner\nshare** (<35%) and teams that **lose despite a high corner share**\n(>65%). If corner dominance were destiny both would be rare. The team\ntables show who lives in each tail.\n",
       "metadata": {},
       "outputs": []
     },
@@ -4696,9 +4710,9 @@
       ]
     },
     {
-      "id": "8f6cbd8c-985f-4980-9904-2609ffca203f",
+      "id": "50a80bd3-a3f8-4958-9e3a-530327fb50ff",
       "cell_type": "markdown",
-      "source": "## Context: home advantage and opponent strength\n\nTwo confounds the band table ignores. **Home teams already win more** —\nand home teams also win more corners (the home side takes roughly\n55–60% of match corners on average), so part of the corner-share effect\nis venue. And **corners are easier to come by against weak teams** that\nsit deep and defend. Split by venue and by opponent strength (the\nopponent's final season points, top vs bottom half within its\nleague-season).",
+      "source": "### Context: home advantage and opponent strength\n\nTwo confounds the band table ignores. **Home teams already win more** —\nand home teams also win more corners (the home side takes roughly\n55–60% of match corners on average), so part of the corner-share effect\nis venue. And **corners are easier to come by against weak teams** that\nsit deep and defend. Split by venue and by opponent strength (the\nopponent's final season points, top vs bottom half within its\nleague-season).\n",
       "metadata": {},
       "outputs": []
     },
@@ -6203,8 +6217,8 @@
           "rows": [
             [
               "<35",
-              "1902 / 3379",
-              "46% / 24%"
+              "1919 / 3362",
+              "45% / 24%"
             ],
             [
               "35-45",
@@ -6213,18 +6227,18 @@
             ],
             [
               "45-55",
-              "1677 / 1674",
+              "1674 / 1677",
               "49% / 27%"
             ],
             [
               "55-65",
-              "1630 / 1440",
+              "1629 / 1441",
               "48% / 27%"
             ],
             [
               ">65",
-              "3219 / 2070",
-              "51% / 33%"
+              "3206 / 2083",
+              "51% / 32%"
             ]
           ]
         },
@@ -7012,28 +7026,28 @@
           "rows": [
             [
               "<35",
-              "1919 / 3362",
+              "1917 / 3364",
               "45% / 24%"
             ],
             [
               "35-45",
-              "1395 / 1676",
+              "1385 / 1686",
               "49% / 27%"
             ],
             [
               "45-55",
-              "1678 / 1673",
+              "1680 / 1671",
               "49% / 27%"
             ],
             [
               "55-65",
-              "1622 / 1448",
+              "1623 / 1447",
               "48% / 27%"
             ],
             [
               ">65",
-              "3204 / 2085",
-              "51% / 33%"
+              "3213 / 2076",
+              "51% / 32%"
             ]
           ]
         },
@@ -7230,9 +7244,9 @@
       ]
     },
     {
-      "id": "e7a82b35-2594-46a4-9b85-4e539d145a0b",
+      "id": "a73c5030-802d-4590-88ed-86d887e76bb9",
       "cell_type": "markdown",
-      "source": "## The season-level view and the historical trend\n\nMatch-level noise is huge. Smooth it three ways: (1) correlate each\ntime's **season-average corner share** with final points; (2) track the\nyearly correlation between corner differential and home wins; (3) track\nthe average **total corners per match** — are modern games more or less\ncornered than the early 2000s?",
+      "source": "### The season-level view and the historical trend\n\nMatch-level noise is huge. Smooth it three ways: (1) correlate each\ntime's **season-average corner share** with final points; (2) track the\nyearly correlation between corner differential and home wins; (3) track\nthe average **total corners per match** — are modern games more or less\ncornered than the early 2000s?\n",
       "metadata": {},
       "outputs": []
     },
@@ -7973,27 +7987,27 @@
           "rows": [
             [
               "<35",
-              "1912 / 3369",
-              "46% / 24%"
+              "1910 / 3371",
+              "45% / 24%"
             ],
             [
               "35-45",
-              "1392 / 1679",
+              "1381 / 1690",
               "49% / 27%"
             ],
             [
               "45-55",
-              "1668 / 1683",
+              "1677 / 1674",
               "49% / 27%"
             ],
             [
               "55-65",
-              "1633 / 1437",
+              "1630 / 1440",
               "48% / 27%"
             ],
             [
               ">65",
-              "3213 / 2076",
+              "3220 / 2069",
               "51% / 32%"
             ]
           ]
@@ -8364,9 +8378,1151 @@
       ]
     },
     {
-      "id": "4b484b48-12e5-4bcc-89cc-4e2277733730",
+      "id": "3c236203-67e4-4f37-bb03-d7c9ddf90e83",
+      "cell_type": "code",
+      "source": "use plotters::prelude::*;\n\nfn chart_num(s: &str) -> f64 {\n    let t = s.replace(',', \"\").replace('%', \"\").replace('−', \"-\");\n    let mult = if t.contains(\"bn\") { 1e9 }\n        else if t.contains('€') && t.contains('m') { 1e6 }\n        else { 1.0 };\n    let cleaned: String = t.chars()\n        .filter(|c| c.is_ascii_digit() || *c == '.' || *c == '-')\n        .collect();\n    cleaned.parse().unwrap_or(0.0) * mult\n}\n\n\nlet mut c_items: Vec<(String, f64)> = hs_rows.iter()\n    .map(|r| (r[0].clone(), chart_num(&r[1].clone())))\n    .collect();\nc_items.retain(|(_, v)| v.is_finite());\nc_items.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());\nc_items.truncate(12);\nlet c_labels: Vec<String> = c_items.iter()\n    .map(|(l, _)| l.chars().take(18).collect()).collect();\nlet c_vals: Vec<f64> = c_items.iter().map(|(_, v)| *v).collect();\nlet c_ymax = c_vals.iter().cloned().fold(0.0_f64, f64::max) * 1.15 + 1e-9;\nlet (c_div, c_unit): (f64, &str) = if c_ymax >= 1e9 { (1e9, \"bn\") }\n    else if c_ymax >= 1e6 { (1e6, \"m\") }\n    else if c_ymax >= 1e3 { (1e3, \"k\") }\n    else { (1.0, \"\") };\nlet c_n = c_vals.len();\nlet figure = plotters::evcxr::evcxr_figure((780, 400), |root| {\n    root.fill(&WHITE)?;\n    let mut chart = ChartBuilder::on(&root)\n        .caption(\"Average home corner share by EPL season\", (\"sans-serif\", 18))\n        .margin(10)\n        .x_label_area_size(45)\n        .y_label_area_size(55)\n        .build_cartesian_2d(-0.5_f64..(c_n as f64 - 0.5), 0.0..c_ymax)?;\n    chart.configure_mesh()\n        .x_labels(c_n)\n        .x_label_formatter(&|x: &f64| c_labels.get(*x as usize).cloned().unwrap_or_default())\n        .y_label_formatter(&|y: &f64| format!(\"{:.1}{}\", y / c_div, c_unit))\n        .draw()?;\n    chart.draw_series(c_vals.iter().enumerate().map(|(i, &v)| {\n        Rectangle::new([(i as f64 - 0.35, 0.0), (i as f64 + 0.35, v)], BLUE.filled())\n    }))?;\n    Ok(())\n});\nfigure.evcxr_display();\n",
+      "metadata": {},
+      "execution_count": 16,
+      "outputs": [
+        {
+          "type": "text",
+          "text": "stat rows indexed: 374660\nmatches with corner data (both teams): 166028\nEPL matches with corners: 10032 | all leagues: 166028\nEPL (8496 matches): corr(home corner share, home win) = 0.050\nEPL: corr(home shot share,   home win) = 0.259\nEPL: corr(home possession,   home win) = 0.120\nALL (111164 matches): corr(corner share)=-0.012 corr(shot share)=0.195 corr(possession)=0.016\nEPL SOG-share subset (10032 matches): corr(shots on target share, home win) = 0.400\nEPL team-matches: wins 7536 | wins with <35%% corner share: 1664 (22.1%% of wins)\nEPL losses 7536 | losses with >65%% corner share: 1664 (22.1%% of losses)\nopponent strength = top-half finishers in same league-season (points)\nEPL team-seasons: 521 | corr(avg corner share, season points) = 0.744\n"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "league",
+            "matches",
+            "season span"
+          ],
+          "rows": [
+            [
+              "English Championship",
+              "14543",
+              "2000/01 → 2026/27"
+            ],
+            [
+              "English League Two",
+              "14424",
+              "2000/01 → 2026/27"
+            ],
+            [
+              "English League One",
+              "14374",
+              "2000/01 → 2026/27"
+            ],
+            [
+              "English Premier League",
+              "10032",
+              "2000/01 → 2026/27"
+            ],
+            [
+              "Spanish La Liga",
+              "8438",
+              "2004/05 → 2026/27"
+            ],
+            [
+              "Italian Serie A",
+              "8086",
+              "2005/06 → 2026/27"
+            ],
+            [
+              "French Ligue 1",
+              "7790",
+              "2005/06 → 2026/27"
+            ],
+            [
+              "German Bundesliga",
+              "7750",
+              "2000/01 → 2026/27"
+            ],
+            [
+              "Spanish La Liga 2",
+              "6527",
+              "2008/09 → 2026/27"
+            ],
+            [
+              "MLS",
+              "6264",
+              "2012 → 2026"
+            ],
+            [
+              "Scottish Premiership",
+              "5958",
+              "2000/01 → 2026/27"
+            ],
+            [
+              "French Ligue 2",
+              "5347",
+              "2008/09 → 2026/27"
+            ],
+            [
+              "Italian Serie B",
+              "5214",
+              "2008/09 → 2026/27"
+            ],
+            [
+              "Dutch Eredivisie",
+              "4798",
+              "2008/09 → 2026/27"
+            ],
+            [
+              "German 2. Bundesliga",
+              "4661",
+              "2000/01 → 2026/27"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "EPL season",
+            "matches with corners"
+          ],
+          "rows": [
+            [
+              "2000/01",
+              "380"
+            ],
+            [
+              "2001/02",
+              "380"
+            ],
+            [
+              "2002/03",
+              "380"
+            ],
+            [
+              "2003/04",
+              "383"
+            ],
+            [
+              "2004/05",
+              "380"
+            ],
+            [
+              "2005/06",
+              "380"
+            ],
+            [
+              "2006/07",
+              "380"
+            ],
+            [
+              "2007/08",
+              "380"
+            ],
+            [
+              "2008/09",
+              "380"
+            ],
+            [
+              "2009/10",
+              "380"
+            ],
+            [
+              "2010/11",
+              "380"
+            ],
+            [
+              "2011/12",
+              "380"
+            ],
+            [
+              "2012/13",
+              "380"
+            ],
+            [
+              "2013/14",
+              "380"
+            ],
+            [
+              "2014/15",
+              "380"
+            ],
+            [
+              "2015/16",
+              "419"
+            ],
+            [
+              "2016/17",
+              "380"
+            ],
+            [
+              "2017/18",
+              "380"
+            ],
+            [
+              "2018/19",
+              "380"
+            ],
+            [
+              "2019/20",
+              "380"
+            ],
+            [
+              "2020/21",
+              "380"
+            ],
+            [
+              "2021/22",
+              "380"
+            ],
+            [
+              "2022/23",
+              "380"
+            ],
+            [
+              "2023/24",
+              "380"
+            ],
+            [
+              "2024/25",
+              "380"
+            ],
+            [
+              "2025/26",
+              "380"
+            ],
+            [
+              "2026/27",
+              "110"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "corner share %",
+            "n",
+            "win%",
+            "draw%",
+            "loss%"
+          ],
+          "rows": [
+            [
+              "<35",
+              "5281",
+              "31.5%",
+              "25.0%",
+              "43.5%"
+            ],
+            [
+              "35-45",
+              "3071",
+              "36.8%",
+              "24.8%",
+              "38.4%"
+            ],
+            [
+              "45-55",
+              "3351",
+              "37.8%",
+              "24.5%",
+              "37.7%"
+            ],
+            [
+              "55-65",
+              "3070",
+              "38.2%",
+              "24.9%",
+              "36.9%"
+            ],
+            [
+              ">65",
+              "5289",
+              "43.5%",
+              "25.0%",
+              "31.5%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "corner share % — all leagues",
+            "n",
+            "win%",
+            "draw%",
+            "loss%"
+          ],
+          "rows": [
+            [
+              "<35",
+              "77963",
+              "35.5%",
+              "26.3%",
+              "38.2%"
+            ],
+            [
+              "35-45",
+              "46418",
+              "36.8%",
+              "26.4%",
+              "36.8%"
+            ],
+            [
+              "45-55",
+              "48749",
+              "37.0%",
+              "26.0%",
+              "37.0%"
+            ],
+            [
+              "55-65",
+              "46435",
+              "36.8%",
+              "26.3%",
+              "36.8%"
+            ],
+            [
+              ">65",
+              "78059",
+              "38.2%",
+              "26.3%",
+              "35.5%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "corners won (EPL)",
+            "n",
+            "win%",
+            "draw%",
+            "loss%"
+          ],
+          "rows": [
+            [
+              "0-2",
+              "3462",
+              "32.2%",
+              "24.7%",
+              "43.2%"
+            ],
+            [
+              "3-4",
+              "5286",
+              "36.0%",
+              "24.8%",
+              "39.2%"
+            ],
+            [
+              "5-6",
+              "4982",
+              "38.0%",
+              "24.2%",
+              "37.8%"
+            ],
+            [
+              "7-9",
+              "4419",
+              "41.1%",
+              "25.1%",
+              "33.7%"
+            ],
+            [
+              "10+",
+              "1915",
+              "42.3%",
+              "26.6%",
+              "31.0%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "corners won — all leagues",
+            "n",
+            "win%",
+            "draw%",
+            "loss%"
+          ],
+          "rows": [
+            [
+              "0-2",
+              "88929",
+              "37.1%",
+              "23.6%",
+              "39.3%"
+            ],
+            [
+              "3-4",
+              "84318",
+              "37.3%",
+              "25.7%",
+              "37.0%"
+            ],
+            [
+              "5-6",
+              "76410",
+              "37.3%",
+              "26.1%",
+              "36.6%"
+            ],
+            [
+              "7-9",
+              "60351",
+              "37.4%",
+              "26.9%",
+              "35.7%"
+            ],
+            [
+              "10+",
+              "22048",
+              "36.1%",
+              "28.5%",
+              "35.4%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "corner diff (home − away)",
+            "matches",
+            "home win%"
+          ],
+          "rows": [
+            [
+              "-16 to -14",
+              "6",
+              "16.7%"
+            ],
+            [
+              "-14 to -12",
+              "22",
+              "36.4%"
+            ],
+            [
+              "-12 to -10",
+              "53",
+              "50.9%"
+            ],
+            [
+              "-10 to -8",
+              "159",
+              "49.7%"
+            ],
+            [
+              "-8 to -6",
+              "322",
+              "37.3%"
+            ],
+            [
+              "-6 to -4",
+              "589",
+              "40.9%"
+            ],
+            [
+              "-4 to -2",
+              "1010",
+              "45.0%"
+            ],
+            [
+              "-2 to +0",
+              "1438",
+              "43.1%"
+            ],
+            [
+              "+0 to +2",
+              "1810",
+              "44.3%"
+            ],
+            [
+              "+2 to +4",
+              "1649",
+              "46.1%"
+            ],
+            [
+              "+4 to +6",
+              "1272",
+              "50.2%"
+            ],
+            [
+              "+6 to +8",
+              "862",
+              "49.3%"
+            ],
+            [
+              "+8 to +10",
+              "461",
+              "49.9%"
+            ],
+            [
+              "+10 to +12",
+              "211",
+              "45.5%"
+            ],
+            [
+              "+12 to +14",
+              "116",
+              "38.8%"
+            ],
+            [
+              "+14 to +16",
+              "36",
+              "52.8%"
+            ],
+            [
+              "+16 to +18",
+              "9",
+              "55.6%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "corner diff — all leagues",
+            "matches",
+            "home win%"
+          ],
+          "rows": [
+            [
+              "-20 to -16",
+              "23",
+              "34.8%"
+            ],
+            [
+              "-16 to -12",
+              "228",
+              "44.3%"
+            ],
+            [
+              "-12 to -8",
+              "2115",
+              "46.6%"
+            ],
+            [
+              "-8 to -4",
+              "12634",
+              "45.3%"
+            ],
+            [
+              "-4 to +0",
+              "39147",
+              "45.7%"
+            ],
+            [
+              "+0 to +4",
+              "71312",
+              "45.6%"
+            ],
+            [
+              "+4 to +8",
+              "30686",
+              "43.2%"
+            ],
+            [
+              "+8 to +12",
+              "8330",
+              "40.8%"
+            ],
+            [
+              "+12 to +16",
+              "1389",
+              "38.9%"
+            ],
+            [
+              "+16 to +20",
+              "147",
+              "44.9%"
+            ],
+            [
+              "+20 to +24",
+              "13",
+              "46.2%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "team (EPL, all seasons)",
+            "wins <35% share",
+            "total wins",
+            "low-share win share"
+          ],
+          "rows": [
+            [
+              "QPR",
+              "11",
+              "22",
+              "50%"
+            ],
+            [
+              "Burnley",
+              "41",
+              "92",
+              "45%"
+            ],
+            [
+              "Derby",
+              "8",
+              "19",
+              "42%"
+            ],
+            [
+              "Nott'm Forest",
+              "21",
+              "50",
+              "42%"
+            ],
+            [
+              "Hull",
+              "18",
+              "44",
+              "41%"
+            ],
+            [
+              "Sunderland",
+              "53",
+              "143",
+              "37%"
+            ],
+            [
+              "Ipswich",
+              "13",
+              "36",
+              "36%"
+            ],
+            [
+              "Charlton",
+              "29",
+              "85",
+              "34%"
+            ],
+            [
+              "Watford",
+              "23",
+              "68",
+              "34%"
+            ],
+            [
+              "Stoke",
+              "39",
+              "116",
+              "34%"
+            ],
+            [
+              "Sheffield United",
+              "11",
+              "34",
+              "32%"
+            ],
+            [
+              "Blackburn",
+              "45",
+              "140",
+              "32%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "team (EPL, all seasons)",
+            "losses >65% share",
+            "total losses",
+            "high-share loss share"
+          ],
+          "rows": [
+            [
+              "Liverpool",
+              "91",
+              "204",
+              "45%"
+            ],
+            [
+              "Man City",
+              "92",
+              "240",
+              "38%"
+            ],
+            [
+              "Chelsea",
+              "78",
+              "210",
+              "37%"
+            ],
+            [
+              "Man United",
+              "73",
+              "205",
+              "36%"
+            ],
+            [
+              "Reading",
+              "19",
+              "59",
+              "32%"
+            ],
+            [
+              "Leeds",
+              "40",
+              "127",
+              "31%"
+            ],
+            [
+              "Arsenal",
+              "60",
+              "195",
+              "31%"
+            ],
+            [
+              "Tottenham",
+              "85",
+              "321",
+              "26%"
+            ],
+            [
+              "Ipswich",
+              "16",
+              "62",
+              "26%"
+            ],
+            [
+              "Everton",
+              "88",
+              "352",
+              "25%"
+            ],
+            [
+              "Aston Villa",
+              "83",
+              "335",
+              "25%"
+            ],
+            [
+              "Blackburn",
+              "40",
+              "168",
+              "24%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "corner share",
+            "n vs weak / strong",
+            "win% vs weak / strong"
+          ],
+          "rows": [
+            [
+              "<35",
+              "1906 / 3375",
+              "45% / 24%"
+            ],
+            [
+              "35-45",
+              "1395 / 1676",
+              "49% / 26%"
+            ],
+            [
+              "45-55",
+              "1678 / 1673",
+              "49% / 27%"
+            ],
+            [
+              "55-65",
+              "1630 / 1440",
+              "48% / 27%"
+            ],
+            [
+              ">65",
+              "3209 / 2080",
+              "51% / 33%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "corner share",
+            "home win% / loss%",
+            "away win% / loss%"
+          ],
+          "rows": [
+            [
+              "<35",
+              "42.1%",
+              "33.1%",
+              "25.4%",
+              "49.5%"
+            ],
+            [
+              "35-45",
+              "44.5%",
+              "30.9%",
+              "31.1%",
+              "43.9%"
+            ],
+            [
+              "45-55",
+              "44.7%",
+              "30.8%",
+              "31.0%",
+              "44.5%"
+            ],
+            [
+              "55-65",
+              "43.7%",
+              "31.2%",
+              "30.9%",
+              "44.5%"
+            ],
+            [
+              ">65",
+              "49.6%",
+              "25.4%",
+              "33.1%",
+              "42.1%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "EPL season",
+            "avg home corner share",
+            "matches"
+          ],
+          "rows": [
+            [
+              "2000/01",
+              "57.6%",
+              "380"
+            ],
+            [
+              "2001/02",
+              "29.4%",
+              "380"
+            ],
+            [
+              "2002/03",
+              "57.2%",
+              "380"
+            ],
+            [
+              "2003/04",
+              "56.1%",
+              "383"
+            ],
+            [
+              "2004/05",
+              "56.2%",
+              "380"
+            ],
+            [
+              "2005/06",
+              "56.2%",
+              "380"
+            ],
+            [
+              "2006/07",
+              "56.8%",
+              "380"
+            ],
+            [
+              "2007/08",
+              "56.8%",
+              "380"
+            ],
+            [
+              "2008/09",
+              "56.1%",
+              "380"
+            ],
+            [
+              "2009/10",
+              "55.2%",
+              "380"
+            ],
+            [
+              "2010/11",
+              "54.5%",
+              "379"
+            ],
+            [
+              "2011/12",
+              "57.1%",
+              "380"
+            ],
+            [
+              "2012/13",
+              "56.3%",
+              "380"
+            ],
+            [
+              "2013/14",
+              "56.7%",
+              "380"
+            ],
+            [
+              "2014/15",
+              "55.3%",
+              "380"
+            ],
+            [
+              "2015/16",
+              "53.4%",
+              "419"
+            ],
+            [
+              "2016/17",
+              "54.2%",
+              "380"
+            ],
+            [
+              "2017/18",
+              "55.9%",
+              "380"
+            ],
+            [
+              "2018/19",
+              "55.7%",
+              "380"
+            ],
+            [
+              "2019/20",
+              "53.4%",
+              "380"
+            ],
+            [
+              "2020/21",
+              "53.7%",
+              "380"
+            ],
+            [
+              "2021/22",
+              "53.3%",
+              "380"
+            ],
+            [
+              "2022/23",
+              "55.2%",
+              "380"
+            ],
+            [
+              "2023/24",
+              "56.3%",
+              "380"
+            ],
+            [
+              "2024/25",
+              "52.6%",
+              "380"
+            ],
+            [
+              "2025/26",
+              "54.0%",
+              "380"
+            ],
+            [
+              "2026/27",
+              "52.8%",
+              "110"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "EPL season",
+            "corr(corner diff, home win)",
+            "matches",
+            "avg corners/team"
+          ],
+          "rows": [
+            [
+              "2000/01",
+              "0.024",
+              "380",
+              "5.5"
+            ],
+            [
+              "2001/02",
+              "-0.057",
+              "380",
+              "4.3"
+            ],
+            [
+              "2002/03",
+              "-0.023",
+              "380",
+              "5.8"
+            ],
+            [
+              "2003/04",
+              "-0.071",
+              "383",
+              "5.6"
+            ],
+            [
+              "2004/05",
+              "0.073",
+              "380",
+              "5.4"
+            ],
+            [
+              "2005/06",
+              "-0.041",
+              "380",
+              "5.3"
+            ],
+            [
+              "2006/07",
+              "-0.086",
+              "380",
+              "5.6"
+            ],
+            [
+              "2007/08",
+              "0.085",
+              "380",
+              "5.5"
+            ],
+            [
+              "2008/09",
+              "0.038",
+              "380",
+              "5.6"
+            ],
+            [
+              "2009/10",
+              "0.141",
+              "380",
+              "5.6"
+            ],
+            [
+              "2010/11",
+              "-0.017",
+              "380",
+              "5.5"
+            ],
+            [
+              "2011/12",
+              "0.088",
+              "380",
+              "5.7"
+            ],
+            [
+              "2012/13",
+              "0.153",
+              "380",
+              "5.6"
+            ],
+            [
+              "2013/14",
+              "0.086",
+              "380",
+              "5.4"
+            ],
+            [
+              "2014/15",
+              "-0.056",
+              "380",
+              "5.3"
+            ],
+            [
+              "2015/16",
+              "-0.050",
+              "419",
+              "5.4"
+            ],
+            [
+              "2016/17",
+              "0.073",
+              "380",
+              "5.2"
+            ],
+            [
+              "2017/18",
+              "0.053",
+              "380",
+              "5.1"
+            ],
+            [
+              "2018/19",
+              "0.085",
+              "380",
+              "5.1"
+            ],
+            [
+              "2019/20",
+              "0.079",
+              "380",
+              "5.4"
+            ],
+            [
+              "2020/21",
+              "0.004",
+              "380",
+              "5.1"
+            ],
+            [
+              "2021/22",
+              "0.142",
+              "380",
+              "5.2"
+            ],
+            [
+              "2022/23",
+              "0.095",
+              "380",
+              "5.1"
+            ],
+            [
+              "2023/24",
+              "0.138",
+              "380",
+              "5.4"
+            ],
+            [
+              "2024/25",
+              "0.113",
+              "380",
+              "5.1"
+            ],
+            [
+              "2025/26",
+              "-0.082",
+              "380",
+              "5.0"
+            ],
+            [
+              "2026/27",
+              "0.061",
+              "110",
+              "4.8"
+            ]
+          ]
+        },
+        {
+          "type": "mime_bundle",
+          "data": {
+            "image/svg+xml": "<svg width=\"780\" height=\"400\" viewBox=\"0 0 780 400\" xmlns=\"http://www.w3.org/2000/svg\">\n<rect x=\"0\" y=\"0\" width=\"780\" height=\"400\" opacity=\"1\" fill=\"#FFFFFF\" stroke=\"none\"/>\n<text x=\"390\" y=\"15\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"14.516129032258064\" opacity=\"1\" fill=\"#000000\">\nAverage home corner share by EPL season\n</text>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"70\" y1=\"344\" x2=\"70\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"82\" y1=\"344\" x2=\"82\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"94\" y1=\"344\" x2=\"94\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"106\" y1=\"344\" x2=\"106\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"117\" y1=\"344\" x2=\"117\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"129\" y1=\"344\" x2=\"129\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"141\" y1=\"344\" x2=\"141\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"153\" y1=\"344\" x2=\"153\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"164\" y1=\"344\" x2=\"164\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"176\" y1=\"344\" x2=\"176\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"188\" y1=\"344\" x2=\"188\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"199\" y1=\"344\" x2=\"199\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"211\" y1=\"344\" x2=\"211\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"223\" y1=\"344\" x2=\"223\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"235\" y1=\"344\" x2=\"235\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"246\" y1=\"344\" x2=\"246\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"258\" y1=\"344\" x2=\"258\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"270\" y1=\"344\" x2=\"270\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"282\" y1=\"344\" x2=\"282\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"293\" y1=\"344\" x2=\"293\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"305\" y1=\"344\" x2=\"305\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"317\" y1=\"344\" x2=\"317\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"329\" y1=\"344\" x2=\"329\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"340\" y1=\"344\" x2=\"340\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"352\" y1=\"344\" x2=\"352\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"364\" y1=\"344\" x2=\"364\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"375\" y1=\"344\" x2=\"375\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"387\" y1=\"344\" x2=\"387\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"399\" y1=\"344\" x2=\"399\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"411\" y1=\"344\" x2=\"411\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"422\" y1=\"344\" x2=\"422\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"434\" y1=\"344\" x2=\"434\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"446\" y1=\"344\" x2=\"446\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"458\" y1=\"344\" x2=\"458\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"469\" y1=\"344\" x2=\"469\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"481\" y1=\"344\" x2=\"481\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"493\" y1=\"344\" x2=\"493\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"505\" y1=\"344\" x2=\"505\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"516\" y1=\"344\" x2=\"516\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"528\" y1=\"344\" x2=\"528\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"540\" y1=\"344\" x2=\"540\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"551\" y1=\"344\" x2=\"551\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"563\" y1=\"344\" x2=\"563\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"575\" y1=\"344\" x2=\"575\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"587\" y1=\"344\" x2=\"587\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"598\" y1=\"344\" x2=\"598\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"610\" y1=\"344\" x2=\"610\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"622\" y1=\"344\" x2=\"622\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"634\" y1=\"344\" x2=\"634\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"645\" y1=\"344\" x2=\"645\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"657\" y1=\"344\" x2=\"657\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"669\" y1=\"344\" x2=\"669\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"681\" y1=\"344\" x2=\"681\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"692\" y1=\"344\" x2=\"692\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"704\" y1=\"344\" x2=\"704\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"716\" y1=\"344\" x2=\"716\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"727\" y1=\"344\" x2=\"727\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"739\" y1=\"344\" x2=\"739\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"751\" y1=\"344\" x2=\"751\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"763\" y1=\"344\" x2=\"763\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"344\" x2=\"769\" y2=\"344\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"340\" x2=\"769\" y2=\"340\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"335\" x2=\"769\" y2=\"335\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"330\" x2=\"769\" y2=\"330\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"326\" x2=\"769\" y2=\"326\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"321\" x2=\"769\" y2=\"321\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"316\" x2=\"769\" y2=\"316\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"312\" x2=\"769\" y2=\"312\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"307\" x2=\"769\" y2=\"307\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"302\" x2=\"769\" y2=\"302\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"298\" x2=\"769\" y2=\"298\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"293\" x2=\"769\" y2=\"293\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"288\" x2=\"769\" y2=\"288\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"284\" x2=\"769\" y2=\"284\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"279\" x2=\"769\" y2=\"279\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"274\" x2=\"769\" y2=\"274\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"270\" x2=\"769\" y2=\"270\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"265\" x2=\"769\" y2=\"265\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"260\" x2=\"769\" y2=\"260\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"256\" x2=\"769\" y2=\"256\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"251\" x2=\"769\" y2=\"251\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"246\" x2=\"769\" y2=\"246\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"242\" x2=\"769\" y2=\"242\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"237\" x2=\"769\" y2=\"237\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"232\" x2=\"769\" y2=\"232\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"228\" x2=\"769\" y2=\"228\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"223\" x2=\"769\" y2=\"223\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"218\" x2=\"769\" y2=\"218\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"213\" x2=\"769\" y2=\"213\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"209\" x2=\"769\" y2=\"209\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"204\" x2=\"769\" y2=\"204\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"199\" x2=\"769\" y2=\"199\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"195\" x2=\"769\" y2=\"195\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"190\" x2=\"769\" y2=\"190\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"185\" x2=\"769\" y2=\"185\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"181\" x2=\"769\" y2=\"181\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"176\" x2=\"769\" y2=\"176\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"171\" x2=\"769\" y2=\"171\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"167\" x2=\"769\" y2=\"167\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"162\" x2=\"769\" y2=\"162\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"157\" x2=\"769\" y2=\"157\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"153\" x2=\"769\" y2=\"153\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"148\" x2=\"769\" y2=\"148\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"143\" x2=\"769\" y2=\"143\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"139\" x2=\"769\" y2=\"139\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"134\" x2=\"769\" y2=\"134\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"129\" x2=\"769\" y2=\"129\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"125\" x2=\"769\" y2=\"125\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"120\" x2=\"769\" y2=\"120\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"115\" x2=\"769\" y2=\"115\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"111\" x2=\"769\" y2=\"111\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"106\" x2=\"769\" y2=\"106\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"101\" x2=\"769\" y2=\"101\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"96\" x2=\"769\" y2=\"96\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"92\" x2=\"769\" y2=\"92\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"87\" x2=\"769\" y2=\"87\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"82\" x2=\"769\" y2=\"82\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"78\" x2=\"769\" y2=\"78\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"73\" x2=\"769\" y2=\"73\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"68\" x2=\"769\" y2=\"68\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"64\" x2=\"769\" y2=\"64\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"59\" x2=\"769\" y2=\"59\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"54\" x2=\"769\" y2=\"54\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"50\" x2=\"769\" y2=\"50\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"45\" x2=\"769\" y2=\"45\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"40\" x2=\"769\" y2=\"40\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"36\" x2=\"769\" y2=\"36\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"94\" y1=\"344\" x2=\"94\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"153\" y1=\"344\" x2=\"153\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"211\" y1=\"344\" x2=\"211\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"270\" y1=\"344\" x2=\"270\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"329\" y1=\"344\" x2=\"329\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"387\" y1=\"344\" x2=\"387\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"446\" y1=\"344\" x2=\"446\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"505\" y1=\"344\" x2=\"505\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"563\" y1=\"344\" x2=\"563\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"622\" y1=\"344\" x2=\"622\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"681\" y1=\"344\" x2=\"681\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"739\" y1=\"344\" x2=\"739\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"344\" x2=\"769\" y2=\"344\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"298\" x2=\"769\" y2=\"298\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"251\" x2=\"769\" y2=\"251\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"204\" x2=\"769\" y2=\"204\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"157\" x2=\"769\" y2=\"157\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"111\" x2=\"769\" y2=\"111\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"64\" x2=\"769\" y2=\"64\"/>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"64,34 64,344 \"/>\n<text x=\"55\" y=\"344\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n0.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,344 64,344 \"/>\n<text x=\"55\" y=\"298\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n10.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,298 64,298 \"/>\n<text x=\"55\" y=\"251\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n20.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,251 64,251 \"/>\n<text x=\"55\" y=\"204\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n30.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,204 64,204 \"/>\n<text x=\"55\" y=\"157\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n40.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,157 64,157 \"/>\n<text x=\"55\" y=\"111\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n50.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,111 64,111 \"/>\n<text x=\"55\" y=\"64\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n60.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,64 64,64 \"/>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"65,345 769,345 \"/>\n<text x=\"94\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n2000/01\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"94,345 94,350 \"/>\n<text x=\"153\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n2002/03\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"153,345 153,350 \"/>\n<text x=\"211\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n2011/12\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"211,345 211,350 \"/>\n<text x=\"270\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n2006/07\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"270,345 270,350 \"/>\n<text x=\"329\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n2007/08\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"329,345 329,350 \"/>\n<text x=\"387\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n2013/14\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"387,345 387,350 \"/>\n<text x=\"446\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n2012/13\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"446,345 446,350 \"/>\n<text x=\"505\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n2023/24\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"505,345 505,350 \"/>\n<text x=\"563\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n2004/05\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"563,345 563,350 \"/>\n<text x=\"622\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n2005/06\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"622,345 622,350 \"/>\n<text x=\"681\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n2003/04\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"681,345 681,350 \"/>\n<text x=\"739\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n2008/09\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"739,345 739,350 \"/>\n<rect x=\"73\" y=\"75\" width=\"41\" height=\"269\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"132\" y=\"77\" width=\"41\" height=\"267\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"191\" y=\"77\" width=\"41\" height=\"267\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"249\" y=\"79\" width=\"41\" height=\"265\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"308\" y=\"79\" width=\"41\" height=\"265\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"367\" y=\"79\" width=\"41\" height=\"265\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"425\" y=\"81\" width=\"41\" height=\"263\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"484\" y=\"81\" width=\"41\" height=\"263\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"543\" y=\"81\" width=\"41\" height=\"263\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"601\" y=\"81\" width=\"41\" height=\"263\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"660\" y=\"82\" width=\"41\" height=\"262\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"719\" y=\"82\" width=\"41\" height=\"262\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n</svg>",
+            "text/plain": "Figure (SVG)"
+          },
+          "metadata": {}
+        }
+      ]
+    },
+    {
+      "id": "cf2839db-1897-4cd0-99b3-d100fc8de129",
       "cell_type": "markdown",
-      "source": "## Findings\n\n**Do more corners help you win? Barely — and less than almost any other\nstat we track.**\n\n1. **The gradient is the weakest of the attacking stats.** In the\n   Premier League, win rate climbs from 31.5% with under 35% of the\n   match's corners to 43.5% above 65% — a 12-point spread. Possession\n   spans 27 points on the same matches; shot share roughly 25. Across\n   *all* covered leagues the corner-share curve nearly flatlines\n   (35.5% → 38.2%), and the pooled correlation between home corner\n   share and home win is **−0.012 — effectively zero, even slightly\n   negative**.\n\n2. **Corner share is a worse match-level predictor than possession.**\n   Head-to-head on identical EPL matches: corner share ρ = 0.050,\n   possession ρ = 0.120, shot share ρ = 0.259, shots-on-target share\n   ρ = 0.400. Corners measure *who you are* far less well than they\n   measure *what happens today* — the opposite of the cliché.\n\n3. **But it is an excellent team-quality marker.** Correlating each\n   team's season-average corner share with its final points gives\n   ρ = 0.744 across 521 EPL team-seasons — stronger than possession's\n   0.704. Corner-heavy teams are good teams; corner-dominant *matches*\n   are barely more likely to be won.\n\n4. **The extremes cut both ways — and the losers are famous.** 22.1%\n   of EPL wins came with under 35% corner share (QPR won half their\n   matches that way; Burnley 45%). And 22.1% of losses came with over\n   65% — led by **Liverpool (45% of their losses)**, Manchester City\n   (38%) and Chelsea (37%): the possession-dominant sides get countered.\n\n5. **Context helps but doesn't rescue it.** Against weak opponents\n   corner share is nearly irrelevant (45–51% win rate across all\n   bands); against strong ones it separates somewhat (24% → 32%).\n   Away from home even a >65% corner share wins only 33.1% of the\n   time.\n\n6. **No dose-response at the top end.** The corner-differential table\n   is non-monotonic: +4 to +6 corners wins 50.2% of home matches, but\n   +12 to +14 wins just 38.8%. In the all-league table the biggest\n   differentials actually *underperform* (38.9% at +12 to +16 vs\n   45.7% at even). More corners ≠ more wins, and at the extreme it can\n   mean sterile pressure.\n\n7. **Corner volume itself is slowly declining.** Average corners per\n   team fell from ~5.5 in the early 2000s to ~5.0 in 2025/26 — modern\n   games produce fewer, and the yearly correlation between corner\n   differential and home wins wanders around zero with no trend.\n\n**Data caveats:** no event-level corner data exists, so corner-to-goal\nconversion and set-piece scoring are untestable here. The 2001/02\nseason shows an anomalous 29.4% average home corner share (vs ~55%\nelsewhere) — likely a partial data gap in that season's corner\ncounts, which also explains its low 4.3 corners/team. Corner totals\ninclude both open-play pressure and dead-ball recycling; we cannot\nseparate them.\n\n**Verdict:** corners are football's second-most quoted attacking stat\nafter possession — and an even weaker predictor of the single match.\nThey tell you which team is *better* (ρ = 0.74 at season level) but\nalmost nothing about which team will win *today* (ρ ≈ 0.05).",
+      "source": "## Discussion\n\n**Do more corners help you win? Barely — and less than almost any other\nstat we track.**\n\n1. **The gradient is the weakest of the attacking stats.** In the\n   Premier League, win rate climbs from 31.5% with under 35% of the\n   match's corners to 43.5% above 65% — a 12-point spread. Possession\n   spans 27 points on the same matches; shot share roughly 25. Across\n   *all* covered leagues the corner-share curve nearly flatlines\n   (35.5% → 38.2%), and the pooled correlation between home corner\n   share and home win is **−0.012 — effectively zero, even slightly\n   negative**.\n\n2. **Corner share is a worse match-level predictor than possession.**\n   Head-to-head on identical EPL matches: corner share ρ = 0.050,\n   possession ρ = 0.120, shot share ρ = 0.259, shots-on-target share\n   ρ = 0.400. Corners measure *who you are* far less well than they\n   measure *what happens today* — the opposite of the cliché.\n\n3. **But it is an excellent team-quality marker.** Correlating each\n   team's season-average corner share with its final points gives\n   ρ = 0.744 across 521 EPL team-seasons — stronger than possession's\n   0.704. Corner-heavy teams are good teams; corner-dominant *matches*\n   are barely more likely to be won.\n\n4. **The extremes cut both ways — and the losers are famous.** 22.1%\n   of EPL wins came with under 35% corner share (QPR won half their\n   matches that way; Burnley 45%). And 22.1% of losses came with over\n   65% — led by **Liverpool (45% of their losses)**, Manchester City\n   (38%) and Chelsea (37%): the possession-dominant sides get countered.\n\n5. **Context helps but doesn't rescue it.** Against weak opponents\n   corner share is nearly irrelevant (45–51% win rate across all\n   bands); against strong ones it separates somewhat (24% → 32%).\n   Away from home even a >65% corner share wins only 33.1% of the\n   time.\n\n6. **No dose-response at the top end.** The corner-differential table\n   is non-monotonic: +4 to +6 corners wins 50.2% of home matches, but\n   +12 to +14 wins just 38.8%. In the all-league table the biggest\n   differentials actually *underperform* (38.9% at +12 to +16 vs\n   45.7% at even). More corners ≠ more wins, and at the extreme it can\n   mean sterile pressure.\n\n7. **Corner volume itself is slowly declining.** Average corners per\n   team fell from ~5.5 in the early 2000s to ~5.0 in 2025/26 — modern\n   games produce fewer, and the yearly correlation between corner\n   differential and home wins wanders around zero with no trend.\n\n**Data caveats:** no event-level corner data exists, so corner-to-goal\nconversion and set-piece scoring are untestable here. The 2001/02\nseason shows an anomalous 29.4% average home corner share (vs ~55%\nelsewhere) — likely a partial data gap in that season's corner\ncounts, which also explains its low 4.3 corners/team. Corner totals\ninclude both open-play pressure and dead-ball recycling; we cannot\nseparate them.\n\n**Verdict:** corners are football's second-most quoted attacking stat\nafter possession — and an even weaker predictor of the single match.\nThey tell you which team is *better* (ρ = 0.74 at season level) but\nalmost nothing about which team will win *today* (ρ ≈ 0.05).\n\n**Limitations.** The analysis is limited to the competitions present in the database; player-level metrics exist only for StatsBomb-covered tournaments, and underlying event data may contain errors.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "dd9de6d4-3fb2-4a1e-b4f7-6a6718f12c14",
+      "cell_type": "markdown",
+      "source": "## Conclusion\n\nThe gradient is the weakest of the attacking stats. Together these results answer the research question posed in the Introduction and quantify the pattern across hundreds of thousands of matches. The notebook provides a fully reproducible pipeline from raw CSV extracts to published figures.\n",
       "metadata": {},
       "outputs": []
     }

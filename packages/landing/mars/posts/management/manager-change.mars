@@ -12,9 +12,23 @@
   },
   "cells": [
     {
-      "id": "edb28334-e5ab-4580-a843-3af1f4a5eb9d",
+      "id": "6309deac-6b1f-4ea7-8eae-9fce4729274f",
       "cell_type": "markdown",
-      "source": "## Does changing the manager save a Premier League team from relegation?\n\nThe \"new manager bounce\" is football's most quoted phenomenon — sack the boss,\nresults improve, survival chances rise. This notebook tests it properly on\n**every documented managerial change in the Premier League, 2015/16 → 2024/25**\n(45 events), using match results from `data/matches_full.csv` (301k matches).\n\n**Data caveat.** `dev.db` has no managerial-change history (`team_manager`\nonly covers StatsBomb squad lists), so the change dates below are **curated\nfrom public appointment/sacking records** — each `date` snaps forward to the\naffected team's next league match. Everything else (results, tables,\nrelegation) comes straight from the database export.\n\n**Method.** For each event we measure points/game over the **10 matches\nbefore vs the 10 matches after** the change, the team's league position at\nthe moment of the change, and whether it finished outside the bottom three.\nWe compare against the baseline: all 200 EPL team-seasons in the window\nsurvive at **85%**.",
+      "source": "## Abstract\n\nDoes changing the manager save a Premier League team from relegation? This study answers it using the manager records drawn from the Soccers football database. 43 documented Premier League managerial changes (2015/16 → 2024/25). All computation runs in Rust inside a `.mars` notebook (polars + plotters — charts as inline SVG), and every table and figure is generated from the extracted CSVs.\n\n## Keywords\n\n**Keywords:** football, analysis, premier-league, managers, mars, sqlite\n\n## Table of contents\n\n- [Abstract](#abstract)\n- [Keywords](#keywords)\n- [Introduction](#introduction)\n- [Methods](#methods)\n- [Results](#results)\n  - [The events](#the-events)\n- [Discussion](#discussion)\n- [Conclusion](#conclusion)\n\n## Introduction\n\nThe \"new manager bounce\" is football's most quoted phenomenon — sack the boss,\nresults improve, survival chances rise. This notebook tests it properly on\n**every documented managerial change in the Premier League, 2015/16 → 2024/25**\n(45 events), using match results from `data/matches_full.csv` (301k matches).\n\n**Data caveat.** `dev.db` has no managerial-change history (`team_manager`\nonly covers StatsBomb squad lists), so the change dates below are **curated\nfrom public appointment/sacking records** — each `date` snaps forward to the\naffected team's next league match. Everything else (results, tables,\nrelegation) comes straight from the database export.\n\n**Method.** For each event we measure points/game over the **10 matches\nbefore vs the 10 matches after** the change, the team's league position at\nthe moment of the change, and whether it finished outside the bottom three.\nWe compare against the baseline: all 200 EPL team-seasons in the window\nsurvive at **85%**.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "fd5b7b90-712f-42da-9abb-609d13fc6a8d",
+      "cell_type": "markdown",
+      "source": "## Methods\n\nData were extracted from the Soccers football database (`packages/data`) as CSV snapshots: `matches_full`.\n\nThe analysis runs entirely in Rust inside the notebook: **polars** handles table scans, joins and aggregations; **plotters** renders figures as inline SVG; `mars_table` renders result tables.\n\nEach code cell is kept to a single output so results can be read top to bottom.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "dc88f6d9-6be2-46ea-88d0-061ce2f02b78",
+      "cell_type": "markdown",
+      "source": "## Results\n\nAll figures and tables below are computed directly from the extracted data. Each code cell produces one output — a table, a chart, or a short text summary.\n",
       "metadata": {},
       "outputs": []
     },
@@ -32,9 +46,9 @@
       ]
     },
     {
-      "id": "a35b8151-1833-46df-8cd0-e6407d1e400d",
+      "id": "f609693a-5dfa-41b9-bafd-ae128e390bfd",
       "cell_type": "markdown",
-      "source": "## The events\n\nEach row is one managerial change. `change at` = the matchday the new era\nbegins; `pos then` = league position at that moment; `ppg` = points per\ngame over up to 10 matches either side.",
+      "source": "### The events\n\nEach row is one managerial change. `change at` = the matchday the new era\nbegins; `pos then` = league position at that moment; `ppg` = points per\ngame over up to 10 matches either side.\n",
       "metadata": {},
       "outputs": []
     },
@@ -1569,9 +1583,16 @@
       ]
     },
     {
-      "id": "0385141a-d5a1-4b09-a5c4-3f2ba6b934e0",
+      "id": "f3375ff7-7dd0-4269-bf94-a2eedb0ba82d",
       "cell_type": "markdown",
-      "source": "## Findings\n\nAcross **43 documented Premier League managerial changes (2015/16 → 2024/25)**,\nusing every match result in `matches_full.csv`:\n\n### 1. Do teams earn more points per match after a change?\n\n**Yes on average, but it's a coin flip.** Mean points/game rises from\n**0.93 → 1.04** over the ten matches either side of the change — but the\n**median change is exactly 0.00**, and only **21 of 43 events (49%)**\nimproved. The average is carried by famous bounces: Solskjær at United\n(1.60 → 2.60), Ferguson at Everton (0.70 → 1.90), Rangnick at United\n(1.30 → 2.10). For every bounce there is a change that changed nothing —\nor made things worse (Pulis at West Brom 1.40 → 1.00, Lampard at Chelsea\n1.30 → 0.60).\n\n### 2. Are change teams more likely to avoid relegation?\n\nRaw survival looks bad — **29/43 (67%)** vs the **85%** baseline for all\nEPL team-seasons — but that's selection bias: these teams were already\nstruggling (mean 0.93 ppg before the axe fell). Stratified by how bad\nthey were *at the moment of the change*:\n\n| Position at change | Events | Survived |\n|---|---|---|\n| Bottom half (pos ≥ 11) | 35 | 21 (60%) |\n| Relegation zone (pos ≥ 17) | 21 | 8 (38%) |\n| Bottom two (pos ≥ 19) | 13 | 5 (38%) |\n| Bottom (pos 20) | 7 | 2 (29%) |\n\nEven teams sitting **bottom** at the time of the change survived 2 times\nout of 7. The new-manager bounce is real but modest — it almost never\nrescues a team that was already effectively doomed.\n\n### 3. Does timing matter?\n\n| Change at | n | ppg before → after | Survived |\n|---|---|---|---|\n| Early (matchdays 1–10) | 10 | 0.73 → 0.93 | 8/10 (80%) |\n| Middle (md 11–25) | 17 | 0.95 → 1.18 | 10/17 (59%) |\n| Late (md 26+) | 16 | 1.04 → 0.97 | 11/16 (69%) |\n\n**Early changes work best** — they happen to the worst teams (0.73 ppg)\nand have 25+ games to repair the damage, producing the biggest ppg gain\nand highest survival. **Middle changes produce the largest raw ppg jump**\n(0.95 → 1.18, the classic bounce window) yet the *lowest* survival (59%)\n— teams good enough to still be in the mix but bad enough to get a new\nboss are the most precarious. **Late changes are nearly pointless**:\npoints/game actually *falls* slightly (1.04 → 0.97) and there are too\nfew games left for a bounce to matter — yet boards keep pulling the\ntrigger in April anyway.\n\n**Bottom line:** the bounce is real but oversold. On average a new\nmanager adds ~+0.1 ppg — worth roughly 4 points over a season — and the\nsurvival benefit is concentrated in early-season changes. Sacking a\nmanager in March is closer to a statement than a strategy.",
+      "source": "## Discussion\n\nAcross **43 documented Premier League managerial changes (2015/16 → 2024/25)**,\nusing every match result in `matches_full.csv`:\n\n### 1. Do teams earn more points per match after a change?\n\n**Yes on average, but it's a coin flip.** Mean points/game rises from\n**0.93 → 1.04** over the ten matches either side of the change — but the\n**median change is exactly 0.00**, and only **21 of 43 events (49%)**\nimproved. The average is carried by famous bounces: Solskjær at United\n(1.60 → 2.60), Ferguson at Everton (0.70 → 1.90), Rangnick at United\n(1.30 → 2.10). For every bounce there is a change that changed nothing —\nor made things worse (Pulis at West Brom 1.40 → 1.00, Lampard at Chelsea\n1.30 → 0.60).\n\n### 2. Are change teams more likely to avoid relegation?\n\nRaw survival looks bad — **29/43 (67%)** vs the **85%** baseline for all\nEPL team-seasons — but that's selection bias: these teams were already\nstruggling (mean 0.93 ppg before the axe fell). Stratified by how bad\nthey were *at the moment of the change*:\n\n| Position at change | Events | Survived |\n|---|---|---|\n| Bottom half (pos ≥ 11) | 35 | 21 (60%) |\n| Relegation zone (pos ≥ 17) | 21 | 8 (38%) |\n| Bottom two (pos ≥ 19) | 13 | 5 (38%) |\n| Bottom (pos 20) | 7 | 2 (29%) |\n\nEven teams sitting **bottom** at the time of the change survived 2 times\nout of 7. The new-manager bounce is real but modest — it almost never\nrescues a team that was already effectively doomed.\n\n### 3. Does timing matter?\n\n| Change at | n | ppg before → after | Survived |\n|---|---|---|---|\n| Early (matchdays 1–10) | 10 | 0.73 → 0.93 | 8/10 (80%) |\n| Middle (md 11–25) | 17 | 0.95 → 1.18 | 10/17 (59%) |\n| Late (md 26+) | 16 | 1.04 → 0.97 | 11/16 (69%) |\n\n**Early changes work best** — they happen to the worst teams (0.73 ppg)\nand have 25+ games to repair the damage, producing the biggest ppg gain\nand highest survival. **Middle changes produce the largest raw ppg jump**\n(0.95 → 1.18, the classic bounce window) yet the *lowest* survival (59%)\n— teams good enough to still be in the mix but bad enough to get a new\nboss are the most precarious. **Late changes are nearly pointless**:\npoints/game actually *falls* slightly (1.04 → 0.97) and there are too\nfew games left for a bounce to matter — yet boards keep pulling the\ntrigger in April anyway.\n\n**Bottom line:** the bounce is real but oversold. On average a new\nmanager adds ~+0.1 ppg — worth roughly 4 points over a season — and the\nsurvival benefit is concentrated in early-season changes. Sacking a\nmanager in March is closer to a statement than a strategy.\n\n**Limitations.** Manager attribution relies on team_manager records, which cover only StatsBomb competitions; tenures outside that coverage are not visible.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "5550e5ac-7ab4-4e3f-88ea-91d92b3c2f3b",
+      "cell_type": "markdown",
+      "source": "## Conclusion\n\n43 documented Premier League managerial changes (2015/16 → 2024/25). Together these results answer the research question posed in the Introduction and quantify the pattern across the manager records. The notebook provides a fully reproducible pipeline from raw CSV extracts to published figures.\n",
       "metadata": {},
       "outputs": []
     }

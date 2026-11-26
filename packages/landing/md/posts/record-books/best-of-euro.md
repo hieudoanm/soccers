@@ -10,7 +10,36 @@ tags: ['football', 'analysis', 'records', 'euro', 'mars', 'sqlite']
 
 # Best of the UEFA European Championship: a record book
 
-## Best of the UEFA European Championship
+## Abstract
+
+This study examines the UEFA European Championship record book using the full
+match archive drawn from the Soccers football database. Italy 2020 was the
+defensively stingiest champion. All computation runs in Rust inside a `.mars`
+notebook (polars + plotters — charts as inline SVG), and every table and figure
+is generated from the extracted CSVs.
+
+## Keywords
+
+**Keywords:** football, analysis, records, euro, mars, sqlite
+
+## Table of contents
+
+- [Abstract](#abstract)
+- [Keywords](#keywords)
+- [Introduction](#introduction)
+- [Methods](#methods)
+- [Results](#results)
+  - [Tournament editions](#tournament-editions)
+  - [Every edition — champion, final score, champion's tournament record](#every-edition--champion-final-score-champions-tournament-record)
+  - [Records across all editions](#records-across-all-editions)
+  - [Champion records: most goals for, fewest against, best GD, most wins](#champion-records-most-goals-for-fewest-against-best-gd-most-wins)
+  - [Unbeaten champions](#unbeaten-champions)
+  - [Closest finals (smallest margin or draw)](#closest-finals-smallest-margin-or-draw)
+  - [Top scorers (latest edition with player data — SCORERS picks best-covered year)](#top-scorers-latest-edition-with-player-data--scorers-picks-best-covered-year)
+- [Discussion](#discussion)
+- [Conclusion](#conclusion)
+
+## Introduction
 
 A record book of the **UEFA European Championship** — international tournament
 champions, finals and records computed from `data/matches_full.csv`.
@@ -22,6 +51,22 @@ champion's full tournament record, biggest wins, highest-scoring matches,
 champion records (most goals, fewest conceded, best goal difference, most wins,
 fewest losses), unbeaten champions, the closest finals, and top scorers where
 player-level data exists.
+
+## Methods
+
+Data were extracted from the Soccers football database (`packages/data`) as CSV
+snapshots: `matches_full`, `player_goals`.
+
+The analysis runs entirely in Rust inside the notebook: **polars** handles table
+scans, joins and aggregations; **plotters** renders figures as inline SVG;
+`mars_table` renders result tables.
+
+Each code cell is kept to a single output so results can be read top to bottom.
+
+## Results
+
+All figures and tables below are computed directly from the extracted data. Each
+code cell produces one output — a table, a chart, or a short text summary.
 
 ```rust
 use polars::prelude::*;
@@ -319,8 +364,9 @@ match best_year {
 
 ```text
 top scorers available for season year 2020 (StatsBomb coverage)
-()
 ```
+
+### Tournament editions
 
 ```rust
 // ---- tournament editions ----
@@ -419,6 +465,8 @@ editions: 2
 | Italy  | 1      | 2020        |
 | Spain  | 1      | 2024        |
 
+### Every edition — champion, final score, champion's tournament record
+
 ```rust
 // T2: every edition — champion, final score, champion's tournament record
 let mut ed_rows: Vec<Vec<String>> = Vec::new();
@@ -451,6 +499,8 @@ mars_table(&["edition", "champion", "final", "tournament record", "gf/ga"], &ed_
 | ------- | -------- | ---------- | ----------------- | ----- |
 | 2020    | Italy    | 1-1 (pens) | 5W 2D 0L          | 13/4  |
 | 2024    | Spain    | 2-1        | 7W 0D 0L          | 15/4  |
+
+### Records across all editions
 
 ```rust
 // T3: records across all editions
@@ -500,6 +550,8 @@ mars_table(&["highest-scoring", "score", "total goals"], &score_rows);
 | Slovakia vs Spain (2020)      | 0-5   | 5           |
 | Sweden vs Poland (2020)       | 3-2   | 5           |
 
+### Champion records: most goals for, fewest against, best GD, most wins
+
 ```rust
 // champion records: most goals for, fewest against, best GD, most wins
 let mut champ_stats: Vec<(String, String, i64, i64, i64, i64, i64)> = Vec::new(); // season, champ, gf, ga, w, d, l
@@ -537,6 +589,8 @@ mars_table(&["record", "champion edition", "record", "gf/ga", "gd"], &rec_rows);
 | most wins             | Spain 2024       | 7W 0D 0L | 15/4  | 11  |
 | fewest losses         | Italy 2020       | 5W 2D 0L | 13/4  | 9   |
 
+### Unbeaten champions
+
 ```rust
 // unbeaten champions
 let unbeaten: Vec<&(String, String, i64, i64, i64, i64, i64)> = champ_stats.iter().filter(|c| c.6 == 0 && c.4 + c.5 >= 3).collect();
@@ -550,6 +604,8 @@ mars_table(&["unbeaten champions", "record", "gf", "ga"], &unb_rows);
 | ------------------ | ------ | --- | --- |
 | Italy 2020         | 5W 2D  | 13  | 4   |
 | Spain 2024         | 7W 0D  | 15  | 4   |
+
+### Closest finals (smallest margin or draw)
 
 ```rust
 println!("unbeaten champions: {}", unbeaten.len());
@@ -572,6 +628,8 @@ unbeaten champions: 2
 | 2020           | Italy vs England (pens) | 1-1   |
 | 2024           | Spain vs England        | 2-1   |
 
+### Top scorers (latest edition with player data — SCORERS picks best-covered year)
+
 ```rust
 // T4: top scorers (latest edition with player data — SCORERS picks best-covered year)
 if !scorer_table.is_empty() {
@@ -580,7 +638,7 @@ if !scorer_table.is_empty() {
 ```
 
 ```text
-()
+
 ```
 
 | player                              | goals |
@@ -659,7 +717,7 @@ figure2.evcxr_display();
 
 ![Notebook output](data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNzYwIiBoZWlnaHQ9IjQwMCIgdmlld0JveD0iMCAwIDc2MCA0MDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHg9IjAiIHk9IjAiIHdpZHRoPSI3NjAiIGhlaWdodD0iNDAwIiBvcGFjaXR5PSIxIiBmaWxsPSIjRkZGRkZGIiBzdHJva2U9Im5vbmUiLz4KPHRleHQgeD0iMzgwIiB5PSIxNSIgZHk9IjAuNzZlbSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTQuNTE2MTI5MDMyMjU4MDY0IiBvcGFjaXR5PSIxIiBmaWxsPSIjMDAwMDAwIj4KQ2hhbXBpb24mYXBvcztzIGdvYWwgZGlmZmVyZW5jZSBwZXIgZWRpdGlvbgo8L3RleHQ+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI1NSIgeTE9IjM1OSIgeDI9Ijc0OSIgeTI9IjM1OSIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNTUiIHkxPSIzNTQiIHgyPSI3NDkiIHkyPSIzNTQiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjU1IiB5MT0iMzQ5IiB4Mj0iNzQ5IiB5Mj0iMzQ5Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI1NSIgeTE9IjM0MyIgeDI9Ijc0OSIgeTI9IjM0MyIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNTUiIHkxPSIzMzgiIHgyPSI3NDkiIHkyPSIzMzgiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjU1IiB5MT0iMzMzIiB4Mj0iNzQ5IiB5Mj0iMzMzIi8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI1NSIgeTE9IjMyNyIgeDI9Ijc0OSIgeTI9IjMyNyIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNTUiIHkxPSIzMjIiIHgyPSI3NDkiIHkyPSIzMjIiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjU1IiB5MT0iMzE3IiB4Mj0iNzQ5IiB5Mj0iMzE3Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI1NSIgeTE9IjMxMSIgeDI9Ijc0OSIgeTI9IjMxMSIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNTUiIHkxPSIzMDYiIHgyPSI3NDkiIHkyPSIzMDYiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjU1IiB5MT0iMzAwIiB4Mj0iNzQ5IiB5Mj0iMzAwIi8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI1NSIgeTE9IjI5NSIgeDI9Ijc0OSIgeTI9IjI5NSIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNTUiIHkxPSIyOTAiIHgyPSI3NDkiIHkyPSIyOTAiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjU1IiB5MT0iMjg0IiB4Mj0iNzQ5IiB5Mj0iMjg0Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI1NSIgeTE9IjI3OSIgeDI9Ijc0OSIgeTI9IjI3OSIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNTUiIHkxPSIyNzQiIHgyPSI3NDkiIHkyPSIyNzQiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjU1IiB5MT0iMjY4IiB4Mj0iNzQ5IiB5Mj0iMjY4Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI1NSIgeTE9IjI2MyIgeDI9Ijc0OSIgeTI9IjI2MyIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNTUiIHkxPSIyNTciIHgyPSI3NDkiIHkyPSIyNTciLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjU1IiB5MT0iMjUyIiB4Mj0iNzQ5IiB5Mj0iMjUyIi8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI1NSIgeTE9IjI0NyIgeDI9Ijc0OSIgeTI9IjI0NyIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNTUiIHkxPSIyNDEiIHgyPSI3NDkiIHkyPSIyNDEiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjU1IiB5MT0iMjM2IiB4Mj0iNzQ5IiB5Mj0iMjM2Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI1NSIgeTE9IjIzMSIgeDI9Ijc0OSIgeTI9IjIzMSIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNTUiIHkxPSIyMjUiIHgyPSI3NDkiIHkyPSIyMjUiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjU1IiB5MT0iMjIwIiB4Mj0iNzQ5IiB5Mj0iMjIwIi8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI1NSIgeTE9IjIxNCIgeDI9Ijc0OSIgeTI9IjIxNCIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNTUiIHkxPSIyMDkiIHgyPSI3NDkiIHkyPSIyMDkiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjU1IiB5MT0iMjA0IiB4Mj0iNzQ5IiB5Mj0iMjA0Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI1NSIgeTE9IjE5OCIgeDI9Ijc0OSIgeTI9IjE5OCIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNTUiIHkxPSIxOTMiIHgyPSI3NDkiIHkyPSIxOTMiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjU1IiB5MT0iMTg4IiB4Mj0iNzQ5IiB5Mj0iMTg4Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI1NSIgeTE9IjE4MiIgeDI9Ijc0OSIgeTI9IjE4MiIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNTUiIHkxPSIxNzciIHgyPSI3NDkiIHkyPSIxNzciLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjU1IiB5MT0iMTcxIiB4Mj0iNzQ5IiB5Mj0iMTcxIi8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI1NSIgeTE9IjE2NiIgeDI9Ijc0OSIgeTI9IjE2NiIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNTUiIHkxPSIxNjEiIHgyPSI3NDkiIHkyPSIxNjEiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjU1IiB5MT0iMTU1IiB4Mj0iNzQ5IiB5Mj0iMTU1Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI1NSIgeTE9IjE1MCIgeDI9Ijc0OSIgeTI9IjE1MCIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNTUiIHkxPSIxNDUiIHgyPSI3NDkiIHkyPSIxNDUiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjU1IiB5MT0iMTM5IiB4Mj0iNzQ5IiB5Mj0iMTM5Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI1NSIgeTE9IjEzNCIgeDI9Ijc0OSIgeTI9IjEzNCIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNTUiIHkxPSIxMjkiIHgyPSI3NDkiIHkyPSIxMjkiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjU1IiB5MT0iMTIzIiB4Mj0iNzQ5IiB5Mj0iMTIzIi8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI1NSIgeTE9IjExOCIgeDI9Ijc0OSIgeTI9IjExOCIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNTUiIHkxPSIxMTIiIHgyPSI3NDkiIHkyPSIxMTIiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjU1IiB5MT0iMTA3IiB4Mj0iNzQ5IiB5Mj0iMTA3Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI1NSIgeTE9IjEwMiIgeDI9Ijc0OSIgeTI9IjEwMiIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNTUiIHkxPSI5NiIgeDI9Ijc0OSIgeTI9Ijk2Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI1NSIgeTE9IjkxIiB4Mj0iNzQ5IiB5Mj0iOTEiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjU1IiB5MT0iODYiIHgyPSI3NDkiIHkyPSI4NiIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNTUiIHkxPSI4MCIgeDI9Ijc0OSIgeTI9IjgwIi8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI1NSIgeTE9Ijc1IiB4Mj0iNzQ5IiB5Mj0iNzUiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjU1IiB5MT0iNjkiIHgyPSI3NDkiIHkyPSI2OSIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNTUiIHkxPSI2NCIgeDI9Ijc0OSIgeTI9IjY0Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI1NSIgeTE9IjU5IiB4Mj0iNzQ5IiB5Mj0iNTkiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjU1IiB5MT0iNTMiIHgyPSI3NDkiIHkyPSI1MyIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNTUiIHkxPSI0OCIgeDI9Ijc0OSIgeTI9IjQ4Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI1NSIgeTE9IjQzIiB4Mj0iNzQ5IiB5Mj0iNDMiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjU1IiB5MT0iMzciIHgyPSI3NDkiIHkyPSIzNyIvPgo8dGV4dCB4PSIxMCIgeT0iMTk3IiBkeT0iMC43NmVtIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSI5LjY3NzQxOTM1NDgzODcxIiBvcGFjaXR5PSIxIiBmaWxsPSIjMDAwMDAwIiB0cmFuc2Zvcm09InJvdGF0ZSgyNzAsIDEwLCAxOTcpIj4KZ29hbCBkaWZmCjwvdGV4dD4KPGxpbmUgb3BhY2l0eT0iMC4yIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjU1IiB5MT0iMzU5IiB4Mj0iNzQ5IiB5Mj0iMzU5Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMiIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI1NSIgeTE9IjMwNiIgeDI9Ijc0OSIgeTI9IjMwNiIvPgo8bGluZSBvcGFjaXR5PSIwLjIiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNTUiIHkxPSIyNTIiIHgyPSI3NDkiIHkyPSIyNTIiLz4KPGxpbmUgb3BhY2l0eT0iMC4yIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjU1IiB5MT0iMTk4IiB4Mj0iNzQ5IiB5Mj0iMTk4Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMiIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI1NSIgeTE9IjE0NSIgeDI9Ijc0OSIgeTI9IjE0NSIvPgo8bGluZSBvcGFjaXR5PSIwLjIiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNTUiIHkxPSI5MSIgeDI9Ijc0OSIgeTI9IjkxIi8+CjxsaW5lIG9wYWNpdHk9IjAuMiIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI1NSIgeTE9IjM3IiB4Mj0iNzQ5IiB5Mj0iMzciLz4KPHBvbHlsaW5lIGZpbGw9Im5vbmUiIG9wYWNpdHk9IjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiBwb2ludHM9IjU0LDM0IDU0LDM1OSAiLz4KPHRleHQgeD0iNDUiIHk9IjM1OSIgZHk9IjAuNWV4IiB0ZXh0LWFuY2hvcj0iZW5kIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSI5LjY3NzQxOTM1NDgzODcxIiBvcGFjaXR5PSIxIiBmaWxsPSIjMDAwMDAwIj4KMC4wCjwvdGV4dD4KPHBvbHlsaW5lIGZpbGw9Im5vbmUiIG9wYWNpdHk9IjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiBwb2ludHM9IjQ5LDM1OSA1NCwzNTkgIi8+Cjx0ZXh0IHg9IjQ1IiB5PSIzMDYiIGR5PSIwLjVleCIgdGV4dC1hbmNob3I9ImVuZCIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iOS42Nzc0MTkzNTQ4Mzg3MSIgb3BhY2l0eT0iMSIgZmlsbD0iIzAwMDAwMCI+CjIuMAo8L3RleHQ+Cjxwb2x5bGluZSBmaWxsPSJub25lIiBvcGFjaXR5PSIxIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgcG9pbnRzPSI0OSwzMDYgNTQsMzA2ICIvPgo8dGV4dCB4PSI0NSIgeT0iMjUyIiBkeT0iMC41ZXgiIHRleHQtYW5jaG9yPSJlbmQiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjkuNjc3NDE5MzU0ODM4NzEiIG9wYWNpdHk9IjEiIGZpbGw9IiMwMDAwMDAiPgo0LjAKPC90ZXh0Pgo8cG9seWxpbmUgZmlsbD0ibm9uZSIgb3BhY2l0eT0iMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHBvaW50cz0iNDksMjUyIDU0LDI1MiAiLz4KPHRleHQgeD0iNDUiIHk9IjE5OCIgZHk9IjAuNWV4IiB0ZXh0LWFuY2hvcj0iZW5kIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSI5LjY3NzQxOTM1NDgzODcxIiBvcGFjaXR5PSIxIiBmaWxsPSIjMDAwMDAwIj4KNi4wCjwvdGV4dD4KPHBvbHlsaW5lIGZpbGw9Im5vbmUiIG9wYWNpdHk9IjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiBwb2ludHM9IjQ5LDE5OCA1NCwxOTggIi8+Cjx0ZXh0IHg9IjQ1IiB5PSIxNDUiIGR5PSIwLjVleCIgdGV4dC1hbmNob3I9ImVuZCIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iOS42Nzc0MTkzNTQ4Mzg3MSIgb3BhY2l0eT0iMSIgZmlsbD0iIzAwMDAwMCI+CjguMAo8L3RleHQ+Cjxwb2x5bGluZSBmaWxsPSJub25lIiBvcGFjaXR5PSIxIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgcG9pbnRzPSI0OSwxNDUgNTQsMTQ1ICIvPgo8dGV4dCB4PSI0NSIgeT0iOTEiIGR5PSIwLjVleCIgdGV4dC1hbmNob3I9ImVuZCIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iOS42Nzc0MTkzNTQ4Mzg3MSIgb3BhY2l0eT0iMSIgZmlsbD0iIzAwMDAwMCI+CjEwLjAKPC90ZXh0Pgo8cG9seWxpbmUgZmlsbD0ibm9uZSIgb3BhY2l0eT0iMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHBvaW50cz0iNDksOTEgNTQsOTEgIi8+Cjx0ZXh0IHg9IjQ1IiB5PSIzNyIgZHk9IjAuNWV4IiB0ZXh0LWFuY2hvcj0iZW5kIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSI5LjY3NzQxOTM1NDgzODcxIiBvcGFjaXR5PSIxIiBmaWxsPSIjMDAwMDAwIj4KMTIuMAo8L3RleHQ+Cjxwb2x5bGluZSBmaWxsPSJub25lIiBvcGFjaXR5PSIxIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgcG9pbnRzPSI0OSwzNyA1NCwzNyAiLz4KPHBvbHlsaW5lIGZpbGw9Im5vbmUiIG9wYWNpdHk9IjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiBwb2ludHM9IjU1LDM2MCA3NDksMzYwICIvPgo8Y2lyY2xlIGN4PSIyMjgiIGN5PSIxMTgiIHI9IjMiIG9wYWNpdHk9IjEiIGZpbGw9IiMwMDAwRkYiIHN0cm9rZT0ibm9uZSIgc3Ryb2tlLXdpZHRoPSIxIi8+CjxjaXJjbGUgY3g9IjU3NSIgY3k9IjY0IiByPSIzIiBvcGFjaXR5PSIxIiBmaWxsPSIjMDAwMEZGIiBzdHJva2U9Im5vbmUiIHN0cm9rZS13aWR0aD0iMSIvPgo8cG9seWxpbmUgZmlsbD0ibm9uZSIgb3BhY2l0eT0iMSIgc3Ryb2tlPSIjMDAwMEZGIiBzdHJva2Utd2lkdGg9IjEiIHBvaW50cz0iMjI4LDExOCA1NzUsNjQgIi8+Cjwvc3ZnPg==)
 
-## What the record book says
+## Discussion
 
 Two full editions (2020, 2024) — every match covered, so this is a complete
 record book for the modern era.
@@ -679,3 +737,14 @@ record book for the modern era.
   every recorded champion went through without a defeat.
 
 *Source: StatsBomb open data via `dev.db`.
+
+**Limitations.** Records reflect only the matches present in the database;
+coverage varies by competition and era, so 'records' are archive records, not
+all-time official marks.
+
+## Conclusion
+
+Italy 2020 was the defensively stingiest champion. Together these results answer
+the research question posed in the Introduction and quantify the pattern across
+the full match archive. The notebook provides a fully reproducible pipeline from
+raw CSV extracts to published figures.

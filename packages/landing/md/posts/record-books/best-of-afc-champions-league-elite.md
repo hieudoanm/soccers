@@ -10,7 +10,36 @@ tags: ['football', 'analysis', 'records', 'mars', 'sqlite']
 
 # Best of the AFC Champions League Elite: a record book
 
-## Best of the AFC Champions League Elite
+## Abstract
+
+This study examines the AFC Champions League Elite record book using the full
+match archive drawn from the Soccers football database. Al Ahli 2024/25 was the
+most dominant season. All computation runs in Rust inside a `.mars` notebook
+(polars + plotters — charts as inline SVG), and every table and figure is
+generated from the extracted CSVs.
+
+## Keywords
+
+**Keywords:** football, analysis, records, mars, sqlite
+
+## Table of contents
+
+- [Abstract](#abstract)
+- [Keywords](#keywords)
+- [Introduction](#introduction)
+- [Methods](#methods)
+- [Results](#results)
+  - [Tournament editions](#tournament-editions)
+  - [Every edition — champion, final score, champion's tournament record](#every-edition--champion-final-score-champions-tournament-record)
+  - [Records across all editions](#records-across-all-editions)
+  - [Champion records: most goals for, fewest against, best GD, most wins](#champion-records-most-goals-for-fewest-against-best-gd-most-wins)
+  - [Unbeaten champions](#unbeaten-champions)
+  - [Closest finals (smallest margin or draw)](#closest-finals-smallest-margin-or-draw)
+  - [Top scorers (latest edition with player data — SCORERS picks best-covered year)](#top-scorers-latest-edition-with-player-data--scorers-picks-best-covered-year)
+- [Discussion](#discussion)
+- [Conclusion](#conclusion)
+
+## Introduction
 
 A record book of the **AFC Champions League Elite** — continental club
 competition champions, finals and records computed from `data/matches_full.csv`.
@@ -24,6 +53,22 @@ champion's full tournament record, biggest wins, highest-scoring matches,
 champion records (most goals, fewest conceded, best goal difference, most wins,
 fewest losses), unbeaten champions, the closest finals, and top scorers where
 player-level data exists.
+
+## Methods
+
+Data were extracted from the Soccers football database (`packages/data`) as CSV
+snapshots: `matches_full`, `player_goals`.
+
+The analysis runs entirely in Rust inside the notebook: **polars** handles table
+scans, joins and aggregations; **plotters** renders figures as inline SVG;
+`mars_table` renders result tables.
+
+Each code cell is kept to a single output so results can be read top to bottom.
+
+## Results
+
+All figures and tables below are computed directly from the extracted data. Each
+code cell produces one output — a table, a chart, or a short text summary.
 
 ```rust
 use polars::prelude::*;
@@ -332,8 +377,9 @@ match best_year {
 
 ```text
 no player-level scorer data for this competition
-()
 ```
+
+### Tournament editions
 
 ```rust
 // ---- tournament editions ----
@@ -431,6 +477,8 @@ editions: 2
 | ------- | ------ | -------------------- |
 | Al Ahli | 2      | 2025/2026, 2024/2025 |
 
+### Every edition — champion, final score, champion's tournament record
+
 ```rust
 // T2: every edition — champion, final score, champion's tournament record
 let mut ed_rows: Vec<Vec<String>> = Vec::new();
@@ -463,6 +511,8 @@ mars_table(&["edition", "champion", "final", "tournament record", "gf/ga"], &ed_
 | --------- | -------- | ----- | ----------------- | ----- |
 | 2024/2025 | Al Ahli  | 2-0   | 12W 1D 0L         | 34/10 |
 | 2025/2026 | Al Ahli  | 1-0   | 9W 2D 1L          | 27/11 |
+
+### Records across all editions
 
 ```rust
 // T3: records across all editions
@@ -512,6 +562,8 @@ mars_table(&["highest-scoring", "score", "total goals"], &score_rows);
 | Al Ittihad vs Al-Gharafa (2025/2026)              | 7-0   | 7           |
 | Al Ahli vs Shabab Al Ahli (2025/2026)             | 4-3   | 7           |
 
+### Champion records: most goals for, fewest against, best GD, most wins
+
 ```rust
 // champion records: most goals for, fewest against, best GD, most wins
 let mut champ_stats: Vec<(String, String, i64, i64, i64, i64, i64)> = Vec::new(); // season, champ, gf, ga, w, d, l
@@ -549,6 +601,8 @@ mars_table(&["record", "champion edition", "record", "gf/ga", "gd"], &rec_rows);
 | most wins             | Al Ahli 2024/2025 | 12W 1D 0L | 34/10 | 24  |
 | fewest losses         | Al Ahli 2024/2025 | 12W 1D 0L | 34/10 | 24  |
 
+### Unbeaten champions
+
 ```rust
 // unbeaten champions
 let unbeaten: Vec<&(String, String, i64, i64, i64, i64, i64)> = champ_stats.iter().filter(|c| c.6 == 0 && c.4 + c.5 >= 3).collect();
@@ -561,6 +615,8 @@ mars_table(&["unbeaten champions", "record", "gf", "ga"], &unb_rows);
 | unbeaten champions | record | gf  | ga  |
 | ------------------ | ------ | --- | --- |
 | Al Ahli 2024/2025  | 12W 1D | 34  | 10  |
+
+### Closest finals (smallest margin or draw)
 
 ```rust
 println!("unbeaten champions: {}", unbeaten.len());
@@ -582,6 +638,8 @@ unbeaten champions: 1
 | -------------- | ---------------------------- | ----- |
 | 2025/2026      | Al Ahli vs Machida Zelvia    | 1-0   |
 | 2024/2025      | Al Ahli vs Kawasaki Frontale | 2-0   |
+
+### Top scorers (latest edition with player data — SCORERS picks best-covered year)
 
 ```rust
 // T4: top scorers (latest edition with player data — SCORERS picks best-covered year)
@@ -652,7 +710,7 @@ figure2.evcxr_display();
 
 ![Notebook output](data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNzYwIiBoZWlnaHQ9IjQwMCIgdmlld0JveD0iMCAwIDc2MCA0MDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHg9IjAiIHk9IjAiIHdpZHRoPSI3NjAiIGhlaWdodD0iNDAwIiBvcGFjaXR5PSIxIiBmaWxsPSIjRkZGRkZGIiBzdHJva2U9Im5vbmUiLz4KPHRleHQgeD0iMzgwIiB5PSIxNSIgZHk9IjAuNzZlbSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTQuNTE2MTI5MDMyMjU4MDY0IiBvcGFjaXR5PSIxIiBmaWxsPSIjMDAwMDAwIj4KQ2hhbXBpb24mYXBvcztzIGdvYWwgZGlmZmVyZW5jZSBwZXIgZWRpdGlvbgo8L3RleHQ+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI1NSIgeTE9IjM1OSIgeDI9Ijc0OSIgeTI9IjM1OSIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNTUiIHkxPSIzNTMiIHgyPSI3NDkiIHkyPSIzNTMiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjU1IiB5MT0iMzQ3IiB4Mj0iNzQ5IiB5Mj0iMzQ3Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI1NSIgeTE9IjM0MSIgeDI9Ijc0OSIgeTI9IjM0MSIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNTUiIHkxPSIzMzUiIHgyPSI3NDkiIHkyPSIzMzUiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjU1IiB5MT0iMzI5IiB4Mj0iNzQ5IiB5Mj0iMzI5Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI1NSIgeTE9IjMyMyIgeDI9Ijc0OSIgeTI9IjMyMyIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNTUiIHkxPSIzMTYiIHgyPSI3NDkiIHkyPSIzMTYiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjU1IiB5MT0iMzEwIiB4Mj0iNzQ5IiB5Mj0iMzEwIi8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI1NSIgeTE9IjMwNCIgeDI9Ijc0OSIgeTI9IjMwNCIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNTUiIHkxPSIyOTgiIHgyPSI3NDkiIHkyPSIyOTgiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjU1IiB5MT0iMjkyIiB4Mj0iNzQ5IiB5Mj0iMjkyIi8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI1NSIgeTE9IjI4NiIgeDI9Ijc0OSIgeTI9IjI4NiIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNTUiIHkxPSIyNzkiIHgyPSI3NDkiIHkyPSIyNzkiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjU1IiB5MT0iMjczIiB4Mj0iNzQ5IiB5Mj0iMjczIi8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI1NSIgeTE9IjI2NyIgeDI9Ijc0OSIgeTI9IjI2NyIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNTUiIHkxPSIyNjEiIHgyPSI3NDkiIHkyPSIyNjEiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjU1IiB5MT0iMjU1IiB4Mj0iNzQ5IiB5Mj0iMjU1Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI1NSIgeTE9IjI0OSIgeDI9Ijc0OSIgeTI9IjI0OSIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNTUiIHkxPSIyNDMiIHgyPSI3NDkiIHkyPSIyNDMiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjU1IiB5MT0iMjM2IiB4Mj0iNzQ5IiB5Mj0iMjM2Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI1NSIgeTE9IjIzMCIgeDI9Ijc0OSIgeTI9IjIzMCIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNTUiIHkxPSIyMjQiIHgyPSI3NDkiIHkyPSIyMjQiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjU1IiB5MT0iMjE4IiB4Mj0iNzQ5IiB5Mj0iMjE4Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI1NSIgeTE9IjIxMiIgeDI9Ijc0OSIgeTI9IjIxMiIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNTUiIHkxPSIyMDYiIHgyPSI3NDkiIHkyPSIyMDYiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjU1IiB5MT0iMTk5IiB4Mj0iNzQ5IiB5Mj0iMTk5Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI1NSIgeTE9IjE5MyIgeDI9Ijc0OSIgeTI9IjE5MyIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNTUiIHkxPSIxODciIHgyPSI3NDkiIHkyPSIxODciLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjU1IiB5MT0iMTgxIiB4Mj0iNzQ5IiB5Mj0iMTgxIi8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI1NSIgeTE9IjE3NSIgeDI9Ijc0OSIgeTI9IjE3NSIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNTUiIHkxPSIxNjkiIHgyPSI3NDkiIHkyPSIxNjkiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjU1IiB5MT0iMTYzIiB4Mj0iNzQ5IiB5Mj0iMTYzIi8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI1NSIgeTE9IjE1NiIgeDI9Ijc0OSIgeTI9IjE1NiIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNTUiIHkxPSIxNTAiIHgyPSI3NDkiIHkyPSIxNTAiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjU1IiB5MT0iMTQ0IiB4Mj0iNzQ5IiB5Mj0iMTQ0Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI1NSIgeTE9IjEzOCIgeDI9Ijc0OSIgeTI9IjEzOCIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNTUiIHkxPSIxMzIiIHgyPSI3NDkiIHkyPSIxMzIiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjU1IiB5MT0iMTI2IiB4Mj0iNzQ5IiB5Mj0iMTI2Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI1NSIgeTE9IjExOSIgeDI9Ijc0OSIgeTI9IjExOSIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNTUiIHkxPSIxMTMiIHgyPSI3NDkiIHkyPSIxMTMiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjU1IiB5MT0iMTA3IiB4Mj0iNzQ5IiB5Mj0iMTA3Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI1NSIgeTE9IjEwMSIgeDI9Ijc0OSIgeTI9IjEwMSIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNTUiIHkxPSI5NSIgeDI9Ijc0OSIgeTI9Ijk1Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI1NSIgeTE9Ijg5IiB4Mj0iNzQ5IiB5Mj0iODkiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjU1IiB5MT0iODMiIHgyPSI3NDkiIHkyPSI4MyIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNTUiIHkxPSI3NiIgeDI9Ijc0OSIgeTI9Ijc2Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI1NSIgeTE9IjcwIiB4Mj0iNzQ5IiB5Mj0iNzAiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjU1IiB5MT0iNjQiIHgyPSI3NDkiIHkyPSI2NCIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNTUiIHkxPSI1OCIgeDI9Ijc0OSIgeTI9IjU4Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI1NSIgeTE9IjUyIiB4Mj0iNzQ5IiB5Mj0iNTIiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjU1IiB5MT0iNDYiIHgyPSI3NDkiIHkyPSI0NiIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNTUiIHkxPSIzOSIgeDI9Ijc0OSIgeTI9IjM5Ii8+Cjx0ZXh0IHg9IjEwIiB5PSIxOTciIGR5PSIwLjc2ZW0iIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjkuNjc3NDE5MzU0ODM4NzEiIG9wYWNpdHk9IjEiIGZpbGw9IiMwMDAwMDAiIHRyYW5zZm9ybT0icm90YXRlKDI3MCwgMTAsIDE5NykiPgpnb2FsIGRpZmYKPC90ZXh0Pgo8bGluZSBvcGFjaXR5PSIwLjIiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNTUiIHkxPSIzNTkiIHgyPSI3NDkiIHkyPSIzNTkiLz4KPGxpbmUgb3BhY2l0eT0iMC4yIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjU1IiB5MT0iMjk4IiB4Mj0iNzQ5IiB5Mj0iMjk4Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMiIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI1NSIgeTE9IjIzNiIgeDI9Ijc0OSIgeTI9IjIzNiIvPgo8bGluZSBvcGFjaXR5PSIwLjIiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNTUiIHkxPSIxNzUiIHgyPSI3NDkiIHkyPSIxNzUiLz4KPGxpbmUgb3BhY2l0eT0iMC4yIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjU1IiB5MT0iMTEzIiB4Mj0iNzQ5IiB5Mj0iMTEzIi8+CjxsaW5lIG9wYWNpdHk9IjAuMiIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI1NSIgeTE9IjUyIiB4Mj0iNzQ5IiB5Mj0iNTIiLz4KPHBvbHlsaW5lIGZpbGw9Im5vbmUiIG9wYWNpdHk9IjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiBwb2ludHM9IjU0LDM0IDU0LDM1OSAiLz4KPHRleHQgeD0iNDUiIHk9IjM1OSIgZHk9IjAuNWV4IiB0ZXh0LWFuY2hvcj0iZW5kIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSI5LjY3NzQxOTM1NDgzODcxIiBvcGFjaXR5PSIxIiBmaWxsPSIjMDAwMDAwIj4KMC4wCjwvdGV4dD4KPHBvbHlsaW5lIGZpbGw9Im5vbmUiIG9wYWNpdHk9IjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiBwb2ludHM9IjQ5LDM1OSA1NCwzNTkgIi8+Cjx0ZXh0IHg9IjQ1IiB5PSIyOTgiIGR5PSIwLjVleCIgdGV4dC1hbmNob3I9ImVuZCIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iOS42Nzc0MTkzNTQ4Mzg3MSIgb3BhY2l0eT0iMSIgZmlsbD0iIzAwMDAwMCI+CjUuMAo8L3RleHQ+Cjxwb2x5bGluZSBmaWxsPSJub25lIiBvcGFjaXR5PSIxIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgcG9pbnRzPSI0OSwyOTggNTQsMjk4ICIvPgo8dGV4dCB4PSI0NSIgeT0iMjM2IiBkeT0iMC41ZXgiIHRleHQtYW5jaG9yPSJlbmQiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjkuNjc3NDE5MzU0ODM4NzEiIG9wYWNpdHk9IjEiIGZpbGw9IiMwMDAwMDAiPgoxMC4wCjwvdGV4dD4KPHBvbHlsaW5lIGZpbGw9Im5vbmUiIG9wYWNpdHk9IjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiBwb2ludHM9IjQ5LDIzNiA1NCwyMzYgIi8+Cjx0ZXh0IHg9IjQ1IiB5PSIxNzUiIGR5PSIwLjVleCIgdGV4dC1hbmNob3I9ImVuZCIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iOS42Nzc0MTkzNTQ4Mzg3MSIgb3BhY2l0eT0iMSIgZmlsbD0iIzAwMDAwMCI+CjE1LjAKPC90ZXh0Pgo8cG9seWxpbmUgZmlsbD0ibm9uZSIgb3BhY2l0eT0iMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHBvaW50cz0iNDksMTc1IDU0LDE3NSAiLz4KPHRleHQgeD0iNDUiIHk9IjExMyIgZHk9IjAuNWV4IiB0ZXh0LWFuY2hvcj0iZW5kIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSI5LjY3NzQxOTM1NDgzODcxIiBvcGFjaXR5PSIxIiBmaWxsPSIjMDAwMDAwIj4KMjAuMAo8L3RleHQ+Cjxwb2x5bGluZSBmaWxsPSJub25lIiBvcGFjaXR5PSIxIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgcG9pbnRzPSI0OSwxMTMgNTQsMTEzICIvPgo8dGV4dCB4PSI0NSIgeT0iNTIiIGR5PSIwLjVleCIgdGV4dC1hbmNob3I9ImVuZCIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iOS42Nzc0MTkzNTQ4Mzg3MSIgb3BhY2l0eT0iMSIgZmlsbD0iIzAwMDAwMCI+CjI1LjAKPC90ZXh0Pgo8cG9seWxpbmUgZmlsbD0ibm9uZSIgb3BhY2l0eT0iMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHBvaW50cz0iNDksNTIgNTQsNTIgIi8+Cjxwb2x5bGluZSBmaWxsPSJub25lIiBvcGFjaXR5PSIxIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgcG9pbnRzPSI1NSwzNjAgNzQ5LDM2MCAiLz4KPGNpcmNsZSBjeD0iMjI4IiBjeT0iNjQiIHI9IjMiIG9wYWNpdHk9IjEiIGZpbGw9IiMwMDAwRkYiIHN0cm9rZT0ibm9uZSIgc3Ryb2tlLXdpZHRoPSIxIi8+CjxjaXJjbGUgY3g9IjU3NSIgY3k9IjE2MyIgcj0iMyIgb3BhY2l0eT0iMSIgZmlsbD0iIzAwMDBGRiIgc3Ryb2tlPSJub25lIiBzdHJva2Utd2lkdGg9IjEiLz4KPHBvbHlsaW5lIGZpbGw9Im5vbmUiIG9wYWNpdHk9IjEiIHN0cm9rZT0iIzAwMDBGRiIgc3Ryb2tlLXdpZHRoPSIxIiBwb2ludHM9IjIyOCw2NCA1NzUsMTYzICIvPgo8L3N2Zz4=)
 
-## What the record book says
+## Discussion
 
 Three seasons exist (2024/25 → 2026/27 in progress); the two completed editions
 are covered in full.
@@ -672,3 +730,14 @@ are covered in full.
 _Source: ESPN import via `dev.db`; only the Elite era (2024/25 onward) is
 included — the old AFC Champions League is a different competition. Player-level
 stats too sparse for a top-scorers table._
+
+**Limitations.** Records reflect only the matches present in the database;
+coverage varies by competition and era, so 'records' are archive records, not
+all-time official marks.
+
+## Conclusion
+
+Al Ahli 2024/25 was the most dominant season. Together these results answer the
+research question posed in the Introduction and quantify the pattern across the
+full match archive. The notebook provides a fully reproducible pipeline from raw
+CSV extracts to published figures.

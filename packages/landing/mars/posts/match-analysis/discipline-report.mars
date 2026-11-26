@@ -12,9 +12,23 @@
   },
   "cells": [
     {
-      "id": "449cc852-dcf1-4f64-a808-495694162e71",
+      "id": "fdfd4dbe-dbc9-4bf8-b79c-709d4a78576d",
       "cell_type": "markdown",
-      "source": "## The discipline report: who collects cards and who concedes fouls\n\nEvery player-match line records fouls committed, fouls drawn, yellow\nand red cards across ~152,000 appearances. This notebook builds the\ndiscipline tables: the most-booked players, the most-fouling players,\nthe players who *draw* the most fouls, and the teams whose matches\nare card-fests.\n\nThe question underneath: is aggression a coaching choice, a player\ntrait, or a tactical necessity — and does it correlate with anything\nwe can measure (cards, goals conceded, results)?\n",
+      "source": "## Abstract\n\nThis study examines the discipline report using 152,000 appearances drawn from the Soccers football database. Card-rate leaders are specialists, not stars. All computation runs in Rust inside a `.mars` notebook (polars + plotters — charts as inline SVG), and every table and figure is generated from the extracted CSVs.\n\n## Keywords\n\n**Keywords:** football, analysis, discipline, cards, statsbomb, mars, sqlite\n\n## Table of contents\n\n- [Abstract](#abstract)\n- [Keywords](#keywords)\n- [Introduction](#introduction)\n- [Methods](#methods)\n- [Results](#results)\n  - [Most cards per 90 (min 30 apps)](#most-cards-per-90-min-30-apps)\n  - [Most fouls committed per 90 (min 30 apps)](#most-fouls-committed-per-90-min-30-apps)\n  - [Most fouls drawn per 90 — the players defenders can't stop fouling](#most-fouls-drawn-per-90--the-players-defenders-cant-stop-fouling)\n  - [Raw card totals (volume kings)](#raw-card-totals-volume-kings)\n  - [Red cards — every dismissal on record](#red-cards--every-dismissal-on-record)\n  - [Position-level discipline averages](#position-level-discipline-averages)\n  - [Team discipline: team-total fouls/cards per team-match](#team-discipline-team-total-foulscards-per-team-match)\n- [Discussion](#discussion)\n- [Conclusion](#conclusion)\n\n## Introduction\n\nEvery player-match line records fouls committed, fouls drawn, yellow\nand red cards across ~152,000 appearances. This notebook builds the\ndiscipline tables: the most-booked players, the most-fouling players,\nthe players who *draw* the most fouls, and the teams whose matches\nare card-fests.\n\nThe question underneath: is aggression a coaching choice, a player\ntrait, or a tactical necessity — and does it correlate with anything\nwe can measure (cards, goals conceded, results)?\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "e6eca9c6-eb7f-4060-b472-1bf7843254a4",
+      "cell_type": "markdown",
+      "source": "## Methods\n\nData were extracted from the Soccers football database (`packages/data`) as CSV snapshots: `player`, `player_match_stat`, `team`.\n\nThe analysis runs entirely in Rust inside the notebook: **polars** handles table scans, joins and aggregations; **plotters** renders figures as inline SVG; `mars_table` renders result tables.\n\nEach code cell is kept to a single output so results can be read top to bottom.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "199f5544-ba6d-431a-8b82-99f35a01ca59",
+      "cell_type": "markdown",
+      "source": "## Results\n\nAll figures and tables below are computed directly from the extracted data. Each code cell produces one output — a table, a chart, or a short text summary.\n",
       "metadata": {},
       "outputs": []
     },
@@ -30,6 +44,13 @@
           "text": "players with stats: 11794, total cards: 2855\n"
         }
       ]
+    },
+    {
+      "id": "d5509ef4-006b-44d7-93ec-4dbc4115d464",
+      "cell_type": "markdown",
+      "source": "### Most cards per 90 (min 30 apps)\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "0466fd6c-a70a-488f-ab34-eb6b53308e20",
@@ -258,6 +279,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "8d1df0bc-c557-4b8c-b138-936b69b89dc0",
+      "cell_type": "markdown",
+      "source": "### Most fouls committed per 90 (min 30 apps)\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "4be87eba-27b9-4406-b99e-4e73bc9718fd",
@@ -701,6 +729,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "0111170f-545f-4bf4-b1d8-f55f6d006000",
+      "cell_type": "markdown",
+      "source": "### Most fouls drawn per 90 — the players defenders can't stop fouling\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "ff42b44b-6f07-4e56-93ec-7f54591a7938",
@@ -1359,6 +1394,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "6c9fefff-0650-4373-b3a4-718a453ac99b",
+      "cell_type": "markdown",
+      "source": "### Raw card totals (volume kings)\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "1d1f1ba9-ce2a-4330-8986-c0d279ec12cf",
@@ -2180,16 +2222,6 @@
               "95"
             ],
             [
-              "Jonathas Cristian de Jesus",
-              "FWD",
-              "48",
-              "76",
-              "1.74",
-              "8",
-              "0.18",
-              "74"
-            ],
-            [
               "Daniel Alves da Silva",
               "DEF",
               "250",
@@ -2198,6 +2230,16 @@
               "8",
               "0.03",
               "392"
+            ],
+            [
+              "Jonathas Cristian de Jesus",
+              "FWD",
+              "48",
+              "76",
+              "1.74",
+              "8",
+              "0.18",
+              "74"
             ],
             [
               "Katie McCabe",
@@ -2220,18 +2262,25 @@
               "87"
             ],
             [
-              "Samuel Eto''o Fils",
-              "FWD",
-              "80",
-              "86",
-              "1.19",
+              "Javier Alejandro Mascheran",
+              "DEF",
+              "221",
+              "231",
+              "1.16",
               "7",
-              "0.10",
-              "146"
+              "0.04",
+              "188"
             ]
           ]
         }
       ]
+    },
+    {
+      "id": "62cfbebe-6ef2-4130-b3f5-25de6f2ae3d4",
+      "cell_type": "markdown",
+      "source": "### Red cards — every dismissal on record\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "20381f67-331f-4887-8644-815451d8ed24",
@@ -3013,16 +3062,6 @@
               "191"
             ],
             [
-              "Gianluigi Donnarumma",
-              "GK",
-              "104",
-              "2",
-              "0.02",
-              "9",
-              "0.09",
-              "15"
-            ],
-            [
               "Iago Aspas Juncal",
               "FWD",
               "49",
@@ -3031,6 +3070,16 @@
               "9",
               "0.22",
               "71"
+            ],
+            [
+              "Gianluigi Donnarumma",
+              "GK",
+              "104",
+              "2",
+              "0.02",
+              "9",
+              "0.09",
+              "15"
             ],
             [
               "Deyverson Brum Silva Acost",
@@ -3043,14 +3092,14 @@
               "82"
             ],
             [
-              "Roberto Trashorras Gayoso",
+              "Katie McCabe",
               "DEF",
-              "43",
-              "62",
-              "1.58",
+              "79",
+              "73",
+              "1.03",
               "8",
-              "0.20",
-              "95"
+              "0.11",
+              "104"
             ],
             [
               "Daniel Alves da Silva",
@@ -3063,26 +3112,6 @@
               "392"
             ],
             [
-              "Jonathas Cristian de Jesus",
-              "FWD",
-              "48",
-              "76",
-              "1.74",
-              "8",
-              "0.18",
-              "74"
-            ],
-            [
-              "Katie McCabe",
-              "DEF",
-              "79",
-              "73",
-              "1.03",
-              "8",
-              "0.11",
-              "104"
-            ],
-            [
               "Manuel Agudo Durán",
               "MID",
               "42",
@@ -3093,14 +3122,34 @@
               "87"
             ],
             [
-              "Charles Días Barbosa de Ol",
+              "Jonathas Cristian de Jesus",
               "FWD",
-              "44",
-              "83",
-              "1.97",
+              "48",
+              "76",
+              "1.74",
+              "8",
+              "0.18",
+              "74"
+            ],
+            [
+              "Roberto Trashorras Gayoso",
+              "DEF",
+              "43",
+              "62",
+              "1.58",
+              "8",
+              "0.20",
+              "95"
+            ],
+            [
+              "Cristiano Ronaldo dos Sant",
+              "FWD",
+              "76",
+              "63",
+              "0.93",
               "7",
-              "0.17",
-              "58"
+              "0.10",
+              "135"
             ]
           ]
         },
@@ -3144,14 +3193,14 @@
               "2"
             ],
             [
-              "Yannick Cahuzac",
-              "WINGER",
+              "Younousse Sankharé",
+              "DEFENSIVE_MIDFIELD",
               "33",
               "2"
             ],
             [
-              "Younousse Sankharé",
-              "DEFENSIVE_MIDFIELD",
+              "Yannick Cahuzac",
+              "WINGER",
               "33",
               "2"
             ],
@@ -3236,6 +3285,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "f4686a03-8a42-4ebc-9414-d82f46149e2e",
+      "cell_type": "markdown",
+      "source": "### Position-level discipline averages\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "6295bd9b-738e-4aed-8230-7a7e8bd271a7",
@@ -4017,16 +4073,6 @@
               "191"
             ],
             [
-              "Iago Aspas Juncal",
-              "FWD",
-              "49",
-              "53",
-              "1.30",
-              "9",
-              "0.22",
-              "71"
-            ],
-            [
               "Gianluigi Donnarumma",
               "GK",
               "104",
@@ -4035,6 +4081,16 @@
               "9",
               "0.09",
               "15"
+            ],
+            [
+              "Iago Aspas Juncal",
+              "FWD",
+              "49",
+              "53",
+              "1.30",
+              "9",
+              "0.22",
+              "71"
             ],
             [
               "Deyverson Brum Silva Acost",
@@ -4047,24 +4103,14 @@
               "82"
             ],
             [
-              "Daniel Alves da Silva",
-              "DEF",
-              "250",
-              "473",
-              "2.06",
-              "8",
-              "0.03",
-              "392"
-            ],
-            [
-              "Roberto Trashorras Gayoso",
-              "DEF",
-              "43",
+              "Manuel Agudo Durán",
+              "MID",
+              "42",
               "62",
-              "1.58",
+              "1.56",
               "8",
               "0.20",
-              "95"
+              "87"
             ],
             [
               "Jonathas Cristian de Jesus",
@@ -4077,6 +4123,26 @@
               "74"
             ],
             [
+              "Roberto Trashorras Gayoso",
+              "DEF",
+              "43",
+              "62",
+              "1.58",
+              "8",
+              "0.20",
+              "95"
+            ],
+            [
+              "Daniel Alves da Silva",
+              "DEF",
+              "250",
+              "473",
+              "2.06",
+              "8",
+              "0.03",
+              "392"
+            ],
+            [
               "Katie McCabe",
               "DEF",
               "79",
@@ -4087,24 +4153,14 @@
               "104"
             ],
             [
-              "Manuel Agudo Durán",
-              "MID",
-              "42",
-              "62",
-              "1.56",
-              "8",
-              "0.20",
-              "87"
-            ],
-            [
-              "Samuel Eto''o Fils",
+              "Yannick Cahuzac",
               "FWD",
-              "80",
-              "86",
-              "1.19",
+              "33",
+              "60",
+              "2.23",
               "7",
-              "0.10",
-              "146"
+              "0.26",
+              "32"
             ]
           ]
         },
@@ -4287,6 +4343,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "ebfdfd07-19d1-4906-bb86-7486d655e29b",
+      "cell_type": "markdown",
+      "source": "### Team discipline: team-total fouls/cards per team-match\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "b8be8c48-53c9-4bd4-9552-2fb990f28119",
@@ -5068,6 +5131,16 @@
               "191"
             ],
             [
+              "Gianluigi Donnarumma",
+              "GK",
+              "104",
+              "2",
+              "0.02",
+              "9",
+              "0.09",
+              "15"
+            ],
+            [
               "Deyverson Brum Silva Acost",
               "FWD",
               "40",
@@ -5088,14 +5161,14 @@
               "71"
             ],
             [
-              "Gianluigi Donnarumma",
-              "GK",
-              "104",
-              "2",
-              "0.02",
-              "9",
-              "0.09",
-              "15"
+              "Manuel Agudo Durán",
+              "MID",
+              "42",
+              "62",
+              "1.56",
+              "8",
+              "0.20",
+              "87"
             ],
             [
               "Katie McCabe",
@@ -5138,24 +5211,14 @@
               "74"
             ],
             [
-              "Manuel Agudo Durán",
-              "MID",
-              "42",
-              "62",
-              "1.56",
-              "8",
-              "0.20",
-              "87"
-            ],
-            [
-              "Charles Días Barbosa de Ol",
+              "Cristiano Ronaldo dos Sant",
               "FWD",
-              "44",
-              "83",
-              "1.97",
+              "76",
+              "63",
+              "0.93",
               "7",
-              "0.17",
-              "58"
+              "0.10",
+              "135"
             ]
           ]
         },
@@ -5259,14 +5322,14 @@
               "1"
             ],
             [
-              "Ibrahim Afellay",
-              "WINGER",
+              "Gilly Louise Scarlett Flah",
+              "CENTER_BACK",
               "55",
               "1"
             ],
             [
-              "Gilly Louise Scarlett Flah",
-              "CENTER_BACK",
+              "Ibrahim Afellay",
+              "WINGER",
               "55",
               "1"
             ],
@@ -5376,14 +5439,14 @@
               "14.05"
             ],
             [
-              "Atletico Madrid W",
-              "0.73",
-              "10.53"
-            ],
-            [
               "FC Levante Badalona",
               "0.73",
               "12.37"
+            ],
+            [
+              "Atletico Madrid W",
+              "0.73",
+              "10.53"
             ],
             [
               "Argentina",
@@ -5436,14 +5499,14 @@
               "13.59"
             ],
             [
-              "Chievo",
-              "0.58",
-              "18.13"
-            ],
-            [
               "Lazio",
               "0.58",
               "16.97"
+            ],
+            [
+              "Chievo",
+              "0.58",
+              "18.13"
             ]
           ]
         }
@@ -6239,16 +6302,6 @@
               "82"
             ],
             [
-              "Iago Aspas Juncal",
-              "FWD",
-              "49",
-              "53",
-              "1.30",
-              "9",
-              "0.22",
-              "71"
-            ],
-            [
               "Gianluigi Donnarumma",
               "GK",
               "104",
@@ -6259,6 +6312,16 @@
               "15"
             ],
             [
+              "Iago Aspas Juncal",
+              "FWD",
+              "49",
+              "53",
+              "1.30",
+              "9",
+              "0.22",
+              "71"
+            ],
+            [
               "Daniel Alves da Silva",
               "DEF",
               "250",
@@ -6267,16 +6330,6 @@
               "8",
               "0.03",
               "392"
-            ],
-            [
-              "Katie McCabe",
-              "DEF",
-              "79",
-              "73",
-              "1.03",
-              "8",
-              "0.11",
-              "104"
             ],
             [
               "Roberto Trashorras Gayoso",
@@ -6299,6 +6352,16 @@
               "74"
             ],
             [
+              "Katie McCabe",
+              "DEF",
+              "79",
+              "73",
+              "1.03",
+              "8",
+              "0.11",
+              "104"
+            ],
+            [
               "Manuel Agudo Durán",
               "MID",
               "42",
@@ -6309,14 +6372,14 @@
               "87"
             ],
             [
-              "Jessica Dahiana Martínez V",
+              "Samuel Eto''o Fils",
               "FWD",
-              "26",
-              "28",
-              "1.40",
+              "80",
+              "86",
+              "1.19",
               "7",
-              "0.35",
-              "65"
+              "0.10",
+              "146"
             ]
           ]
         },
@@ -6537,14 +6600,1285 @@
               "14.05"
             ],
             [
+              "FC Levante Badalona",
+              "0.73",
+              "12.37"
+            ],
+            [
               "Atletico Madrid W",
               "0.73",
               "10.53"
             ],
             [
+              "Argentina",
+              "0.73",
+              "15.64"
+            ],
+            [
+              "Malaga",
+              "0.72",
+              "17.89"
+            ],
+            [
+              "Frosinone",
+              "0.68",
+              "18.05"
+            ],
+            [
+              "Palermo",
+              "0.66",
+              "17.74"
+            ],
+            [
+              "Kerala Blasters",
+              "0.65",
+              "17.43"
+            ],
+            [
+              "Real Betis",
+              "0.64",
+              "17.10"
+            ],
+            [
+              "Sporting Gijón",
+              "0.64",
+              "17.59"
+            ],
+            [
+              "Bayer Leverkusen",
+              "0.63",
+              "13.37"
+            ],
+            [
+              "Getafe",
+              "0.61",
+              "18.07"
+            ],
+            [
+              "RB Leipzig W",
+              "0.59",
+              "13.59"
+            ],
+            [
+              "Lazio",
+              "0.58",
+              "16.97"
+            ],
+            [
+              "Chievo",
+              "0.58",
+              "18.13"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "team",
+            "fouls per team-match",
+            "cards per team-match"
+          ],
+          "rows": [
+            [
+              "Espanyol",
+              "21.21",
+              "0.84"
+            ],
+            [
+              "Osasuna",
+              "19.30",
+              "0.45"
+            ],
+            [
+              "Granada",
+              "18.64",
+              "1.02"
+            ],
+            [
+              "Torino",
+              "18.63",
+              "0.34"
+            ],
+            [
+              "Carpi",
+              "18.58",
+              "0.34"
+            ],
+            [
+              "Bengaluru",
+              "18.50",
+              "0.25"
+            ],
+            [
+              "Atlético Madrid",
+              "18.35",
+              "0.50"
+            ],
+            [
+              "Atalanta",
+              "18.21",
+              "0.39"
+            ],
+            [
+              "Chievo",
+              "18.13",
+              "0.58"
+            ],
+            [
+              "Getafe",
+              "18.07",
+              "0.61"
+            ],
+            [
+              "Frosinone",
+              "18.05",
+              "0.68"
+            ],
+            [
+              "Genoa",
+              "18.05",
+              "0.32"
+            ],
+            [
+              "Athletic Club",
+              "17.94",
+              "0.44"
+            ],
+            [
+              "Malaga",
+              "17.89",
+              "0.72"
+            ],
+            [
+              "Hellas Verona",
+              "17.84",
+              "0.26"
+            ],
+            [
+              "Celta Vigo",
+              "17.78",
+              "0.91"
+            ],
+            [
+              "Rayo Vallecano",
+              "17.77",
+              "0.51"
+            ],
+            [
+              "Palermo",
+              "17.74",
+              "0.66"
+            ],
+            [
+              "Sporting Gijón",
+              "17.59",
+              "0.64"
+            ],
+            [
+              "Kerala Blasters",
+              "17.43",
+              "0.65"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "61a0fc38-8c23-4952-983a-578cda7182e6",
+      "cell_type": "code",
+      "source": "use plotters::prelude::*;\n\nfn chart_num(s: &str) -> f64 {\n    let t = s.replace(',', \"\").replace('%', \"\").replace('−', \"-\");\n    let mult = if t.contains(\"bn\") { 1e9 }\n        else if t.contains('€') && t.contains('m') { 1e6 }\n        else { 1.0 };\n    let cleaned: String = t.chars()\n        .filter(|c| c.is_ascii_digit() || *c == '.' || *c == '-')\n        .collect();\n    cleaned.parse().unwrap_or(0.0) * mult\n}\n\n\nlet mut c_items: Vec<(String, f64)> = tcard.iter()\n    .map(|r| (r[0].clone(), chart_num(&r[1].clone())))\n    .collect();\nc_items.retain(|(_, v)| v.is_finite());\nc_items.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());\nc_items.truncate(12);\nlet c_labels: Vec<String> = c_items.iter()\n    .map(|(l, _)| l.chars().take(18).collect()).collect();\nlet c_vals: Vec<f64> = c_items.iter().map(|(_, v)| *v).collect();\nlet c_ymax = c_vals.iter().cloned().fold(0.0_f64, f64::max) * 1.15 + 1e-9;\nlet (c_div, c_unit): (f64, &str) = if c_ymax >= 1e9 { (1e9, \"bn\") }\n    else if c_ymax >= 1e6 { (1e6, \"m\") }\n    else if c_ymax >= 1e3 { (1e3, \"k\") }\n    else { (1.0, \"\") };\nlet c_n = c_vals.len();\nlet figure = plotters::evcxr::evcxr_figure((780, 400), |root| {\n    root.fill(&WHITE)?;\n    let mut chart = ChartBuilder::on(&root)\n        .caption(\"Cards per team-match — most punished teams\", (\"sans-serif\", 18))\n        .margin(10)\n        .x_label_area_size(45)\n        .y_label_area_size(55)\n        .build_cartesian_2d(-0.5_f64..(c_n as f64 - 0.5), 0.0..c_ymax)?;\n    chart.configure_mesh()\n        .x_labels(c_n)\n        .x_label_formatter(&|x: &f64| c_labels.get(*x as usize).cloned().unwrap_or_default())\n        .y_label_formatter(&|y: &f64| format!(\"{:.1}{}\", y / c_div, c_unit))\n        .draw()?;\n    chart.draw_series(c_vals.iter().enumerate().map(|(i, &v)| {\n        Rectangle::new([(i as f64 - 0.35, 0.0), (i as f64 + 0.35, v)], BLUE.filled())\n    }))?;\n    Ok(())\n});\nfigure.evcxr_display();\n",
+      "metadata": {},
+      "execution_count": 10,
+      "outputs": [
+        {
+          "type": "text",
+          "text": "players with stats: 11794, total cards: 2855\n"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "player",
+            "pos",
+            "apps",
+            "fouls",
+            "fouls/90",
+            "cards",
+            "cards/90",
+            "fouls drawn"
+          ],
+          "rows": [
+            [
+              "Fabián Ariel Orellana Vale",
+              "FWD",
+              "49",
+              "50",
+              "1.10",
+              "13",
+              "0.29",
+              "122"
+            ],
+            [
+              "Yannick Cahuzac",
+              "FWD",
+              "33",
+              "60",
+              "2.23",
+              "7",
+              "0.26",
+              "32"
+            ],
+            [
+              "Deyverson Brum Silva Acost",
+              "FWD",
+              "40",
+              "55",
+              "1.53",
+              "9",
+              "0.25",
+              "82"
+            ],
+            [
+              "Alexis Ruano Delgado",
+              "DEF",
+              "31",
+              "24",
+              "0.80",
+              "7",
+              "0.23",
+              "15"
+            ],
+            [
+              "Domenico Berardi",
+              "FWD",
+              "35",
+              "52",
+              "1.69",
+              "7",
+              "0.23",
+              "92"
+            ],
+            [
+              "Iago Aspas Juncal",
+              "FWD",
+              "49",
+              "53",
+              "1.30",
+              "9",
+              "0.22",
+              "71"
+            ],
+            [
+              "Roberto Trashorras Gayoso",
+              "DEF",
+              "43",
+              "62",
+              "1.58",
+              "8",
+              "0.20",
+              "95"
+            ],
+            [
+              "Manuel Agudo Durán",
+              "MID",
+              "42",
+              "62",
+              "1.56",
+              "8",
+              "0.20",
+              "87"
+            ],
+            [
+              "Jonathas Cristian de Jesus",
+              "FWD",
+              "48",
+              "76",
+              "1.74",
+              "8",
+              "0.18",
+              "74"
+            ],
+            [
+              "Isaac Ajayi Success",
+              "FWD",
+              "32",
+              "58",
+              "2.09",
+              "5",
+              "0.18",
+              "97"
+            ],
+            [
+              "Younousse Sankharé",
+              "DEF",
+              "33",
+              "54",
+              "1.86",
+              "5",
+              "0.17",
+              "53"
+            ],
+            [
+              "Esteban Félix Granero Moli",
+              "MID",
+              "31",
+              "38",
+              "1.30",
+              "5",
+              "0.17",
+              "42"
+            ],
+            [
+              "Danilo Soddimo",
+              "MID",
+              "33",
+              "42",
+              "1.43",
+              "5",
+              "0.17",
+              "49"
+            ],
+            [
+              "Radja Nainggolan",
+              "MID",
+              "35",
+              "53",
+              "1.80",
+              "5",
+              "0.17",
+              "57"
+            ],
+            [
+              "Juan Torres Ruiz",
+              "DEF",
+              "31",
+              "44",
+              "1.47",
+              "5",
+              "0.17",
+              "28"
+            ],
+            [
+              "Charles Días Barbosa de Ol",
+              "FWD",
+              "44",
+              "83",
+              "1.97",
+              "7",
+              "0.17",
+              "58"
+            ],
+            [
+              "Aleksandar Mitrović",
+              "FWD",
+              "45",
+              "63",
+              "1.49",
+              "7",
+              "0.17",
+              "76"
+            ],
+            [
+              "María Dolores Gallardo Nuñ",
+              "GK",
+              "37",
+              "0",
+              "0.00",
+              "6",
+              "0.16",
+              "1"
+            ],
+            [
+              "Fabrizio Cacciatore",
+              "MID",
+              "35",
+              "24",
+              "0.75",
+              "5",
+              "0.16",
+              "16"
+            ],
+            [
+              "Gary Alexis Medel Soto",
+              "MID",
+              "39",
+              "38",
+              "1.13",
+              "5",
+              "0.15",
+              "28"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "player",
+            "pos",
+            "apps",
+            "fouls",
+            "fouls/90",
+            "cards",
+            "cards/90",
+            "fouls drawn"
+          ],
+          "rows": [
+            [
+              "Franco Damián Vázquez",
+              "MID",
+              "46",
+              "145",
+              "3.81",
+              "4",
+              "0.11",
+              "223"
+            ],
+            [
+              "Papa Kouly Diop",
+              "DEF",
+              "47",
+              "151",
+              "3.79",
+              "2",
+              "0.05",
+              "81"
+            ],
+            [
+              "Hernán Arsenio Pérez Gonzá",
+              "FWD",
+              "36",
+              "104",
+              "3.51",
+              "1",
+              "0.03",
+              "63"
+            ],
+            [
+              "Pedro Pablo Hernández",
+              "MID",
+              "36",
+              "100",
+              "3.37",
+              "4",
+              "0.13",
+              "123"
+            ],
+            [
+              "Lorenzo Lollo",
+              "MID",
+              "31",
+              "86",
+              "3.28",
+              "0",
+              "0.00",
+              "46"
+            ],
+            [
+              "Gabriel Fernández Arenas",
+              "DEF",
+              "55",
+              "156",
+              "3.24",
+              "2",
+              "0.04",
+              "80"
+            ],
+            [
+              "Gonzalo Escalante",
+              "DEF",
+              "41",
+              "121",
+              "3.22",
+              "3",
+              "0.08",
+              "39"
+            ],
+            [
+              "Raúl García Escudero",
+              "FWD",
+              "55",
+              "150",
+              "3.08",
+              "5",
+              "0.10",
+              "128"
+            ],
+            [
+              "Cheikh N''Doye",
+              "MID",
+              "35",
+              "88",
+              "2.98",
+              "2",
+              "0.07",
+              "53"
+            ],
+            [
+              "Anderson Luís de Souza",
+              "MID",
+              "57",
+              "149",
+              "2.95",
+              "5",
+              "0.10",
+              "176"
+            ],
+            [
+              "Ignacio Camacho Barnola",
+              "DEF",
+              "31",
+              "84",
+              "2.90",
+              "3",
+              "0.10",
+              "56"
+            ],
+            [
+              "Lassana Diarra",
+              "DEF",
+              "31",
+              "78",
+              "2.85",
+              "0",
+              "0.00",
+              "40"
+            ],
+            [
+              "Paul Pogba",
+              "MID",
+              "48",
+              "125",
+              "2.80",
+              "4",
+              "0.09",
+              "99"
+            ],
+            [
+              "Artur Ioniţă",
+              "MID",
+              "31",
+              "68",
+              "2.73",
+              "1",
+              "0.04",
+              "36"
+            ],
+            [
+              "Didier Ndong Ibrahim",
+              "DEF",
+              "34",
+              "80",
+              "2.70",
+              "0",
+              "0.00",
+              "43"
+            ],
+            [
+              "Karim Bellarabi",
+              "FWD",
+              "33",
+              "70",
+              "2.60",
+              "4",
+              "0.15",
+              "69"
+            ],
+            [
+              "Víctor Sánchez Mata",
+              "FWD",
+              "49",
+              "114",
+              "2.60",
+              "3",
+              "0.07",
+              "66"
+            ],
+            [
+              "Juraj Kucka",
+              "DEF",
+              "38",
+              "89",
+              "2.58",
+              "2",
+              "0.06",
+              "65"
+            ],
+            [
+              "Sofiane Boufal",
+              "MID",
+              "41",
+              "88",
+              "2.57",
+              "1",
+              "0.03",
+              "96"
+            ],
+            [
+              "José Luis García del Pozo",
+              "DEF",
+              "44",
+              "98",
+              "2.56",
+              "2",
+              "0.05",
+              "59"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "player",
+            "pos",
+            "apps",
+            "fouls",
+            "fouls/90",
+            "cards",
+            "cards/90",
+            "fouls drawn"
+          ],
+          "rows": [
+            [
+              "Franco Damián Vázquez",
+              "MID",
+              "46",
+              "145",
+              "3.81",
+              "4",
+              "0.11",
+              "223"
+            ],
+            [
+              "Neymar da Silva Santos Jun",
+              "FWD",
+              "158",
+              "204",
+              "1.41",
+              "15",
+              "0.10",
+              "665"
+            ],
+            [
+              "Pedro Pablo Hernández",
+              "MID",
+              "36",
+              "100",
+              "3.37",
+              "4",
+              "0.13",
+              "123"
+            ],
+            [
+              "Bryan Dabo",
+              "DEF",
+              "37",
+              "64",
+              "2.05",
+              "2",
+              "0.06",
+              "122"
+            ],
+            [
+              "Ronaldo de Assis Moreira",
+              "FWD",
+              "59",
+              "75",
+              "1.41",
+              "3",
+              "0.06",
+              "202"
+            ],
+            [
+              "Wilfried Zaha",
+              "FWD",
+              "34",
+              "43",
+              "1.57",
+              "2",
+              "0.07",
+              "102"
+            ],
+            [
+              "Isaac Ajayi Success",
+              "FWD",
+              "32",
+              "58",
+              "2.09",
+              "5",
+              "0.18",
+              "97"
+            ],
+            [
+              "Anderson Luís de Souza",
+              "MID",
+              "57",
+              "149",
+              "2.95",
+              "5",
+              "0.10",
+              "176"
+            ],
+            [
+              "Borja Valero Iglesias",
+              "DEF",
+              "44",
+              "52",
+              "1.39",
+              "3",
+              "0.08",
+              "129"
+            ],
+            [
+              "Nicolas de Roussel de Prév",
+              "MID",
+              "36",
+              "67",
+              "2.24",
+              "0",
+              "0.00",
+              "103"
+            ],
+            [
+              "Eden Hazard",
+              "FWD",
+              "45",
+              "26",
+              "0.66",
+              "0",
+              "0.00",
+              "129"
+            ],
+            [
+              "Lionel Andrés Messi Cuccit",
+              "FWD",
+              "603",
+              "417",
+              "0.77",
+              "27",
+              "0.05",
+              "1747"
+            ],
+            [
+              "Carlos Alberto Vela Garrid",
+              "FWD",
+              "50",
+              "68",
+              "1.58",
+              "1",
+              "0.02",
+              "133"
+            ],
+            [
+              "Daniel Ceballos Fernández",
+              "MID",
+              "39",
+              "51",
+              "1.53",
+              "4",
+              "0.12",
+              "102"
+            ],
+            [
+              "Emmanuel Agyemang-Badu",
+              "MID",
+              "34",
+              "30",
+              "1.02",
+              "0",
+              "0.00",
+              "90"
+            ],
+            [
+              "Juan Guillermo Cuadrado Be",
+              "DEF",
+              "43",
+              "41",
+              "1.09",
+              "1",
+              "0.03",
+              "113"
+            ],
+            [
+              "Domenico Berardi",
+              "FWD",
+              "35",
+              "52",
+              "1.69",
+              "7",
+              "0.23",
+              "92"
+            ],
+            [
+              "Andrea Belotti",
+              "FWD",
+              "45",
+              "72",
+              "1.83",
+              "0",
+              "0.00",
+              "117"
+            ],
+            [
+              "Federico Dionisi",
+              "FWD",
+              "34",
+              "62",
+              "2.03",
+              "3",
+              "0.10",
+              "90"
+            ],
+            [
+              "Gilles Sunu",
+              "FWD",
+              "32",
+              "33",
+              "1.24",
+              "0",
+              "0.00",
+              "78"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "player",
+            "pos",
+            "apps",
+            "fouls",
+            "fouls/90",
+            "cards",
+            "cards/90",
+            "fouls drawn"
+          ],
+          "rows": [
+            [
+              "Jordi Alba Ramos",
+              "DEF",
+              "284",
+              "234",
+              "0.87",
+              "28",
+              "0.10",
+              "200"
+            ],
+            [
+              "Lionel Andrés Messi Cuccit",
+              "FWD",
+              "603",
+              "417",
+              "0.77",
+              "27",
+              "0.05",
+              "1747"
+            ],
+            [
+              "Gerard Piqué Bernabéu",
+              "DEF",
+              "358",
+              "285",
+              "0.85",
+              "24",
+              "0.07",
+              "187"
+            ],
+            [
+              "Víctor Valdés Arribas",
+              "GK",
+              "256",
+              "5",
+              "0.02",
+              "20",
+              "0.08",
+              "30"
+            ],
+            [
+              "Luis Alberto Suárez Díaz",
+              "FWD",
+              "204",
+              "201",
+              "1.05",
+              "19",
+              "0.10",
+              "349"
+            ],
+            [
+              "Sergio Busquets i Burgos",
+              "DEF",
+              "420",
+              "586",
+              "1.54",
+              "18",
+              "0.05",
+              "944"
+            ],
+            [
+              "Neymar da Silva Santos Jun",
+              "FWD",
+              "158",
+              "204",
+              "1.41",
+              "15",
+              "0.10",
+              "665"
+            ],
+            [
+              "Fabián Ariel Orellana Vale",
+              "FWD",
+              "49",
+              "50",
+              "1.10",
+              "13",
+              "0.29",
+              "122"
+            ],
+            [
+              "Xavier Hernández Creus",
+              "MID",
+              "266",
+              "126",
+              "0.52",
+              "12",
+              "0.05",
+              "406"
+            ],
+            [
+              "Samuel Yves Umtiti",
+              "DEF",
+              "162",
+              "124",
+              "0.80",
+              "11",
+              "0.07",
+              "126"
+            ],
+            [
+              "Francesc Fàbregas i Soler",
+              "MID",
+              "121",
+              "138",
+              "1.33",
+              "10",
+              "0.10",
+              "191"
+            ],
+            [
+              "Deyverson Brum Silva Acost",
+              "FWD",
+              "40",
+              "55",
+              "1.53",
+              "9",
+              "0.25",
+              "82"
+            ],
+            [
+              "Iago Aspas Juncal",
+              "FWD",
+              "49",
+              "53",
+              "1.30",
+              "9",
+              "0.22",
+              "71"
+            ],
+            [
+              "Gianluigi Donnarumma",
+              "GK",
+              "104",
+              "2",
+              "0.02",
+              "9",
+              "0.09",
+              "15"
+            ],
+            [
+              "Daniel Alves da Silva",
+              "DEF",
+              "250",
+              "473",
+              "2.06",
+              "8",
+              "0.03",
+              "392"
+            ],
+            [
+              "Jonathas Cristian de Jesus",
+              "FWD",
+              "48",
+              "76",
+              "1.74",
+              "8",
+              "0.18",
+              "74"
+            ],
+            [
+              "Manuel Agudo Durán",
+              "MID",
+              "42",
+              "62",
+              "1.56",
+              "8",
+              "0.20",
+              "87"
+            ],
+            [
+              "Katie McCabe",
+              "DEF",
+              "79",
+              "73",
+              "1.03",
+              "8",
+              "0.11",
+              "104"
+            ],
+            [
+              "Roberto Trashorras Gayoso",
+              "DEF",
+              "43",
+              "62",
+              "1.58",
+              "8",
+              "0.20",
+              "95"
+            ],
+            [
+              "Cristiano Ronaldo dos Sant",
+              "FWD",
+              "76",
+              "63",
+              "0.93",
+              "7",
+              "0.10",
+              "135"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "player",
+            "pos",
+            "apps",
+            "red cards"
+          ],
+          "rows": [
+            [
+              "Jordi Alba Ramos",
+              "FULL_BACK",
+              "284",
+              "2"
+            ],
+            [
+              "Anderson Luís de Souza",
+              "ATTACKING_MIDFIELD",
+              "57",
+              "2"
+            ],
+            [
+              "Fabián Ariel Orellana Vale",
+              "WINGER",
+              "49",
+              "2"
+            ],
+            [
+              "Jonathas Cristian de Jesus",
+              "STRIKER",
+              "48",
+              "2"
+            ],
+            [
+              "Diego Perotti",
+              "CENTER_BACK",
+              "34",
+              "2"
+            ],
+            [
+              "Yannick Cahuzac",
+              "WINGER",
+              "33",
+              "2"
+            ],
+            [
+              "Younousse Sankharé",
+              "DEFENSIVE_MIDFIELD",
+              "33",
+              "2"
+            ],
+            [
+              "Víctor Valdés Arribas",
+              "GOALKEEPER",
+              "256",
+              "1"
+            ],
+            [
+              "Javier Alejandro Mascheran",
+              "CENTER_BACK",
+              "221",
+              "1"
+            ],
+            [
+              "Ousmane Dembélé",
+              "CENTRAL_MIDFIELD",
+              "125",
+              "1"
+            ],
+            [
+              "Ella Toone",
+              "CENTRAL_MIDFIELD",
+              "76",
+              "1"
+            ],
+            [
+              "Rosella Ayane",
+              "WINGER",
+              "73",
+              "1"
+            ],
+            [
+              "Alex Greenwood",
+              "FULL_BACK",
+              "66",
+              "1"
+            ],
+            [
+              "Achraf Hakimi Mouh",
+              "WINGER",
+              "60",
+              "1"
+            ],
+            [
+              "Ronaldo de Assis Moreira",
+              "WINGER",
+              "59",
+              "1"
+            ],
+            [
+              "Ibrahim Afellay",
+              "WINGER",
+              "55",
+              "1"
+            ],
+            [
+              "Gilly Louise Scarlett Flah",
+              "CENTER_BACK",
+              "55",
+              "1"
+            ],
+            [
+              "Bruno Miguel Borges Fernan",
+              "ATTACKING_MIDFIELD",
+              "54",
+              "1"
+            ],
+            [
+              "Kayleigh Green",
+              "STRIKER",
+              "53",
+              "1"
+            ],
+            [
+              "Lauren James",
+              "STRIKER",
+              "50",
+              "1"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "pos",
+            "apps",
+            "fouls committed/90",
+            "fouls drawn/90",
+            "cards/90"
+          ],
+          "rows": [
+            [
+              "FWD",
+              "40739",
+              "0.87",
+              "1.00",
+              "0.02"
+            ],
+            [
+              "MID",
+              "30688",
+              "0.93",
+              "0.99",
+              "0.02"
+            ],
+            [
+              "DEF",
+              "60475",
+              "0.92",
+              "0.69",
+              "0.02"
+            ],
+            [
+              "GK",
+              "14262",
+              "0.01",
+              "0.09",
+              "0.02"
+            ],
+            [
+              "UNK",
+              "5969",
+              "0.00",
+              "0.00",
+              "0.00"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "team",
+            "cards per team-match",
+            "fouls per team-match"
+          ],
+          "rows": [
+            [
+              "Granada",
+              "1.02",
+              "18.64"
+            ],
+            [
+              "Celta Vigo",
+              "0.91",
+              "17.78"
+            ],
+            [
+              "Espanyol",
+              "0.84",
+              "21.21"
+            ],
+            [
+              "Netherlands",
+              "0.80",
+              "17.40"
+            ],
+            [
+              "Levante",
+              "0.79",
+              "16.88"
+            ],
+            [
+              "Nürnberg W",
+              "0.77",
+              "14.05"
+            ],
+            [
               "FC Levante Badalona",
               "0.73",
               "12.37"
+            ],
+            [
+              "Atletico Madrid W",
+              "0.73",
+              "10.53"
             ],
             [
               "Argentina",
@@ -6717,13 +8051,28 @@
               "0.65"
             ]
           ]
+        },
+        {
+          "type": "mime_bundle",
+          "data": {
+            "image/svg+xml": "<svg width=\"780\" height=\"400\" viewBox=\"0 0 780 400\" xmlns=\"http://www.w3.org/2000/svg\">\n<rect x=\"0\" y=\"0\" width=\"780\" height=\"400\" opacity=\"1\" fill=\"#FFFFFF\" stroke=\"none\"/>\n<text x=\"390\" y=\"15\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"14.516129032258064\" opacity=\"1\" fill=\"#000000\">\nCards per team-match — most punished teams\n</text>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"70\" y1=\"344\" x2=\"70\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"82\" y1=\"344\" x2=\"82\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"94\" y1=\"344\" x2=\"94\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"106\" y1=\"344\" x2=\"106\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"117\" y1=\"344\" x2=\"117\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"129\" y1=\"344\" x2=\"129\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"141\" y1=\"344\" x2=\"141\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"153\" y1=\"344\" x2=\"153\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"164\" y1=\"344\" x2=\"164\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"176\" y1=\"344\" x2=\"176\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"188\" y1=\"344\" x2=\"188\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"199\" y1=\"344\" x2=\"199\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"211\" y1=\"344\" x2=\"211\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"223\" y1=\"344\" x2=\"223\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"235\" y1=\"344\" x2=\"235\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"246\" y1=\"344\" x2=\"246\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"258\" y1=\"344\" x2=\"258\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"270\" y1=\"344\" x2=\"270\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"282\" y1=\"344\" x2=\"282\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"293\" y1=\"344\" x2=\"293\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"305\" y1=\"344\" x2=\"305\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"317\" y1=\"344\" x2=\"317\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"329\" y1=\"344\" x2=\"329\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"340\" y1=\"344\" x2=\"340\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"352\" y1=\"344\" x2=\"352\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"364\" y1=\"344\" x2=\"364\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"375\" y1=\"344\" x2=\"375\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"387\" y1=\"344\" x2=\"387\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"399\" y1=\"344\" x2=\"399\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"411\" y1=\"344\" x2=\"411\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"422\" y1=\"344\" x2=\"422\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"434\" y1=\"344\" x2=\"434\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"446\" y1=\"344\" x2=\"446\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"458\" y1=\"344\" x2=\"458\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"469\" y1=\"344\" x2=\"469\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"481\" y1=\"344\" x2=\"481\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"493\" y1=\"344\" x2=\"493\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"505\" y1=\"344\" x2=\"505\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"516\" y1=\"344\" x2=\"516\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"528\" y1=\"344\" x2=\"528\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"540\" y1=\"344\" x2=\"540\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"551\" y1=\"344\" x2=\"551\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"563\" y1=\"344\" x2=\"563\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"575\" y1=\"344\" x2=\"575\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"587\" y1=\"344\" x2=\"587\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"598\" y1=\"344\" x2=\"598\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"610\" y1=\"344\" x2=\"610\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"622\" y1=\"344\" x2=\"622\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"634\" y1=\"344\" x2=\"634\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"645\" y1=\"344\" x2=\"645\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"657\" y1=\"344\" x2=\"657\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"669\" y1=\"344\" x2=\"669\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"681\" y1=\"344\" x2=\"681\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"692\" y1=\"344\" x2=\"692\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"704\" y1=\"344\" x2=\"704\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"716\" y1=\"344\" x2=\"716\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"727\" y1=\"344\" x2=\"727\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"739\" y1=\"344\" x2=\"739\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"751\" y1=\"344\" x2=\"751\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"763\" y1=\"344\" x2=\"763\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"344\" x2=\"769\" y2=\"344\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"339\" x2=\"769\" y2=\"339\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"334\" x2=\"769\" y2=\"334\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"329\" x2=\"769\" y2=\"329\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"323\" x2=\"769\" y2=\"323\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"318\" x2=\"769\" y2=\"318\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"313\" x2=\"769\" y2=\"313\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"307\" x2=\"769\" y2=\"307\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"302\" x2=\"769\" y2=\"302\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"297\" x2=\"769\" y2=\"297\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"292\" x2=\"769\" y2=\"292\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"286\" x2=\"769\" y2=\"286\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"281\" x2=\"769\" y2=\"281\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"276\" x2=\"769\" y2=\"276\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"271\" x2=\"769\" y2=\"271\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"265\" x2=\"769\" y2=\"265\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"260\" x2=\"769\" y2=\"260\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"255\" x2=\"769\" y2=\"255\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"249\" x2=\"769\" y2=\"249\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"244\" x2=\"769\" y2=\"244\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"239\" x2=\"769\" y2=\"239\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"234\" x2=\"769\" y2=\"234\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"228\" x2=\"769\" y2=\"228\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"223\" x2=\"769\" y2=\"223\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"218\" x2=\"769\" y2=\"218\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"212\" x2=\"769\" y2=\"212\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"207\" x2=\"769\" y2=\"207\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"202\" x2=\"769\" y2=\"202\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"197\" x2=\"769\" y2=\"197\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"191\" x2=\"769\" y2=\"191\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"186\" x2=\"769\" y2=\"186\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"181\" x2=\"769\" y2=\"181\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"175\" x2=\"769\" y2=\"175\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"170\" x2=\"769\" y2=\"170\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"165\" x2=\"769\" y2=\"165\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"160\" x2=\"769\" y2=\"160\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"154\" x2=\"769\" y2=\"154\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"149\" x2=\"769\" y2=\"149\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"144\" x2=\"769\" y2=\"144\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"138\" x2=\"769\" y2=\"138\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"133\" x2=\"769\" y2=\"133\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"128\" x2=\"769\" y2=\"128\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"123\" x2=\"769\" y2=\"123\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"117\" x2=\"769\" y2=\"117\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"112\" x2=\"769\" y2=\"112\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"107\" x2=\"769\" y2=\"107\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"101\" x2=\"769\" y2=\"101\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"96\" x2=\"769\" y2=\"96\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"91\" x2=\"769\" y2=\"91\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"86\" x2=\"769\" y2=\"86\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"80\" x2=\"769\" y2=\"80\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"75\" x2=\"769\" y2=\"75\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"70\" x2=\"769\" y2=\"70\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"64\" x2=\"769\" y2=\"64\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"59\" x2=\"769\" y2=\"59\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"54\" x2=\"769\" y2=\"54\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"49\" x2=\"769\" y2=\"49\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"43\" x2=\"769\" y2=\"43\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"94\" y1=\"344\" x2=\"94\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"153\" y1=\"344\" x2=\"153\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"211\" y1=\"344\" x2=\"211\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"270\" y1=\"344\" x2=\"270\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"329\" y1=\"344\" x2=\"329\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"387\" y1=\"344\" x2=\"387\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"446\" y1=\"344\" x2=\"446\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"505\" y1=\"344\" x2=\"505\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"563\" y1=\"344\" x2=\"563\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"622\" y1=\"344\" x2=\"622\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"681\" y1=\"344\" x2=\"681\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"739\" y1=\"344\" x2=\"739\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"344\" x2=\"769\" y2=\"344\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"292\" x2=\"769\" y2=\"292\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"239\" x2=\"769\" y2=\"239\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"186\" x2=\"769\" y2=\"186\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"133\" x2=\"769\" y2=\"133\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"80\" x2=\"769\" y2=\"80\"/>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"64,34 64,344 \"/>\n<text x=\"55\" y=\"344\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n0.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,344 64,344 \"/>\n<text x=\"55\" y=\"292\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n0.2\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,292 64,292 \"/>\n<text x=\"55\" y=\"239\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n0.4\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,239 64,239 \"/>\n<text x=\"55\" y=\"186\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n0.6\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,186 64,186 \"/>\n<text x=\"55\" y=\"133\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n0.8\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,133 64,133 \"/>\n<text x=\"55\" y=\"80\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n1.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,80 64,80 \"/>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"65,345 769,345 \"/>\n<text x=\"94\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nGranada\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"94,345 94,350 \"/>\n<text x=\"153\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nCelta Vigo\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"153,345 153,350 \"/>\n<text x=\"211\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nEspanyol\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"211,345 211,350 \"/>\n<text x=\"270\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nNetherlands\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"270,345 270,350 \"/>\n<text x=\"329\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nLevante\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"329,345 329,350 \"/>\n<text x=\"387\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nNürnberg W\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"387,345 387,350 \"/>\n<text x=\"446\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nFC Levante Badalon\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"446,345 446,350 \"/>\n<text x=\"505\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nAtletico Madrid W\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"505,345 505,350 \"/>\n<text x=\"563\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nArgentina\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"563,345 563,350 \"/>\n<text x=\"622\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nMalaga\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"622,345 622,350 \"/>\n<text x=\"681\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nFrosinone\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"681,345 681,350 \"/>\n<text x=\"739\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nPalermo\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"739,345 739,350 \"/>\n<rect x=\"73\" y=\"75\" width=\"41\" height=\"269\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"132\" y=\"104\" width=\"41\" height=\"240\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"191\" y=\"123\" width=\"41\" height=\"221\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"249\" y=\"133\" width=\"41\" height=\"211\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"308\" y=\"136\" width=\"41\" height=\"208\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"367\" y=\"141\" width=\"41\" height=\"203\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"425\" y=\"152\" width=\"41\" height=\"192\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"484\" y=\"152\" width=\"41\" height=\"192\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"543\" y=\"152\" width=\"41\" height=\"192\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"601\" y=\"154\" width=\"41\" height=\"190\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"660\" y=\"165\" width=\"41\" height=\"179\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"719\" y=\"170\" width=\"41\" height=\"174\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n</svg>",
+            "text/plain": "Figure (SVG)"
+          },
+          "metadata": {}
         }
       ]
     },
     {
-      "id": "b36d82bb-408c-4d12-a313-1ef5a9c07ff2",
+      "id": "914d3d1e-a7ab-4e4b-8bdc-1c5771c06597",
       "cell_type": "markdown",
-      "source": "## Findings\n\nFrom 152k player-match lines and 2,855 cards:\n\n- **Card-rate leaders are specialists, not stars**: Fabián Orellana\n  (0.29 cards/90), Yannick Cahuzac (0.26) and Deyverson (0.25) top\n  the per-90 table — players who foul early and often in limited\n  minutes. Among volume players, Alba (28 cards), Messi (27) and\n  Piqué (24) lead the raw totals.\n- **The real foul merchants commit 3–4 per game**: Franco Vázquez\n  (3.81 fouls/90), Papa Kouly Diop (3.79) and Lorenzo Lollo (3.28,\n  *zero* cards) — defenders who stop attacks with tactical fouling,\n  not punishment.\n- **Forwards draw more fouls than they commit** (1.00 vs 0.87 per\n  90); defenders invert it (commit 0.92, draw 0.69). Dribbling is a\n  card-generating skill — Messi has drawn **1,747 fouls** across his\n  career, the most on record.\n- **Team identity is real**: Granada averages 1.02 cards per match\n  (highest), Espanyol 21.2 fouls per match — Spanish football's\n  aggressive reputation shows up directly in the data.\n- Red cards are genuinely rare: only ~20 players have 2+ in the\n  dataset; Jordi Alba leads with 2 in 284 apps.\n\nCaveats: fouls/card data comes from StatsBomb competitions only;\n\"fouls drawn\" includes fouls that wouldn't be given in stricter\nleagues; small samples (min 30 apps) still let one bad run dominate a\nrate; cards/90 looks flat (~0.02) because yellows are spread thin.\n",
+      "source": "## Discussion\n\nFrom 152k player-match lines and 2,855 cards:\n\n- **Card-rate leaders are specialists, not stars**: Fabián Orellana\n  (0.29 cards/90), Yannick Cahuzac (0.26) and Deyverson (0.25) top\n  the per-90 table — players who foul early and often in limited\n  minutes. Among volume players, Alba (28 cards), Messi (27) and\n  Piqué (24) lead the raw totals.\n- **The real foul merchants commit 3–4 per game**: Franco Vázquez\n  (3.81 fouls/90), Papa Kouly Diop (3.79) and Lorenzo Lollo (3.28,\n  *zero* cards) — defenders who stop attacks with tactical fouling,\n  not punishment.\n- **Forwards draw more fouls than they commit** (1.00 vs 0.87 per\n  90); defenders invert it (commit 0.92, draw 0.69). Dribbling is a\n  card-generating skill — Messi has drawn **1,747 fouls** across his\n  career, the most on record.\n- **Team identity is real**: Granada averages 1.02 cards per match\n  (highest), Espanyol 21.2 fouls per match — Spanish football's\n  aggressive reputation shows up directly in the data.\n- Red cards are genuinely rare: only ~20 players have 2+ in the\n  dataset; Jordi Alba leads with 2 in 284 apps.\n\nCaveats: fouls/card data comes from StatsBomb competitions only;\n\"fouls drawn\" includes fouls that wouldn't be given in stricter\nleagues; small samples (min 30 apps) still let one bad run dominate a\nrate; cards/90 looks flat (~0.02) because yellows are spread thin.\n\n**Limitations.** The analysis is limited to the competitions present in the database; player-level metrics exist only for StatsBomb-covered tournaments, and underlying event data may contain errors.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "be9861d6-4181-427a-b962-43802c96ebf7",
+      "cell_type": "markdown",
+      "source": "## Conclusion\n\nCard-rate leaders are specialists, not stars. Together these results answer the research question posed in the Introduction and quantify the pattern across 152,000 appearances. The notebook provides a fully reproducible pipeline from raw CSV extracts to published figures.\n",
       "metadata": {},
       "outputs": []
     }

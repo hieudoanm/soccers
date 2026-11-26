@@ -12,9 +12,23 @@
   },
   "cells": [
     {
-      "id": "2eaf94f4-d6a5-4d81-bac6-7aad0a5cd667",
+      "id": "c19d7b7c-061c-4a54-9c7a-890203968614",
       "cell_type": "markdown",
-      "source": "## Best of the Belgian Pro League\n\nA complete record-book of the **Belgian Pro League** — every statistic worth knowing,\ncomputed from all matches in `data/matches_full.csv`.\n\n**Records covered:** most championships, the champion hall of fame\n(most points, most goals, fewest conceded, best goal difference, biggest\ntitle margin, most wins), the best team-seasons ever, unbeaten\ninvincibles, closest and biggest title races, biggest wins and\nhighest-scoring matches, and the season's top scorers where player-level\ndata exists.",
+      "source": "## Abstract\n\nThis study examines the Belgian Pro League record book using 8,813 matches drawn from the Soccers football database. 31 complete seasons (1995/96 → 2025/26) and 8,813 matches, the Belgian Pro League record book. Most championships: Anderlecht 11 and Club Brugge 10 — but Brugge have won five of the last six titles, including 2025/26. All computation runs in Rust inside a `.mars` notebook (polars + plotters — charts as inline SVG), and every table and figure is generated from the extracted CSVs.\n\n## Keywords\n\n**Keywords:** football, analysis, records, belgian-pro-league, mars, sqlite\n\n## Table of contents\n\n- [Abstract](#abstract)\n- [Keywords](#keywords)\n- [Introduction](#introduction)\n- [Methods](#methods)\n- [Results](#results)\n  - [Assemble per-season standings for all complete seasons](#assemble-per-season-standings-for-all-complete-seasons)\n  - [Champion hall of fame — six records](#champion-hall-of-fame--six-records)\n  - [Best team-seasons ever by points (any team)](#best-team-seasons-ever-by-points-any-team)\n  - [Unbeaten seasons](#unbeaten-seasons)\n  - [Title races — closest and biggest margins](#title-races--closest-and-biggest-margins)\n  - [Biggest wins & highest scoring matches](#biggest-wins--highest-scoring-matches)\n  - [Top scorers](#top-scorers)\n- [Discussion](#discussion)\n- [Conclusion](#conclusion)\n\n## Introduction\n\nA complete record-book of the **Belgian Pro League** — every statistic worth knowing,\ncomputed from all matches in `data/matches_full.csv`.\n\n**Records covered:** most championships, the champion hall of fame\n(most points, most goals, fewest conceded, best goal difference, biggest\ntitle margin, most wins), the best team-seasons ever, unbeaten\ninvincibles, closest and biggest title races, biggest wins and\nhighest-scoring matches, and the season's top scorers where player-level\ndata exists.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "87ec3d46-8b07-47d6-9497-d049b3f0a89a",
+      "cell_type": "markdown",
+      "source": "## Methods\n\nData were extracted from the Soccers football database (`packages/data`) as CSV snapshots: `matches_full`, `player_goals`.\n\nThe analysis runs entirely in Rust inside the notebook: **polars** handles table scans, joins and aggregations; **plotters** renders figures as inline SVG; `mars_table` renders result tables.\n\nEach code cell is kept to a single output so results can be read top to bottom.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "4f7d5984-2c09-4be5-aa0f-bdb3bc0b0fb8",
+      "cell_type": "markdown",
+      "source": "## Results\n\nAll figures and tables below are computed directly from the extracted data. Each code cell produces one output — a table, a chart, or a short text summary.\n",
       "metadata": {},
       "outputs": []
     },
@@ -43,6 +57,13 @@
           "text": "Belgian Pro League matches: 8813\nfinished matches: 8813 (0 duplicate fixtures dropped) | team-season entries: 546\ncomplete seasons: 31 (1995/96 -> 2025/26)\nno player-level scorer data for this competition\n()\n"
         }
       ]
+    },
+    {
+      "id": "6b0d1ad0-cfb3-4c33-afbc-c966156fd35e",
+      "cell_type": "markdown",
+      "source": "### Assemble per-season standings for all complete seasons\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "7c97cae7-91c9-40dd-916d-3f57a285f166",
@@ -96,6 +117,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "69ca14ba-309c-44c2-bf4b-54b5a34b1b31",
+      "cell_type": "markdown",
+      "source": "### Champion hall of fame — six records\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "2e2cc631-afbe-4b41-8820-85fd57ab705e",
@@ -203,6 +231,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "a01b4093-1c0e-4ac3-a3a4-389181e33974",
+      "cell_type": "markdown",
+      "source": "### Best team-seasons ever by points (any team)\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "2eaf4364-744f-41cf-8076-4325c2af9bc9",
@@ -403,6 +438,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "48acafd3-5622-411e-99c2-cea62ad4f81d",
+      "cell_type": "markdown",
+      "source": "### Unbeaten seasons\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "3de70d43-d439-4fd1-a6ff-fbed597b248d",
@@ -613,6 +655,13 @@
           "rows": []
         }
       ]
+    },
+    {
+      "id": "276d2799-6199-4644-b687-87d3c3f2148f",
+      "cell_type": "markdown",
+      "source": "### Title races — closest and biggest margins\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "15040a50-ed8f-4959-a2dc-d4189cb12aa6",
@@ -1138,6 +1187,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "f5cb51da-2f15-44bb-aceb-3939683ee3b2",
+      "cell_type": "markdown",
+      "source": "### Biggest wins & highest scoring matches\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "e6be7414-f41d-4aac-844b-54c3d4b33e35",
@@ -1803,6 +1859,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "b496a02a-af14-44dd-a362-67bbf69abeba",
+      "cell_type": "markdown",
+      "source": "### Top scorers\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "f1621298-28af-4a72-ba83-0f9e49b24818",
@@ -2879,9 +2942,16 @@
       ]
     },
     {
-      "id": "9df79d2a-c3bb-4a2f-80ef-1a88b763e1c3",
+      "id": "78b63114-9a3a-445e-8df3-94f20e5dbde0",
       "cell_type": "markdown",
-      "source": "## Findings\n\nAcross **31 complete seasons** (1995/96 → 2025/26) and 8,813 matches, the\nBelgian Pro League record book:\n\n- **Most championships**: Anderlecht **11** and Club Brugge **10** — but\n  Brugge have won **five of the last six** titles, including 2025/26.\n  Genk 4, Union Saint-Gilloise 3, Standard 2, Lierse 1.\n- **Champion hall of fame**: Brugge 2025/26 owns most points (88) and most\n  wins; Brugge 2002/03 scored the most goals (96) and posted the best\n  goal difference (+63); Brugge 2019/20 conceded the fewest (14).\n- **Best season ever**: Brugge 1997/98 — 84 points in a 34-game season,\n  2.47 ppg, still the highest ppg by a Belgian champion.\n- **No invincible seasons** in the dataset.\n- **Closest finishes**: two titles went to a final-round decider at level\n  points (Anderlecht 2008/09, Genk 2022/23); two more were one-point\n  margins — Belgian football produces dead heats.\n- **Biggest blowouts**: Brugge 1997/98 (+18) tops the list; Brugge have\n  won four of the five biggest routs.\n- **Records on the pitch**: Genk 9–0 Mechelen (2002/03) is the biggest\n  win; Westerlo 6–6 Genk (1999/00) the highest-scoring draw.\n- No player-level scoring data for the Belgian Pro League in the StatsBomb\n  subset.\n\n*Method notes: canonical names merged (\"Lommel SK\"/\"Lommel\" etc.); era\nformat changes (16/18-team seasons) handled by per-season standings.",
+      "source": "## Discussion\n\nAcross **31 complete seasons** (1995/96 → 2025/26) and 8,813 matches, the\nBelgian Pro League record book:\n\n- **Most championships**: Anderlecht **11** and Club Brugge **10** — but\n  Brugge have won **five of the last six** titles, including 2025/26.\n  Genk 4, Union Saint-Gilloise 3, Standard 2, Lierse 1.\n- **Champion hall of fame**: Brugge 2025/26 owns most points (88) and most\n  wins; Brugge 2002/03 scored the most goals (96) and posted the best\n  goal difference (+63); Brugge 2019/20 conceded the fewest (14).\n- **Best season ever**: Brugge 1997/98 — 84 points in a 34-game season,\n  2.47 ppg, still the highest ppg by a Belgian champion.\n- **No invincible seasons** in the dataset.\n- **Closest finishes**: two titles went to a final-round decider at level\n  points (Anderlecht 2008/09, Genk 2022/23); two more were one-point\n  margins — Belgian football produces dead heats.\n- **Biggest blowouts**: Brugge 1997/98 (+18) tops the list; Brugge have\n  won four of the five biggest routs.\n- **Records on the pitch**: Genk 9–0 Mechelen (2002/03) is the biggest\n  win; Westerlo 6–6 Genk (1999/00) the highest-scoring draw.\n- No player-level scoring data for the Belgian Pro League in the StatsBomb\n  subset.\n\n*Method notes: canonical names merged (\"Lommel SK\"/\"Lommel\" etc.); era\nformat changes (16/18-team seasons) handled by per-season standings.\n\n**Limitations.** Records reflect only the matches present in the database; coverage varies by competition and era, so 'records' are archive records, not all-time official marks.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "98641feb-4ac6-4ac6-bb00-ae4a42b84e12",
+      "cell_type": "markdown",
+      "source": "## Conclusion\n\n31 complete seasons (1995/96 → 2025/26) and 8,813 matches, the Belgian Pro League record book. Most championships: Anderlecht 11 and Club Brugge 10 — but Brugge have won five of the last six titles, including 2025/26. Together these results answer the research question posed in the Introduction and quantify the pattern across 8,813 matches. The notebook provides a fully reproducible pipeline from raw CSV extracts to published figures.\n",
       "metadata": {},
       "outputs": []
     }

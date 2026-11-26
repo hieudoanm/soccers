@@ -12,9 +12,23 @@
   },
   "cells": [
     {
-      "id": "9771735e-e347-4207-8684-99f24f30cb05",
+      "id": "7efa0a45-f54b-443b-adff-d4c340d13cbc",
       "cell_type": "markdown",
-      "source": "## The Opening Goal Advantage\n\nScoring first is football's oldest cliché — but how much is it actually\nworth? This notebook replays the goal timelines of **3,703 matches** with\ntiming data and measures what happens after the first goal: how often the\nfirst scorer wins, which teams are best at *protecting* an early lead, and\nwhich are best at *recovering* after conceding first.\n\nWe also split by when the first goal arrives (first half vs second half),\nsince a 10th-minute opener and an 80th-minute opener are not the same\nthing.",
+      "source": "## Abstract\n\nThis study examines the opening goal advantage using 3,703 matches drawn from the Soccers football database. In 3,703 matches with goal timing, the opening goal is worth a lot — but less than the cliché suggests. All computation runs in Rust inside a `.mars` notebook (polars + plotters — charts as inline SVG), and every table and figure is generated from the extracted CSVs.\n\n## Keywords\n\n**Keywords:** football, analysis, comebacks, mars, sqlite\n\n## Table of contents\n\n- [Abstract](#abstract)\n- [Keywords](#keywords)\n- [Introduction](#introduction)\n- [Methods](#methods)\n- [Results](#results)\n  - [First-goal outcomes](#first-goal-outcomes)\n- [Discussion](#discussion)\n- [Conclusion](#conclusion)\n\n## Introduction\n\nScoring first is football's oldest cliché — but how much is it actually\nworth? This notebook replays the goal timelines of **3,703 matches** with\ntiming data and measures what happens after the first goal: how often the\nfirst scorer wins, which teams are best at *protecting* an early lead, and\nwhich are best at *recovering* after conceding first.\n\nWe also split by when the first goal arrives (first half vs second half),\nsince a 10th-minute opener and an 80th-minute opener are not the same\nthing.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "23d59159-2085-4730-bd21-1fcaaae801cf",
+      "cell_type": "markdown",
+      "source": "## Methods\n\nData were extracted from the Soccers football database (`packages/data`) as CSV snapshots: `goal_events`.\n\nThe analysis runs entirely in Rust inside the notebook: **polars** handles table scans, joins and aggregations; **plotters** renders figures as inline SVG; `mars_table` renders result tables.\n\nEach code cell is kept to a single output so results can be read top to bottom.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "d6d62ae6-d23e-402c-9617-ce701c200185",
+      "cell_type": "markdown",
+      "source": "## Results\n\nAll figures and tables below are computed directly from the extracted data. Each code cell produces one output — a table, a chart, or a short text summary.\n",
       "metadata": {},
       "outputs": []
     },
@@ -45,9 +59,9 @@
       ]
     },
     {
-      "id": "39a4d7a2-2dce-4744-a230-4cfa0d748fd0",
+      "id": "594eec49-9ff4-47f8-9c32-51d9e87eacab",
       "cell_type": "markdown",
-      "source": "## First-goal outcomes\n\nFor each match: the first goal's scorer \"scored first\"; the other side\n\"conceded first\". We record the final result for both, plus the minute of\nthe opener.",
+      "source": "### First-goal outcomes\n\nFor each match: the first goal's scorer \"scored first\"; the other side\n\"conceded first\". We record the final result for both, plus the minute of\nthe opener.\n",
       "metadata": {},
       "outputs": []
     },
@@ -733,9 +747,16 @@
       ]
     },
     {
-      "id": "95506afa-0993-44e0-9b17-788e7ad1d730",
+      "id": "95a28ce0-7421-4b7d-af3d-18637f19349a",
       "cell_type": "markdown",
-      "source": "## Findings\n\nIn **3,703 matches** with goal timing, the opening goal is worth a lot —\nbut less than the cliché suggests:\n\n- **First scorer wins 71.2%** of the time; the first *conceder* wins\n  just **11.4%**.\n- Timing matters: first goals in minutes 1–30 convert at 68.2%, rising\n  to **82.4%** for 61+' openers — a late first goal is nearly a\n  match-winner because there's less time to equalise.\n- **Best protectors** (min. 15 times scoring first): Juventus Women and\n  AS Roma Women at a perfect **100%**, Barcelona Femení 96.6%, Real Madrid\n  Femenino 95.2%, **Bayer Leverkusen 95.0%** over 40 chances — the\n  unbeaten-machine side protects leads like few others.\n- **Best recoverers** after conceding first: Manchester City WFC 52.9%,\n  Arsenal WFC 45.0%, and **Barcelona (men's) 43.3%** — 55 wins from 127\n  deficits, the best big-sample comeback side in the data.\n\n*Caveat: StatsBomb coverage includes women's competitions — \"W\" suffixed\nnames are the women's teams, which skew the small-sample leaderboards.*",
+      "source": "## Discussion\n\nIn **3,703 matches** with goal timing, the opening goal is worth a lot —\nbut less than the cliché suggests:\n\n- **First scorer wins 71.2%** of the time; the first *conceder* wins\n  just **11.4%**.\n- Timing matters: first goals in minutes 1–30 convert at 68.2%, rising\n  to **82.4%** for 61+' openers — a late first goal is nearly a\n  match-winner because there's less time to equalise.\n- **Best protectors** (min. 15 times scoring first): Juventus Women and\n  AS Roma Women at a perfect **100%**, Barcelona Femení 96.6%, Real Madrid\n  Femenino 95.2%, **Bayer Leverkusen 95.0%** over 40 chances — the\n  unbeaten-machine side protects leads like few others.\n- **Best recoverers** after conceding first: Manchester City WFC 52.9%,\n  Arsenal WFC 45.0%, and **Barcelona (men's) 43.3%** — 55 wins from 127\n  deficits, the best big-sample comeback side in the data.\n\n*Caveat: StatsBomb coverage includes women's competitions — \"W\" suffixed\nnames are the women's teams, which skew the small-sample leaderboards.*\n\n**Limitations.** The analysis is limited to the competitions present in the database; player-level metrics exist only for StatsBomb-covered tournaments, and underlying event data may contain errors.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "998034df-95af-4b0a-b2ad-7b973fb67caf",
+      "cell_type": "markdown",
+      "source": "## Conclusion\n\nIn 3,703 matches with goal timing, the opening goal is worth a lot — but less than the cliché suggests: the first scorer wins 71.2% of the time. Together these results answer the research question posed in the Introduction and quantify the pattern across 3,703 matches. The notebook provides a fully reproducible pipeline from raw CSV extracts to published figures.\n",
       "metadata": {},
       "outputs": []
     }

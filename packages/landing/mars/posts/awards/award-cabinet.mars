@@ -12,9 +12,23 @@
   },
   "cells": [
     {
-      "id": "66df54d6-f477-47f4-b206-4d6dbd5dff2b",
+      "id": "c8033d6c-2d6f-483d-87d6-b0e6e8b8956b",
       "cell_type": "markdown",
-      "source": "## The award cabinet: who owns football's trophies\n\nThe awards importer collected **11 individual honours** — Ballon d'Or\n(men's and women's), FIFA World Player, The Best FIFA awards, PFA\nPlayer of the Year, the European Golden Shoe and coaching prizes —\nwith podium places where available.\n\nThis notebook counts the cabinets: who has won the most, which awards\nproduce repeat winners vs one-hit wonders, and how the record books\nsplit between players, goalkeepers and managers.\n\n*Caveat: player resolution is incomplete for the earliest years —\npre-2000 Ballon d'Or rows often carry only a club. Counts below cover\nresolved winners only.*\n",
+      "source": "## Abstract\n\nThis study examines the award cabinet using the award records drawn from the Soccers football database. Across 11 awards and 590 recorded finishes, Messi owns the cabinet: 18 wins and 30 podium finishes across Ballon d'Or, Golden Shoe and FIFA awards — nearly 12% of all resolved wins. All computation runs in Rust inside a `.mars` notebook (polars + plotters — charts as inline SVG), and every table and figure is generated from the extracted CSVs.\n\n## Keywords\n\n**Keywords:** football, analysis, awards, ballon-dor, mars, sqlite\n\n## Table of contents\n\n- [Abstract](#abstract)\n- [Keywords](#keywords)\n- [Introduction](#introduction)\n- [Methods](#methods)\n- [Results](#results)\n  - [Most awarded players overall (wins + podiums)](#most-awarded-players-overall-wins--podiums)\n  - [Repeat-winner rate: players with >1 win](#repeat-winner-rate-players-with-1-win)\n- [Discussion](#discussion)\n- [Conclusion](#conclusion)\n\n## Introduction\n\nThe awards importer collected **11 individual honours** — Ballon d'Or\n(men's and women's), FIFA World Player, The Best FIFA awards, PFA\nPlayer of the Year, the European Golden Shoe and coaching prizes —\nwith podium places where available.\n\nThis notebook counts the cabinets: who has won the most, which awards\nproduce repeat winners vs one-hit wonders, and how the record books\nsplit between players, goalkeepers and managers.\n\n*Caveat: player resolution is incomplete for the earliest years —\npre-2000 Ballon d'Or rows often carry only a club. Counts below cover\nresolved winners only.*\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "61729bad-926d-4bcc-878c-0f2d0866b5c4",
+      "cell_type": "markdown",
+      "source": "## Methods\n\nData were extracted from the Soccers football database (`packages/data`) as CSV snapshots: `award`, `award_winner`, `manager`, `player`, `team`.\n\nThe analysis runs entirely in Rust inside the notebook: **polars** handles table scans, joins and aggregations; **plotters** renders figures as inline SVG; `mars_table` renders result tables.\n\nEach code cell is kept to a single output so results can be read top to bottom.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "a8466e8a-ea18-4488-ade1-1dd21a16da0b",
+      "cell_type": "markdown",
+      "source": "## Results\n\nAll figures and tables below are computed directly from the extracted data. Each code cell produces one output — a table, a chart, or a short text summary.\n",
       "metadata": {},
       "outputs": []
     },
@@ -37,6 +51,101 @@
       "source": "\n// winners (place=1) per award — resolved players only\nstruct W { aid: i64, pid: i64, mid: i64, tid: i64, year: i64, place: i64, goals: f64 }\nlet mut winners: Vec<W> = Vec::new();\nlet mut podiums: Vec<W> = Vec::new();\nfor i in 0..w_award.len() {\n    if w_place[i] == 1 && w_pid[i] > 0 {\n        winners.push(W{aid:w_award[i],pid:w_pid[i],mid:w_mid[i],tid:w_tid[i],year:w_year[i],place:w_place[i],goals:w_goals[i]});\n    }\n    if w_place[i] >= 1 && w_place[i] <= 3 {\n        podiums.push(W{aid:w_award[i],pid:w_pid[i],mid:w_mid[i],tid:w_tid[i],year:w_year[i],place:w_place[i],goals:w_goals[i]});\n    }\n}\nprintln!(\"resolved winners: {}, podium finishes: {}\", winners.len(), podiums.len());\n\n// per-award summary\nlet mut by_award: HashMap<i64, Vec<&W>> = HashMap::new();\nfor w in &winners { by_award.entry(w.aid).or_default().push(w); }\nlet mut arows: Vec<Vec<String>> = by_award.iter().map(|(aid, ws)| {\n    let mut pc: HashMap<i64,usize> = HashMap::new();\n    for w in ws { *pc.entry(w.pid).or_insert(0)+=1; }\n    let (bp,bn) = pc.iter().max_by_key(|(_,c)| *c).map(|(p,c)| (*p,*c)).unwrap_or((0,0));\n    let yrs: Vec<i64> = ws.iter().map(|w|w.year).collect();\n    vec![\n        award_name.get(aid).cloned().unwrap_or_default(),\n        award_cat.get(aid).cloned().unwrap_or_default(),\n        ws.len().to_string(),\n        format!(\"{}–{}\", yrs.iter().min().unwrap(), yrs.iter().max().unwrap()),\n        if bn>0 { format!(\"{} ({})\", pname.get(&bp).cloned().unwrap_or_default().chars().take(22).collect::<String>(), bn) } else { \"-\".into() },\n    ]}).collect();\narows.sort_by(|a,b| b[2].parse::<usize>().unwrap_or(0).cmp(&a[2].parse::<usize>().unwrap_or(0)));\nmars_table(&[\"award\",\"category\",\"winners\",\"years\",\"most wins\"], &arows);\n",
       "metadata": {},
       "execution_count": 2,
+      "outputs": [
+        {
+          "type": "text",
+          "text": "award_winner rows: 590\nrows with resolved player: 335\nresolved winners: 154, podium finishes: 588\n"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "award",
+            "category",
+            "winners",
+            "years",
+            "most wins"
+          ],
+          "rows": [
+            [
+              "Ballon d'Or",
+              "PLAYER",
+              "37",
+              "1960–2026",
+              "Lionel Andrés Messi Cu (8)"
+            ],
+            [
+              "PFA Players' Player of the Year",
+              "PLAYER",
+              "32",
+              "1973–2025",
+              "Mohamed Salah (3)"
+            ],
+            [
+              "European Golden Shoe",
+              "PLAYER",
+              "31",
+              "1973–2025",
+              "Lionel Andrés Messi Cu (6)"
+            ],
+            [
+              "FIFA World Player of the Year",
+              "PLAYER",
+              "11",
+              "1991–2009",
+              "Zinédine Zidane (3)"
+            ],
+            [
+              "The Best FIFA Men's Player",
+              "PLAYER",
+              "10",
+              "2016–2025",
+              "Lionel Andrés Messi Cu (3)"
+            ],
+            [
+              "The Best FIFA Men's Goalkeeper",
+              "PLAYER",
+              "9",
+              "2017–2025",
+              "Damián Emiliano Martín (2)"
+            ],
+            [
+              "The Best FIFA Women's Player",
+              "PLAYER",
+              "9",
+              "2017–2025",
+              "Aitana Bonmati Conca (3)"
+            ],
+            [
+              "Ballon d'Or Féminin",
+              "PLAYER",
+              "8",
+              "2018–2026",
+              "Aitana Bonmati Conca (3)"
+            ],
+            [
+              "The Best FIFA Women's Goalkeeper",
+              "PLAYER",
+              "7",
+              "2019–2025",
+              "Mary Alexandra Earps (2)"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bab0c2a4-e360-46e9-bf3e-5de4905f689e",
+      "cell_type": "markdown",
+      "source": "### Most awarded players overall (wins + podiums)\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "5df97b5c-d3fe-4040-ae5c-cf3812d29d31",
+      "cell_type": "code",
+      "source": "// most awarded players overall (wins + podiums)\nlet mut win_count: HashMap<i64,usize> = HashMap::new();\nlet mut pod_count: HashMap<i64,usize> = HashMap::new();\nfor w in &winners { *win_count.entry(w.pid).or_insert(0)+=1; }\nfor w in &podiums { if w.pid>0 { *pod_count.entry(w.pid).or_insert(0)+=1; } }\nlet mut pl_rows: Vec<(i64,usize,usize)> = win_count.iter()\n    .map(|(p,w)| (*p,*w,*pod_count.get(p).unwrap_or(&0))).collect();\npl_rows.sort_by(|a,b| b.1.cmp(&a.1).then(b.2.cmp(&a.2)));\nlet prows: Vec<Vec<String>> = pl_rows.iter().take(20).map(|(p,w,pd)| vec![\n    pname.get(p).cloned().unwrap_or_default().chars().take(30).collect(),\n    w.to_string(), pd.to_string(),\n]).collect();\nmars_table(&[\"player\",\"wins\",\"podium finishes\"], &prows);\n",
+      "metadata": {},
+      "execution_count": 3,
       "outputs": [
         {
           "type": "text",
@@ -116,94 +225,6 @@
               "Mary Alexandra Earps (2)"
             ]
           ]
-        }
-      ]
-    },
-    {
-      "id": "5df97b5c-d3fe-4040-ae5c-cf3812d29d31",
-      "cell_type": "code",
-      "source": "// most awarded players overall (wins + podiums)\nlet mut win_count: HashMap<i64,usize> = HashMap::new();\nlet mut pod_count: HashMap<i64,usize> = HashMap::new();\nfor w in &winners { *win_count.entry(w.pid).or_insert(0)+=1; }\nfor w in &podiums { if w.pid>0 { *pod_count.entry(w.pid).or_insert(0)+=1; } }\nlet mut pl_rows: Vec<(i64,usize,usize)> = win_count.iter()\n    .map(|(p,w)| (*p,*w,*pod_count.get(p).unwrap_or(&0))).collect();\npl_rows.sort_by(|a,b| b.1.cmp(&a.1).then(b.2.cmp(&a.2)));\nlet prows: Vec<Vec<String>> = pl_rows.iter().take(20).map(|(p,w,pd)| vec![\n    pname.get(p).cloned().unwrap_or_default().chars().take(30).collect(),\n    w.to_string(), pd.to_string(),\n]).collect();\nmars_table(&[\"player\",\"wins\",\"podium finishes\"], &prows);\n",
-      "metadata": {},
-      "execution_count": 3,
-      "outputs": [
-        {
-          "type": "text",
-          "text": "award_winner rows: 590\nrows with resolved player: 335\nresolved winners: 154, podium finishes: 588\n"
-        },
-        {
-          "type": "table",
-          "columns": [
-            "award",
-            "category",
-            "winners",
-            "years",
-            "most wins"
-          ],
-          "rows": [
-            [
-              "Ballon d'Or",
-              "PLAYER",
-              "37",
-              "1960–2026",
-              "Lionel Andrés Messi Cu (8)"
-            ],
-            [
-              "PFA Players' Player of the Year",
-              "PLAYER",
-              "32",
-              "1973–2025",
-              "Mohamed Salah (3)"
-            ],
-            [
-              "European Golden Shoe",
-              "PLAYER",
-              "31",
-              "1973–2025",
-              "Lionel Andrés Messi Cu (6)"
-            ],
-            [
-              "FIFA World Player of the Year",
-              "PLAYER",
-              "11",
-              "1991–2009",
-              "Ronaldo Aparecido Rodr (3)"
-            ],
-            [
-              "The Best FIFA Men's Player",
-              "PLAYER",
-              "10",
-              "2016–2025",
-              "Lionel Andrés Messi Cu (3)"
-            ],
-            [
-              "The Best FIFA Women's Player",
-              "PLAYER",
-              "9",
-              "2017–2025",
-              "Aitana Bonmati Conca (3)"
-            ],
-            [
-              "The Best FIFA Men's Goalkeeper",
-              "PLAYER",
-              "9",
-              "2017–2025",
-              "Damián Emiliano Martín (2)"
-            ],
-            [
-              "Ballon d'Or Féminin",
-              "PLAYER",
-              "8",
-              "2018–2026",
-              "Alexia Putellas Segura (3)"
-            ],
-            [
-              "The Best FIFA Women's Goalkeeper",
-              "PLAYER",
-              "7",
-              "2019–2025",
-              "Mary Alexandra Earps (2)"
-            ]
-          ]
         },
         {
           "type": "table",
@@ -259,12 +280,12 @@
               "5"
             ],
             [
-              "Michel Platini",
+              "Mohamed Salah",
               "3",
               "5"
             ],
             [
-              "Mohamed Salah",
+              "Michel Platini",
               "3",
               "5"
             ],
@@ -289,6 +310,16 @@
               "4"
             ],
             [
+              "Lothar Matthäus",
+              "2",
+              "3"
+            ],
+            [
+              "Kevin De Bruyne",
+              "2",
+              "3"
+            ],
+            [
               "Mary Alexandra Earps",
               "2",
               "3"
@@ -299,23 +330,20 @@
               "3"
             ],
             [
-              "Kevin De Bruyne",
-              "2",
-              "3"
-            ],
-            [
-              "Lothar Matthäus",
-              "2",
-              "3"
-            ],
-            [
-              "Damián Emiliano Martínez",
+              "Gareth Frank Bale",
               "2",
               "2"
             ]
           ]
         }
       ]
+    },
+    {
+      "id": "0dc328a5-5572-4cae-8345-30cd9a8e7d02",
+      "cell_type": "markdown",
+      "source": "### Repeat-winner rate: players with >1 win\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "d508b0f0-d42c-4db1-87ac-34e0474cd1e6",
@@ -487,12 +515,7 @@
               "4"
             ],
             [
-              "Kevin De Bruyne",
-              "2",
-              "3"
-            ],
-            [
-              "Karl-Heinz Rummenigge",
+              "Lothar Matthäus",
               "2",
               "3"
             ],
@@ -502,12 +525,17 @@
               "3"
             ],
             [
-              "Lothar Matthäus",
+              "Karl-Heinz Rummenigge",
               "2",
               "3"
             ],
             [
-              "Fabio Cannavaro",
+              "Kevin De Bruyne",
+              "2",
+              "3"
+            ],
+            [
+              "Damián Emiliano Martínez",
               "2",
               "2"
             ]
@@ -601,9 +629,307 @@
       ]
     },
     {
-      "id": "cae72c34-88d5-4f7c-81eb-b9fbee89f9c9",
+      "id": "267e09c1-435f-426a-80d4-c3353013f006",
+      "cell_type": "code",
+      "source": "use plotters::prelude::*;\n\nfn chart_num(s: &str) -> f64 {\n    let t = s.replace(',', \"\").replace('%', \"\").replace('−', \"-\");\n    let mult = if t.contains(\"bn\") { 1e9 }\n        else if t.contains('€') && t.contains('m') { 1e6 }\n        else { 1.0 };\n    let cleaned: String = t.chars()\n        .filter(|c| c.is_ascii_digit() || *c == '.' || *c == '-')\n        .collect();\n    cleaned.parse().unwrap_or(0.0) * mult\n}\n\n\nlet mut c_items: Vec<(String, f64)> = prows.iter()\n    .map(|r| (r[0].clone(), chart_num(&r[1].clone())))\n    .collect();\nc_items.retain(|(_, v)| v.is_finite());\nc_items.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());\nc_items.truncate(12);\nlet c_labels: Vec<String> = c_items.iter()\n    .map(|(l, _)| l.chars().take(18).collect()).collect();\nlet c_vals: Vec<f64> = c_items.iter().map(|(_, v)| *v).collect();\nlet c_ymax = c_vals.iter().cloned().fold(0.0_f64, f64::max) * 1.15 + 1e-9;\nlet (c_div, c_unit): (f64, &str) = if c_ymax >= 1e9 { (1e9, \"bn\") }\n    else if c_ymax >= 1e6 { (1e6, \"m\") }\n    else if c_ymax >= 1e3 { (1e3, \"k\") }\n    else { (1.0, \"\") };\nlet c_n = c_vals.len();\nlet figure = plotters::evcxr::evcxr_figure((780, 400), |root| {\n    root.fill(&WHITE)?;\n    let mut chart = ChartBuilder::on(&root)\n        .caption(\"Most award wins — top 12 players\", (\"sans-serif\", 18))\n        .margin(10)\n        .x_label_area_size(45)\n        .y_label_area_size(55)\n        .build_cartesian_2d(-0.5_f64..(c_n as f64 - 0.5), 0.0..c_ymax)?;\n    chart.configure_mesh()\n        .x_labels(c_n)\n        .x_label_formatter(&|x: &f64| c_labels.get(*x as usize).cloned().unwrap_or_default())\n        .y_label_formatter(&|y: &f64| format!(\"{:.1}{}\", y / c_div, c_unit))\n        .draw()?;\n    chart.draw_series(c_vals.iter().enumerate().map(|(i, &v)| {\n        Rectangle::new([(i as f64 - 0.35, 0.0), (i as f64 + 0.35, v)], BLUE.filled())\n    }))?;\n    Ok(())\n});\nfigure.evcxr_display();\n",
+      "metadata": {},
+      "execution_count": 5,
+      "outputs": [
+        {
+          "type": "text",
+          "text": "award_winner rows: 590\nrows with resolved player: 335\nresolved winners: 154, podium finishes: 588\nplayers with multiple wins: 27 of 76\n"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "award",
+            "category",
+            "winners",
+            "years",
+            "most wins"
+          ],
+          "rows": [
+            [
+              "Ballon d'Or",
+              "PLAYER",
+              "37",
+              "1960–2026",
+              "Lionel Andrés Messi Cu (8)"
+            ],
+            [
+              "PFA Players' Player of the Year",
+              "PLAYER",
+              "32",
+              "1973–2025",
+              "Mohamed Salah (3)"
+            ],
+            [
+              "European Golden Shoe",
+              "PLAYER",
+              "31",
+              "1973–2025",
+              "Lionel Andrés Messi Cu (6)"
+            ],
+            [
+              "FIFA World Player of the Year",
+              "PLAYER",
+              "11",
+              "1991–2009",
+              "Ronaldo Aparecido Rodr (3)"
+            ],
+            [
+              "The Best FIFA Men's Player",
+              "PLAYER",
+              "10",
+              "2016–2025",
+              "Lionel Andrés Messi Cu (3)"
+            ],
+            [
+              "The Best FIFA Women's Player",
+              "PLAYER",
+              "9",
+              "2017–2025",
+              "Aitana Bonmati Conca (3)"
+            ],
+            [
+              "The Best FIFA Men's Goalkeeper",
+              "PLAYER",
+              "9",
+              "2017–2025",
+              "Damián Emiliano Martín (2)"
+            ],
+            [
+              "Ballon d'Or Féminin",
+              "PLAYER",
+              "8",
+              "2018–2026",
+              "Aitana Bonmati Conca (3)"
+            ],
+            [
+              "The Best FIFA Women's Goalkeeper",
+              "PLAYER",
+              "7",
+              "2019–2025",
+              "Mary Alexandra Earps (2)"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "player",
+            "wins",
+            "podium finishes"
+          ],
+          "rows": [
+            [
+              "Lionel Andrés Messi Cuccittini",
+              "18",
+              "30"
+            ],
+            [
+              "Cristiano Ronaldo dos Santos A",
+              "14",
+              "26"
+            ],
+            [
+              "Ronaldo Aparecido Rodrigues",
+              "6",
+              "10"
+            ],
+            [
+              "Aitana Bonmati Conca",
+              "6",
+              "6"
+            ],
+            [
+              "Alexia Putellas Segura",
+              "5",
+              "6"
+            ],
+            [
+              "Zinédine Zidane",
+              "4",
+              "9"
+            ],
+            [
+              "Thierry Henry",
+              "4",
+              "8"
+            ],
+            [
+              "Luis Alberto Suárez Díaz",
+              "4",
+              "7"
+            ],
+            [
+              "Robert Lewandowski",
+              "4",
+              "5"
+            ],
+            [
+              "Michel Platini",
+              "3",
+              "5"
+            ],
+            [
+              "Mohamed Salah",
+              "3",
+              "5"
+            ],
+            [
+              "Johan Cruyff",
+              "3",
+              "4"
+            ],
+            [
+              "Harry Kane",
+              "3",
+              "3"
+            ],
+            [
+              "Franz Beckenbauer",
+              "2",
+              "5"
+            ],
+            [
+              "Alan Shearer",
+              "2",
+              "4"
+            ],
+            [
+              "Karl-Heinz Rummenigge",
+              "2",
+              "3"
+            ],
+            [
+              "Lothar Matthäus",
+              "2",
+              "3"
+            ],
+            [
+              "Mary Alexandra Earps",
+              "2",
+              "3"
+            ],
+            [
+              "Kevin De Bruyne",
+              "2",
+              "3"
+            ],
+            [
+              "Megan Anna Rapinoe",
+              "2",
+              "2"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "player",
+            "year",
+            "goals"
+          ],
+          "rows": [
+            [
+              "Héctor Casimiro Yazalde",
+              "1973",
+              "46"
+            ],
+            [
+              "Erwin Vandenbergh",
+              "1979",
+              "39"
+            ],
+            [
+              "Fernando de Lacerda Gomes",
+              "1982",
+              "36"
+            ],
+            [
+              "Fernando de Lacerda Gomes",
+              "1984",
+              "39"
+            ],
+            [
+              "Ronaldo Aparecido Rodrigue",
+              "1996",
+              "34"
+            ],
+            [
+              "Kevin Phillips",
+              "1999",
+              "30"
+            ],
+            [
+              "Henrik Larsson",
+              "2000",
+              "35"
+            ],
+            [
+              "Thierry Henry",
+              "2003",
+              "30"
+            ],
+            [
+              "Thierry Henry",
+              "2004",
+              "25"
+            ],
+            [
+              "Diego Forlán Corazo",
+              "2004",
+              "25"
+            ],
+            [
+              "Luca Toni",
+              "2005",
+              "31"
+            ],
+            [
+              "Francesco Totti",
+              "2006",
+              "26"
+            ],
+            [
+              "Cristiano Ronaldo dos Sant",
+              "2007",
+              "31"
+            ],
+            [
+              "Diego Forlán Corazo",
+              "2008",
+              "32"
+            ],
+            [
+              "Lionel Andrés Messi Cuccit",
+              "2009",
+              "34"
+            ]
+          ]
+        },
+        {
+          "type": "mime_bundle",
+          "data": {
+            "image/svg+xml": "<svg width=\"780\" height=\"400\" viewBox=\"0 0 780 400\" xmlns=\"http://www.w3.org/2000/svg\">\n<rect x=\"0\" y=\"0\" width=\"780\" height=\"400\" opacity=\"1\" fill=\"#FFFFFF\" stroke=\"none\"/>\n<text x=\"390\" y=\"15\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"14.516129032258064\" opacity=\"1\" fill=\"#000000\">\nMost award wins — top 12 players\n</text>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"70\" y1=\"344\" x2=\"70\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"82\" y1=\"344\" x2=\"82\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"94\" y1=\"344\" x2=\"94\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"106\" y1=\"344\" x2=\"106\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"117\" y1=\"344\" x2=\"117\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"129\" y1=\"344\" x2=\"129\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"141\" y1=\"344\" x2=\"141\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"153\" y1=\"344\" x2=\"153\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"164\" y1=\"344\" x2=\"164\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"176\" y1=\"344\" x2=\"176\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"188\" y1=\"344\" x2=\"188\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"199\" y1=\"344\" x2=\"199\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"211\" y1=\"344\" x2=\"211\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"223\" y1=\"344\" x2=\"223\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"235\" y1=\"344\" x2=\"235\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"246\" y1=\"344\" x2=\"246\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"258\" y1=\"344\" x2=\"258\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"270\" y1=\"344\" x2=\"270\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"282\" y1=\"344\" x2=\"282\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"293\" y1=\"344\" x2=\"293\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"305\" y1=\"344\" x2=\"305\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"317\" y1=\"344\" x2=\"317\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"329\" y1=\"344\" x2=\"329\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"340\" y1=\"344\" x2=\"340\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"352\" y1=\"344\" x2=\"352\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"364\" y1=\"344\" x2=\"364\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"375\" y1=\"344\" x2=\"375\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"387\" y1=\"344\" x2=\"387\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"399\" y1=\"344\" x2=\"399\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"411\" y1=\"344\" x2=\"411\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"422\" y1=\"344\" x2=\"422\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"434\" y1=\"344\" x2=\"434\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"446\" y1=\"344\" x2=\"446\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"458\" y1=\"344\" x2=\"458\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"469\" y1=\"344\" x2=\"469\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"481\" y1=\"344\" x2=\"481\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"493\" y1=\"344\" x2=\"493\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"505\" y1=\"344\" x2=\"505\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"516\" y1=\"344\" x2=\"516\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"528\" y1=\"344\" x2=\"528\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"540\" y1=\"344\" x2=\"540\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"551\" y1=\"344\" x2=\"551\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"563\" y1=\"344\" x2=\"563\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"575\" y1=\"344\" x2=\"575\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"587\" y1=\"344\" x2=\"587\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"598\" y1=\"344\" x2=\"598\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"610\" y1=\"344\" x2=\"610\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"622\" y1=\"344\" x2=\"622\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"634\" y1=\"344\" x2=\"634\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"645\" y1=\"344\" x2=\"645\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"657\" y1=\"344\" x2=\"657\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"669\" y1=\"344\" x2=\"669\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"681\" y1=\"344\" x2=\"681\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"692\" y1=\"344\" x2=\"692\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"704\" y1=\"344\" x2=\"704\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"716\" y1=\"344\" x2=\"716\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"727\" y1=\"344\" x2=\"727\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"739\" y1=\"344\" x2=\"739\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"751\" y1=\"344\" x2=\"751\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"763\" y1=\"344\" x2=\"763\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"344\" x2=\"769\" y2=\"344\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"342\" x2=\"769\" y2=\"342\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"339\" x2=\"769\" y2=\"339\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"336\" x2=\"769\" y2=\"336\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"333\" x2=\"769\" y2=\"333\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"330\" x2=\"769\" y2=\"330\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"327\" x2=\"769\" y2=\"327\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"324\" x2=\"769\" y2=\"324\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"321\" x2=\"769\" y2=\"321\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"318\" x2=\"769\" y2=\"318\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"315\" x2=\"769\" y2=\"315\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"312\" x2=\"769\" y2=\"312\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"309\" x2=\"769\" y2=\"309\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"306\" x2=\"769\" y2=\"306\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"303\" x2=\"769\" y2=\"303\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"300\" x2=\"769\" y2=\"300\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"297\" x2=\"769\" y2=\"297\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"294\" x2=\"769\" y2=\"294\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"291\" x2=\"769\" y2=\"291\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"288\" x2=\"769\" y2=\"288\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"285\" x2=\"769\" y2=\"285\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"282\" x2=\"769\" y2=\"282\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"279\" x2=\"769\" y2=\"279\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"276\" x2=\"769\" y2=\"276\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"273\" x2=\"769\" y2=\"273\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"270\" x2=\"769\" y2=\"270\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"267\" x2=\"769\" y2=\"267\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"264\" x2=\"769\" y2=\"264\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"261\" x2=\"769\" y2=\"261\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"258\" x2=\"769\" y2=\"258\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"255\" x2=\"769\" y2=\"255\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"252\" x2=\"769\" y2=\"252\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"249\" x2=\"769\" y2=\"249\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"246\" x2=\"769\" y2=\"246\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"243\" x2=\"769\" y2=\"243\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"240\" x2=\"769\" y2=\"240\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"237\" x2=\"769\" y2=\"237\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"234\" x2=\"769\" y2=\"234\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"231\" x2=\"769\" y2=\"231\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"228\" x2=\"769\" y2=\"228\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"225\" x2=\"769\" y2=\"225\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"222\" x2=\"769\" y2=\"222\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"219\" x2=\"769\" y2=\"219\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"216\" x2=\"769\" y2=\"216\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"213\" x2=\"769\" y2=\"213\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"210\" x2=\"769\" y2=\"210\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"207\" x2=\"769\" y2=\"207\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"204\" x2=\"769\" y2=\"204\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"201\" x2=\"769\" y2=\"201\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"198\" x2=\"769\" y2=\"198\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"195\" x2=\"769\" y2=\"195\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"192\" x2=\"769\" y2=\"192\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"189\" x2=\"769\" y2=\"189\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"186\" x2=\"769\" y2=\"186\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"183\" x2=\"769\" y2=\"183\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"180\" x2=\"769\" y2=\"180\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"177\" x2=\"769\" y2=\"177\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"174\" x2=\"769\" y2=\"174\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"171\" x2=\"769\" y2=\"171\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"168\" x2=\"769\" y2=\"168\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"165\" x2=\"769\" y2=\"165\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"162\" x2=\"769\" y2=\"162\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"159\" x2=\"769\" y2=\"159\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"156\" x2=\"769\" y2=\"156\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"153\" x2=\"769\" y2=\"153\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"150\" x2=\"769\" y2=\"150\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"147\" x2=\"769\" y2=\"147\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"144\" x2=\"769\" y2=\"144\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"141\" x2=\"769\" y2=\"141\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"138\" x2=\"769\" y2=\"138\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"135\" x2=\"769\" y2=\"135\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"132\" x2=\"769\" y2=\"132\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"129\" x2=\"769\" y2=\"129\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"126\" x2=\"769\" y2=\"126\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"123\" x2=\"769\" y2=\"123\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"120\" x2=\"769\" y2=\"120\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"117\" x2=\"769\" y2=\"117\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"114\" x2=\"769\" y2=\"114\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"111\" x2=\"769\" y2=\"111\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"108\" x2=\"769\" y2=\"108\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"105\" x2=\"769\" y2=\"105\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"102\" x2=\"769\" y2=\"102\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"99\" x2=\"769\" y2=\"99\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"96\" x2=\"769\" y2=\"96\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"93\" x2=\"769\" y2=\"93\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"90\" x2=\"769\" y2=\"90\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"87\" x2=\"769\" y2=\"87\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"84\" x2=\"769\" y2=\"84\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"81\" x2=\"769\" y2=\"81\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"78\" x2=\"769\" y2=\"78\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"75\" x2=\"769\" y2=\"75\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"72\" x2=\"769\" y2=\"72\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"69\" x2=\"769\" y2=\"69\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"66\" x2=\"769\" y2=\"66\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"63\" x2=\"769\" y2=\"63\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"60\" x2=\"769\" y2=\"60\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"57\" x2=\"769\" y2=\"57\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"54\" x2=\"769\" y2=\"54\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"51\" x2=\"769\" y2=\"51\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"48\" x2=\"769\" y2=\"48\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"45\" x2=\"769\" y2=\"45\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"42\" x2=\"769\" y2=\"42\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"39\" x2=\"769\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"36\" x2=\"769\" y2=\"36\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"94\" y1=\"344\" x2=\"94\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"153\" y1=\"344\" x2=\"153\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"211\" y1=\"344\" x2=\"211\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"270\" y1=\"344\" x2=\"270\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"329\" y1=\"344\" x2=\"329\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"387\" y1=\"344\" x2=\"387\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"446\" y1=\"344\" x2=\"446\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"505\" y1=\"344\" x2=\"505\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"563\" y1=\"344\" x2=\"563\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"622\" y1=\"344\" x2=\"622\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"681\" y1=\"344\" x2=\"681\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"739\" y1=\"344\" x2=\"739\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"344\" x2=\"769\" y2=\"344\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"315\" x2=\"769\" y2=\"315\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"285\" x2=\"769\" y2=\"285\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"255\" x2=\"769\" y2=\"255\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"225\" x2=\"769\" y2=\"225\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"195\" x2=\"769\" y2=\"195\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"165\" x2=\"769\" y2=\"165\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"135\" x2=\"769\" y2=\"135\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"105\" x2=\"769\" y2=\"105\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"75\" x2=\"769\" y2=\"75\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"45\" x2=\"769\" y2=\"45\"/>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"64,34 64,344 \"/>\n<text x=\"55\" y=\"344\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n0.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,344 64,344 \"/>\n<text x=\"55\" y=\"315\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n2.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,315 64,315 \"/>\n<text x=\"55\" y=\"285\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n4.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,285 64,285 \"/>\n<text x=\"55\" y=\"255\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n6.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,255 64,255 \"/>\n<text x=\"55\" y=\"225\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n8.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,225 64,225 \"/>\n<text x=\"55\" y=\"195\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n10.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,195 64,195 \"/>\n<text x=\"55\" y=\"165\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n12.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,165 64,165 \"/>\n<text x=\"55\" y=\"135\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n14.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,135 64,135 \"/>\n<text x=\"55\" y=\"105\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n16.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,105 64,105 \"/>\n<text x=\"55\" y=\"75\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n18.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,75 64,75 \"/>\n<text x=\"55\" y=\"45\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n20.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,45 64,45 \"/>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"65,345 769,345 \"/>\n<text x=\"94\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nLionel Andrés Mess\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"94,345 94,350 \"/>\n<text x=\"153\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nCristiano Ronaldo \n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"153,345 153,350 \"/>\n<text x=\"211\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nRonaldo Aparecido \n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"211,345 211,350 \"/>\n<text x=\"270\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nAitana Bonmati Con\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"270,345 270,350 \"/>\n<text x=\"329\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nAlexia Putellas Se\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"329,345 329,350 \"/>\n<text x=\"387\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nZinédine Zidane\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"387,345 387,350 \"/>\n<text x=\"446\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nThierry Henry\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"446,345 446,350 \"/>\n<text x=\"505\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nLuis Alberto Suáre\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"505,345 505,350 \"/>\n<text x=\"563\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nRobert Lewandowski\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"563,345 563,350 \"/>\n<text x=\"622\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nMichel Platini\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"622,345 622,350 \"/>\n<text x=\"681\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nMohamed Salah\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"681,345 681,350 \"/>\n<text x=\"739\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nJohan Cruyff\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"739,345 739,350 \"/>\n<rect x=\"73\" y=\"75\" width=\"41\" height=\"269\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"132\" y=\"135\" width=\"41\" height=\"209\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"191\" y=\"255\" width=\"41\" height=\"89\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"249\" y=\"255\" width=\"41\" height=\"89\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"308\" y=\"270\" width=\"41\" height=\"74\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"367\" y=\"285\" width=\"41\" height=\"59\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"425\" y=\"285\" width=\"41\" height=\"59\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"484\" y=\"285\" width=\"41\" height=\"59\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"543\" y=\"285\" width=\"41\" height=\"59\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"601\" y=\"300\" width=\"41\" height=\"44\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"660\" y=\"300\" width=\"41\" height=\"44\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"719\" y=\"300\" width=\"41\" height=\"44\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n</svg>",
+            "text/plain": "Figure (SVG)"
+          },
+          "metadata": {}
+        }
+      ]
+    },
+    {
+      "id": "25bc2d64-dff0-44a5-adf0-c263d746d3a8",
       "cell_type": "markdown",
-      "source": "## Findings\n\n11 awards, 590 recorded finishes, 154 resolved winners:\n\n- **Messi owns the cabinet**: 18 wins and 30 podium finishes across\n  Ballon d'Or, Golden Shoe and FIFA awards — nearly 12% of all\n  resolved wins. Cristiano Ronaldo is second at 14/26.\n- **The modern era is a duopoly**: of 76 players with resolved wins,\n  27 have won more than once — and the repeat winners are almost all\n  post-2000 (Messi, Ronaldo, Modrić-era Ballon d'Or regulars).\n- **Women's football has its own cabinet**: Aitana Bonmatí (6 wins),\n  Alexia Putellas (5) and the Earps/Pajor generation are building the\n  equivalent records in the Ballon d'Or Féminin and The Best FIFA\n  Women's awards, which only exist since 2017.\n- Golden Shoe goal tallies show the evolution: Yazalde's 46 goals in\n  1973 vs Messi's 34 in 2009 — volume records have actually *fallen*\n  as defending improved.\n\nCaveats: player resolution is incomplete — only 154 of 274 first-place\nrows resolved to a player (early Ballon d'Or rows carry clubs, not\nplayers), so counts understate the true cabinet; awards cover only\nwhat the Wikipedia importer captured; \"wins\" mixes award types with\nvery different prestige.\n",
+      "source": "## Discussion\n\n11 awards, 590 recorded finishes, 154 resolved winners:\n\n- **Messi owns the cabinet**: 18 wins and 30 podium finishes across\n  Ballon d'Or, Golden Shoe and FIFA awards — nearly 12% of all\n  resolved wins. Cristiano Ronaldo is second at 14/26.\n- **The modern era is a duopoly**: of 76 players with resolved wins,\n  27 have won more than once — and the repeat winners are almost all\n  post-2000 (Messi, Ronaldo, Modrić-era Ballon d'Or regulars).\n- **Women's football has its own cabinet**: Aitana Bonmatí (6 wins),\n  Alexia Putellas (5) and the Earps/Pajor generation are building the\n  equivalent records in the Ballon d'Or Féminin and The Best FIFA\n  Women's awards, which only exist since 2017.\n- Golden Shoe goal tallies show the evolution: Yazalde's 46 goals in\n  1973 vs Messi's 34 in 2009 — volume records have actually *fallen*\n  as defending improved.\n\nCaveats: player resolution is incomplete — only 154 of 274 first-place\nrows resolved to a player (early Ballon d'Or rows carry clubs, not\nplayers), so counts understate the true cabinet; awards cover only\nwhat the Wikipedia importer captured; \"wins\" mixes award types with\nvery different prestige.\n\n**Limitations.** Award coverage depends on the imported results; early years have sparse player resolution, so counts reflect resolved winners only.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "211c44ed-056f-43a7-8e8d-52880f41ea31",
+      "cell_type": "markdown",
+      "source": "## Conclusion\n\nAcross 11 awards and 590 recorded finishes, Messi owns the cabinet: 18 wins and 30 podium finishes across Ballon d'Or, Golden Shoe and FIFA awards — nearly 12% of all resolved wins. Together these results answer the research question posed in the Introduction and quantify the pattern across the award records. The notebook provides a fully reproducible pipeline from raw CSV extracts to published figures.\n",
       "metadata": {},
       "outputs": []
     }

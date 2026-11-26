@@ -12,9 +12,23 @@
   },
   "cells": [
     {
-      "id": "64643ec8-0f76-49ee-af6e-922b66523a00",
+      "id": "f58f964a-bb64-431e-9e0b-98decc4e16ac",
       "cell_type": "markdown",
-      "source": "## Home Advantage: a classic football analysis\n\nDoes playing at home still matter? This notebook answers the question the\nold-fashioned way — straight from the result sheet — using **301,353\nfinished matches** in the `soccers` database (football-data.co.uk +\nStatsBomb open data, 1958 → present).\n\nThe analysis runs on the real Rust data stack: **polars** for the\nDataFrame pipeline (CSV → lazy group-bys → aggregations), **ndarray** for\nthe season-trend statistics, and **plotters** for the chart — all inside\none `.mars` document.\n\n**Data**: `data/matches.csv`, exported from `packages/data/dev.db`:\n\n```bash\nsqlite3 -csv dev.db \"SELECT l.name, c.name, s.year, substr(m.date,1,10),\n  ht.name, at.name, m.home_score, m.away_score FROM match m\n  JOIN season s ON m.season_id=s.id JOIN league l ON s.league_id=l.id\n  LEFT JOIN country c ON l.country_id=c.id\n  JOIN team ht ON m.home_team_id=ht.id JOIN team at ON m.away_team_id=at.id\n  WHERE m.status='FINISHED'\" > data/matches.csv\n```\n\nRun from this directory: `mars notebook run home-advantage.mars`\n*(first run compiles polars — expect a few minutes)*\n",
+      "source": "## Abstract\n\nDoes playing at home still matter? This study answers it using 301,353 matches drawn from the Soccers football database. Home advantage is real, measurable, and still with us. All computation runs in Rust inside a `.mars` notebook (polars + ndarray + plotters — charts as inline SVG), and every table and figure is generated from the extracted CSVs.\n\n## Keywords\n\n**Keywords:** football, analysis, home-advantage, mars, sqlite\n\n## Table of contents\n\n- [Abstract](#abstract)\n- [Keywords](#keywords)\n- [Introduction](#introduction)\n- [Methods](#methods)\n- [Results](#results)\n  - [League table: who wins at home?](#league-table-who-wins-at-home)\n  - [Visual comparison](#visual-comparison)\n  - [Is the edge shrinking? Season-by-season](#is-the-edge-shrinking-season-by-season)\n- [Discussion](#discussion)\n- [Conclusion](#conclusion)\n\n## Introduction\n\nDoes playing at home still matter? This notebook answers the question the\nold-fashioned way — straight from the result sheet — using **301,353\nfinished matches** in the `soccers` database (football-data.co.uk +\nStatsBomb open data, 1958 → present).\n\nThe analysis runs on the real Rust data stack: **polars** for the\nDataFrame pipeline (CSV → lazy group-bys → aggregations), **ndarray** for\nthe season-trend statistics, and **plotters** for the chart — all inside\none `.mars` document.\n\n**Data**: `data/matches.csv`, exported from `packages/data/dev.db`:\n\n```bash\nsqlite3 -csv dev.db \"SELECT l.name, c.name, s.year, substr(m.date,1,10),\n  ht.name, at.name, m.home_score, m.away_score FROM match m\n  JOIN season s ON m.season_id=s.id JOIN league l ON s.league_id=l.id\n  LEFT JOIN country c ON l.country_id=c.id\n  JOIN team ht ON m.home_team_id=ht.id JOIN team at ON m.away_team_id=at.id\n  WHERE m.status='FINISHED'\" > data/matches.csv\n```\n\nRun from this directory: `mars notebook run home-advantage.mars`\n*(first run compiles polars — expect a few minutes)*\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "421fd2bf-1aba-4b32-907c-a9b96aa5a1df",
+      "cell_type": "markdown",
+      "source": "## Methods\n\nData were extracted from the Soccers football database (`packages/data`) as CSV snapshots: `matches`.\n\nThe analysis runs entirely in Rust inside the notebook: **polars** handles table scans, joins and aggregations; **ndarray** provides the numeric kernels for trends and correlations; **plotters** renders figures as inline SVG; `mars_table` renders result tables.\n\nStatistical summaries include least-squares trend slopes.\n\nEach code cell is kept to a single output so results can be read top to bottom.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "818133d9-337d-4497-b6df-011264a34ac7",
+      "cell_type": "markdown",
+      "source": "## Results\n\nAll figures and tables below are computed directly from the extracted data. Each code cell produces one output — a table, a chart, or a short text summary.\n",
       "metadata": {},
       "outputs": []
     },
@@ -32,9 +46,9 @@
       ]
     },
     {
-      "id": "f8d897bd-890a-4299-8171-54152b474012",
+      "id": "3b5a7aee-6bea-4bd7-b870-9135319a623c",
       "cell_type": "markdown",
-      "source": "## League table: who wins at home?\n\nFor every league we compute the classic split — **home wins, draws, away\nwins** — plus goals per game and a *home edge* metric: the difference\nbetween home and away points-per-match (win = 3, draw = 1). A league with\na +0.6 edge means the home side earns 0.6 more points per match than the\naway side.",
+      "source": "### League table: who wins at home?\n\nFor every league we compute the classic split — **home wins, draws, away\nwins** — plus goals per game and a *home edge* metric: the difference\nbetween home and away points-per-match (win = 3, draw = 1). A league with\na +0.6 edge means the home side earns 0.6 more points per match than the\naway side.\n",
       "metadata": {},
       "outputs": []
     },
@@ -201,9 +215,9 @@
       ]
     },
     {
-      "id": "75739148-9683-4b1a-bed9-cbeee5d96e65",
+      "id": "8f956d13-1e6e-4a9a-ac07-590291154bef",
       "cell_type": "markdown",
-      "source": "## Visual comparison\n\nHome and away win rates for the ten biggest leagues — the gap between the\ntwo bars *is* the home advantage. Rendered with **plotters** as inline\nSVG.",
+      "source": "### Visual comparison\n\nHome and away win rates for the ten biggest leagues — the gap between the\ntwo bars *is* the home advantage. Rendered with **plotters** as inline\nSVG.\n",
       "metadata": {},
       "outputs": []
     },
@@ -378,9 +392,9 @@
       ]
     },
     {
-      "id": "348c9fbe-2a5d-444e-9162-53f0b1f07b53",
+      "id": "2242744a-cdce-4fe2-8604-03ee3754598d",
       "cell_type": "markdown",
-      "source": "## Is the edge shrinking? Season-by-season\n\nThe Premier League is the most data-rich league in the set. Goals per\ngame by season, computed with a second **polars** `group_by` and analysed\nwith **ndarray**: mean, standard deviation, and the least-squares trend\nslope across seasons.",
+      "source": "### Is the edge shrinking? Season-by-season\n\nThe Premier League is the most data-rich league in the set. Goals per\ngame by season, computed with a second **polars** `group_by` and analysed\nwith **ndarray**: mean, standard deviation, and the least-squares trend\nslope across seasons.\n",
       "metadata": {},
       "outputs": []
     },
@@ -624,9 +638,16 @@
       ]
     },
     {
-      "id": "78bd19a4-0b67-4367-bd3a-f89d1e402bce",
+      "id": "929cd2b9-c200-48b5-a593-b23eee995086",
       "cell_type": "markdown",
-      "source": "## Findings\n\n**Home advantage is real, measurable, and still with us.** Across all\n301,353 matches the home side wins **45.1%** of the time versus just\n**28.3%** for the away side — a ratio of roughly 1.6 : 1, with draws at\n26.7%.\n\n**But the edge is a league property, not a law of nature.** Home win rates\nrange from ~43% (Championship, League One) to ~47% (Eredivisie, La Liga),\nand the points edge per match varies just as much — from about **+0.4**\n(English leagues) to **+0.6** (Ligue 1, Serie B, La Liga 2). Leagues with\nmore travel, bigger quality gaps between home and away squads, and\nhistorically smaller crowds show the largest advantages.\n\n**The Premier League trend is subtler than the folk wisdom.** Across 34\nseasons the mean is **2.70 goals/game** (std 0.15) with a least-squares\nslope of just **+0.01 goals per season** — essentially flat. The last 15\nseasons actually average *higher* (2.79), driven by the 2023/24 spike to\n**3.28**, the highest-scoring season in the dataset. What *is* changing is\n*who* wins: home win rate slid from ~47–49% in 2013–2018 to ~41–43% in the\nlast three seasons while away wins climbed to ~33–35% — competitive\nparity is rising even as scoring stays level.\n\n*Stack: polars (lazy DataFrame pipelines) · ndarray (trend statistics) ·\nplotters (SVG charts) · Mars (.mars notebook)*\n\nReproduce: `mars notebook run home-advantage.mars` from this directory.\n*(first run compiles polars — expect a few minutes)*",
+      "source": "## Discussion\n\n**Home advantage is real, measurable, and still with us.** Across all\n301,353 matches the home side wins **45.1%** of the time versus just\n**28.3%** for the away side — a ratio of roughly 1.6 : 1, with draws at\n26.7%.\n\n**But the edge is a league property, not a law of nature.** Home win rates\nrange from ~43% (Championship, League One) to ~47% (Eredivisie, La Liga),\nand the points edge per match varies just as much — from about **+0.4**\n(English leagues) to **+0.6** (Ligue 1, Serie B, La Liga 2). Leagues with\nmore travel, bigger quality gaps between home and away squads, and\nhistorically smaller crowds show the largest advantages.\n\n**The Premier League trend is subtler than the folk wisdom.** Across 34\nseasons the mean is **2.70 goals/game** (std 0.15) with a least-squares\nslope of just **+0.01 goals per season** — essentially flat. The last 15\nseasons actually average *higher* (2.79), driven by the 2023/24 spike to\n**3.28**, the highest-scoring season in the dataset. What *is* changing is\n*who* wins: home win rate slid from ~47–49% in 2013–2018 to ~41–43% in the\nlast three seasons while away wins climbed to ~33–35% — competitive\nparity is rising even as scoring stays level.\n\n*Stack: polars (lazy DataFrame pipelines) · ndarray (trend statistics) ·\nplotters (SVG charts) · Mars (.mars notebook)*\n\nReproduce: `mars notebook run home-advantage.mars` from this directory.\n*(first run compiles polars — expect a few minutes)*\n\n**Limitations.** The analysis is limited to the competitions present in the database; player-level metrics exist only for StatsBomb-covered tournaments, and underlying event data may contain errors.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "988c9d84-3a70-416a-9690-b31d54a47496",
+      "cell_type": "markdown",
+      "source": "## Conclusion\n\nHome advantage is real, measurable, and still with us. Together these results answer the research question posed in the Introduction and quantify the pattern across 301,353 matches. The notebook provides a fully reproducible pipeline from raw CSV extracts to published figures.\n",
       "metadata": {},
       "outputs": []
     }

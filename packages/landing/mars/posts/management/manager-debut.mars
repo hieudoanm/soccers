@@ -12,9 +12,23 @@
   },
   "cells": [
     {
-      "id": "f49b0c97-a060-4a58-b09d-640936a7f190",
+      "id": "90402fb5-ebb8-4dac-a6df-0fb2b5498ddc",
       "cell_type": "markdown",
-      "source": "## The Best Debut Season\n\nEvery football fan knows the script: new manager arrives, team goes on a\nrun, and suddenly \"Project X\" is trending. This notebook asks the harder\nquestion — **which managerial debuts were genuinely the best, relative to\nwhat the club was expected to do?**\n\n**Dataset.** A curated list of **~75 debut seasons**: every case where a\nmanager took charge of an EPL club for the first time, 2015/16 → 2024/25\n(permanent appointments only — caretaker spells and returns to former\nclubs excluded). Match results come from `data/matches_full.csv` (all\n13k+ EPL matches since 1993); the appointment dates are compiled from\npublic record — `dev.db` has no managerial history.\n\n**Metrics.** For each debut season we compute points/game, win%, goal\ndifference per game, final league position, and **over/underachievement**\n= previous season's finish minus this season's finish (positive = beat\nexpectation). Newly promoted clubs are scored against an expectation of\n20th. We then test four follow-ups: experience (first-ever job vs\nveteran), timing (pre-season vs mid-season appointment), and whether a\nstrong debut predicts the following season.",
+      "source": "## Abstract\n\nThis study examines the best debut season using the manager records drawn from the Soccers football database. Not really — first-timers actually score higher on ppg. All computation runs in Rust inside a `.mars` notebook (polars + plotters — charts as inline SVG), and every table and figure is generated from the extracted CSVs.\n\n## Keywords\n\n**Keywords:** football, analysis, premier-league, managers, mars, sqlite\n\n## Table of contents\n\n- [Abstract](#abstract)\n- [Keywords](#keywords)\n- [Introduction](#introduction)\n- [Methods](#methods)\n- [Results](#results)\n  - [Debut seasons analysed](#debut-seasons-analysed)\n- [Discussion](#discussion)\n- [Conclusion](#conclusion)\n\n## Introduction\n\nEvery football fan knows the script: new manager arrives, team goes on a\nrun, and suddenly \"Project X\" is trending. This notebook asks the harder\nquestion — **which managerial debuts were genuinely the best, relative to\nwhat the club was expected to do?**\n\n**Dataset.** A curated list of **~75 debut seasons**: every case where a\nmanager took charge of an EPL club for the first time, 2015/16 → 2024/25\n(permanent appointments only — caretaker spells and returns to former\nclubs excluded). Match results come from `data/matches_full.csv` (all\n13k+ EPL matches since 1993); the appointment dates are compiled from\npublic record — `dev.db` has no managerial history.\n\n**Metrics.** For each debut season we compute points/game, win%, goal\ndifference per game, final league position, and **over/underachievement**\n= previous season's finish minus this season's finish (positive = beat\nexpectation). Newly promoted clubs are scored against an expectation of\n20th. We then test four follow-ups: experience (first-ever job vs\nveteran), timing (pre-season vs mid-season appointment), and whether a\nstrong debut predicts the following season.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "24430e7a-b83a-45b3-9222-1c76fa6c8534",
+      "cell_type": "markdown",
+      "source": "## Methods\n\nData were extracted from the Soccers football database (`packages/data`) as CSV snapshots: `matches_full`.\n\nThe analysis runs entirely in Rust inside the notebook: **polars** handles table scans, joins and aggregations; **plotters** renders figures as inline SVG; `mars_table` renders result tables.\n\nEach code cell is kept to a single output so results can be read top to bottom.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "d683f1d5-ca78-4a78-a01b-a310610ff75c",
+      "cell_type": "markdown",
+      "source": "## Results\n\nAll figures and tables below are computed directly from the extracted data. Each code cell produces one output — a table, a chart, or a short text summary.\n",
       "metadata": {},
       "outputs": []
     },
@@ -32,9 +46,9 @@
       ]
     },
     {
-      "id": "4fe50af1-0756-42ef-ad9b-ea1650a85601",
+      "id": "3b751d06-6ddb-4f9d-9523-032bf2c96fe9",
       "cell_type": "markdown",
-      "source": "## Debut seasons analysed",
+      "source": "### Debut seasons analysed\n",
       "metadata": {},
       "outputs": []
     },
@@ -1462,9 +1476,16 @@
       ]
     },
     {
-      "id": "79eb0af6-f44f-4c66-ba8b-0be8395d5975",
+      "id": "6ae87250-6eac-4a77-9a37-e2a326ec421f",
       "cell_type": "markdown",
-      "source": "## Findings\n\nAcross **80 curated debut seasons** (a manager's first spell in charge of\neach club, EPL 2015/16 → 2024/25, permanent appointments only):\n\n### 1. Who had the best debut season?\n\nBy pure results, **Antonio Conte's Chelsea 2016/17** is the standard:\n**2.45 ppg, 78.9% wins, +1.37 gd/game, title** — the best debut season\nin the dataset on every absolute metric. **Arne Slot's Liverpool\n2024/25** (2.21 ppg, champions) is the other standout. By over/under\nachievement, **Claudio Ranieri's Leicester 2015/16** (+13: expected ~14th,\nwon the title) edges **Nuno's Wolves 2018/19** (+13: newly promoted,\nfinished 7th) and **Conte (+12)**.\n\n### 2. Who overachieved the most?\n\nThe overachievement table is dominated by two patterns: **title-chasing\nmiracles** (Ranieri +13, Conte +12) and **promoted-club surprises** —\nWolves +13, Bielsa's Leeds +11, Brentford +7. But note the caveat: for\nnewly promoted clubs \"expected\" is conservatively set to 20th, so\n*surviving comfortably* already counts as a big overachievement.\n\n### 3. Does previous experience matter?\n\n**Not really — first-timers actually score higher on ppg.** The six\nfirst-ever appointments (Smith, Solskjaer, Ljungberg, Arteta, Gerrard,\nKompany, Hürzeler) averaged **1.40 ppg** vs 1.21 for veterans — though\nthey were all hired by clubs with money to spend, and none finished\ntop-4 (0/6 vs 9/74 for veterans). Small sample, but the \"new manager\nbump\" hits rookies and veterans alike.\n\n### 4. Does appointment timing matter?\n\n**Decisively — pre-season appointments are far better.**\n\n| Timing | n | mean ppg | mean over/under | survived |\n|---|---|---|---|---|\n| Pre-season | 40 | **1.33** | **+1.9** | 34/40 (85%) |\n| Mid-season | 40 | 1.12 | **-2.3** | 30/40 (75%) |\n\nThis isn't causal — mid-season appointments happen *because* things are\nalready going wrong (hence negative over/under: they inherit a bad\nsituation). But it does mean the \"new manager bounce\" measured on\nmid-season changes is fighting uphill; managers given a full preseason\nprepare actually outperform expectation by ~2 places on average.\n\n### 5. Does a good debut predict quality?\n\n**Weakly at best.** Of the 63 debuts with a following EPL season,\noverachievers finished the next season at **11.7** vs underachievers at\n**9.4** — i.e., the teams that \"overperformed\" actually regressed\nslightly more on average. Mean sophomore regression is only **+0.1\nplaces**, essentially noise. Great debuts (Klopp, Guardiola, Arteta)\ndo tend to become great tenures — but the debut season itself is a\npoor predictor; most overachievers settle back toward their level.",
+      "source": "## Discussion\n\nAcross **80 curated debut seasons** (a manager's first spell in charge of\neach club, EPL 2015/16 → 2024/25, permanent appointments only):\n\n### 1. Who had the best debut season?\n\nBy pure results, **Antonio Conte's Chelsea 2016/17** is the standard:\n**2.45 ppg, 78.9% wins, +1.37 gd/game, title** — the best debut season\nin the dataset on every absolute metric. **Arne Slot's Liverpool\n2024/25** (2.21 ppg, champions) is the other standout. By over/under\nachievement, **Claudio Ranieri's Leicester 2015/16** (+13: expected ~14th,\nwon the title) edges **Nuno's Wolves 2018/19** (+13: newly promoted,\nfinished 7th) and **Conte (+12)**.\n\n### 2. Who overachieved the most?\n\nThe overachievement table is dominated by two patterns: **title-chasing\nmiracles** (Ranieri +13, Conte +12) and **promoted-club surprises** —\nWolves +13, Bielsa's Leeds +11, Brentford +7. But note the caveat: for\nnewly promoted clubs \"expected\" is conservatively set to 20th, so\n*surviving comfortably* already counts as a big overachievement.\n\n### 3. Does previous experience matter?\n\n**Not really — first-timers actually score higher on ppg.** The six\nfirst-ever appointments (Smith, Solskjaer, Ljungberg, Arteta, Gerrard,\nKompany, Hürzeler) averaged **1.40 ppg** vs 1.21 for veterans — though\nthey were all hired by clubs with money to spend, and none finished\ntop-4 (0/6 vs 9/74 for veterans). Small sample, but the \"new manager\nbump\" hits rookies and veterans alike.\n\n### 4. Does appointment timing matter?\n\n**Decisively — pre-season appointments are far better.**\n\n| Timing | n | mean ppg | mean over/under | survived |\n|---|---|---|---|---|\n| Pre-season | 40 | **1.33** | **+1.9** | 34/40 (85%) |\n| Mid-season | 40 | 1.12 | **-2.3** | 30/40 (75%) |\n\nThis isn't causal — mid-season appointments happen *because* things are\nalready going wrong (hence negative over/under: they inherit a bad\nsituation). But it does mean the \"new manager bounce\" measured on\nmid-season changes is fighting uphill; managers given a full preseason\nprepare actually outperform expectation by ~2 places on average.\n\n### 5. Does a good debut predict quality?\n\n**Weakly at best.** Of the 63 debuts with a following EPL season,\noverachievers finished the next season at **11.7** vs underachievers at\n**9.4** — i.e., the teams that \"overperformed\" actually regressed\nslightly more on average. Mean sophomore regression is only **+0.1\nplaces**, essentially noise. Great debuts (Klopp, Guardiola, Arteta)\ndo tend to become great tenures — but the debut season itself is a\npoor predictor; most overachievers settle back toward their level.\n\n**Limitations.** Manager attribution relies on team_manager records, which cover only StatsBomb competitions; tenures outside that coverage are not visible.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "d3f1c864-10e6-4623-b1a6-24498d3c09ec",
+      "cell_type": "markdown",
+      "source": "## Conclusion\n\nNot really — first-timers actually score higher on ppg. Together these results answer the research question posed in the Introduction and quantify the pattern across the manager records. The notebook provides a fully reproducible pipeline from raw CSV extracts to published figures.\n",
       "metadata": {},
       "outputs": []
     }

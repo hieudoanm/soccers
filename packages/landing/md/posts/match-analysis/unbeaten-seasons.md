@@ -10,7 +10,35 @@ tags: ['football', 'analysis', 'records', 'mars', 'sqlite']
 
 # Are unbeaten seasons really that impressive?
 
-## Are unbeaten seasons really that impressive?
+## Abstract
+
+Are unbeaten seasons really that impressive? This study answers it using
+hundreds of thousands of matches drawn from the Soccers football database.
+Unbeaten teams don't "play not to lose" — they win _more_. All computation runs
+in Rust inside a `.mars` notebook (polars + plotters — charts as inline SVG),
+and every table and figure is generated from the extracted CSVs.
+
+## Keywords
+
+**Keywords:** football, analysis, records, mars, sqlite
+
+## Table of contents
+
+- [Abstract](#abstract)
+- [Keywords](#keywords)
+- [Introduction](#introduction)
+- [Methods](#methods)
+- [Results](#results)
+  - [The unbeaten roll call](#the-unbeaten-roll-call)
+  - [The defeats gradient](#the-defeats-gradient)
+  - [Unbeaten champions vs the most dominant champions](#unbeaten-champions-vs-the-most-dominant-champions)
+  - [The price of invincibility](#the-price-of-invincibility)
+  - [Rarity and parity](#rarity-and-parity)
+  - [The picture](#the-picture)
+- [Discussion](#discussion)
+- [Conclusion](#conclusion)
+
+## Introduction
 
 The romantic claim: _an unbeaten league season is the ultimate proof of
 dominance._ This notebook tests it across **every top-flight league in the
@@ -30,6 +58,22 @@ for the trivial fact that bad teams lose more _and_ score less. Champions are
 compared separately: unbeaten champions vs ordinary champions vs the biggest
 points-margin champions. xG is unavailable for most of this history, so
 everything is actual outcomes — stated throughout as a limitation.
+
+## Methods
+
+Data were extracted from the Soccers football database (`packages/data`) as CSV
+snapshots: `matches_full`.
+
+The analysis runs entirely in Rust inside the notebook: **polars** handles table
+scans, joins and aggregations; **plotters** renders figures as inline SVG;
+`mars_table` renders result tables.
+
+Each code cell is kept to a single output so results can be read top to bottom.
+
+## Results
+
+All figures and tables below are computed directly from the extracted data. Each
+code cell produces one output — a table, a chart, or a short text summary.
 
 ```rust
 use polars::prelude::*;
@@ -275,7 +319,7 @@ league-seasons: 610 | team-season entries: 10492
 complete league-seasons: 592
 ```
 
-## The unbeaten roll call
+### The unbeaten roll call
 
 Every team-season in the dataset with **zero defeats** (minimum 25 matches
 played, complete league-seasons only). Each is checked against the league table:
@@ -338,7 +382,7 @@ unbeaten team-seasons: 10 | of which champions: 9 | non-champions: 1
 | Scotland \| Scottish Premiership     | 2016/17 | Celtic     | 38     | 4     | 106/25 | #1     | champion |
 | Scotland \| Scottish Premiership     | 2020/21 | Rangers    | 38     | 6     | 92/13  | #1     | champion |
 
-## The defeats gradient
+### The defeats gradient
 
 If "unbeaten" is genuinely special, the curve of performance vs defeats should
 show a **jump at zero**. If it's just the tail of a smooth gradient, consistency
@@ -428,7 +472,7 @@ team-seasons analysed: 9917
 | 4-6     | 791  | 748     | 2.05    | 2.07      | +1.01    | +1.04      | 60%      | 24%       |
 | 7+      | 8834 | 1270    | 1.28    | 1.78      | -0.14    | +0.57      | 34%      | 26%       |
 
-## Unbeaten champions vs the most dominant champions
+### Unbeaten champions vs the most dominant champions
 
 Three groups of title winners across all leagues:
 
@@ -541,7 +585,7 @@ mars_table(&["league", "season", "champion", "played", "w-d-l", "gf/ga", "margin
 | Scotland \| Scottish Premiership     | 2016/17 | Celtic     | 38     | 34W 4D 0L  | 106/25 | +30    |
 | Scotland \| Scottish Premiership     | 2020/21 | Rangers    | 38     | 32W 6D 0L  | 92/13  | +25    |
 
-## The price of invincibility
+### The price of invincibility
 
 The romantic version says unbeaten teams _choose_ to avoid defeat — meaning more
 draws, fewer wins, points dropped through stalemates. The data version: does the
@@ -598,7 +642,7 @@ println!("2 defeats (n={}): {:.1}%W {:.1}%D {:.1}%L", n2 as i64, w2, d2, l2);
 | 4-6     | 791          | 24.3%     | 12992             | 16.4         |
 | 7+      | 8834         | 26.0%     | 161614            | 18.3         |
 
-## Rarity and parity
+### Rarity and parity
 
 Two questions: is the unbeaten season actually _rare_, and does league parity
 predict it? For each league we count seasons covered, unbeaten campaigns,
@@ -686,7 +730,7 @@ mars_table(&["decade", "unbeaten team-seasons"], &dec_rows);
 | 2010s  | 5                     |
 | 2020s  | 3                     |
 
-## The picture
+### The picture
 
 Two views: the defeats-gradient curve (does performance jump at zero or slide
 smoothly?), and the unbeaten champions against the most dominant champions on
@@ -795,7 +839,7 @@ println!("red = unbeaten champions (n={}) | blue = other champions (n={})", ub_f
 red = unbeaten champions (n=9) | blue = other champions (n=567)
 ```
 
-## What the data says
+## Discussion
 
 **The unbeaten season is real but rare — and it's the _tail_ of a consistency
 gradient, not a separate category.**
@@ -846,3 +890,14 @@ causation._
 
 _Source: 176,903 deduplicated top-flight matches across 28 leagues, 592 complete
 league-seasons, 1990s → 2026._
+
+**Limitations.** The analysis is limited to the competitions present in the
+database; player-level metrics exist only for StatsBomb-covered tournaments, and
+underlying event data may contain errors.
+
+## Conclusion
+
+Unbeaten teams don't "play not to lose" — they win _more_. Together these
+results answer the research question posed in the Introduction and quantify the
+pattern across hundreds of thousands of matches. The notebook provides a fully
+reproducible pipeline from raw CSV extracts to published figures.

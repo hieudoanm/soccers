@@ -12,9 +12,23 @@
   },
   "cells": [
     {
-      "id": "48bb8f59-810f-4960-a792-d182941bf3cc",
+      "id": "24591204-9cc5-4161-a8d6-dc5fa063fd55",
       "cell_type": "markdown",
-      "source": "## Best of the Copa América\n\nA record book of the **Copa América** — international tournament champions,\nfinals and records computed from `data/matches_full.csv`.\n\nOnly the 2024 edition is in the dataset — complete coverage.\n\n**Records covered:** most titles, every edition's champion and final\nscore, the champion's full tournament record, biggest wins,\nhighest-scoring matches, champion records (most goals, fewest conceded,\nbest goal difference, most wins, fewest losses), unbeaten champions,\nthe closest finals, and top scorers where player-level data exists.",
+      "source": "## Abstract\n\nThis study examines the Copa América record book using the Copa América matches held in the Soccers football database. Argentina 2024 was the most complete champion run in the series. All computation runs in Rust inside a `.mars` notebook (polars + plotters — charts as inline SVG), and every table and figure is generated from the extracted CSVs.\n\n## Keywords\n\n**Keywords:** football, analysis, records, copa-america, mars, sqlite\n\n## Table of contents\n\n- [Abstract](#abstract)\n- [Keywords](#keywords)\n- [Introduction](#introduction)\n- [Methods](#methods)\n- [Results](#results)\n  - [Tournament editions](#tournament-editions)\n  - [Every edition — champion, final score, champion's tournament record](#every-edition--champion-final-score-champions-tournament-record)\n  - [Records across all editions](#records-across-all-editions)\n  - [Champion records: most goals for, fewest against, best GD, most wins](#champion-records-most-goals-for-fewest-against-best-gd-most-wins)\n  - [Unbeaten champions](#unbeaten-champions)\n  - [Closest finals (smallest margin or draw)](#closest-finals-smallest-margin-or-draw)\n  - [Top scorers (latest edition with player data — SCORERS picks best-covered year)](#top-scorers-latest-edition-with-player-data--scorers-picks-best-covered-year)\n- [Discussion](#discussion)\n- [Conclusion](#conclusion)\n\n## Introduction\n\nA record book of the **Copa América** — international tournament champions,\nfinals and records computed from `data/matches_full.csv`.\n\nOnly the 2024 edition is in the dataset — complete coverage.\n\n**Records covered:** most titles, every edition's champion and final\nscore, the champion's full tournament record, biggest wins,\nhighest-scoring matches, champion records (most goals, fewest conceded,\nbest goal difference, most wins, fewest losses), unbeaten champions,\nthe closest finals, and top scorers where player-level data exists.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "b4517d80-8c97-453c-ba9e-1b053fa4a522",
+      "cell_type": "markdown",
+      "source": "## Methods\n\nData were extracted from the Soccers football database (`packages/data`) as CSV snapshots: `matches_full`, `player_goals`.\n\nThe analysis runs entirely in Rust inside the notebook: **polars** handles table scans, joins and aggregations; **plotters** renders figures as inline SVG; `mars_table` renders result tables.\n\nEach code cell is kept to a single output so results can be read top to bottom.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "95282ee3-96f4-4c0d-8b08-cda79d211449",
+      "cell_type": "markdown",
+      "source": "## Results\n\nAll figures and tables below are computed directly from the extracted data. Each code cell produces one output — a table, a chart, or a short text summary.\n",
       "metadata": {},
       "outputs": []
     },
@@ -45,6 +59,13 @@
       ]
     },
     {
+      "id": "77de3a1a-ea3e-4d2d-877a-beee661658bf",
+      "cell_type": "markdown",
+      "source": "### Tournament editions\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
       "id": "3886df13-d800-4efc-9239-7f838e6519e2",
       "cell_type": "code",
       "source": "// ---- tournament editions ----\n#[derive(Clone)]\nstruct TMatch {\n    date: String,\n    h: String,\n    a: String,\n    hg: i64,\n    ag: i64,\n}\n\nstruct Edition {\n    season: String,\n    n: usize,\n    matches: Vec<TMatch>,\n    champion: String,\n    runner_up: String,\n    final_hg: i64,\n    final_ag: i64,\n    pens: bool,\n}\n\nlet mut by_season: BTreeMap<String, Vec<TMatch>> = BTreeMap::new();\nfor (s, h, a, d, hg, ag) in &all_matches {\n    by_season.entry(s.clone()).or_default().push(TMatch {\n        date: d.clone(), h: h.clone(), a: a.clone(), hg: *hg, ag: *ag,\n    });\n}\n\nlet mut editions: Vec<Edition> = Vec::new();\nfor (sname, mut ms) in by_season {\n    if ms.is_empty() {\n        continue;\n    }\n    ms.sort_by(|x, y| x.date.cmp(&y.date));\n    let last = ms.last().unwrap();\n    // champions are only recorded for editions with substantial coverage;\n    // scattered finals/group games can't identify the winner reliably\n    let pens_winners: &[(&str, &str)] = &[];\n    let (champ, runner, pens) = if ms.len() < 10 {\n        (String::new(), String::new(), false)\n    } else if last.hg > last.ag {\n        (last.h.clone(), last.a.clone(), false)\n    } else if last.hg < last.ag {\n        (last.a.clone(), last.h.clone(), false)\n    } else if let Some((_, w)) = pens_winners.iter().find(|(y, _)| *y == sname) {\n        let ru = if last.h == *w { last.a.clone() } else { last.h.clone() };\n        (w.to_string(), ru, true)\n    } else {\n        (\"decided on penalties\".to_string(), String::new(), true)\n    };\n    editions.push(Edition {\n        season: sname,\n        n: ms.len(),\n        champion: champ,\n        runner_up: runner,\n        final_hg: last.hg,\n        final_ag: last.ag,\n        pens,\n        matches: ms,\n    });\n}\nprintln!(\"editions: {}\", editions.len());\nfor e in &editions {\n    println!(\"  {}: {} matches, champion-ish: {} (final {}-{}{})\", e.season, e.n, e.champion, e.final_hg, e.final_ag, if e.pens { \" pens\" } else { \"\" });\n}\n\n// T1: most titles per nation\nlet mut titles: BTreeMap<String, Vec<String>> = BTreeMap::new();\nfor e in &editions {\n    if !e.champion.is_empty() && e.champion != \"decided on penalties\" {\n        titles.entry(e.champion.clone()).or_default().push(e.season.clone());\n    }\n}\nlet mut tv: Vec<(String, Vec<String>)> = titles.into_iter().collect();\ntv.sort_by(|a, b| b.1.len().cmp(&a.1.len()).then(a.0.cmp(&b.0)));\nlet title_rows: Vec<Vec<String>> = tv.iter().take(8)\n    .map(|(t, ss)| vec![t.clone(), ss.len().to_string(), ss.iter().rev().take(4).cloned().collect::<Vec<_>>().join(\", \")])\n    .collect();\nmars_table(&[\"nation\", \"titles\", \"most recent\"], &title_rows);\n",
@@ -71,6 +92,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "31b79232-7596-4ed8-85ea-dbd354dab809",
+      "cell_type": "markdown",
+      "source": "### Every edition — champion, final score, champion's tournament record\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "cfccaa6b-891f-4d05-b71a-9c72b14d9620",
@@ -118,6 +146,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "10a07da1-87a1-4635-8eeb-9b8299eefbf0",
+      "cell_type": "markdown",
+      "source": "### Records across all editions\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "1f26b014-7d64-40af-96de-314c7064e537",
@@ -364,6 +399,13 @@
       ]
     },
     {
+      "id": "b968bac9-303d-4299-926d-6261083f1b9a",
+      "cell_type": "markdown",
+      "source": "### Champion records: most goals for, fewest against, best GD, most wins\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
       "id": "946e8c21-55a2-4593-b6d4-2c6c1c4ffc68",
       "cell_type": "code",
       "source": "// champion records: most goals for, fewest against, best GD, most wins\nlet mut champ_stats: Vec<(String, String, i64, i64, i64, i64, i64)> = Vec::new(); // season, champ, gf, ga, w, d, l\nfor e in &editions {\n    if e.champion.is_empty() || e.champion == \"decided on penalties\" { continue; }\n    let mut w = 0i64; let mut d = 0i64; let mut l = 0i64;\n    let mut gf = 0i64; let mut ga = 0i64;\n    for m in &e.matches {\n        let (hg, ag) = if m.h == e.champion { (m.hg, m.ag) }\n            else if m.a == e.champion { (m.ag, m.hg) }\n            else { continue };\n        gf += hg; ga += ag;\n        if hg > ag { w += 1; } else if hg == ag { d += 1; } else { l += 1; }\n    }\n    champ_stats.push((e.season.clone(), e.champion.clone(), gf, ga, w, d, l));\n}\nlet rec_rows: Vec<Vec<String>> = vec![\n    (\"most goals scored\", champ_stats.iter().max_by_key(|c| c.2).unwrap()),\n    (\"fewest goals conceded\", champ_stats.iter().min_by_key(|c| c.3).unwrap()),\n    (\"best goal difference\", champ_stats.iter().max_by_key(|c| c.2 - c.3).unwrap()),\n    (\"most wins\", champ_stats.iter().max_by_key(|c| c.4).unwrap()),\n    (\"fewest losses\", champ_stats.iter().min_by_key(|c| c.6).unwrap()),\n]\n.iter()\n.map(|(label, c)| vec![label.to_string(), format!(\"{} {}\", c.1, c.0), format!(\"{}W {}D {}L\", c.4, c.5, c.6), format!(\"{}/{}\", c.2, c.3), (c.2 - c.3).to_string()])\n.collect();\nmars_table(&[\"record\", \"champion edition\", \"record\", \"gf/ga\", \"gd\"], &rec_rows);\n",
@@ -556,6 +598,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "266ff886-a155-47d0-8409-91216de19c38",
+      "cell_type": "markdown",
+      "source": "### Unbeaten champions\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "c1bcf646-c280-4ed4-997f-28681653cfd6",
@@ -767,6 +816,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "229dd7d9-da36-4986-ac64-2bd178593797",
+      "cell_type": "markdown",
+      "source": "### Closest finals (smallest margin or draw)\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "c6a9f7f2-f4df-4248-b7d2-04a3c6a0e3b0",
@@ -993,6 +1049,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "1cfb746c-b199-4950-b69a-000036c76495",
+      "cell_type": "markdown",
+      "source": "### Top scorers (latest edition with player data — SCORERS picks best-covered year)\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "b37d13a6-3c79-45ab-94b1-f83848203066",
@@ -1784,9 +1847,16 @@
       ]
     },
     {
-      "id": "970f1d73-f6a5-4c93-8653-356200de1662",
+      "id": "23624dbb-cc43-42af-b2cb-b3626936eb6c",
       "cell_type": "markdown",
-      "source": "## What the record book says\n\nA single edition (2024, 32 matches) is in the dataset — a complete record book\nfor that tournament.\n\n- **Argentina 2024 was the most complete champion run in the series**: unbeaten\n  (5W-1D-0L) with a tournament record of **9 scored, 1 conceded** — the best\n  defence and near-best attack combined. They swept every champion record.\n- **The final was the lowest-scoring of the tournament**: Argentina 1–0 Colombia\n  — a final decided by a single goal after extra time.\n- **Biggest wins**: Uruguay 5–0 Bolivia and Colombia 5–0 Panama — both +5\n  margins.\n- **Top scorers**: Lautaro Martínez (Argentina) with 5; Jonathan David, José\n  Salomón Rondón and Rodrigo Bentancur on 4.\n- **Contrast with AFCON**: where the African champion won despite two defeats,\n  the Copa América champion conceded once all tournament — the two\n  single-edition record books show opposite paths to glory.\n\n*Source: StatsBomb open data via `dev.db`.",
+      "source": "## Discussion\n\nA single edition (2024, 32 matches) is in the dataset — a complete record book\nfor that tournament.\n\n- **Argentina 2024 was the most complete champion run in the series**: unbeaten\n  (5W-1D-0L) with a tournament record of **9 scored, 1 conceded** — the best\n  defence and near-best attack combined. They swept every champion record.\n- **The final was the lowest-scoring of the tournament**: Argentina 1–0 Colombia\n  — a final decided by a single goal after extra time.\n- **Biggest wins**: Uruguay 5–0 Bolivia and Colombia 5–0 Panama — both +5\n  margins.\n- **Top scorers**: Lautaro Martínez (Argentina) with 5; Jonathan David, José\n  Salomón Rondón and Rodrigo Bentancur on 4.\n- **Contrast with AFCON**: where the African champion won despite two defeats,\n  the Copa América champion conceded once all tournament — the two\n  single-edition record books show opposite paths to glory.\n\n*Source: StatsBomb open data via `dev.db`.\n\n**Limitations.** Records reflect only the matches present in the database; coverage varies by competition and era, so 'records' are archive records, not all-time official marks.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "1ca70ae1-15f2-403d-af37-cc50580079c2",
+      "cell_type": "markdown",
+      "source": "## Conclusion\n\nArgentina 2024 was the most complete champion run in the series. Together these results answer the research question posed in the Introduction and quantify the pattern across 32 matches. The notebook provides a fully reproducible pipeline from raw CSV extracts to published figures.\n",
       "metadata": {},
       "outputs": []
     }

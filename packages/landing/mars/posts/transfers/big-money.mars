@@ -12,9 +12,23 @@
   },
   "cells": [
     {
-      "id": "a8ec8b64-df5f-4f2a-af6a-b1c1f6f020e0",
+      "id": "51614439-87e1-4c81-bb0f-67804e9c589e",
       "cell_type": "markdown",
-      "source": "## Does big money buy goals? Fee vs. output\n\n19,436 transfers are in the database — 5,354 with a disclosed fee. This\nnotebook asks the uncomfortable question: **do expensive signings actually\nproduce more?**\n\nFor every transfer with a fee ≥ €10m, we compare the player's goal\ninvolvement (goals + assists per 90) in the 12 months *before* the move\n(at the selling club) versus the 12 months *after* (at the buying club).\nOnly players with at least 3 appearances on each side are counted, and\nonly their club-level minutes count — international duty is excluded.\n\nCaveats: fees are Transfermarkt EUR figures (add-ons excluded); \"before\"\nform may already be declining (buy-high/sell-low is normal); players who\nmoved again inside a year have truncated windows.\n",
+      "source": "## Abstract\n\nDoes big money buy goals? This study answers it using 19,436 transfers drawn from the Soccers football database. Among 189 big-money transfers (fee ≥ €10m) had enough before/after match data to measure. All computation runs in Rust inside a `.mars` notebook (polars + plotters — charts as inline SVG), and every table and figure is generated from the extracted CSVs.\n\n## Keywords\n\n**Keywords:** football, analysis, transfers, transfermarkt, mars, sqlite\n\n## Table of contents\n\n- [Abstract](#abstract)\n- [Keywords](#keywords)\n- [Introduction](#introduction)\n- [Methods](#methods)\n- [Results](#results)\n  - [Before and after the move](#before-and-after-the-move)\n  - [Busts and surprise hits](#busts-and-surprise-hits)\n  - [The fee quartiles](#the-fee-quartiles)\n- [Discussion](#discussion)\n- [Conclusion](#conclusion)\n\n## Introduction\n\n19,436 transfers are in the database — 5,354 with a disclosed fee. This\nnotebook asks the uncomfortable question: **do expensive signings actually\nproduce more?**\n\nFor every transfer with a fee ≥ €10m, we compare the player's goal\ninvolvement (goals + assists per 90) in the 12 months *before* the move\n(at the selling club) versus the 12 months *after* (at the buying club).\nOnly players with at least 3 appearances on each side are counted, and\nonly their club-level minutes count — international duty is excluded.\n\nCaveats: fees are Transfermarkt EUR figures (add-ons excluded); \"before\"\nform may already be declining (buy-high/sell-low is normal); players who\nmoved again inside a year have truncated windows.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "3e8e5f57-e13c-4698-b297-ff11b5c8dc63",
+      "cell_type": "markdown",
+      "source": "## Methods\n\nData were extracted from the Soccers football database (`packages/data`) as CSV snapshots: `match`, `player`, `player_match_stat`, `team`, `transfer`.\n\nThe analysis runs entirely in Rust inside the notebook: **polars** handles table scans, joins and aggregations; **plotters** renders figures as inline SVG; `mars_table` renders result tables.\n\nStatistical summaries include medians and percentiles.\n\nEach code cell is kept to a single output so results can be read top to bottom.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "3a701dc7-dbd8-43b9-a2ad-4471def33c3d",
+      "cell_type": "markdown",
+      "source": "## Results\n\nAll figures and tables below are computed directly from the extracted data. Each code cell produces one output — a table, a chart, or a short text summary.\n",
       "metadata": {},
       "outputs": []
     },
@@ -30,6 +44,13 @@
           "text": "players with match stats: 11701\n"
         }
       ]
+    },
+    {
+      "id": "c9c72e06-03d2-4539-9f53-39edbbfef33b",
+      "cell_type": "markdown",
+      "source": "### Before and after the move\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "9b0bd646-e392-4cfb-a788-b1d074f452b1",
@@ -88,6 +109,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "42b427a2-4eb7-4b94-a3de-bc3128265c69",
+      "cell_type": "markdown",
+      "source": "### Busts and surprise hits\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "68aafc73-e0ab-4c38-93bd-d516c12a2f21",
@@ -509,6 +537,13 @@
       ]
     },
     {
+      "id": "34b77234-919f-4ab3-aef2-57e7bc2b98e3",
+      "cell_type": "markdown",
+      "source": "### The fee quartiles\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
       "id": "94ff4543-7d2d-4664-8b84-3755bde31687",
       "cell_type": "code",
       "source": "\n// does the fee predict the outcome? bucket all measured deals by fee\nlet idx: Vec<usize> = { let mut v: Vec<usize> = (0..deals.len()).collect();\n    v.sort_by(|&a,&b| deals[a].fee.partial_cmp(&deals[b].fee).unwrap()); v };\nlet n = idx.len();\nlet quart_rows: Vec<Vec<String>> = (0..4).map(|q| {\n    let slice = &idx[q*n/4..(q+1)*n/4];\n    let med_fee = { let mut v:Vec<f64>=slice.iter().map(|&i|deals[i].fee).collect(); v.sort_by(|a,b|a.partial_cmp(b).unwrap()); v[v.len()/2] };\n    let med_b: f64 = { let mut v:Vec<f64>=slice.iter().map(|&i|deals[i].before_ga90).collect(); v.sort_by(|a,b|a.partial_cmp(b).unwrap()); v[v.len()/2] };\n    let med_a: f64 = { let mut v:Vec<f64>=slice.iter().map(|&i|deals[i].after_ga90).collect(); v.sort_by(|a,b|a.partial_cmp(b).unwrap()); v[v.len()/2] };\n    let imp = slice.iter().filter(|&&i| deals[i].after_ga90 > deals[i].before_ga90).count();\n    vec![format!(\"Q{}\",q+1), slice.len().to_string(), eur(med_fee),\n        format!(\"{:.2}\",med_b), format!(\"{:.2}\",med_a),\n        format!(\"{:.0}%\",100.0*imp as f64/slice.len() as f64),\n        format!(\"{:+.2}\", med_a-med_b)]\n}).collect();\nmars_table(&[\"fee quartile\",\"deals\",\"med fee\",\"med before\",\"med after\",\"% improved\",\"Δ\"], &quart_rows);\n",
@@ -819,9 +854,334 @@
       ]
     },
     {
-      "id": "5475cb45-09ec-4c84-a4f3-a9d58306d12b",
+      "id": "baf4a76c-c8fd-44f5-b953-a5faf5a53cb4",
+      "cell_type": "code",
+      "source": "use plotters::prelude::*;\n\nfn chart_num(s: &str) -> f64 {\n    let t = s.replace(',', \"\").replace('%', \"\").replace('−', \"-\");\n    let mult = if t.contains(\"bn\") { 1e9 }\n        else if t.contains('€') && t.contains('m') { 1e6 }\n        else { 1.0 };\n    let cleaned: String = t.chars()\n        .filter(|c| c.is_ascii_digit() || *c == '.' || *c == '-')\n        .collect();\n    cleaned.parse().unwrap_or(0.0) * mult\n}\n\n\nlet mut c_items: Vec<(String, f64)> = quart_rows.iter()\n    .map(|r| (r[0].clone(), chart_num(&r[5].clone())))\n    .collect();\nc_items.retain(|(_, v)| v.is_finite());\nc_items.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());\nc_items.truncate(12);\nlet c_labels: Vec<String> = c_items.iter()\n    .map(|(l, _)| l.chars().take(18).collect()).collect();\nlet c_vals: Vec<f64> = c_items.iter().map(|(_, v)| *v).collect();\nlet c_ymax = c_vals.iter().cloned().fold(0.0_f64, f64::max) * 1.15 + 1e-9;\nlet (c_div, c_unit): (f64, &str) = if c_ymax >= 1e9 { (1e9, \"bn\") }\n    else if c_ymax >= 1e6 { (1e6, \"m\") }\n    else if c_ymax >= 1e3 { (1e3, \"k\") }\n    else { (1.0, \"\") };\nlet c_n = c_vals.len();\nlet figure = plotters::evcxr::evcxr_figure((780, 400), |root| {\n    root.fill(&WHITE)?;\n    let mut chart = ChartBuilder::on(&root)\n        .caption(\"Share of big-money deals that improved output\", (\"sans-serif\", 18))\n        .margin(10)\n        .x_label_area_size(45)\n        .y_label_area_size(55)\n        .build_cartesian_2d(-0.5_f64..(c_n as f64 - 0.5), 0.0..c_ymax)?;\n    chart.configure_mesh()\n        .x_labels(c_n)\n        .x_label_formatter(&|x: &f64| c_labels.get(*x as usize).cloned().unwrap_or_default())\n        .y_label_formatter(&|y: &f64| format!(\"{:.1}{}\", y / c_div, c_unit))\n        .draw()?;\n    chart.draw_series(c_vals.iter().enumerate().map(|(i, &v)| {\n        Rectangle::new([(i as f64 - 0.35, 0.0), (i as f64 + 0.35, v)], BLUE.filled())\n    }))?;\n    Ok(())\n});\nfigure.evcxr_display();\n",
+      "metadata": {},
+      "execution_count": 6,
+      "outputs": [
+        {
+          "type": "text",
+          "text": "players with match stats: 11701\nbig-money deals with before+after data: 189\n"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "fee band",
+            "deals",
+            "med G+A/90 before",
+            "after",
+            "% improved",
+            "Δ median"
+          ],
+          "rows": [
+            [
+              "€10–25m",
+              "96",
+              "0.06",
+              "0.09",
+              "34%",
+              "+0.02"
+            ],
+            [
+              "€25–50m",
+              "53",
+              "0.11",
+              "0.00",
+              "28%",
+              "-0.11"
+            ],
+            [
+              "€50–100m",
+              "29",
+              "0.31",
+              "0.18",
+              "38%",
+              "-0.13"
+            ],
+            [
+              "€100m+",
+              "11",
+              "0.48",
+              "0.20",
+              "18%",
+              "-0.28"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "player",
+            "fee",
+            "move",
+            "G+A/90 before→after"
+          ],
+          "rows": [
+            [
+              "Gonçalo Matias Ramos",
+              "€65.0m",
+              "Benfica → Paris Saint-Germai",
+              "0.88 → 0.00"
+            ],
+            [
+              "Romelu Lukaku Menama",
+              "€113.0m",
+              "Inter Milan → Chelsea",
+              "0.81 → 0.00"
+            ],
+            [
+              "Aleksandar Mitrović",
+              "€52.6m",
+              "Fulham → Al Hilal",
+              "0.72 → 0.00"
+            ],
+            [
+              "Kevin Gameiro",
+              "€32.0m",
+              "Sevilla → Atlético Madrid",
+              "0.67 → 0.00"
+            ],
+            [
+              "Harry Kane",
+              "€95.0m",
+              "Tottenham Hotspur → Bayern Munich",
+              "1.12 → 0.47"
+            ],
+            [
+              "Youssef En-Nesyri",
+              "€20.0m",
+              "Leganes → Sevilla",
+              "0.55 → 0.00"
+            ],
+            [
+              "Wissam Ben Yedder",
+              "€40.0m",
+              "Sevilla → AS Monaco",
+              "0.50 → 0.00"
+            ],
+            [
+              "Antoine Griezmann",
+              "€22.0m",
+              "Barcelona → Atlético Madrid",
+              "0.47 → 0.00"
+            ],
+            [
+              "Robert Lewandowski",
+              "€45.0m",
+              "Bayern Munich → Barcelona",
+              "1.12 → 0.65"
+            ],
+            [
+              "Michy Batshuayi Tunga",
+              "€39.0m",
+              "Marseille → Chelsea",
+              "0.69 → 0.25"
+            ],
+            [
+              "Kylian Mbappé Lottin",
+              "€180.0m",
+              "AS Monaco → Paris Saint-Germai",
+              "0.79 → 0.36"
+            ],
+            [
+              "Moisés Isaac Caicedo Cor",
+              "€116.0m",
+              "Brighton & Hove Al → Chelsea",
+              "0.40 → 0.00"
+            ],
+            [
+              "Sergej Milinković-Savić",
+              "€40.0m",
+              "Lazio → Al Hilal",
+              "0.40 → 0.00"
+            ],
+            [
+              "Paul Pogba",
+              "€105.0m",
+              "Juventus → Manchester United",
+              "0.53 → 0.14"
+            ],
+            [
+              "Ousmane Dembélé",
+              "€35.0m",
+              "Stade Rennais → Borussia Dortmund",
+              "0.80 → 0.43"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "player",
+            "fee",
+            "move",
+            "G+A/90 before→after"
+          ],
+          "rows": [
+            [
+              "Juan Guillermo Cuadrado ",
+              "€20.0m",
+              "Chelsea → Juventus",
+              "0.23 → 1.00"
+            ],
+            [
+              "Thorgan Hazard",
+              "€25.5m",
+              "Borussia Mönchengl → Borussia Dortmund",
+              "0.00 → 0.65"
+            ],
+            [
+              "Ángel Fabián Di María He",
+              "€75.0m",
+              "Real Madrid → Manchester United",
+              "0.54 → 1.18"
+            ],
+            [
+              "Álvaro Borja Morata Mart",
+              "€35.0m",
+              "Chelsea → Atlético Madrid",
+              "0.00 → 0.64"
+            ],
+            [
+              "Carlos Arturo Bacca Ahum",
+              "€33.3m",
+              "Sevilla → AC Milan",
+              "0.00 → 0.60"
+            ],
+            [
+              "Kasper Dolberg",
+              "€20.5m",
+              "Ajax Amsterdam → OGC Nice",
+              "0.00 → 0.59"
+            ],
+            [
+              "Ángel Fabián Di María He",
+              "€63.0m",
+              "Manchester United → Paris Saint-Germai",
+              "0.72 → 1.18"
+            ],
+            [
+              "Ikoma Loïs Openda",
+              "€40.0m",
+              "Lens → RB Leipzig",
+              "0.00 → 0.37"
+            ],
+            [
+              "Jude Bellingham",
+              "€127.0m",
+              "Borussia Dortmund → Real Madrid",
+              "0.27 → 0.63"
+            ],
+            [
+              "Cody Mathès Gakpo",
+              "€42.0m",
+              "PSV Eindhoven → Liverpool",
+              "0.37 → 0.69"
+            ],
+            [
+              "Fabián Ruiz Peña",
+              "€22.5m",
+              "Napoli → Paris Saint-Germai",
+              "0.00 → 0.30"
+            ],
+            [
+              "John Stones",
+              "€55.6m",
+              "Everton → Manchester City",
+              "0.00 → 0.30"
+            ],
+            [
+              "Antoine Griezmann",
+              "€54.0m",
+              "Real Sociedad → Atlético Madrid",
+              "0.55 → 0.84"
+            ],
+            [
+              "Nuno Mendes",
+              "€38.0m",
+              "Sporting CP → Paris Saint-Germai",
+              "0.00 → 0.27"
+            ],
+            [
+              "Alexis Mac Allister",
+              "€42.0m",
+              "Brighton & Hove Al → Liverpool",
+              "0.30 → 0.55"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "fee quartile",
+            "deals",
+            "med fee",
+            "med before",
+            "med after",
+            "% improved",
+            "Δ"
+          ],
+          "rows": [
+            [
+              "Q1",
+              "47",
+              "€13.0m",
+              "0.00",
+              "0.00",
+              "36%",
+              "+0.00"
+            ],
+            [
+              "Q2",
+              "47",
+              "€18.5m",
+              "0.10",
+              "0.11",
+              "32%",
+              "+0.01"
+            ],
+            [
+              "Q3",
+              "47",
+              "€34.2m",
+              "0.03",
+              "0.00",
+              "28%",
+              "-0.03"
+            ],
+            [
+              "Q4",
+              "48",
+              "€65.0m",
+              "0.33",
+              "0.19",
+              "33%",
+              "-0.14"
+            ]
+          ]
+        },
+        {
+          "type": "mime_bundle",
+          "data": {
+            "image/svg+xml": "<svg width=\"780\" height=\"400\" viewBox=\"0 0 780 400\" xmlns=\"http://www.w3.org/2000/svg\">\n<rect x=\"0\" y=\"0\" width=\"780\" height=\"400\" opacity=\"1\" fill=\"#FFFFFF\" stroke=\"none\"/>\n<text x=\"390\" y=\"15\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"14.516129032258064\" opacity=\"1\" fill=\"#000000\">\nShare of big-money deals that improved output\n</text>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"82\" y1=\"344\" x2=\"82\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"117\" y1=\"344\" x2=\"117\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"153\" y1=\"344\" x2=\"153\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"188\" y1=\"344\" x2=\"188\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"223\" y1=\"344\" x2=\"223\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"258\" y1=\"344\" x2=\"258\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"293\" y1=\"344\" x2=\"293\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"329\" y1=\"344\" x2=\"329\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"364\" y1=\"344\" x2=\"364\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"399\" y1=\"344\" x2=\"399\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"434\" y1=\"344\" x2=\"434\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"469\" y1=\"344\" x2=\"469\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"505\" y1=\"344\" x2=\"505\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"540\" y1=\"344\" x2=\"540\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"575\" y1=\"344\" x2=\"575\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"610\" y1=\"344\" x2=\"610\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"645\" y1=\"344\" x2=\"645\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"681\" y1=\"344\" x2=\"681\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"716\" y1=\"344\" x2=\"716\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"344\" x2=\"769\" y2=\"344\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"341\" x2=\"769\" y2=\"341\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"337\" x2=\"769\" y2=\"337\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"333\" x2=\"769\" y2=\"333\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"330\" x2=\"769\" y2=\"330\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"326\" x2=\"769\" y2=\"326\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"322\" x2=\"769\" y2=\"322\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"318\" x2=\"769\" y2=\"318\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"315\" x2=\"769\" y2=\"315\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"311\" x2=\"769\" y2=\"311\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"307\" x2=\"769\" y2=\"307\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"303\" x2=\"769\" y2=\"303\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"300\" x2=\"769\" y2=\"300\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"296\" x2=\"769\" y2=\"296\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"292\" x2=\"769\" y2=\"292\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"288\" x2=\"769\" y2=\"288\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"285\" x2=\"769\" y2=\"285\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"281\" x2=\"769\" y2=\"281\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"277\" x2=\"769\" y2=\"277\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"273\" x2=\"769\" y2=\"273\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"270\" x2=\"769\" y2=\"270\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"266\" x2=\"769\" y2=\"266\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"262\" x2=\"769\" y2=\"262\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"258\" x2=\"769\" y2=\"258\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"255\" x2=\"769\" y2=\"255\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"251\" x2=\"769\" y2=\"251\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"247\" x2=\"769\" y2=\"247\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"243\" x2=\"769\" y2=\"243\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"240\" x2=\"769\" y2=\"240\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"236\" x2=\"769\" y2=\"236\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"232\" x2=\"769\" y2=\"232\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"228\" x2=\"769\" y2=\"228\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"225\" x2=\"769\" y2=\"225\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"221\" x2=\"769\" y2=\"221\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"217\" x2=\"769\" y2=\"217\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"213\" x2=\"769\" y2=\"213\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"210\" x2=\"769\" y2=\"210\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"206\" x2=\"769\" y2=\"206\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"202\" x2=\"769\" y2=\"202\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"198\" x2=\"769\" y2=\"198\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"195\" x2=\"769\" y2=\"195\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"191\" x2=\"769\" y2=\"191\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"187\" x2=\"769\" y2=\"187\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"184\" x2=\"769\" y2=\"184\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"180\" x2=\"769\" y2=\"180\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"176\" x2=\"769\" y2=\"176\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"172\" x2=\"769\" y2=\"172\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"169\" x2=\"769\" y2=\"169\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"165\" x2=\"769\" y2=\"165\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"161\" x2=\"769\" y2=\"161\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"157\" x2=\"769\" y2=\"157\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"154\" x2=\"769\" y2=\"154\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"150\" x2=\"769\" y2=\"150\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"146\" x2=\"769\" y2=\"146\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"142\" x2=\"769\" y2=\"142\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"139\" x2=\"769\" y2=\"139\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"135\" x2=\"769\" y2=\"135\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"131\" x2=\"769\" y2=\"131\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"127\" x2=\"769\" y2=\"127\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"124\" x2=\"769\" y2=\"124\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"120\" x2=\"769\" y2=\"120\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"116\" x2=\"769\" y2=\"116\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"112\" x2=\"769\" y2=\"112\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"109\" x2=\"769\" y2=\"109\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"105\" x2=\"769\" y2=\"105\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"101\" x2=\"769\" y2=\"101\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"97\" x2=\"769\" y2=\"97\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"94\" x2=\"769\" y2=\"94\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"90\" x2=\"769\" y2=\"90\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"86\" x2=\"769\" y2=\"86\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"82\" x2=\"769\" y2=\"82\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"79\" x2=\"769\" y2=\"79\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"75\" x2=\"769\" y2=\"75\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"71\" x2=\"769\" y2=\"71\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"67\" x2=\"769\" y2=\"67\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"64\" x2=\"769\" y2=\"64\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"60\" x2=\"769\" y2=\"60\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"56\" x2=\"769\" y2=\"56\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"52\" x2=\"769\" y2=\"52\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"49\" x2=\"769\" y2=\"49\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"45\" x2=\"769\" y2=\"45\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"41\" x2=\"769\" y2=\"41\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"37\" x2=\"769\" y2=\"37\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"153\" y1=\"344\" x2=\"153\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"329\" y1=\"344\" x2=\"329\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"505\" y1=\"344\" x2=\"505\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"681\" y1=\"344\" x2=\"681\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"344\" x2=\"769\" y2=\"344\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"307\" x2=\"769\" y2=\"307\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"270\" x2=\"769\" y2=\"270\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"232\" x2=\"769\" y2=\"232\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"195\" x2=\"769\" y2=\"195\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"157\" x2=\"769\" y2=\"157\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"120\" x2=\"769\" y2=\"120\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"82\" x2=\"769\" y2=\"82\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"45\" x2=\"769\" y2=\"45\"/>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"64,34 64,344 \"/>\n<text x=\"55\" y=\"344\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n0.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,344 64,344 \"/>\n<text x=\"55\" y=\"307\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n5.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,307 64,307 \"/>\n<text x=\"55\" y=\"270\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n10.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,270 64,270 \"/>\n<text x=\"55\" y=\"232\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n15.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,232 64,232 \"/>\n<text x=\"55\" y=\"195\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n20.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,195 64,195 \"/>\n<text x=\"55\" y=\"157\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n25.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,157 64,157 \"/>\n<text x=\"55\" y=\"120\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n30.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,120 64,120 \"/>\n<text x=\"55\" y=\"82\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n35.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,82 64,82 \"/>\n<text x=\"55\" y=\"45\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n40.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,45 64,45 \"/>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"65,345 769,345 \"/>\n<text x=\"153\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nQ1\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"153,345 153,350 \"/>\n<text x=\"329\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nQ4\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"329,345 329,350 \"/>\n<text x=\"505\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nQ2\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"505,345 505,350 \"/>\n<text x=\"681\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nQ3\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"681,345 681,350 \"/>\n<rect x=\"91\" y=\"75\" width=\"123\" height=\"269\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"267\" y=\"97\" width=\"123\" height=\"247\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"443\" y=\"105\" width=\"123\" height=\"239\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"619\" y=\"135\" width=\"123\" height=\"209\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n</svg>",
+            "text/plain": "Figure (SVG)"
+          },
+          "metadata": {}
+        }
+      ]
+    },
+    {
+      "id": "0000980b-9799-4f11-b46c-a78605c5d0ba",
       "cell_type": "markdown",
-      "source": "## Findings\n\n189 big-money transfers (fee ≥ €10m) had enough before/after match\ndata to measure. The result is uncomfortable for the transfer market:\n\n- **The bigger the fee, the worse the return**: median G+A/90 before\n  vs after the move is +0.02 for €10–25m deals, roughly flat for\n  €25–50m, **−0.11 for €50–100m, and −0.28 for €100m+** — the most\n  expensive signings lose nearly a third of a goal contribution per\n  90 relative to their prior form.\n- **Only 18% of €100m+ signings improved** after moving; 33–38% of\n  cheaper deals did.\n- Signature busts: Gonçalo Ramos (€65m, 0.88→0.00), Lukaku (€113m,\n  0.81→0.00), Mitrović (€52.6m to Al Hilal, 0.72→0.00), Kane (€95m,\n  1.12→0.47 at Bayern).\n- This is partly **mean reversion** — players are bought at their\n  peak, so some decline is arithmetic, not betrayal. But the fee\n  gradient suggests the market systematically overpays for peak form.\n\nCaveats: performance is measured across *all* recorded competitions\n(±24 months, min 3 apps each side), not just the new club; our match\ncoverage is StatsBomb competitions only, so players moving to\nuncovered leagues can show truncated \"after\" windows; fees exclude\nadd-ons and sell-on clauses; 189 deals is a small sample of the\n5,354 fee-bearing transfers.\n",
+      "source": "## Discussion\n\n189 big-money transfers (fee ≥ €10m) had enough before/after match\ndata to measure. The result is uncomfortable for the transfer market:\n\n- **The bigger the fee, the worse the return**: median G+A/90 before\n  vs after the move is +0.02 for €10–25m deals, roughly flat for\n  €25–50m, **−0.11 for €50–100m, and −0.28 for €100m+** — the most\n  expensive signings lose nearly a third of a goal contribution per\n  90 relative to their prior form.\n- **Only 18% of €100m+ signings improved** after moving; 33–38% of\n  cheaper deals did.\n- Signature busts: Gonçalo Ramos (€65m, 0.88→0.00), Lukaku (€113m,\n  0.81→0.00), Mitrović (€52.6m to Al Hilal, 0.72→0.00), Kane (€95m,\n  1.12→0.47 at Bayern).\n- This is partly **mean reversion** — players are bought at their\n  peak, so some decline is arithmetic, not betrayal. But the fee\n  gradient suggests the market systematically overpays for peak form.\n\nCaveats: performance is measured across *all* recorded competitions\n(±24 months, min 3 apps each side), not just the new club; our match\ncoverage is StatsBomb competitions only, so players moving to\nuncovered leagues can show truncated \"after\" windows; fees exclude\nadd-ons and sell-on clauses; 189 deals is a small sample of the\n5,354 fee-bearing transfers.\n\n**Limitations.** Transfer fee coverage is incomplete — roughly three quarters of moves have undisclosed fees — and output is measured only where match statistics exist for the player.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "e5a11e41-8b43-4682-9da3-42d06e3f5ee4",
+      "cell_type": "markdown",
+      "source": "## Conclusion\n\nAmong 189 big-money transfers (fee ≥ €10m) had enough before/after match data to measure. Together these results answer the research question posed in the Introduction and quantify the pattern across 19,436 transfers. The notebook provides a fully reproducible pipeline from raw CSV extracts to published figures.\n",
       "metadata": {},
       "outputs": []
     }

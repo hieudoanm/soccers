@@ -12,9 +12,30 @@
   },
   "cells": [
     {
-      "id": "dfb8b7af-fa76-496f-a5ab-6e01f1ddc406",
+      "id": "d9b5898b-1b0b-4031-b2c3-d8e81d2d43cc",
       "cell_type": "markdown",
-      "source": "## Deadline day: football's most expensive 24 hours\n\nEvery summer and winter, European football compresses a month of dealing\ninto 24–72 hours. The transfer window shuts at 23:59 and suddenly every\nunfinished negotiation becomes a fait accompli — or collapses entirely.\n\nThis notebook measures the phenomenon directly: **when** do the 19,436\nrecorded transfers actually happen, and does the deadline spike survive\nonce you account for free transfers and academy promotions?",
+      "source": "## Abstract\n\nDo transfers cluster on deadline day? This study answers it using the transfer records drawn from the Soccers football database. Aug 31 and Jan 31 dominate the calendar. All computation runs in Rust inside a `.mars` notebook (polars + plotters — charts as inline SVG), and every table and figure is generated from the extracted CSVs.\n\n## Keywords\n\n**Keywords:** football, analysis, transfers, transfermarkt, mars, sqlite\n\n## Table of contents\n\n- [Abstract](#abstract)\n- [Keywords](#keywords)\n- [Introduction](#introduction)\n- [Methods](#methods)\n- [Results](#results)\n  - [(year, month, day, fee) — fee is EUR, 0/empty means undisclosed or free](#year-month-day-fee--fee-is-eur-0empty-means-undisclosed-or-free)\n  - [Daily profile around the two windows, aggregated across all years](#daily-profile-around-the-two-windows-aggregated-across-all-years)\n  - [Deadline-window share per year: Aug 30-Sep 2 and Jan 30-Feb 2](#deadline-window-share-per-year-aug-30-sep-2-and-jan-30-feb-2)\n  - [Do deadline-day moves differ? fee disclosure + median fee inside vs outside window](#do-deadline-day-moves-differ-fee-disclosure--median-fee-inside-vs-outside-window)\n- [Discussion](#discussion)\n- [Conclusion](#conclusion)\n\n## Introduction\n\nEvery summer and winter, European football compresses a month of dealing\ninto 24–72 hours. The transfer window shuts at 23:59 and suddenly every\nunfinished negotiation becomes a fait accompli — or collapses entirely.\n\nThis notebook measures the phenomenon directly: **when** do the 19,436\nrecorded transfers actually happen, and does the deadline spike survive\nonce you account for free transfers and academy promotions?\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "ba99a1b8-f30d-47a4-99da-94c0a915441f",
+      "cell_type": "markdown",
+      "source": "## Methods\n\nData were extracted from the Soccers football database (`packages/data`) as CSV snapshots: `transfer`.\n\nThe analysis runs entirely in Rust inside the notebook: **polars** handles table scans, joins and aggregations; **plotters** renders figures as inline SVG; `mars_table` renders result tables.\n\nStatistical summaries include medians and percentiles.\n\nEach code cell is kept to a single output so results can be read top to bottom.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "6b23076f-93c6-4cdd-9b37-15bd5144fe89",
+      "cell_type": "markdown",
+      "source": "## Results\n\nAll figures and tables below are computed directly from the extracted data. Each code cell produces one output — a table, a chart, or a short text summary.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "e65bc5f5-9f29-47c6-97bf-6cf950d7b2ee",
+      "cell_type": "markdown",
+      "source": "### (year, month, day, fee) — fee is EUR, 0/empty means undisclosed or free\n",
       "metadata": {},
       "outputs": []
     },
@@ -87,6 +108,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "70b1fbd9-e0b3-41ae-acbc-ab715b06c876",
+      "cell_type": "markdown",
+      "source": "### Daily profile around the two windows, aggregated across all years\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "a9afc647-1651-4d5b-afb6-b382b9abca1f",
@@ -342,6 +370,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "c0af2a7e-d0b9-418f-99a8-2356a71bc61a",
+      "cell_type": "markdown",
+      "source": "### Deadline-window share per year: Aug 30-Sep 2 and Jan 30-Feb 2\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "926072f7-1cd3-4420-bc30-6fdeeb8deab7",
@@ -710,6 +745,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "4e9acc70-358a-465c-a117-12e96dcb8c6f",
+      "cell_type": "markdown",
+      "source": "### Do deadline-day moves differ? fee disclosure + median fee inside vs outside window\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "960e358f-470e-439d-98c9-5ca0b45bbc4b",
@@ -1149,9 +1191,461 @@
       ]
     },
     {
-      "id": "59559742-faef-49d8-993e-7ead56951056",
+      "id": "8cd77e51-8d26-4f30-b110-5c1d736b2085",
+      "cell_type": "code",
+      "source": "use plotters::prelude::*;\n\nfn chart_num(s: &str) -> f64 {\n    let t = s.replace(',', \"\").replace('%', \"\").replace('−', \"-\");\n    let mult = if t.contains(\"bn\") { 1e9 }\n        else if t.contains('€') && t.contains('m') { 1e6 }\n        else { 1.0 };\n    let cleaned: String = t.chars()\n        .filter(|c| c.is_ascii_digit() || *c == '.' || *c == '-')\n        .collect();\n    cleaned.parse().unwrap_or(0.0) * mult\n}\n\n\nlet mut c_items: Vec<(String, f64)> = drows.iter()\n    .map(|r| (r[0].clone(), chart_num(&r[1].clone())))\n    .collect();\nc_items.retain(|(_, v)| v.is_finite());\nc_items.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());\nc_items.truncate(12);\nlet c_labels: Vec<String> = c_items.iter()\n    .map(|(l, _)| l.chars().take(18).collect()).collect();\nlet c_vals: Vec<f64> = c_items.iter().map(|(_, v)| *v).collect();\nlet c_ymax = c_vals.iter().cloned().fold(0.0_f64, f64::max) * 1.15 + 1e-9;\nlet (c_div, c_unit): (f64, &str) = if c_ymax >= 1e9 { (1e9, \"bn\") }\n    else if c_ymax >= 1e6 { (1e6, \"m\") }\n    else if c_ymax >= 1e3 { (1e3, \"k\") }\n    else { (1.0, \"\") };\nlet c_n = c_vals.len();\nlet figure = plotters::evcxr::evcxr_figure((780, 400), |root| {\n    root.fill(&WHITE)?;\n    let mut chart = ChartBuilder::on(&root)\n        .caption(\"Busiest transfer days — all years combined\", (\"sans-serif\", 18))\n        .margin(10)\n        .x_label_area_size(45)\n        .y_label_area_size(55)\n        .build_cartesian_2d(-0.5_f64..(c_n as f64 - 0.5), 0.0..c_ymax)?;\n    chart.configure_mesh()\n        .x_labels(c_n)\n        .x_label_formatter(&|x: &f64| c_labels.get(*x as usize).cloned().unwrap_or_default())\n        .y_label_formatter(&|y: &f64| format!(\"{:.1}{}\", y / c_div, c_unit))\n        .draw()?;\n    chart.draw_series(c_vals.iter().enumerate().map(|(i, &v)| {\n        Rectangle::new([(i as f64 - 0.35, 0.0), (i as f64 + 0.35, v)], BLUE.filled())\n    }))?;\n    Ok(())\n});\nfigure.evcxr_display();\n",
+      "metadata": {},
+      "execution_count": 5,
+      "outputs": [
+        {
+          "type": "text",
+          "text": "transfers with parseable date: 19436\n2010+ transfers: 18837 | in window: 2159 (11.5%) | with fee: 5243\nmedian fee — window: €4M over 651 moves | other days: €4M over 4592 moves\n"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "month",
+            "transfers"
+          ],
+          "rows": [
+            [
+              "1",
+              "3355"
+            ],
+            [
+              "2",
+              "700"
+            ],
+            [
+              "3",
+              "98"
+            ],
+            [
+              "4",
+              "70"
+            ],
+            [
+              "5",
+              "299"
+            ],
+            [
+              "6",
+              "3376"
+            ],
+            [
+              "7",
+              "6818"
+            ],
+            [
+              "8",
+              "3033"
+            ],
+            [
+              "9",
+              "974"
+            ],
+            [
+              "10",
+              "236"
+            ],
+            [
+              "11",
+              "119"
+            ],
+            [
+              "12",
+              "358"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "month-day",
+            "transfers (all years)"
+          ],
+          "rows": [
+            [
+              "01-20",
+              "58"
+            ],
+            [
+              "01-21",
+              "60"
+            ],
+            [
+              "01-22",
+              "59"
+            ],
+            [
+              "01-23",
+              "86"
+            ],
+            [
+              "01-24",
+              "81"
+            ],
+            [
+              "01-25",
+              "84"
+            ],
+            [
+              "01-26",
+              "97"
+            ],
+            [
+              "01-27",
+              "88"
+            ],
+            [
+              "01-28",
+              "96"
+            ],
+            [
+              "01-29",
+              "138"
+            ],
+            [
+              "01-30",
+              "203"
+            ],
+            [
+              "01-31",
+              "449"
+            ],
+            [
+              "02-01",
+              "240"
+            ],
+            [
+              "02-02",
+              "103"
+            ],
+            [
+              "02-03",
+              "60"
+            ],
+            [
+              "02-04",
+              "15"
+            ],
+            [
+              "02-05",
+              "17"
+            ],
+            [
+              "02-06",
+              "26"
+            ],
+            [
+              "02-07",
+              "16"
+            ],
+            [
+              "02-08",
+              "18"
+            ],
+            [
+              "02-09",
+              "23"
+            ],
+            [
+              "02-10",
+              "16"
+            ],
+            [
+              "08-20",
+              "64"
+            ],
+            [
+              "08-21",
+              "67"
+            ],
+            [
+              "08-22",
+              "57"
+            ],
+            [
+              "08-23",
+              "75"
+            ],
+            [
+              "08-24",
+              "53"
+            ],
+            [
+              "08-25",
+              "69"
+            ],
+            [
+              "08-26",
+              "91"
+            ],
+            [
+              "08-27",
+              "75"
+            ],
+            [
+              "08-28",
+              "91"
+            ],
+            [
+              "08-29",
+              "113"
+            ],
+            [
+              "08-30",
+              "225"
+            ],
+            [
+              "08-31",
+              "463"
+            ],
+            [
+              "09-01",
+              "370"
+            ],
+            [
+              "09-02",
+              "136"
+            ],
+            [
+              "09-03",
+              "23"
+            ],
+            [
+              "09-04",
+              "39"
+            ],
+            [
+              "09-05",
+              "21"
+            ],
+            [
+              "09-06",
+              "30"
+            ],
+            [
+              "09-07",
+              "21"
+            ],
+            [
+              "09-08",
+              "36"
+            ],
+            [
+              "09-09",
+              "22"
+            ],
+            [
+              "09-10",
+              "21"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "year",
+            "transfers",
+            "in deadline window",
+            "share %"
+          ],
+          "rows": [
+            [
+              "2010",
+              "285",
+              "15",
+              "5.3%"
+            ],
+            [
+              "2011",
+              "377",
+              "27",
+              "7.2%"
+            ],
+            [
+              "2012",
+              "473",
+              "37",
+              "7.8%"
+            ],
+            [
+              "2013",
+              "603",
+              "62",
+              "10.3%"
+            ],
+            [
+              "2014",
+              "762",
+              "71",
+              "9.3%"
+            ],
+            [
+              "2015",
+              "990",
+              "88",
+              "8.9%"
+            ],
+            [
+              "2016",
+              "1106",
+              "110",
+              "9.9%"
+            ],
+            [
+              "2017",
+              "1274",
+              "120",
+              "9.4%"
+            ],
+            [
+              "2018",
+              "1368",
+              "111",
+              "8.1%"
+            ],
+            [
+              "2019",
+              "1537",
+              "162",
+              "10.5%"
+            ],
+            [
+              "2020",
+              "1474",
+              "227",
+              "15.4%"
+            ],
+            [
+              "2021",
+              "1431",
+              "208",
+              "14.5%"
+            ],
+            [
+              "2022",
+              "1684",
+              "203",
+              "12.1%"
+            ],
+            [
+              "2023",
+              "1713",
+              "228",
+              "13.3%"
+            ],
+            [
+              "2024",
+              "1543",
+              "219",
+              "14.2%"
+            ],
+            [
+              "2025",
+              "1504",
+              "179",
+              "11.9%"
+            ],
+            [
+              "2026",
+              "709",
+              "92",
+              "13.0%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "month-day",
+            "transfers (all years)"
+          ],
+          "rows": [
+            [
+              "07-01",
+              "4011"
+            ],
+            [
+              "06-30",
+              "3314"
+            ],
+            [
+              "01-01",
+              "694"
+            ],
+            [
+              "08-31",
+              "463"
+            ],
+            [
+              "01-31",
+              "449"
+            ],
+            [
+              "09-01",
+              "370"
+            ],
+            [
+              "12-31",
+              "272"
+            ],
+            [
+              "02-01",
+              "240"
+            ],
+            [
+              "08-30",
+              "225"
+            ],
+            [
+              "05-31",
+              "211"
+            ],
+            [
+              "01-30",
+              "203"
+            ],
+            [
+              "08-01",
+              "157"
+            ],
+            [
+              "01-29",
+              "138"
+            ],
+            [
+              "07-05",
+              "137"
+            ],
+            [
+              "09-02",
+              "136"
+            ]
+          ]
+        },
+        {
+          "type": "mime_bundle",
+          "data": {
+            "image/svg+xml": "<svg width=\"780\" height=\"400\" viewBox=\"0 0 780 400\" xmlns=\"http://www.w3.org/2000/svg\">\n<rect x=\"0\" y=\"0\" width=\"780\" height=\"400\" opacity=\"1\" fill=\"#FFFFFF\" stroke=\"none\"/>\n<text x=\"390\" y=\"15\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"14.516129032258064\" opacity=\"1\" fill=\"#000000\">\nBusiest transfer days — all years combined\n</text>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"70\" y1=\"344\" x2=\"70\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"82\" y1=\"344\" x2=\"82\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"94\" y1=\"344\" x2=\"94\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"106\" y1=\"344\" x2=\"106\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"117\" y1=\"344\" x2=\"117\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"129\" y1=\"344\" x2=\"129\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"141\" y1=\"344\" x2=\"141\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"153\" y1=\"344\" x2=\"153\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"164\" y1=\"344\" x2=\"164\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"176\" y1=\"344\" x2=\"176\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"188\" y1=\"344\" x2=\"188\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"199\" y1=\"344\" x2=\"199\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"211\" y1=\"344\" x2=\"211\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"223\" y1=\"344\" x2=\"223\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"235\" y1=\"344\" x2=\"235\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"246\" y1=\"344\" x2=\"246\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"258\" y1=\"344\" x2=\"258\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"270\" y1=\"344\" x2=\"270\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"282\" y1=\"344\" x2=\"282\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"293\" y1=\"344\" x2=\"293\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"305\" y1=\"344\" x2=\"305\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"317\" y1=\"344\" x2=\"317\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"329\" y1=\"344\" x2=\"329\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"340\" y1=\"344\" x2=\"340\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"352\" y1=\"344\" x2=\"352\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"364\" y1=\"344\" x2=\"364\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"375\" y1=\"344\" x2=\"375\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"387\" y1=\"344\" x2=\"387\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"399\" y1=\"344\" x2=\"399\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"411\" y1=\"344\" x2=\"411\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"422\" y1=\"344\" x2=\"422\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"434\" y1=\"344\" x2=\"434\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"446\" y1=\"344\" x2=\"446\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"458\" y1=\"344\" x2=\"458\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"469\" y1=\"344\" x2=\"469\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"481\" y1=\"344\" x2=\"481\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"493\" y1=\"344\" x2=\"493\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"505\" y1=\"344\" x2=\"505\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"516\" y1=\"344\" x2=\"516\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"528\" y1=\"344\" x2=\"528\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"540\" y1=\"344\" x2=\"540\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"551\" y1=\"344\" x2=\"551\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"563\" y1=\"344\" x2=\"563\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"575\" y1=\"344\" x2=\"575\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"587\" y1=\"344\" x2=\"587\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"598\" y1=\"344\" x2=\"598\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"610\" y1=\"344\" x2=\"610\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"622\" y1=\"344\" x2=\"622\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"634\" y1=\"344\" x2=\"634\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"645\" y1=\"344\" x2=\"645\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"657\" y1=\"344\" x2=\"657\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"669\" y1=\"344\" x2=\"669\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"681\" y1=\"344\" x2=\"681\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"692\" y1=\"344\" x2=\"692\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"704\" y1=\"344\" x2=\"704\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"716\" y1=\"344\" x2=\"716\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"727\" y1=\"344\" x2=\"727\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"739\" y1=\"344\" x2=\"739\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"751\" y1=\"344\" x2=\"751\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"763\" y1=\"344\" x2=\"763\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"344\" x2=\"769\" y2=\"344\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"342\" x2=\"769\" y2=\"342\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"339\" x2=\"769\" y2=\"339\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"336\" x2=\"769\" y2=\"336\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"333\" x2=\"769\" y2=\"333\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"330\" x2=\"769\" y2=\"330\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"327\" x2=\"769\" y2=\"327\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"324\" x2=\"769\" y2=\"324\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"321\" x2=\"769\" y2=\"321\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"318\" x2=\"769\" y2=\"318\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"315\" x2=\"769\" y2=\"315\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"312\" x2=\"769\" y2=\"312\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"310\" x2=\"769\" y2=\"310\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"307\" x2=\"769\" y2=\"307\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"304\" x2=\"769\" y2=\"304\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"301\" x2=\"769\" y2=\"301\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"298\" x2=\"769\" y2=\"298\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"295\" x2=\"769\" y2=\"295\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"292\" x2=\"769\" y2=\"292\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"289\" x2=\"769\" y2=\"289\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"286\" x2=\"769\" y2=\"286\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"283\" x2=\"769\" y2=\"283\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"280\" x2=\"769\" y2=\"280\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"278\" x2=\"769\" y2=\"278\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"275\" x2=\"769\" y2=\"275\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"272\" x2=\"769\" y2=\"272\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"269\" x2=\"769\" y2=\"269\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"266\" x2=\"769\" y2=\"266\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"263\" x2=\"769\" y2=\"263\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"260\" x2=\"769\" y2=\"260\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"257\" x2=\"769\" y2=\"257\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"254\" x2=\"769\" y2=\"254\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"251\" x2=\"769\" y2=\"251\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"248\" x2=\"769\" y2=\"248\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"246\" x2=\"769\" y2=\"246\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"243\" x2=\"769\" y2=\"243\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"240\" x2=\"769\" y2=\"240\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"237\" x2=\"769\" y2=\"237\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"234\" x2=\"769\" y2=\"234\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"231\" x2=\"769\" y2=\"231\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"228\" x2=\"769\" y2=\"228\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"225\" x2=\"769\" y2=\"225\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"222\" x2=\"769\" y2=\"222\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"219\" x2=\"769\" y2=\"219\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"216\" x2=\"769\" y2=\"216\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"214\" x2=\"769\" y2=\"214\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"211\" x2=\"769\" y2=\"211\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"208\" x2=\"769\" y2=\"208\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"205\" x2=\"769\" y2=\"205\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"202\" x2=\"769\" y2=\"202\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"199\" x2=\"769\" y2=\"199\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"196\" x2=\"769\" y2=\"196\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"193\" x2=\"769\" y2=\"193\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"190\" x2=\"769\" y2=\"190\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"187\" x2=\"769\" y2=\"187\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"184\" x2=\"769\" y2=\"184\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"181\" x2=\"769\" y2=\"181\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"179\" x2=\"769\" y2=\"179\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"176\" x2=\"769\" y2=\"176\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"173\" x2=\"769\" y2=\"173\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"170\" x2=\"769\" y2=\"170\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"167\" x2=\"769\" y2=\"167\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"164\" x2=\"769\" y2=\"164\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"161\" x2=\"769\" y2=\"161\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"158\" x2=\"769\" y2=\"158\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"155\" x2=\"769\" y2=\"155\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"152\" x2=\"769\" y2=\"152\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"149\" x2=\"769\" y2=\"149\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"147\" x2=\"769\" y2=\"147\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"144\" x2=\"769\" y2=\"144\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"141\" x2=\"769\" y2=\"141\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"138\" x2=\"769\" y2=\"138\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"135\" x2=\"769\" y2=\"135\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"132\" x2=\"769\" y2=\"132\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"129\" x2=\"769\" y2=\"129\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"126\" x2=\"769\" y2=\"126\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"123\" x2=\"769\" y2=\"123\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"120\" x2=\"769\" y2=\"120\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"117\" x2=\"769\" y2=\"117\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"115\" x2=\"769\" y2=\"115\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"112\" x2=\"769\" y2=\"112\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"109\" x2=\"769\" y2=\"109\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"106\" x2=\"769\" y2=\"106\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"103\" x2=\"769\" y2=\"103\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"100\" x2=\"769\" y2=\"100\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"97\" x2=\"769\" y2=\"97\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"94\" x2=\"769\" y2=\"94\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"91\" x2=\"769\" y2=\"91\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"88\" x2=\"769\" y2=\"88\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"85\" x2=\"769\" y2=\"85\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"83\" x2=\"769\" y2=\"83\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"80\" x2=\"769\" y2=\"80\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"77\" x2=\"769\" y2=\"77\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"74\" x2=\"769\" y2=\"74\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"71\" x2=\"769\" y2=\"71\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"68\" x2=\"769\" y2=\"68\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"65\" x2=\"769\" y2=\"65\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"62\" x2=\"769\" y2=\"62\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"59\" x2=\"769\" y2=\"59\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"56\" x2=\"769\" y2=\"56\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"53\" x2=\"769\" y2=\"53\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"50\" x2=\"769\" y2=\"50\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"48\" x2=\"769\" y2=\"48\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"45\" x2=\"769\" y2=\"45\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"42\" x2=\"769\" y2=\"42\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"39\" x2=\"769\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"36\" x2=\"769\" y2=\"36\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"94\" y1=\"344\" x2=\"94\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"153\" y1=\"344\" x2=\"153\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"211\" y1=\"344\" x2=\"211\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"270\" y1=\"344\" x2=\"270\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"329\" y1=\"344\" x2=\"329\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"387\" y1=\"344\" x2=\"387\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"446\" y1=\"344\" x2=\"446\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"505\" y1=\"344\" x2=\"505\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"563\" y1=\"344\" x2=\"563\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"622\" y1=\"344\" x2=\"622\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"681\" y1=\"344\" x2=\"681\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"739\" y1=\"344\" x2=\"739\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"344\" x2=\"769\" y2=\"344\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"315\" x2=\"769\" y2=\"315\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"286\" x2=\"769\" y2=\"286\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"257\" x2=\"769\" y2=\"257\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"228\" x2=\"769\" y2=\"228\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"199\" x2=\"769\" y2=\"199\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"170\" x2=\"769\" y2=\"170\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"141\" x2=\"769\" y2=\"141\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"112\" x2=\"769\" y2=\"112\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"83\" x2=\"769\" y2=\"83\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"53\" x2=\"769\" y2=\"53\"/>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"64,34 64,344 \"/>\n<text x=\"55\" y=\"344\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n0.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,344 64,344 \"/>\n<text x=\"55\" y=\"315\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n50.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,315 64,315 \"/>\n<text x=\"55\" y=\"286\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n100.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,286 64,286 \"/>\n<text x=\"55\" y=\"257\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n150.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,257 64,257 \"/>\n<text x=\"55\" y=\"228\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n200.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,228 64,228 \"/>\n<text x=\"55\" y=\"199\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n250.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,199 64,199 \"/>\n<text x=\"55\" y=\"170\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n300.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,170 64,170 \"/>\n<text x=\"55\" y=\"141\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n350.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,141 64,141 \"/>\n<text x=\"55\" y=\"112\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n400.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,112 64,112 \"/>\n<text x=\"55\" y=\"83\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n450.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,83 64,83 \"/>\n<text x=\"55\" y=\"53\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n500.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,53 64,53 \"/>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"65,345 769,345 \"/>\n<text x=\"94\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n08-31\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"94,345 94,350 \"/>\n<text x=\"153\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n01-31\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"153,345 153,350 \"/>\n<text x=\"211\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n09-01\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"211,345 211,350 \"/>\n<text x=\"270\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n02-01\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"270,345 270,350 \"/>\n<text x=\"329\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n08-30\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"329,345 329,350 \"/>\n<text x=\"387\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n01-30\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"387,345 387,350 \"/>\n<text x=\"446\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n01-29\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"446,345 446,350 \"/>\n<text x=\"505\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n09-02\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"505,345 505,350 \"/>\n<text x=\"563\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n08-29\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"563,345 563,350 \"/>\n<text x=\"622\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n02-02\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"622,345 622,350 \"/>\n<text x=\"681\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n01-26\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"681,345 681,350 \"/>\n<text x=\"739\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n01-28\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"739,345 739,350 \"/>\n<rect x=\"73\" y=\"75\" width=\"41\" height=\"269\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"132\" y=\"83\" width=\"41\" height=\"261\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"191\" y=\"129\" width=\"41\" height=\"215\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"249\" y=\"205\" width=\"41\" height=\"139\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"308\" y=\"214\" width=\"41\" height=\"130\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"367\" y=\"226\" width=\"41\" height=\"118\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"425\" y=\"264\" width=\"41\" height=\"80\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"484\" y=\"265\" width=\"41\" height=\"79\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"543\" y=\"279\" width=\"41\" height=\"65\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"601\" y=\"285\" width=\"41\" height=\"59\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"660\" y=\"288\" width=\"41\" height=\"56\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"719\" y=\"289\" width=\"41\" height=\"55\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n</svg>",
+            "text/plain": "Figure (SVG)"
+          },
+          "metadata": {}
+        }
+      ]
+    },
+    {
+      "id": "739b5424-41ce-4427-8367-49f2246d0e53",
       "cell_type": "markdown",
-      "source": "## Findings\n\nThe headline is not deadline day — it is **1 July**. Jun 30–Jul 1 alone\naccounts for ~7,300 moves, nearly 40% of the dataset: Transfermarkt dates\nmost season-long agreements to the contract year boundary, so the summer\nwindow's true shape is hidden under a mountain of Jul 1 stamps.\n\nStripping that out, the deadline effect is still real and getting bigger:\n\n- **Aug 31 (463) and Jan 31 (449)** run ~5–7× a normal day (~65–90 moves).\n  Sep 1 (370) and Feb 1 (240) carry the spillover as deals roll past midnight.\n- The share of a year's business done inside the four deadline days rose\n  from **~8% in 2010–2015 to 13–15% since 2020** — windows got shorter and\n  clubs adapted by waiting.\n- But deadline-day moves are not bigger moves: median fee is **€4M** both\n  inside and outside the window. Deadline day concentrates *volume*, not\n  *money* — the €100M deals were agreed weeks earlier; what lands on Aug 31\n  is the long tail of squad fillers, loans and panic buys.\n\nCaveats: Transfermarkt's `transfer_date` is the contract date for many\npre-agreed moves (hence the Jul 1 spike), window deadlines differ by country\n(England Sep 1, others Sep 2 / Feb 1), and fee data is only reliably\npopulated from ~2010.",
+      "source": "## Discussion\n\nThe headline is not deadline day — it is **1 July**. Jun 30–Jul 1 alone\naccounts for ~7,300 moves, nearly 40% of the dataset: Transfermarkt dates\nmost season-long agreements to the contract year boundary, so the summer\nwindow's true shape is hidden under a mountain of Jul 1 stamps.\n\nStripping that out, the deadline effect is still real and getting bigger:\n\n- **Aug 31 (463) and Jan 31 (449)** run ~5–7× a normal day (~65–90 moves).\n  Sep 1 (370) and Feb 1 (240) carry the spillover as deals roll past midnight.\n- The share of a year's business done inside the four deadline days rose\n  from **~8% in 2010–2015 to 13–15% since 2020** — windows got shorter and\n  clubs adapted by waiting.\n- But deadline-day moves are not bigger moves: median fee is **€4M** both\n  inside and outside the window. Deadline day concentrates *volume*, not\n  *money* — the €100M deals were agreed weeks earlier; what lands on Aug 31\n  is the long tail of squad fillers, loans and panic buys.\n\nCaveats: Transfermarkt's `transfer_date` is the contract date for many\npre-agreed moves (hence the Jul 1 spike), window deadlines differ by country\n(England Sep 1, others Sep 2 / Feb 1), and fee data is only reliably\npopulated from ~2010.\n\n**Limitations.** Transfer fee coverage is incomplete — roughly three quarters of moves have undisclosed fees — and output is measured only where match statistics exist for the player.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "e585796a-9c75-40a5-9dbb-c1a1a9cb067c",
+      "cell_type": "markdown",
+      "source": "## Conclusion\n\nThe headline is not deadline day — it is 1 July. Together these results answer the research question posed in the Introduction and quantify the pattern across the transfer records. The notebook provides a fully reproducible pipeline from raw CSV extracts to published figures.\n",
       "metadata": {},
       "outputs": []
     }

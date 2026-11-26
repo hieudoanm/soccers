@@ -12,9 +12,23 @@
   },
   "cells": [
     {
-      "id": "8f6ff2df-10e4-4db3-958e-362d2b3221ba",
+      "id": "3401cdc2-1caa-47f5-b1d9-00a70b3b6d28",
       "cell_type": "markdown",
-      "source": "## Best of the Ligue 1\n\nA complete record-book of the **Ligue 1** — every statistic worth knowing,\ncomputed from all matches in `data/matches_full.csv`.\n\n**Records covered:** most championships, the champion hall of fame\n(most points, most goals, fewest conceded, best goal difference, biggest\ntitle margin, most wins), the best team-seasons ever, unbeaten\ninvincibles, closest and biggest title races, biggest wins and\nhighest-scoring matches, and the season's top scorers where player-level\ndata exists.",
+      "source": "## Abstract\n\nThis study examines the Ligue 1 record book using 11,983 matches drawn from the Soccers football database. Across 33 complete seasons (1993/94 → 2025/26) and 11,983 matches (289 duplicate fixtures dropped), the Ligue 1 record book. Most championships: Paris Saint-Germain 13 — including ten of the last eleven titles. All computation runs in Rust inside a `.mars` notebook (polars + plotters — charts as inline SVG), and every table and figure is generated from the extracted CSVs.\n\n## Keywords\n\n**Keywords:** football, analysis, records, ligue-1, mars, sqlite\n\n## Table of contents\n\n- [Abstract](#abstract)\n- [Keywords](#keywords)\n- [Introduction](#introduction)\n- [Methods](#methods)\n- [Results](#results)\n  - [Assemble per-season standings for all complete seasons](#assemble-per-season-standings-for-all-complete-seasons)\n  - [Champion hall of fame — six records](#champion-hall-of-fame--six-records)\n  - [Best team-seasons ever by points (any team)](#best-team-seasons-ever-by-points-any-team)\n  - [Unbeaten seasons](#unbeaten-seasons)\n  - [Title races — closest and biggest margins](#title-races--closest-and-biggest-margins)\n  - [Biggest wins & highest scoring matches](#biggest-wins--highest-scoring-matches)\n  - [Top scorers](#top-scorers)\n- [Discussion](#discussion)\n- [Conclusion](#conclusion)\n\n## Introduction\n\nA complete record-book of the **Ligue 1** — every statistic worth knowing,\ncomputed from all matches in `data/matches_full.csv`.\n\n**Records covered:** most championships, the champion hall of fame\n(most points, most goals, fewest conceded, best goal difference, biggest\ntitle margin, most wins), the best team-seasons ever, unbeaten\ninvincibles, closest and biggest title races, biggest wins and\nhighest-scoring matches, and the season's top scorers where player-level\ndata exists.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "054f3b70-7d44-4680-af2e-1d05207f54b0",
+      "cell_type": "markdown",
+      "source": "## Methods\n\nData were extracted from the Soccers football database (`packages/data`) as CSV snapshots: `matches_full`, `player_goals`.\n\nThe analysis runs entirely in Rust inside the notebook: **polars** handles table scans, joins and aggregations; **plotters** renders figures as inline SVG; `mars_table` renders result tables.\n\nEach code cell is kept to a single output so results can be read top to bottom.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "4e5c1606-a732-4b04-aa9d-a6afdca6531a",
+      "cell_type": "markdown",
+      "source": "## Results\n\nAll figures and tables below are computed directly from the extracted data. Each code cell produces one output — a table, a chart, or a short text summary.\n",
       "metadata": {},
       "outputs": []
     },
@@ -43,6 +57,13 @@
           "text": "French Ligue 1 matches: 12272\nfinished matches: 11983 (289 duplicate fixtures dropped) | team-season entries: 663\ncomplete seasons: 33 (1993/94 -> 2025/26)\ntop scorers available for season year 2015 (StatsBomb coverage)\n()\n"
         }
       ]
+    },
+    {
+      "id": "cd15ba3b-dda6-4a60-abef-80c14dbb7402",
+      "cell_type": "markdown",
+      "source": "### Assemble per-season standings for all complete seasons\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "7fe17f18-bb36-42ea-ae81-37b3d0738462",
@@ -106,6 +127,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "32d8da00-2da6-4a0b-8efe-37be0ab42b11",
+      "cell_type": "markdown",
+      "source": "### Champion hall of fame — six records\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "3dddad19-1a31-4a71-bb93-b294f0469493",
@@ -223,6 +251,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "bbb7a9ee-4786-48cf-be24-0b943444a3b9",
+      "cell_type": "markdown",
+      "source": "### Best team-seasons ever by points (any team)\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "9963bb76-93f3-4a02-acc2-d2448bed1cea",
@@ -433,6 +468,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "581437e4-ce35-4c4b-8c45-b605dd3dfc62",
+      "cell_type": "markdown",
+      "source": "### Unbeaten seasons\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "7341254c-0f42-4ddc-a4e1-bbd168acf4fc",
@@ -653,6 +695,13 @@
           "rows": []
         }
       ]
+    },
+    {
+      "id": "a2dad845-1e25-4f34-a695-3e2cd4dc3d99",
+      "cell_type": "markdown",
+      "source": "### Title races — closest and biggest margins\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "70a45d4e-f1f2-4f9b-ac58-50056bbae087",
@@ -1198,6 +1247,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "092c5613-c7b8-436b-a2d0-572030158321",
+      "cell_type": "markdown",
+      "source": "### Biggest wins & highest scoring matches\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "52cf1402-ff6c-4545-b6f8-1bd2a6435082",
@@ -1883,6 +1939,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "672819f5-5463-45f2-88aa-2cabcbb84047",
+      "cell_type": "markdown",
+      "source": "### Top scorers\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "e3625836-f72a-4fc2-8f22-c868b00f12b3",
@@ -3076,9 +3139,16 @@
       ]
     },
     {
-      "id": "3cf7ffb8-9449-48c5-9a13-237f727561a4",
+      "id": "6c426ebd-955a-46f9-a46c-03eb40e58827",
       "cell_type": "markdown",
-      "source": "## Findings\n\nAcross **33 complete seasons** (1993/94 → 2025/26) and 11,983 matches\n(289 duplicate fixtures dropped), the Ligue 1 record book:\n\n- **Most championships**: Paris Saint-Germain **13** — including ten of\n  the last eleven titles. Lyon 7, Monaco 3, Bordeaux 2, Lille 2, Nantes 2,\n  and one each for Auxerre and Lens.\n- **Champion hall of fame**: PSG's 2015/16 side owns almost every record\n  — **102 points** (a Ligue 1 record, from a 40-game season), fewest\n  conceded (19), best goal difference (+89) and biggest margin (+33).\n  PSG 2017/18 scored the most goals (108).\n- **Best season ever**: PSG 2015/16 — 2.55 ppg, the highest ever by a\n  Ligue 1 champion.\n- **Closest finishes**: Lens 1997/98 and Bordeaux 1998/99 both went to a\n  final round decider decided by goal difference at level points; Lille's\n  2020/21 title was won by one point over PSG.\n- **Biggest blowouts**: PSG 2015/16 (+33) is the largest margin ever; the\n  modern PSG machine repeated it in 2024/25 (+19 over Marseille).\n- **Records on the pitch**: PSG 9–0 Guingamp (2018/19) is the biggest win;\n  highest-scoring was Lyon 5–5 Marseille (2009/10).\n- **Top scorers** (StatsBomb coverage, 2015/16): Ibrahimović 36,\n  Lacazette 21, Cavani 19, Ben Arfa 17, Batshuayi 17.\n\n*Method notes: canonical names merged \"Olympique de Marseille\"/\"Marseille\"\netc.; 2026/27 excluded.*",
+      "source": "## Discussion\n\nAcross **33 complete seasons** (1993/94 → 2025/26) and 11,983 matches\n(289 duplicate fixtures dropped), the Ligue 1 record book:\n\n- **Most championships**: Paris Saint-Germain **13** — including ten of\n  the last eleven titles. Lyon 7, Monaco 3, Bordeaux 2, Lille 2, Nantes 2,\n  and one each for Auxerre and Lens.\n- **Champion hall of fame**: PSG's 2015/16 side owns almost every record\n  — **102 points** (a Ligue 1 record, from a 40-game season), fewest\n  conceded (19), best goal difference (+89) and biggest margin (+33).\n  PSG 2017/18 scored the most goals (108).\n- **Best season ever**: PSG 2015/16 — 2.55 ppg, the highest ever by a\n  Ligue 1 champion.\n- **Closest finishes**: Lens 1997/98 and Bordeaux 1998/99 both went to a\n  final round decider decided by goal difference at level points; Lille's\n  2020/21 title was won by one point over PSG.\n- **Biggest blowouts**: PSG 2015/16 (+33) is the largest margin ever; the\n  modern PSG machine repeated it in 2024/25 (+19 over Marseille).\n- **Records on the pitch**: PSG 9–0 Guingamp (2018/19) is the biggest win;\n  highest-scoring was Lyon 5–5 Marseille (2009/10).\n- **Top scorers** (StatsBomb coverage, 2015/16): Ibrahimović 36,\n  Lacazette 21, Cavani 19, Ben Arfa 17, Batshuayi 17.\n\n*Method notes: canonical names merged \"Olympique de Marseille\"/\"Marseille\"\netc.; 2026/27 excluded.*\n\n**Limitations.** Records reflect only the matches present in the database; coverage varies by competition and era, so 'records' are archive records, not all-time official marks.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "d60a3924-530b-4322-8b2c-cd405f2ecdb5",
+      "cell_type": "markdown",
+      "source": "## Conclusion\n\nAcross 33 complete seasons (1993/94 → 2025/26) and 11,983 matches (289 duplicate fixtures dropped), the Ligue 1 record book. Most championships: Paris Saint-Germain 13 — including ten of the last eleven titles. Together these results answer the research question posed in the Introduction and quantify the pattern across 11,983 matches. The notebook provides a fully reproducible pipeline from raw CSV extracts to published figures.\n",
       "metadata": {},
       "outputs": []
     }

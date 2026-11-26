@@ -12,9 +12,23 @@
   },
   "cells": [
     {
-      "id": "bff9291c-f984-4ea2-bcf7-357944b008c4",
+      "id": "7f4cb9c7-aab5-4257-b68e-58d2ecc35e1d",
       "cell_type": "markdown",
-      "source": "## Best of the UEFA European Championship\n\nA record book of the **UEFA European Championship** — international tournament champions,\nfinals and records computed from `data/matches_full.csv`.\n\nOnly the 2020 and 2024 editions are in the dataset — both complete.\n\n**Records covered:** most titles, every edition's champion and final\nscore, the champion's full tournament record, biggest wins,\nhighest-scoring matches, champion records (most goals, fewest conceded,\nbest goal difference, most wins, fewest losses), unbeaten champions,\nthe closest finals, and top scorers where player-level data exists.",
+      "source": "## Abstract\n\nThis study examines the UEFA European Championship record book using the full match archive drawn from the Soccers football database. Italy 2020 was the defensively stingiest champion. All computation runs in Rust inside a `.mars` notebook (polars + plotters — charts as inline SVG), and every table and figure is generated from the extracted CSVs.\n\n## Keywords\n\n**Keywords:** football, analysis, records, euro, mars, sqlite\n\n## Table of contents\n\n- [Abstract](#abstract)\n- [Keywords](#keywords)\n- [Introduction](#introduction)\n- [Methods](#methods)\n- [Results](#results)\n  - [Tournament editions](#tournament-editions)\n  - [Every edition — champion, final score, champion's tournament record](#every-edition--champion-final-score-champions-tournament-record)\n  - [Records across all editions](#records-across-all-editions)\n  - [Champion records: most goals for, fewest against, best GD, most wins](#champion-records-most-goals-for-fewest-against-best-gd-most-wins)\n  - [Unbeaten champions](#unbeaten-champions)\n  - [Closest finals (smallest margin or draw)](#closest-finals-smallest-margin-or-draw)\n  - [Top scorers (latest edition with player data — SCORERS picks best-covered year)](#top-scorers-latest-edition-with-player-data--scorers-picks-best-covered-year)\n- [Discussion](#discussion)\n- [Conclusion](#conclusion)\n\n## Introduction\n\nA record book of the **UEFA European Championship** — international tournament champions,\nfinals and records computed from `data/matches_full.csv`.\n\nOnly the 2020 and 2024 editions are in the dataset — both complete.\n\n**Records covered:** most titles, every edition's champion and final\nscore, the champion's full tournament record, biggest wins,\nhighest-scoring matches, champion records (most goals, fewest conceded,\nbest goal difference, most wins, fewest losses), unbeaten champions,\nthe closest finals, and top scorers where player-level data exists.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "6d1d61e5-bdb4-4d39-b1dd-095bdedd7bb3",
+      "cell_type": "markdown",
+      "source": "## Methods\n\nData were extracted from the Soccers football database (`packages/data`) as CSV snapshots: `matches_full`, `player_goals`.\n\nThe analysis runs entirely in Rust inside the notebook: **polars** handles table scans, joins and aggregations; **plotters** renders figures as inline SVG; `mars_table` renders result tables.\n\nEach code cell is kept to a single output so results can be read top to bottom.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "73b22b76-2412-4133-a0b2-eacab1940693",
+      "cell_type": "markdown",
+      "source": "## Results\n\nAll figures and tables below are computed directly from the extracted data. Each code cell produces one output — a table, a chart, or a short text summary.\n",
       "metadata": {},
       "outputs": []
     },
@@ -43,6 +57,13 @@
           "text": "UEFA Euro matches: 102\nfinished matches: 102 (0 duplicate fixtures dropped) | team-season entries: 48\ncomplete seasons: 0 ( -> )\ntop scorers available for season year 2020 (StatsBomb coverage)\n()\n"
         }
       ]
+    },
+    {
+      "id": "c393e15f-a1b3-4b84-91f1-d47ca1388b70",
+      "cell_type": "markdown",
+      "source": "### Tournament editions\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "30ef6b4b-01a2-49f5-b634-6a33d9e36f1d",
@@ -76,6 +97,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "67e22de6-117b-4e3d-a57d-20c37002e2bf",
+      "cell_type": "markdown",
+      "source": "### Every edition — champion, final score, champion's tournament record\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "1ef29e21-3085-4112-961d-fc6919180c6a",
@@ -135,6 +163,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "00ac2741-069f-49a6-b0c5-0e9c2c221868",
+      "cell_type": "markdown",
+      "source": "### Records across all editions\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "33694e8f-eaf6-4833-bcb6-74c8ef4d2e47",
@@ -405,6 +440,13 @@
       ]
     },
     {
+      "id": "145c112f-a4f2-4c41-816a-ece804481d86",
+      "cell_type": "markdown",
+      "source": "### Champion records: most goals for, fewest against, best GD, most wins\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
       "id": "e98f7275-f027-424a-89bc-9477966641ed",
       "cell_type": "code",
       "source": "// champion records: most goals for, fewest against, best GD, most wins\nlet mut champ_stats: Vec<(String, String, i64, i64, i64, i64, i64)> = Vec::new(); // season, champ, gf, ga, w, d, l\nfor e in &editions {\n    if e.champion.is_empty() || e.champion == \"decided on penalties\" { continue; }\n    let mut w = 0i64; let mut d = 0i64; let mut l = 0i64;\n    let mut gf = 0i64; let mut ga = 0i64;\n    for m in &e.matches {\n        let (hg, ag) = if m.h == e.champion { (m.hg, m.ag) }\n            else if m.a == e.champion { (m.ag, m.hg) }\n            else { continue };\n        gf += hg; ga += ag;\n        if hg > ag { w += 1; } else if hg == ag { d += 1; } else { l += 1; }\n    }\n    champ_stats.push((e.season.clone(), e.champion.clone(), gf, ga, w, d, l));\n}\nlet rec_rows: Vec<Vec<String>> = vec![\n    (\"most goals scored\", champ_stats.iter().max_by_key(|c| c.2).unwrap()),\n    (\"fewest goals conceded\", champ_stats.iter().min_by_key(|c| c.3).unwrap()),\n    (\"best goal difference\", champ_stats.iter().max_by_key(|c| c.2 - c.3).unwrap()),\n    (\"most wins\", champ_stats.iter().max_by_key(|c| c.4).unwrap()),\n    (\"fewest losses\", champ_stats.iter().min_by_key(|c| c.6).unwrap()),\n]\n.iter()\n.map(|(label, c)| vec![label.to_string(), format!(\"{} {}\", c.1, c.0), format!(\"{}W {}D {}L\", c.4, c.5, c.6), format!(\"{}/{}\", c.2, c.3), (c.2 - c.3).to_string()])\n.collect();\nmars_table(&[\"record\", \"champion edition\", \"record\", \"gf/ga\", \"gd\"], &rec_rows);\n",
@@ -609,6 +651,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "ca4b91d9-113a-472c-a40c-481c9c5a8576",
+      "cell_type": "markdown",
+      "source": "### Unbeaten champions\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "b8888695-4c4b-4504-8c94-e825d884bb38",
@@ -838,6 +887,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "a101617f-1394-46ca-8266-db6765b9083c",
+      "cell_type": "markdown",
+      "source": "### Closest finals (smallest margin or draw)\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "a915aa6b-77b5-4675-bd19-c8b9f024b6c6",
@@ -1087,6 +1143,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "e7b6ccc1-ddd0-4385-9fa5-8f72789cb21c",
+      "cell_type": "markdown",
+      "source": "### Top scorers (latest edition with player data — SCORERS picks best-covered year)\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "d6b82628-f5a3-4a8a-8029-e610c9ad5912",
@@ -1947,9 +2010,16 @@
       ]
     },
     {
-      "id": "8a956cd3-1a82-49c9-abe9-fe2597560dd7",
+      "id": "326aee60-b120-4f05-b20b-0fa620c9ec03",
       "cell_type": "markdown",
-      "source": "## What the record book says\n\nTwo full editions (2020, 2024) — every match covered, so this is a complete\nrecord book for the modern era.\n\n- **Two champions, two profiles**: Italy 2020 went unbeaten (5W-2D-0L, 13/4) and\n  lifted the trophy on penalties at Wembley; Spain 2024 went a perfect **7W-0D**\n  (15/4) — the most dominant champion run in the dataset.\n- **Spain 2024 swept the attacking records**: most goals (15), best goal\n  difference (+11), most wins — a perfect tournament.\n- **Italy 2020 was the defensively stingiest champion** alongside conceding just\n  4 (tied with Spain).\n- **Biggest win**: Germany 5–1 Scotland (2024). **Wildest match**: Croatia 3–5\n  Spain (2020) — 8 goals in a last-16 thriller.\n- **Top scorers**: Cristiano Ronaldo, Harry Kane and Patrik Schick all finished\n  with 5 goals across the two editions.\n- **Both champions were unbeaten** — the only tournament in this series where\n  every recorded champion went through without a defeat.\n\n*Source: StatsBomb open data via `dev.db`.",
+      "source": "## Discussion\n\nTwo full editions (2020, 2024) — every match covered, so this is a complete\nrecord book for the modern era.\n\n- **Two champions, two profiles**: Italy 2020 went unbeaten (5W-2D-0L, 13/4) and\n  lifted the trophy on penalties at Wembley; Spain 2024 went a perfect **7W-0D**\n  (15/4) — the most dominant champion run in the dataset.\n- **Spain 2024 swept the attacking records**: most goals (15), best goal\n  difference (+11), most wins — a perfect tournament.\n- **Italy 2020 was the defensively stingiest champion** alongside conceding just\n  4 (tied with Spain).\n- **Biggest win**: Germany 5–1 Scotland (2024). **Wildest match**: Croatia 3–5\n  Spain (2020) — 8 goals in a last-16 thriller.\n- **Top scorers**: Cristiano Ronaldo, Harry Kane and Patrik Schick all finished\n  with 5 goals across the two editions.\n- **Both champions were unbeaten** — the only tournament in this series where\n  every recorded champion went through without a defeat.\n\n*Source: StatsBomb open data via `dev.db`.\n\n**Limitations.** Records reflect only the matches present in the database; coverage varies by competition and era, so 'records' are archive records, not all-time official marks.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "c170982a-7e80-4a08-a0dd-57ea4a2b936d",
+      "cell_type": "markdown",
+      "source": "## Conclusion\n\nItaly 2020 was the defensively stingiest champion. Together these results answer the research question posed in the Introduction and quantify the pattern across the full match archive. The notebook provides a fully reproducible pipeline from raw CSV extracts to published figures.\n",
       "metadata": {},
       "outputs": []
     }

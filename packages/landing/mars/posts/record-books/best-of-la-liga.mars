@@ -12,9 +12,23 @@
   },
   "cells": [
     {
-      "id": "abd73475-8e64-46e9-8578-9d71dcd047a2",
+      "id": "a977781d-3c3f-4b00-b376-48a6f37cc12c",
       "cell_type": "markdown",
-      "source": "## Best of the La Liga\n\nA complete record-book of the **La Liga** — every statistic worth knowing,\ncomputed from all matches in `data/matches_full.csv`.\n\n**Records covered:** most championships, the champion hall of fame\n(most points, most goals, fewest conceded, best goal difference, biggest\ntitle margin, most wins), the best team-seasons ever, unbeaten\ninvincibles, closest and biggest title races, biggest wins and\nhighest-scoring matches, and the season's top scorers where player-level\ndata exists.",
+      "source": "## Abstract\n\nThis study examines the La Liga record book using 12,834 matches drawn from the Soccers football database. La Liga record book. Most championships: Barcelona 17, Real Madrid 10 — the two clubs have won 27 of 33 titles between them. All computation runs in Rust inside a `.mars` notebook (polars + plotters — charts as inline SVG), and every table and figure is generated from the extracted CSVs.\n\n## Keywords\n\n**Keywords:** football, analysis, records, la-liga, mars, sqlite\n\n## Table of contents\n\n- [Abstract](#abstract)\n- [Keywords](#keywords)\n- [Introduction](#introduction)\n- [Methods](#methods)\n- [Results](#results)\n  - [Assemble per-season standings for all complete seasons](#assemble-per-season-standings-for-all-complete-seasons)\n  - [Champion hall of fame — six records](#champion-hall-of-fame--six-records)\n  - [Best team-seasons ever by points (any team)](#best-team-seasons-ever-by-points-any-team)\n  - [Unbeaten seasons](#unbeaten-seasons)\n  - [Title races — closest and biggest margins](#title-races--closest-and-biggest-margins)\n  - [Biggest wins & highest scoring matches](#biggest-wins--highest-scoring-matches)\n  - [Top scorers](#top-scorers)\n- [Discussion](#discussion)\n- [Conclusion](#conclusion)\n\n## Introduction\n\nA complete record-book of the **La Liga** — every statistic worth knowing,\ncomputed from all matches in `data/matches_full.csv`.\n\n**Records covered:** most championships, the champion hall of fame\n(most points, most goals, fewest conceded, best goal difference, biggest\ntitle margin, most wins), the best team-seasons ever, unbeaten\ninvincibles, closest and biggest title races, biggest wins and\nhighest-scoring matches, and the season's top scorers where player-level\ndata exists.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "f7937b68-bf66-4dd9-bcef-25bb77c5036e",
+      "cell_type": "markdown",
+      "source": "## Methods\n\nData were extracted from the Soccers football database (`packages/data`) as CSV snapshots: `matches_full`, `player_goals`.\n\nThe analysis runs entirely in Rust inside the notebook: **polars** handles table scans, joins and aggregations; **plotters** renders figures as inline SVG; `mars_table` renders result tables.\n\nEach code cell is kept to a single output so results can be read top to bottom.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "d5338519-c4ac-40b0-b85c-f0560ddb2b23",
+      "cell_type": "markdown",
+      "source": "## Results\n\nAll figures and tables below are computed directly from the extracted data. Each code cell produces one output — a table, a chart, or a short text summary.\n",
       "metadata": {},
       "outputs": []
     },
@@ -43,6 +57,13 @@
           "text": "Spanish La Liga matches: 13279\nfinished matches: 12834 (445 duplicate fixtures dropped) | team-season entries: 686\ncomplete seasons: 33 (1993/94 -> 2025/26)\ntop scorers available for season year 2015 (StatsBomb coverage)\n()\n"
         }
       ]
+    },
+    {
+      "id": "6d97a09e-4df3-4f15-b143-9e47daf7e3ec",
+      "cell_type": "markdown",
+      "source": "### Assemble per-season standings for all complete seasons\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "5cab450c-75bb-4b08-a2e6-e386787d9a3b",
@@ -91,6 +112,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "679df8ab-eae9-410c-9c91-52d11249fc54",
+      "cell_type": "markdown",
+      "source": "### Champion hall of fame — six records\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "abc96ce4-3924-4238-8fd2-85d40efc9fe6",
@@ -193,6 +221,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "17979315-7313-4083-85a7-b6dac61a9b95",
+      "cell_type": "markdown",
+      "source": "### Best team-seasons ever by points (any team)\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "bede21a1-c001-41ce-82ca-b475d01e05ca",
@@ -388,6 +423,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "89b60745-94fd-4e44-9482-045c02f67781",
+      "cell_type": "markdown",
+      "source": "### Unbeaten seasons\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "6cf9fa31-081a-4f64-921c-ae50100c6cc8",
@@ -593,6 +635,13 @@
           "rows": []
         }
       ]
+    },
+    {
+      "id": "fe18b35e-8f7e-45e2-8884-50fe32560ec4",
+      "cell_type": "markdown",
+      "source": "### Title races — closest and biggest margins\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "d06a6561-85d0-47eb-8aa4-934a34551887",
@@ -1108,6 +1157,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "81c2e7f7-5654-427c-92a1-8e26cf68101a",
+      "cell_type": "markdown",
+      "source": "### Biggest wins & highest scoring matches\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "a0459a95-f1c0-442b-96b6-e3dc317e0a0e",
@@ -1763,6 +1819,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "dbac8066-480e-461f-8224-10fa09dd2804",
+      "cell_type": "markdown",
+      "source": "### Top scorers\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "2f40d884-6336-4bc8-bf03-7617d020331b",
@@ -2911,9 +2974,16 @@
       ]
     },
     {
-      "id": "fdd82118-a541-42df-a151-3d8f721c6477",
+      "id": "71570c00-ff29-421c-b485-1c9018b463c0",
       "cell_type": "markdown",
-      "source": "## Findings\n\nAcross **33 complete seasons** (1993/94 → 2025/26) and 12,834 matches —\n445 duplicate fixtures removed after reconciling the two data sources'\nteam-name conventions — the La Liga record book:\n\n- **Most championships**: Barcelona **17**, Real Madrid **10** — the two\n  clubs have won **27 of 33** titles between them. Atlético Madrid 3,\n  Valencia 2, and Deportivo La Coruña's 1999/00 crown are the only other\n  champions in the modern era.\n- **Champion hall of fame**: Barcelona's 2012/13 MSN side owns most\n  points (100), most wins and biggest margin; Real Madrid's 2011/12 side\n  scored a record **121 goals**; Barcelona 2022/23 conceded just **20**;\n  Barcelona 2014/15 produced the best goal difference (+89).\n- **Best season ever**: a dead heat at the top — Real Madrid 2011/12 and\n  Barcelona 2012/13 both finished on **100 points** (2.63 ppg).\n- **Closest finish**: 2006/07 — Barcelona and Real Madrid finished on\n  **identical points** and Madrid won the title on goal difference, one of\n  the greatest finishes in football history. 2015/16 was decided by a\n  single point (Barcelona over Madrid).\n- **Biggest blowout**: Barcelona 2012/13, 15 clear. Madrid's 2021/22 title\n  (+13 over Barcelona) is the only Los Blancos rout of the era.\n- **Records on the pitch**: Real Madrid 10–2 Rayo Vallecano (2015/16) is\n  the highest-scoring match (12 goals) and among the biggest wins; three\n  separate 8–0 wins.\n- **Top scorers** (StatsBomb coverage, 2015/16): Suárez 40, Ronaldo 35,\n  Messi 26, Benzema 24, Neymar 24.\n\n*Method notes: same pipeline as the Premier League record book — merged\ndata sources deduplicated via canonical club names; 2026/27 in progress\nexcluded; player data covers the StatsBomb subset only.*",
+      "source": "## Discussion\n\nAcross **33 complete seasons** (1993/94 → 2025/26) and 12,834 matches —\n445 duplicate fixtures removed after reconciling the two data sources'\nteam-name conventions — the La Liga record book:\n\n- **Most championships**: Barcelona **17**, Real Madrid **10** — the two\n  clubs have won **27 of 33** titles between them. Atlético Madrid 3,\n  Valencia 2, and Deportivo La Coruña's 1999/00 crown are the only other\n  champions in the modern era.\n- **Champion hall of fame**: Barcelona's 2012/13 MSN side owns most\n  points (100), most wins and biggest margin; Real Madrid's 2011/12 side\n  scored a record **121 goals**; Barcelona 2022/23 conceded just **20**;\n  Barcelona 2014/15 produced the best goal difference (+89).\n- **Best season ever**: a dead heat at the top — Real Madrid 2011/12 and\n  Barcelona 2012/13 both finished on **100 points** (2.63 ppg).\n- **Closest finish**: 2006/07 — Barcelona and Real Madrid finished on\n  **identical points** and Madrid won the title on goal difference, one of\n  the greatest finishes in football history. 2015/16 was decided by a\n  single point (Barcelona over Madrid).\n- **Biggest blowout**: Barcelona 2012/13, 15 clear. Madrid's 2021/22 title\n  (+13 over Barcelona) is the only Los Blancos rout of the era.\n- **Records on the pitch**: Real Madrid 10–2 Rayo Vallecano (2015/16) is\n  the highest-scoring match (12 goals) and among the biggest wins; three\n  separate 8–0 wins.\n- **Top scorers** (StatsBomb coverage, 2015/16): Suárez 40, Ronaldo 35,\n  Messi 26, Benzema 24, Neymar 24.\n\n*Method notes: same pipeline as the Premier League record book — merged\ndata sources deduplicated via canonical club names; 2026/27 in progress\nexcluded; player data covers the StatsBomb subset only.*\n\n**Limitations.** Records reflect only the matches present in the database; coverage varies by competition and era, so 'records' are archive records, not all-time official marks.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "027457bc-381b-4fa6-81da-6d211d5fe449",
+      "cell_type": "markdown",
+      "source": "## Conclusion\n\nLa Liga record book. Most championships: Barcelona 17, Real Madrid 10 — the two clubs have won 27 of 33 titles between them. Together these results answer the research question posed in the Introduction and quantify the pattern across 12,834 matches. The notebook provides a fully reproducible pipeline from raw CSV extracts to published figures.\n",
       "metadata": {},
       "outputs": []
     }

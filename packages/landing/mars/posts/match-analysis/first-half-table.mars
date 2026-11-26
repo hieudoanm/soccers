@@ -12,9 +12,23 @@
   },
   "cells": [
     {
-      "id": "c12e5d4a-55e7-486e-abc2-c764c27712c5",
+      "id": "c25c226a-ec93-499e-b98e-bf6937ad81f3",
       "cell_type": "markdown",
-      "source": "## Does the first half of the season predict the final table?\n\nThe oldest question in football analysis: **is the table at Christmas\nreal, or does it lie?** This notebook splits every league-season at its\nmidpoint — first half of fixtures vs second half — rebuilds both tables,\nand measures how well the mid-season table predicts the finish.\n\nMetrics per league-season (≥8 teams, ≥40 matches):\n\n- **Spearman rank correlation** between mid-season and final position\n- **Top-4 retention**: % of mid-table top-4 finishing top-4\n- **Bottom-3 retention**: % of mid-table bottom-3 finishing bottom-3\n- **Title accuracy**: % of mid-table leaders winning the league\n\nThen the fun part: the biggest risers and fallers between the two\ntables.",
+      "source": "## Abstract\n\nDoes the first half of the season predict the final table? This study answers it using 897 team-seasons drawn from the Soccers football database. Yes — emphatically. The team leading after half the fixtures wins the title 57% of the time, and the mid-season table predicts the final one at ρ≈0.87 in the Premier League. All computation runs in Rust inside a `.mars` notebook (polars + plotters — charts as inline SVG), and every table and figure is generated from the extracted CSVs.\n\n## Keywords\n\n**Keywords:** football, analysis, standings, mars, sqlite\n\n## Table of contents\n\n- [Abstract](#abstract)\n- [Keywords](#keywords)\n- [Introduction](#introduction)\n- [Methods](#methods)\n- [Results](#results)\n  - [By league: which tables are most predictable?](#by-league-which-tables-are-most-predictable)\n  - [The climbers and the collapsers](#the-climbers-and-the-collapsers)\n- [Discussion](#discussion)\n- [Conclusion](#conclusion)\n\n## Introduction\n\nThe oldest question in football analysis: **is the table at Christmas\nreal, or does it lie?** This notebook splits every league-season at its\nmidpoint — first half of fixtures vs second half — rebuilds both tables,\nand measures how well the mid-season table predicts the finish.\n\nMetrics per league-season (≥8 teams, ≥40 matches):\n\n- **Spearman rank correlation** between mid-season and final position\n- **Top-4 retention**: % of mid-table top-4 finishing top-4\n- **Bottom-3 retention**: % of mid-table bottom-3 finishing bottom-3\n- **Title accuracy**: % of mid-table leaders winning the league\n\nThen the fun part: the biggest risers and fallers between the two\ntables.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "87866393-914e-45c5-9454-2ce0046446e1",
+      "cell_type": "markdown",
+      "source": "## Methods\n\nData were extracted from the Soccers football database (`packages/data`) as CSV snapshots: `matches_full`.\n\nThe analysis runs entirely in Rust inside the notebook: **polars** handles table scans, joins and aggregations; **plotters** renders figures as inline SVG; `mars_table` renders result tables.\n\nStatistical summaries include Pearson correlations, medians and percentiles.\n\nEach code cell is kept to a single output so results can be read top to bottom.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "e7d587e7-50e1-4373-8dc2-1316b8472bc9",
+      "cell_type": "markdown",
+      "source": "## Results\n\nAll figures and tables below are computed directly from the extracted data. Each code cell produces one output — a table, a chart, or a short text summary.\n",
       "metadata": {},
       "outputs": []
     },
@@ -27,14 +41,14 @@
       "outputs": [
         {
           "type": "text",
-          "text": "completed matches after dedup: 311832 (1190 dupes dropped)\nleague-seasons analysed: 897\nmean Spearman(mid,final) = 0.838 | median = 0.857\nmid top-4 -> final top-4: 2701/3588 = 75%\nmid bottom-3 -> final bottom-3: 1742/2691 = 65%\nmid leader wins title: 511/897 = 57%\n"
+          "text": "completed matches after dedup: 311832 (1190 dupes dropped)\nleague-seasons analysed: 897\nmean Spearman(mid,final) = 0.838 | median = 0.857\nmid top-4 -> final top-4: 2701/3588 = 75%\nmid bottom-3 -> final bottom-3: 1746/2691 = 65%\nmid leader wins title: 510/897 = 57%\n"
         }
       ]
     },
     {
-      "id": "cc607020-6360-4569-b37a-1c39a6493032",
+      "id": "90129923-7719-4cb7-b38a-fb086b06d7a9",
       "cell_type": "markdown",
-      "source": "## By league: which tables are most predictable?\n\nNot all leagues are equally chaotic — a dominant league produces stable\ntables, a parity league produces coin flips. Rank the leagues by their\naverage mid-season correlation.",
+      "source": "### By league: which tables are most predictable?\n\nNot all leagues are equally chaotic — a dominant league produces stable\ntables, a parity league produces coin flips. Rank the leagues by their\naverage mid-season correlation.\n",
       "metadata": {},
       "outputs": []
     },
@@ -47,7 +61,7 @@
       "outputs": [
         {
           "type": "text",
-          "text": "completed matches after dedup: 311832 (1190 dupes dropped)\nleague-seasons analysed: 897\nmean Spearman(mid,final) = 0.838 | median = 0.857\nmid top-4 -> final top-4: 2701/3588 = 75%\nmid bottom-3 -> final bottom-3: 1746/2691 = 65%\nmid leader wins title: 511/897 = 57%\n"
+          "text": "completed matches after dedup: 311832 (1190 dupes dropped)\nleague-seasons analysed: 897\nmean Spearman(mid,final) = 0.838 | median = 0.856\nmid top-4 -> final top-4: 2702/3588 = 75%\nmid bottom-3 -> final bottom-3: 1744/2691 = 65%\nmid leader wins title: 510/897 = 57%\n"
         },
         {
           "type": "table",
@@ -62,7 +76,7 @@
               "Champions League",
               "22",
               "0.928",
-              "0.941"
+              "0.940"
             ],
             [
               "FA Women's Super League",
@@ -79,296 +93,13 @@
             [
               "UEFA Europa League",
               "6",
-              "0.905",
-              "0.945"
-            ],
-            [
-              "AFC Champions League Elite",
-              "3",
-              "0.896",
-              "0.922"
-            ],
-            [
-              "Eliteserien",
-              "3",
-              "0.893",
-              "0.894"
-            ],
-            [
-              "Italian Serie A",
-              "34",
-              "0.889",
-              "0.899"
-            ],
-            [
-              "Scottish Premiership",
-              "33",
-              "0.884",
-              "0.902"
-            ],
-            [
-              "Dutch Eredivisie",
-              "34",
-              "0.879",
-              "0.891"
-            ],
-            [
-              "Scottish Championship",
-              "34",
-              "0.871",
-              "0.879"
-            ],
-            [
-              "English Premier League",
-              "34",
-              "0.868",
-              "0.884"
-            ],
-            [
-              "Greek Super League",
-              "28",
-              "0.864",
-              "0.886"
-            ],
-            [
-              "J1 League",
-              "12",
-              "0.861",
-              "0.872"
-            ],
-            [
-              "Belgian Pro League",
-              "32",
-              "0.860",
-              "0.870"
-            ],
-            [
-              "Super League",
-              "11",
-              "0.859",
-              "0.886"
-            ],
-            [
-              "Portuguese Liga Portugal",
-              "34",
-              "0.854",
-              "0.868"
-            ],
-            [
-              "German Bundesliga",
-              "34",
-              "0.850",
-              "0.878"
-            ],
-            [
-              "Premier League",
-              "4",
-              "0.850",
-              "0.888"
-            ],
-            [
-              "Scottish League Two",
-              "30",
-              "0.842",
-              "0.867"
-            ],
-            [
-              "Allsvenskan",
-              "3",
-              "0.842",
-              "0.838"
-            ],
-            [
-              "Turkish Süper Lig",
-              "33",
-              "0.838",
-              "0.870"
-            ],
-            [
-              "English League Two",
-              "34",
-              "0.838",
-              "0.837"
-            ],
-            [
-              "Spanish La Liga",
-              "34",
-              "0.837",
-              "0.848"
-            ],
-            [
-              "Superliga",
-              "5",
-              "0.833",
-              "0.871"
-            ],
-            [
-              "French Ligue 1",
-              "34",
-              "0.833",
-              "0.836"
-            ],
-            [
-              "English League One",
-              "34",
-              "0.829",
-              "0.837"
-            ],
-            [
-              "Bundesliga",
-              "13",
-              "0.828",
-              "0.846"
-            ],
-            [
-              "Serie A",
-              "15",
-              "0.823",
-              "0.848"
-            ],
-            [
-              "Italian Serie B",
-              "30",
-              "0.818",
-              "0.839"
-            ],
-            [
-              "Scottish League One",
-              "30",
-              "0.816",
-              "0.867"
-            ],
-            [
-              "Veikkausliiga",
-              "5",
-              "0.806",
-              "0.832"
-            ],
-            [
-              "Liga MX",
-              "15",
-              "0.805",
-              "0.804"
-            ],
-            [
-              "German 2. Bundesliga",
-              "34",
-              "0.805",
-              "0.812"
-            ],
-            [
-              "English Championship",
-              "34",
-              "0.801",
-              "0.817"
-            ],
-            [
-              "Liga Profesional",
-              "14",
-              "0.797",
-              "0.812"
-            ],
-            [
-              "Superliga",
-              "12",
-              "0.794",
-              "0.853"
-            ],
-            [
-              "Spanish La Liga 2",
-              "34",
-              "0.792",
-              "0.792"
-            ],
-            [
-              "French Ligue 2",
-              "31",
-              "0.785",
-              "0.815"
-            ],
-            [
-              "MLS",
-              "15",
-              "0.751",
-              "0.753"
-            ],
-            [
-              "Copa De La Liga Profesional",
-              "5",
-              "0.740",
-              "0.795"
-            ],
-            [
-              "Super League",
-              "10",
-              "0.740",
-              "0.709"
-            ],
-            [
-              "Ekstraklasa",
-              "14",
-              "0.727",
-              "0.721"
-            ]
-          ]
-        }
-      ]
-    },
-    {
-      "id": "8611e8c9-aa5f-41de-8e8a-724d36e670c2",
-      "cell_type": "markdown",
-      "source": "## The climbers and the collapsers\n\nThe biggest rank swings between the mid-season and final table —\nteams that proved the halfway table wrong in both directions.",
-      "metadata": {},
-      "outputs": []
-    },
-    {
-      "id": "fcb4bec2-efe0-482d-bc38-f1074765fed5",
-      "cell_type": "code",
-      "source": "// biggest rank changes mid->final across all lgsns\nstruct Swing { lg:String, sn:String, team:String, mid:usize, fin:usize, delta:i64 }\nlet mut swings: Vec<Swing> = Vec::new();\nfor ((lg,sn), idxs) in &groups {\n    if idxs.len() < 40 { continue; }\n    let mut sorted_idx = idxs.clone();\n    sorted_idx.sort_by(|&a,&b| s_date[a].cmp(&s_date[b]).then(s_id[a].cmp(&s_id[b])));\n    let mut dates: Vec<String> = sorted_idx.iter().map(|&i| s_date[i][..10].to_string()).collect();\n    dates.sort(); dates.dedup();\n    if dates.len() < 10 { continue; }\n    let mid_date = dates[dates.len()/2].clone();\n    let first: Vec<usize> = sorted_idx.iter().cloned().filter(|&i| &s_date[i][..10] <= mid_date.as_str()).collect();\n    let (mid_table, mid_names, _) = replay_lgsn(&first, &s_hid, &s_aid, &s_hg, &s_ag, &s_home, &s_away);\n    let (fin_table, _fn, _) = replay_lgsn(&sorted_idx, &s_hid, &s_aid, &s_hg, &s_ag, &s_home, &s_away);\n    if mid_table.len() != fin_table.len() || mid_table.len() < 8 { continue; }\n    let mut mid_rank: HashMap<i64,usize> = HashMap::new();\n    for (pos,t) in mid_table.iter().enumerate() { mid_rank.insert(t.0,pos+1); }\n    let mut fin_rank: HashMap<i64,usize> = HashMap::new();\n    for (pos,t) in fin_table.iter().enumerate() { fin_rank.insert(t.0,pos+1); }\n    for (&tid,&mr) in &mid_rank {\n        if let Some(&fr) = fin_rank.get(&tid) {\n            let d = fr as i64 - mr as i64;\n            if d.abs() >= 4 {\n                swings.push(Swing{lg:lg.clone(),sn:sn.clone(),team:mid_names.get(&tid).cloned().unwrap_or_default(),mid:mr,fin:fr,delta:d});\n            }\n        }\n    }\n}\n// biggest risers (delta negative = moved up) and fallers\nlet mut risers: Vec<&Swing> = swings.iter().collect(); risers.sort_by(|a,b| a.delta.cmp(&b.delta));\nlet rrows: Vec<Vec<String>> = risers.iter().take(20).map(|s| vec![\n    s.lg.split('|').nth(1).unwrap_or(\"\").to_string(), s.sn.clone(), s.team.clone(),\n    format!(\"P{}\", s.mid), format!(\"P{}\", s.fin), format!(\"{:+}\", -s.delta),\n]).collect();\nmars_table(&[\"league\",\"season\",\"team\",\"mid pos\",\"final pos\",\"places up\"], &rrows);\n",
-      "metadata": {},
-      "execution_count": 3,
-      "outputs": [
-        {
-          "type": "text",
-          "text": "completed matches after dedup: 311832 (1190 dupes dropped)\nleague-seasons analysed: 897\nmean Spearman(mid,final) = 0.838 | median = 0.857\nmid top-4 -> final top-4: 2702/3588 = 75%\nmid bottom-3 -> final bottom-3: 1745/2691 = 65%\nmid leader wins title: 511/897 = 57%\n"
-        },
-        {
-          "type": "table",
-          "columns": [
-            "league",
-            "seasons",
-            "mean ρ",
-            "median ρ"
-          ],
-          "rows": [
-            [
-              "Champions League",
-              "22",
-              "0.928",
-              "0.941"
-            ],
-            [
-              "FA Women's Super League",
-              "4",
-              "0.928",
-              "0.930"
-            ],
-            [
-              "UEFA Conference League",
-              "5",
-              "0.916",
-              "0.926"
-            ],
-            [
-              "UEFA Europa League",
-              "6",
               "0.904",
               "0.944"
             ],
             [
               "AFC Champions League Elite",
               "3",
-              "0.896",
+              "0.897",
               "0.922"
             ],
             [
@@ -423,455 +154,6 @@
               "Belgian Pro League",
               "32",
               "0.860",
-              "0.870"
-            ],
-            [
-              "Super League",
-              "11",
-              "0.859",
-              "0.886"
-            ],
-            [
-              "Portuguese Liga Portugal",
-              "34",
-              "0.854",
-              "0.868"
-            ],
-            [
-              "Premier League",
-              "4",
-              "0.850",
-              "0.888"
-            ],
-            [
-              "German Bundesliga",
-              "34",
-              "0.850",
-              "0.878"
-            ],
-            [
-              "Scottish League Two",
-              "30",
-              "0.842",
-              "0.867"
-            ],
-            [
-              "English League Two",
-              "34",
-              "0.838",
-              "0.837"
-            ],
-            [
-              "Turkish Süper Lig",
-              "33",
-              "0.837",
-              "0.870"
-            ],
-            [
-              "Spanish La Liga",
-              "34",
-              "0.837",
-              "0.848"
-            ],
-            [
-              "Allsvenskan",
-              "3",
-              "0.835",
-              "0.838"
-            ],
-            [
-              "Superliga",
-              "5",
-              "0.833",
-              "0.871"
-            ],
-            [
-              "French Ligue 1",
-              "34",
-              "0.833",
-              "0.836"
-            ],
-            [
-              "English League One",
-              "34",
-              "0.829",
-              "0.837"
-            ],
-            [
-              "Bundesliga",
-              "13",
-              "0.828",
-              "0.846"
-            ],
-            [
-              "Serie A",
-              "15",
-              "0.823",
-              "0.848"
-            ],
-            [
-              "Italian Serie B",
-              "30",
-              "0.818",
-              "0.839"
-            ],
-            [
-              "Scottish League One",
-              "30",
-              "0.816",
-              "0.867"
-            ],
-            [
-              "Veikkausliiga",
-              "5",
-              "0.806",
-              "0.832"
-            ],
-            [
-              "German 2. Bundesliga",
-              "34",
-              "0.805",
-              "0.812"
-            ],
-            [
-              "Liga MX",
-              "15",
-              "0.805",
-              "0.804"
-            ],
-            [
-              "English Championship",
-              "34",
-              "0.801",
-              "0.817"
-            ],
-            [
-              "Liga Profesional",
-              "14",
-              "0.797",
-              "0.812"
-            ],
-            [
-              "Superliga",
-              "12",
-              "0.794",
-              "0.853"
-            ],
-            [
-              "Spanish La Liga 2",
-              "34",
-              "0.792",
-              "0.792"
-            ],
-            [
-              "French Ligue 2",
-              "31",
-              "0.785",
-              "0.815"
-            ],
-            [
-              "MLS",
-              "15",
-              "0.751",
-              "0.753"
-            ],
-            [
-              "Copa De La Liga Profesional",
-              "5",
-              "0.740",
-              "0.795"
-            ],
-            [
-              "Super League",
-              "10",
-              "0.740",
-              "0.709"
-            ],
-            [
-              "Ekstraklasa",
-              "14",
-              "0.727",
-              "0.721"
-            ]
-          ]
-        },
-        {
-          "type": "table",
-          "columns": [
-            "league",
-            "season",
-            "team",
-            "mid pos",
-            "final pos",
-            "places up"
-          ],
-          "rows": [
-            [
-              "Champions League",
-              "2019/2020",
-              "Atalanta",
-              "P79",
-              "P17",
-              "+62"
-            ],
-            [
-              "Champions League",
-              "2018/2019",
-              "Tottenham",
-              "P44",
-              "P5",
-              "+39"
-            ],
-            [
-              "Champions League",
-              "2019/2020",
-              "Leverkusen",
-              "P76",
-              "P40",
-              "+36"
-            ],
-            [
-              "Champions League",
-              "2008/2009",
-              "FC Porto",
-              "P48",
-              "P16",
-              "+32"
-            ],
-            [
-              "Champions League",
-              "2016/2017",
-              "Dynamo Kyiv",
-              "P69",
-              "P37",
-              "+32"
-            ],
-            [
-              "Champions League",
-              "2005/2006",
-              "Benfica",
-              "P42",
-              "P11",
-              "+31"
-            ],
-            [
-              "UEFA Europa League",
-              "2020/2021",
-              "Man United",
-              "P39",
-              "P8",
-              "+31"
-            ],
-            [
-              "Champions League",
-              "2005/2006",
-              "AC Milan",
-              "P37",
-              "P7",
-              "+30"
-            ],
-            [
-              "Champions League",
-              "2012/2013",
-              "Galatasaray",
-              "P40",
-              "P10",
-              "+30"
-            ],
-            [
-              "Champions League",
-              "2018/2019",
-              "Liverpool",
-              "P32",
-              "P3",
-              "+29"
-            ],
-            [
-              "Champions League",
-              "2005/2006",
-              "Olympiacos",
-              "P74",
-              "P45",
-              "+29"
-            ],
-            [
-              "Champions League",
-              "2011/2012",
-              "FC Basel",
-              "P41",
-              "P12",
-              "+29"
-            ],
-            [
-              "Champions League",
-              "2015/2016",
-              "VfL Wolfsburg",
-              "P34",
-              "P6",
-              "+28"
-            ],
-            [
-              "Champions League",
-              "2015/2016",
-              "Arsenal",
-              "P57",
-              "P29",
-              "+28"
-            ],
-            [
-              "UEFA Conference League",
-              "2023/2024",
-              "Olympiacos",
-              "P32",
-              "P4",
-              "+28"
-            ],
-            [
-              "Champions League",
-              "2014/2015",
-              "Juventus",
-              "P32",
-              "P5",
-              "+27"
-            ],
-            [
-              "Champions League",
-              "2018/2019",
-              "Viktoria Plzen",
-              "P67",
-              "P41",
-              "+26"
-            ],
-            [
-              "Champions League",
-              "2018/2019",
-              "Man City",
-              "P30",
-              "P4",
-              "+26"
-            ],
-            [
-              "Champions League",
-              "2011/2012",
-              "Napoli",
-              "P37",
-              "P11",
-              "+26"
-            ],
-            [
-              "Champions League",
-              "2008/2009",
-              "Celtic",
-              "P65",
-              "P39",
-              "+26"
-            ]
-          ]
-        }
-      ]
-    },
-    {
-      "id": "88b04e5f-7ade-494d-ae0a-a1bfe67e52c4",
-      "cell_type": "code",
-      "source": "let mut fallers: Vec<&Swing> = swings.iter().collect(); fallers.sort_by(|a,b| b.delta.cmp(&a.delta));\nlet frows: Vec<Vec<String>> = fallers.iter().take(20).map(|s| vec![\n    s.lg.split('|').nth(1).unwrap_or(\"\").to_string(), s.sn.clone(), s.team.clone(),\n    format!(\"P{}\", s.mid), format!(\"P{}\", s.fin), format!(\"{:+}\", s.delta),\n]).collect();\nmars_table(&[\"league\",\"season\",\"team\",\"mid pos\",\"final pos\",\"places down\"], &frows);\n",
-      "metadata": {},
-      "execution_count": 4,
-      "outputs": [
-        {
-          "type": "text",
-          "text": "completed matches after dedup: 311832 (1190 dupes dropped)\nleague-seasons analysed: 897\nmean Spearman(mid,final) = 0.838 | median = 0.856\nmid top-4 -> final top-4: 2702/3588 = 75%\nmid bottom-3 -> final bottom-3: 1742/2691 = 65%\nmid leader wins title: 510/897 = 57%\n"
-        },
-        {
-          "type": "table",
-          "columns": [
-            "league",
-            "seasons",
-            "mean ρ",
-            "median ρ"
-          ],
-          "rows": [
-            [
-              "FA Women's Super League",
-              "4",
-              "0.928",
-              "0.930"
-            ],
-            [
-              "Champions League",
-              "22",
-              "0.928",
-              "0.940"
-            ],
-            [
-              "UEFA Conference League",
-              "5",
-              "0.916",
-              "0.926"
-            ],
-            [
-              "UEFA Europa League",
-              "6",
-              "0.904",
-              "0.944"
-            ],
-            [
-              "AFC Champions League Elite",
-              "3",
-              "0.898",
-              "0.922"
-            ],
-            [
-              "Eliteserien",
-              "3",
-              "0.893",
-              "0.894"
-            ],
-            [
-              "Italian Serie A",
-              "34",
-              "0.889",
-              "0.899"
-            ],
-            [
-              "Scottish Premiership",
-              "33",
-              "0.884",
-              "0.902"
-            ],
-            [
-              "Dutch Eredivisie",
-              "34",
-              "0.879",
-              "0.891"
-            ],
-            [
-              "Scottish Championship",
-              "34",
-              "0.871",
-              "0.879"
-            ],
-            [
-              "English Premier League",
-              "34",
-              "0.868",
-              "0.884"
-            ],
-            [
-              "Greek Super League",
-              "28",
-              "0.863",
-              "0.886"
-            ],
-            [
-              "J1 League",
-              "12",
-              "0.861",
-              "0.872"
-            ],
-            [
-              "Belgian Pro League",
-              "32",
-              "0.859",
               "0.870"
             ],
             [
@@ -977,6 +259,1360 @@
               "0.832"
             ],
             [
+              "German 2. Bundesliga",
+              "34",
+              "0.805",
+              "0.812"
+            ],
+            [
+              "Liga MX",
+              "15",
+              "0.805",
+              "0.804"
+            ],
+            [
+              "English Championship",
+              "34",
+              "0.801",
+              "0.817"
+            ],
+            [
+              "Liga Profesional",
+              "14",
+              "0.797",
+              "0.812"
+            ],
+            [
+              "Superliga",
+              "12",
+              "0.794",
+              "0.853"
+            ],
+            [
+              "Spanish La Liga 2",
+              "34",
+              "0.792",
+              "0.792"
+            ],
+            [
+              "French Ligue 2",
+              "31",
+              "0.785",
+              "0.815"
+            ],
+            [
+              "MLS",
+              "15",
+              "0.751",
+              "0.753"
+            ],
+            [
+              "Copa De La Liga Profesional",
+              "5",
+              "0.741",
+              "0.795"
+            ],
+            [
+              "Super League",
+              "10",
+              "0.740",
+              "0.709"
+            ],
+            [
+              "Ekstraklasa",
+              "14",
+              "0.727",
+              "0.721"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fd654108-461b-4b76-ad07-4c189a4233ce",
+      "cell_type": "markdown",
+      "source": "### The climbers and the collapsers\n\nThe biggest rank swings between the mid-season and final table —\nteams that proved the halfway table wrong in both directions.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "fcb4bec2-efe0-482d-bc38-f1074765fed5",
+      "cell_type": "code",
+      "source": "// biggest rank changes mid->final across all lgsns\nstruct Swing { lg:String, sn:String, team:String, mid:usize, fin:usize, delta:i64 }\nlet mut swings: Vec<Swing> = Vec::new();\nfor ((lg,sn), idxs) in &groups {\n    if idxs.len() < 40 { continue; }\n    let mut sorted_idx = idxs.clone();\n    sorted_idx.sort_by(|&a,&b| s_date[a].cmp(&s_date[b]).then(s_id[a].cmp(&s_id[b])));\n    let mut dates: Vec<String> = sorted_idx.iter().map(|&i| s_date[i][..10].to_string()).collect();\n    dates.sort(); dates.dedup();\n    if dates.len() < 10 { continue; }\n    let mid_date = dates[dates.len()/2].clone();\n    let first: Vec<usize> = sorted_idx.iter().cloned().filter(|&i| &s_date[i][..10] <= mid_date.as_str()).collect();\n    let (mid_table, mid_names, _) = replay_lgsn(&first, &s_hid, &s_aid, &s_hg, &s_ag, &s_home, &s_away);\n    let (fin_table, _fn, _) = replay_lgsn(&sorted_idx, &s_hid, &s_aid, &s_hg, &s_ag, &s_home, &s_away);\n    if mid_table.len() != fin_table.len() || mid_table.len() < 8 { continue; }\n    let mut mid_rank: HashMap<i64,usize> = HashMap::new();\n    for (pos,t) in mid_table.iter().enumerate() { mid_rank.insert(t.0,pos+1); }\n    let mut fin_rank: HashMap<i64,usize> = HashMap::new();\n    for (pos,t) in fin_table.iter().enumerate() { fin_rank.insert(t.0,pos+1); }\n    for (&tid,&mr) in &mid_rank {\n        if let Some(&fr) = fin_rank.get(&tid) {\n            let d = fr as i64 - mr as i64;\n            if d.abs() >= 4 {\n                swings.push(Swing{lg:lg.clone(),sn:sn.clone(),team:mid_names.get(&tid).cloned().unwrap_or_default(),mid:mr,fin:fr,delta:d});\n            }\n        }\n    }\n}\n// biggest risers (delta negative = moved up) and fallers\nlet mut risers: Vec<&Swing> = swings.iter().collect(); risers.sort_by(|a,b| a.delta.cmp(&b.delta));\nlet rrows: Vec<Vec<String>> = risers.iter().take(20).map(|s| vec![\n    s.lg.split('|').nth(1).unwrap_or(\"\").to_string(), s.sn.clone(), s.team.clone(),\n    format!(\"P{}\", s.mid), format!(\"P{}\", s.fin), format!(\"{:+}\", -s.delta),\n]).collect();\nmars_table(&[\"league\",\"season\",\"team\",\"mid pos\",\"final pos\",\"places up\"], &rrows);\n",
+      "metadata": {},
+      "execution_count": 3,
+      "outputs": [
+        {
+          "type": "text",
+          "text": "completed matches after dedup: 311832 (1190 dupes dropped)\nleague-seasons analysed: 897\nmean Spearman(mid,final) = 0.838 | median = 0.857\nmid top-4 -> final top-4: 2701/3588 = 75%\nmid bottom-3 -> final bottom-3: 1745/2691 = 65%\nmid leader wins title: 510/897 = 57%\n"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "league",
+            "seasons",
+            "mean ρ",
+            "median ρ"
+          ],
+          "rows": [
+            [
+              "Champions League",
+              "22",
+              "0.928",
+              "0.940"
+            ],
+            [
+              "FA Women's Super League",
+              "4",
+              "0.928",
+              "0.930"
+            ],
+            [
+              "UEFA Conference League",
+              "5",
+              "0.916",
+              "0.926"
+            ],
+            [
+              "UEFA Europa League",
+              "6",
+              "0.904",
+              "0.944"
+            ],
+            [
+              "AFC Champions League Elite",
+              "3",
+              "0.897",
+              "0.922"
+            ],
+            [
+              "Eliteserien",
+              "3",
+              "0.893",
+              "0.894"
+            ],
+            [
+              "Italian Serie A",
+              "34",
+              "0.889",
+              "0.899"
+            ],
+            [
+              "Scottish Premiership",
+              "33",
+              "0.884",
+              "0.902"
+            ],
+            [
+              "Dutch Eredivisie",
+              "34",
+              "0.879",
+              "0.891"
+            ],
+            [
+              "Scottish Championship",
+              "34",
+              "0.871",
+              "0.879"
+            ],
+            [
+              "English Premier League",
+              "34",
+              "0.868",
+              "0.884"
+            ],
+            [
+              "Greek Super League",
+              "28",
+              "0.864",
+              "0.886"
+            ],
+            [
+              "J1 League",
+              "12",
+              "0.861",
+              "0.872"
+            ],
+            [
+              "Belgian Pro League",
+              "32",
+              "0.860",
+              "0.870"
+            ],
+            [
+              "Super League",
+              "11",
+              "0.859",
+              "0.886"
+            ],
+            [
+              "Portuguese Liga Portugal",
+              "34",
+              "0.854",
+              "0.868"
+            ],
+            [
+              "Premier League",
+              "4",
+              "0.850",
+              "0.888"
+            ],
+            [
+              "German Bundesliga",
+              "34",
+              "0.849",
+              "0.878"
+            ],
+            [
+              "Scottish League Two",
+              "30",
+              "0.842",
+              "0.867"
+            ],
+            [
+              "English League Two",
+              "34",
+              "0.838",
+              "0.837"
+            ],
+            [
+              "Turkish Süper Lig",
+              "33",
+              "0.837",
+              "0.870"
+            ],
+            [
+              "Spanish La Liga",
+              "34",
+              "0.837",
+              "0.848"
+            ],
+            [
+              "Allsvenskan",
+              "3",
+              "0.835",
+              "0.838"
+            ],
+            [
+              "Superliga",
+              "5",
+              "0.833",
+              "0.871"
+            ],
+            [
+              "French Ligue 1",
+              "34",
+              "0.833",
+              "0.836"
+            ],
+            [
+              "English League One",
+              "34",
+              "0.829",
+              "0.837"
+            ],
+            [
+              "Bundesliga",
+              "13",
+              "0.828",
+              "0.846"
+            ],
+            [
+              "Serie A",
+              "15",
+              "0.823",
+              "0.848"
+            ],
+            [
+              "Italian Serie B",
+              "30",
+              "0.818",
+              "0.839"
+            ],
+            [
+              "Scottish League One",
+              "30",
+              "0.816",
+              "0.867"
+            ],
+            [
+              "Veikkausliiga",
+              "5",
+              "0.808",
+              "0.832"
+            ],
+            [
+              "German 2. Bundesliga",
+              "34",
+              "0.805",
+              "0.812"
+            ],
+            [
+              "Liga MX",
+              "15",
+              "0.805",
+              "0.804"
+            ],
+            [
+              "English Championship",
+              "34",
+              "0.801",
+              "0.817"
+            ],
+            [
+              "Liga Profesional",
+              "14",
+              "0.796",
+              "0.812"
+            ],
+            [
+              "Spanish La Liga 2",
+              "34",
+              "0.792",
+              "0.792"
+            ],
+            [
+              "Superliga",
+              "12",
+              "0.792",
+              "0.853"
+            ],
+            [
+              "French Ligue 2",
+              "31",
+              "0.786",
+              "0.815"
+            ],
+            [
+              "MLS",
+              "15",
+              "0.751",
+              "0.753"
+            ],
+            [
+              "Super League",
+              "10",
+              "0.743",
+              "0.720"
+            ],
+            [
+              "Copa De La Liga Profesional",
+              "5",
+              "0.740",
+              "0.795"
+            ],
+            [
+              "Ekstraklasa",
+              "14",
+              "0.727",
+              "0.721"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "league",
+            "season",
+            "team",
+            "mid pos",
+            "final pos",
+            "places up"
+          ],
+          "rows": [
+            [
+              "Champions League",
+              "2019/2020",
+              "Atalanta",
+              "P79",
+              "P17",
+              "+62"
+            ],
+            [
+              "Champions League",
+              "2018/2019",
+              "Tottenham",
+              "P44",
+              "P5",
+              "+39"
+            ],
+            [
+              "Champions League",
+              "2019/2020",
+              "Leverkusen",
+              "P76",
+              "P40",
+              "+36"
+            ],
+            [
+              "Champions League",
+              "2008/2009",
+              "FC Porto",
+              "P48",
+              "P16",
+              "+32"
+            ],
+            [
+              "Champions League",
+              "2016/2017",
+              "Dynamo Kyiv",
+              "P69",
+              "P37",
+              "+32"
+            ],
+            [
+              "UEFA Europa League",
+              "2020/2021",
+              "Man United",
+              "P39",
+              "P8",
+              "+31"
+            ],
+            [
+              "Champions League",
+              "2005/2006",
+              "Benfica",
+              "P42",
+              "P11",
+              "+31"
+            ],
+            [
+              "Champions League",
+              "2012/2013",
+              "Galatasaray",
+              "P40",
+              "P10",
+              "+30"
+            ],
+            [
+              "Champions League",
+              "2005/2006",
+              "AC Milan",
+              "P37",
+              "P7",
+              "+30"
+            ],
+            [
+              "Champions League",
+              "2018/2019",
+              "Liverpool",
+              "P32",
+              "P3",
+              "+29"
+            ],
+            [
+              "Champions League",
+              "2011/2012",
+              "FC Basel",
+              "P41",
+              "P12",
+              "+29"
+            ],
+            [
+              "Champions League",
+              "2005/2006",
+              "Olympiacos",
+              "P74",
+              "P45",
+              "+29"
+            ],
+            [
+              "Champions League",
+              "2015/2016",
+              "Arsenal",
+              "P57",
+              "P29",
+              "+28"
+            ],
+            [
+              "UEFA Conference League",
+              "2023/2024",
+              "Olympiacos",
+              "P32",
+              "P4",
+              "+28"
+            ],
+            [
+              "Champions League",
+              "2015/2016",
+              "VfL Wolfsburg",
+              "P33",
+              "P6",
+              "+27"
+            ],
+            [
+              "Champions League",
+              "2014/2015",
+              "Juventus",
+              "P32",
+              "P5",
+              "+27"
+            ],
+            [
+              "Champions League",
+              "2018/2019",
+              "Man City",
+              "P30",
+              "P4",
+              "+26"
+            ],
+            [
+              "Champions League",
+              "2018/2019",
+              "Viktoria Plzen",
+              "P67",
+              "P41",
+              "+26"
+            ],
+            [
+              "Champions League",
+              "2011/2012",
+              "Napoli",
+              "P37",
+              "P11",
+              "+26"
+            ],
+            [
+              "Champions League",
+              "2008/2009",
+              "Celtic",
+              "P65",
+              "P39",
+              "+26"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "88b04e5f-7ade-494d-ae0a-a1bfe67e52c4",
+      "cell_type": "code",
+      "source": "let mut fallers: Vec<&Swing> = swings.iter().collect(); fallers.sort_by(|a,b| b.delta.cmp(&a.delta));\nlet frows: Vec<Vec<String>> = fallers.iter().take(20).map(|s| vec![\n    s.lg.split('|').nth(1).unwrap_or(\"\").to_string(), s.sn.clone(), s.team.clone(),\n    format!(\"P{}\", s.mid), format!(\"P{}\", s.fin), format!(\"{:+}\", s.delta),\n]).collect();\nmars_table(&[\"league\",\"season\",\"team\",\"mid pos\",\"final pos\",\"places down\"], &frows);\n",
+      "metadata": {},
+      "execution_count": 4,
+      "outputs": [
+        {
+          "type": "text",
+          "text": "completed matches after dedup: 311832 (1190 dupes dropped)\nleague-seasons analysed: 897\nmean Spearman(mid,final) = 0.838 | median = 0.857\nmid top-4 -> final top-4: 2701/3588 = 75%\nmid bottom-3 -> final bottom-3: 1743/2691 = 65%\nmid leader wins title: 510/897 = 57%\n"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "league",
+            "seasons",
+            "mean ρ",
+            "median ρ"
+          ],
+          "rows": [
+            [
+              "FA Women's Super League",
+              "4",
+              "0.928",
+              "0.930"
+            ],
+            [
+              "Champions League",
+              "22",
+              "0.928",
+              "0.941"
+            ],
+            [
+              "UEFA Conference League",
+              "5",
+              "0.916",
+              "0.926"
+            ],
+            [
+              "UEFA Europa League",
+              "6",
+              "0.905",
+              "0.945"
+            ],
+            [
+              "AFC Champions League Elite",
+              "3",
+              "0.897",
+              "0.922"
+            ],
+            [
+              "Eliteserien",
+              "3",
+              "0.893",
+              "0.894"
+            ],
+            [
+              "Italian Serie A",
+              "34",
+              "0.889",
+              "0.899"
+            ],
+            [
+              "Scottish Premiership",
+              "33",
+              "0.884",
+              "0.902"
+            ],
+            [
+              "Dutch Eredivisie",
+              "34",
+              "0.879",
+              "0.891"
+            ],
+            [
+              "Scottish Championship",
+              "34",
+              "0.871",
+              "0.879"
+            ],
+            [
+              "English Premier League",
+              "34",
+              "0.868",
+              "0.884"
+            ],
+            [
+              "Greek Super League",
+              "28",
+              "0.864",
+              "0.886"
+            ],
+            [
+              "J1 League",
+              "12",
+              "0.861",
+              "0.872"
+            ],
+            [
+              "Belgian Pro League",
+              "32",
+              "0.859",
+              "0.870"
+            ],
+            [
+              "Super League",
+              "11",
+              "0.859",
+              "0.886"
+            ],
+            [
+              "Portuguese Liga Portugal",
+              "34",
+              "0.854",
+              "0.868"
+            ],
+            [
+              "Premier League",
+              "4",
+              "0.850",
+              "0.888"
+            ],
+            [
+              "German Bundesliga",
+              "34",
+              "0.849",
+              "0.878"
+            ],
+            [
+              "Scottish League Two",
+              "30",
+              "0.842",
+              "0.867"
+            ],
+            [
+              "Turkish Süper Lig",
+              "33",
+              "0.838",
+              "0.870"
+            ],
+            [
+              "English League Two",
+              "34",
+              "0.838",
+              "0.837"
+            ],
+            [
+              "Spanish La Liga",
+              "34",
+              "0.837",
+              "0.848"
+            ],
+            [
+              "Allsvenskan",
+              "3",
+              "0.835",
+              "0.838"
+            ],
+            [
+              "French Ligue 1",
+              "34",
+              "0.833",
+              "0.836"
+            ],
+            [
+              "Superliga",
+              "5",
+              "0.833",
+              "0.871"
+            ],
+            [
+              "English League One",
+              "34",
+              "0.829",
+              "0.837"
+            ],
+            [
+              "Bundesliga",
+              "13",
+              "0.828",
+              "0.846"
+            ],
+            [
+              "Serie A",
+              "15",
+              "0.823",
+              "0.848"
+            ],
+            [
+              "Italian Serie B",
+              "30",
+              "0.818",
+              "0.839"
+            ],
+            [
+              "Scottish League One",
+              "30",
+              "0.816",
+              "0.867"
+            ],
+            [
+              "Veikkausliiga",
+              "5",
+              "0.808",
+              "0.832"
+            ],
+            [
+              "Liga MX",
+              "15",
+              "0.805",
+              "0.804"
+            ],
+            [
+              "German 2. Bundesliga",
+              "34",
+              "0.805",
+              "0.812"
+            ],
+            [
+              "English Championship",
+              "34",
+              "0.801",
+              "0.817"
+            ],
+            [
+              "Liga Profesional",
+              "14",
+              "0.797",
+              "0.812"
+            ],
+            [
+              "Superliga",
+              "12",
+              "0.794",
+              "0.853"
+            ],
+            [
+              "Spanish La Liga 2",
+              "34",
+              "0.792",
+              "0.792"
+            ],
+            [
+              "French Ligue 2",
+              "31",
+              "0.785",
+              "0.815"
+            ],
+            [
+              "MLS",
+              "15",
+              "0.751",
+              "0.753"
+            ],
+            [
+              "Copa De La Liga Profesional",
+              "5",
+              "0.741",
+              "0.795"
+            ],
+            [
+              "Super League",
+              "10",
+              "0.740",
+              "0.709"
+            ],
+            [
+              "Ekstraklasa",
+              "14",
+              "0.727",
+              "0.721"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "league",
+            "season",
+            "team",
+            "mid pos",
+            "final pos",
+            "places up"
+          ],
+          "rows": [
+            [
+              "Champions League",
+              "2019/2020",
+              "Atalanta",
+              "P79",
+              "P17",
+              "+62"
+            ],
+            [
+              "Champions League",
+              "2018/2019",
+              "Tottenham",
+              "P44",
+              "P5",
+              "+39"
+            ],
+            [
+              "Champions League",
+              "2019/2020",
+              "Leverkusen",
+              "P76",
+              "P40",
+              "+36"
+            ],
+            [
+              "Champions League",
+              "2016/2017",
+              "Dynamo Kyiv",
+              "P69",
+              "P37",
+              "+32"
+            ],
+            [
+              "Champions League",
+              "2008/2009",
+              "FC Porto",
+              "P48",
+              "P16",
+              "+32"
+            ],
+            [
+              "UEFA Europa League",
+              "2020/2021",
+              "Man United",
+              "P39",
+              "P8",
+              "+31"
+            ],
+            [
+              "Champions League",
+              "2005/2006",
+              "Benfica",
+              "P42",
+              "P11",
+              "+31"
+            ],
+            [
+              "Champions League",
+              "2012/2013",
+              "Galatasaray",
+              "P40",
+              "P10",
+              "+30"
+            ],
+            [
+              "Champions League",
+              "2005/2006",
+              "AC Milan",
+              "P37",
+              "P7",
+              "+30"
+            ],
+            [
+              "Champions League",
+              "2011/2012",
+              "FC Basel",
+              "P41",
+              "P12",
+              "+29"
+            ],
+            [
+              "Champions League",
+              "2018/2019",
+              "Liverpool",
+              "P32",
+              "P3",
+              "+29"
+            ],
+            [
+              "Champions League",
+              "2005/2006",
+              "Olympiacos",
+              "P74",
+              "P45",
+              "+29"
+            ],
+            [
+              "Champions League",
+              "2015/2016",
+              "Arsenal",
+              "P57",
+              "P29",
+              "+28"
+            ],
+            [
+              "Champions League",
+              "2015/2016",
+              "VfL Wolfsburg",
+              "P34",
+              "P6",
+              "+28"
+            ],
+            [
+              "UEFA Conference League",
+              "2023/2024",
+              "Olympiacos",
+              "P32",
+              "P4",
+              "+28"
+            ],
+            [
+              "Champions League",
+              "2014/2015",
+              "Juventus",
+              "P32",
+              "P5",
+              "+27"
+            ],
+            [
+              "Champions League",
+              "2011/2012",
+              "Napoli",
+              "P37",
+              "P11",
+              "+26"
+            ],
+            [
+              "Champions League",
+              "2018/2019",
+              "Man City",
+              "P30",
+              "P4",
+              "+26"
+            ],
+            [
+              "Champions League",
+              "2018/2019",
+              "Viktoria Plzen",
+              "P67",
+              "P41",
+              "+26"
+            ],
+            [
+              "Champions League",
+              "2018/2019",
+              "Valencia",
+              "P55",
+              "P30",
+              "+25"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "league",
+            "season",
+            "team",
+            "mid pos",
+            "final pos",
+            "places down"
+          ],
+          "rows": [
+            [
+              "Copa De La Liga Profesional",
+              "2023",
+              "Defensa y Justicia",
+              "P8",
+              "P24",
+              "+16"
+            ],
+            [
+              "Champions League",
+              "2017/2018",
+              "Olympiacos",
+              "P10",
+              "P25",
+              "+15"
+            ],
+            [
+              "English Championship",
+              "2022/23",
+              "QPR",
+              "P6",
+              "P21",
+              "+15"
+            ],
+            [
+              "Champions League",
+              "2019/2020",
+              "Apoel Nicosia",
+              "P11",
+              "P26",
+              "+15"
+            ],
+            [
+              "English Championship",
+              "2002/03",
+              "Coventry",
+              "P6",
+              "P20",
+              "+14"
+            ],
+            [
+              "Champions League",
+              "2012/2013",
+              "Hapoel Kiryat Shmona",
+              "P11",
+              "P25",
+              "+14"
+            ],
+            [
+              "Champions League",
+              "2012/2013",
+              "Helsingborg",
+              "P12",
+              "P26",
+              "+14"
+            ],
+            [
+              "Champions League",
+              "2018/2019",
+              "Celtic",
+              "P5",
+              "P19",
+              "+14"
+            ],
+            [
+              "Champions League",
+              "2018/2019",
+              "PAOK",
+              "P6",
+              "P20",
+              "+14"
+            ],
+            [
+              "Champions League",
+              "2018/2019",
+              "Dinamo Zagreb",
+              "P4",
+              "P18",
+              "+14"
+            ],
+            [
+              "Champions League",
+              "2018/2019",
+              "AEK Athens",
+              "P21",
+              "P35",
+              "+14"
+            ],
+            [
+              "Champions League",
+              "2018/2019",
+              "Ludogorets Razgrad",
+              "P22",
+              "P36",
+              "+14"
+            ],
+            [
+              "Champions League",
+              "2007/2008",
+              "Dinamo Zagreb",
+              "P13",
+              "P27",
+              "+14"
+            ],
+            [
+              "UEFA Europa League",
+              "2024/2025",
+              "Galatasaray",
+              "P5",
+              "P19",
+              "+14"
+            ],
+            [
+              "UEFA Europa League",
+              "2024/2025",
+              "Anderlecht",
+              "P3",
+              "P17",
+              "+14"
+            ],
+            [
+              "English Championship",
+              "2019/20",
+              "Sheffield Weds",
+              "P3",
+              "P17",
+              "+14"
+            ],
+            [
+              "Champions League",
+              "2017/2018",
+              "Hapoel Be'er",
+              "P8",
+              "P22",
+              "+14"
+            ],
+            [
+              "Champions League",
+              "2017/2018",
+              "FC Astana",
+              "P12",
+              "P26",
+              "+14"
+            ],
+            [
+              "Champions League",
+              "2017/2018",
+              "FK Qarabag",
+              "P3",
+              "P17",
+              "+14"
+            ],
+            [
+              "Champions League",
+              "2017/2018",
+              "Legia Warsaw",
+              "P13",
+              "P27",
+              "+14"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "14a99d6c-09c1-416e-aa1f-0bb58be228ad",
+      "cell_type": "code",
+      "source": "use plotters::prelude::*;\n\nfn chart_num(s: &str) -> f64 {\n    let t = s.replace(',', \"\").replace('%', \"\").replace('−', \"-\");\n    let mult = if t.contains(\"bn\") { 1e9 }\n        else if t.contains('€') && t.contains('m') { 1e6 }\n        else { 1.0 };\n    let cleaned: String = t.chars()\n        .filter(|c| c.is_ascii_digit() || *c == '.' || *c == '-')\n        .collect();\n    cleaned.parse().unwrap_or(0.0) * mult\n}\n\n\nlet mut c_items: Vec<(String, f64)> = rrows.iter()\n    .map(|r| (format!(\"{} {}\", r[2], r[0]), chart_num(&r[5].clone())))\n    .collect();\nc_items.retain(|(_, v)| v.is_finite());\nc_items.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());\nc_items.truncate(12);\nlet c_labels: Vec<String> = c_items.iter()\n    .map(|(l, _)| l.chars().take(18).collect()).collect();\nlet c_vals: Vec<f64> = c_items.iter().map(|(_, v)| *v).collect();\nlet c_ymax = c_vals.iter().cloned().fold(0.0_f64, f64::max) * 1.15 + 1e-9;\nlet (c_div, c_unit): (f64, &str) = if c_ymax >= 1e9 { (1e9, \"bn\") }\n    else if c_ymax >= 1e6 { (1e6, \"m\") }\n    else if c_ymax >= 1e3 { (1e3, \"k\") }\n    else { (1.0, \"\") };\nlet c_n = c_vals.len();\nlet figure = plotters::evcxr::evcxr_figure((780, 400), |root| {\n    root.fill(&WHITE)?;\n    let mut chart = ChartBuilder::on(&root)\n        .caption(\"Biggest mid-season risers — places gained\", (\"sans-serif\", 18))\n        .margin(10)\n        .x_label_area_size(45)\n        .y_label_area_size(55)\n        .build_cartesian_2d(-0.5_f64..(c_n as f64 - 0.5), 0.0..c_ymax)?;\n    chart.configure_mesh()\n        .x_labels(c_n)\n        .x_label_formatter(&|x: &f64| c_labels.get(*x as usize).cloned().unwrap_or_default())\n        .y_label_formatter(&|y: &f64| format!(\"{:.1}{}\", y / c_div, c_unit))\n        .draw()?;\n    chart.draw_series(c_vals.iter().enumerate().map(|(i, &v)| {\n        Rectangle::new([(i as f64 - 0.35, 0.0), (i as f64 + 0.35, v)], BLUE.filled())\n    }))?;\n    Ok(())\n});\nfigure.evcxr_display();\n",
+      "metadata": {},
+      "execution_count": 5,
+      "outputs": [
+        {
+          "type": "text",
+          "text": "completed matches after dedup: 311832 (1190 dupes dropped)\nleague-seasons analysed: 897\nmean Spearman(mid,final) = 0.838 | median = 0.857\nmid top-4 -> final top-4: 2701/3588 = 75%\nmid bottom-3 -> final bottom-3: 1745/2691 = 65%\nmid leader wins title: 511/897 = 57%\n"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "league",
+            "seasons",
+            "mean ρ",
+            "median ρ"
+          ],
+          "rows": [
+            [
+              "FA Women's Super League",
+              "4",
+              "0.928",
+              "0.930"
+            ],
+            [
+              "Champions League",
+              "22",
+              "0.928",
+              "0.940"
+            ],
+            [
+              "UEFA Conference League",
+              "5",
+              "0.917",
+              "0.927"
+            ],
+            [
+              "UEFA Europa League",
+              "6",
+              "0.905",
+              "0.944"
+            ],
+            [
+              "AFC Champions League Elite",
+              "3",
+              "0.895",
+              "0.922"
+            ],
+            [
+              "Eliteserien",
+              "3",
+              "0.893",
+              "0.894"
+            ],
+            [
+              "Italian Serie A",
+              "34",
+              "0.889",
+              "0.899"
+            ],
+            [
+              "Scottish Premiership",
+              "33",
+              "0.884",
+              "0.902"
+            ],
+            [
+              "Dutch Eredivisie",
+              "34",
+              "0.879",
+              "0.891"
+            ],
+            [
+              "Scottish Championship",
+              "34",
+              "0.871",
+              "0.879"
+            ],
+            [
+              "English Premier League",
+              "34",
+              "0.868",
+              "0.884"
+            ],
+            [
+              "Greek Super League",
+              "28",
+              "0.864",
+              "0.886"
+            ],
+            [
+              "J1 League",
+              "12",
+              "0.861",
+              "0.872"
+            ],
+            [
+              "Belgian Pro League",
+              "32",
+              "0.860",
+              "0.870"
+            ],
+            [
+              "Super League",
+              "11",
+              "0.859",
+              "0.886"
+            ],
+            [
+              "Portuguese Liga Portugal",
+              "34",
+              "0.854",
+              "0.868"
+            ],
+            [
+              "Premier League",
+              "4",
+              "0.850",
+              "0.888"
+            ],
+            [
+              "German Bundesliga",
+              "34",
+              "0.849",
+              "0.878"
+            ],
+            [
+              "Scottish League Two",
+              "30",
+              "0.842",
+              "0.867"
+            ],
+            [
+              "English League Two",
+              "34",
+              "0.838",
+              "0.837"
+            ],
+            [
+              "Turkish Süper Lig",
+              "33",
+              "0.838",
+              "0.870"
+            ],
+            [
+              "Spanish La Liga",
+              "34",
+              "0.837",
+              "0.848"
+            ],
+            [
+              "Allsvenskan",
+              "3",
+              "0.835",
+              "0.838"
+            ],
+            [
+              "French Ligue 1",
+              "34",
+              "0.833",
+              "0.836"
+            ],
+            [
+              "Superliga",
+              "5",
+              "0.833",
+              "0.871"
+            ],
+            [
+              "English League One",
+              "34",
+              "0.829",
+              "0.837"
+            ],
+            [
+              "Bundesliga",
+              "13",
+              "0.828",
+              "0.846"
+            ],
+            [
+              "Serie A",
+              "15",
+              "0.823",
+              "0.848"
+            ],
+            [
+              "Italian Serie B",
+              "30",
+              "0.818",
+              "0.839"
+            ],
+            [
+              "Scottish League One",
+              "30",
+              "0.816",
+              "0.867"
+            ],
+            [
+              "Veikkausliiga",
+              "5",
+              "0.808",
+              "0.832"
+            ],
+            [
               "Liga MX",
               "15",
               "0.805",
@@ -1003,7 +1639,7 @@
             [
               "Superliga",
               "12",
-              "0.794",
+              "0.792",
               "0.853"
             ],
             [
@@ -1096,19 +1732,19 @@
               "+31"
             ],
             [
-              "Champions League",
-              "2008/2009",
-              "FC Porto",
-              "P47",
-              "P16",
-              "+31"
-            ],
-            [
               "UEFA Europa League",
               "2020/2021",
               "Man United",
               "P39",
               "P8",
+              "+31"
+            ],
+            [
+              "Champions League",
+              "2008/2009",
+              "FC Porto",
+              "P47",
+              "P16",
               "+31"
             ],
             [
@@ -1129,18 +1765,18 @@
             ],
             [
               "Champions League",
-              "2005/2006",
-              "Olympiacos",
-              "P74",
-              "P45",
-              "+29"
-            ],
-            [
-              "Champions League",
               "2018/2019",
               "Liverpool",
               "P32",
               "P3",
+              "+29"
+            ],
+            [
+              "Champions League",
+              "2005/2006",
+              "Olympiacos",
+              "P74",
+              "P45",
               "+29"
             ],
             [
@@ -1238,18 +1874,10 @@
             ],
             [
               "Champions League",
-              "2012/2013",
-              "Helsingborg",
-              "P11",
-              "P26",
-              "+15"
-            ],
-            [
-              "Champions League",
-              "2019/2020",
-              "Apoel Nicosia",
-              "P11",
-              "P26",
+              "2017/2018",
+              "Olympiacos",
+              "P10",
+              "P25",
               "+15"
             ],
             [
@@ -1262,18 +1890,34 @@
             ],
             [
               "Champions League",
-              "2017/2018",
-              "Olympiacos",
-              "P10",
-              "P25",
+              "2019/2020",
+              "Apoel Nicosia",
+              "P11",
+              "P26",
               "+15"
             ],
             [
               "Champions League",
+              "2012/2013",
+              "Hapoel Kiryat Shmona",
+              "P11",
+              "P26",
+              "+15"
+            ],
+            [
+              "Champions League",
+              "2007/2008",
+              "Dinamo Zagreb",
+              "P13",
+              "P27",
+              "+14"
+            ],
+            [
+              "Champions League",
               "2018/2019",
-              "AEK Athens",
-              "P21",
-              "P35",
+              "Celtic",
+              "P5",
+              "P19",
               "+14"
             ],
             [
@@ -1287,25 +1931,17 @@
             [
               "Champions League",
               "2018/2019",
-              "Dinamo Zagreb",
-              "P4",
-              "P18",
+              "AEK Athens",
+              "P21",
+              "P35",
               "+14"
             ],
             [
               "Champions League",
               "2018/2019",
-              "Celtic",
-              "P5",
-              "P19",
-              "+14"
-            ],
-            [
-              "English Championship",
-              "2019/20",
-              "Sheffield Weds",
-              "P3",
-              "P17",
+              "Dinamo Zagreb",
+              "P4",
+              "P18",
               "+14"
             ],
             [
@@ -1326,42 +1962,18 @@
             ],
             [
               "Champions League",
-              "2007/2008",
-              "Dinamo Zagreb",
+              "2017/2018",
+              "Apoel Nicosia",
+              "P4",
+              "P18",
+              "+14"
+            ],
+            [
+              "Champions League",
+              "2017/2018",
+              "Legia Warsaw",
               "P13",
               "P27",
-              "+14"
-            ],
-            [
-              "English Championship",
-              "2002/03",
-              "Coventry",
-              "P6",
-              "P20",
-              "+14"
-            ],
-            [
-              "UEFA Europa League",
-              "2024/2025",
-              "Anderlecht",
-              "P3",
-              "P17",
-              "+14"
-            ],
-            [
-              "UEFA Europa League",
-              "2024/2025",
-              "Galatasaray",
-              "P5",
-              "P19",
-              "+14"
-            ],
-            [
-              "English League Two",
-              "2003/04",
-              "York",
-              "P10",
-              "P24",
               "+14"
             ],
             [
@@ -1375,27 +1987,66 @@
             [
               "Champions League",
               "2017/2018",
+              "FK Qarabag",
+              "P3",
+              "P17",
+              "+14"
+            ],
+            [
+              "Champions League",
+              "2017/2018",
               "Hapoel Be'er",
               "P8",
               "P22",
               "+14"
             ],
             [
-              "Champions League",
-              "2017/2018",
-              "Legia Warsaw",
-              "P13",
-              "P27",
+              "English League Two",
+              "2003/04",
+              "York",
+              "P10",
+              "P24",
+              "+14"
+            ],
+            [
+              "English League Two",
+              "1996/97",
+              "Torquay",
+              "P7",
+              "P21",
+              "+14"
+            ],
+            [
+              "English Championship",
+              "2019/20",
+              "Sheffield Weds",
+              "P3",
+              "P17",
               "+14"
             ]
           ]
+        },
+        {
+          "type": "mime_bundle",
+          "data": {
+            "image/svg+xml": "<svg width=\"780\" height=\"400\" viewBox=\"0 0 780 400\" xmlns=\"http://www.w3.org/2000/svg\">\n<rect x=\"0\" y=\"0\" width=\"780\" height=\"400\" opacity=\"1\" fill=\"#FFFFFF\" stroke=\"none\"/>\n<text x=\"390\" y=\"15\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"14.516129032258064\" opacity=\"1\" fill=\"#000000\">\nBiggest mid-season risers — places gained\n</text>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"70\" y1=\"344\" x2=\"70\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"82\" y1=\"344\" x2=\"82\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"94\" y1=\"344\" x2=\"94\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"106\" y1=\"344\" x2=\"106\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"117\" y1=\"344\" x2=\"117\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"129\" y1=\"344\" x2=\"129\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"141\" y1=\"344\" x2=\"141\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"153\" y1=\"344\" x2=\"153\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"164\" y1=\"344\" x2=\"164\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"176\" y1=\"344\" x2=\"176\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"188\" y1=\"344\" x2=\"188\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"199\" y1=\"344\" x2=\"199\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"211\" y1=\"344\" x2=\"211\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"223\" y1=\"344\" x2=\"223\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"235\" y1=\"344\" x2=\"235\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"246\" y1=\"344\" x2=\"246\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"258\" y1=\"344\" x2=\"258\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"270\" y1=\"344\" x2=\"270\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"282\" y1=\"344\" x2=\"282\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"293\" y1=\"344\" x2=\"293\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"305\" y1=\"344\" x2=\"305\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"317\" y1=\"344\" x2=\"317\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"329\" y1=\"344\" x2=\"329\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"340\" y1=\"344\" x2=\"340\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"352\" y1=\"344\" x2=\"352\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"364\" y1=\"344\" x2=\"364\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"375\" y1=\"344\" x2=\"375\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"387\" y1=\"344\" x2=\"387\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"399\" y1=\"344\" x2=\"399\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"411\" y1=\"344\" x2=\"411\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"422\" y1=\"344\" x2=\"422\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"434\" y1=\"344\" x2=\"434\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"446\" y1=\"344\" x2=\"446\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"458\" y1=\"344\" x2=\"458\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"469\" y1=\"344\" x2=\"469\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"481\" y1=\"344\" x2=\"481\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"493\" y1=\"344\" x2=\"493\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"505\" y1=\"344\" x2=\"505\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"516\" y1=\"344\" x2=\"516\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"528\" y1=\"344\" x2=\"528\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"540\" y1=\"344\" x2=\"540\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"551\" y1=\"344\" x2=\"551\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"563\" y1=\"344\" x2=\"563\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"575\" y1=\"344\" x2=\"575\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"587\" y1=\"344\" x2=\"587\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"598\" y1=\"344\" x2=\"598\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"610\" y1=\"344\" x2=\"610\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"622\" y1=\"344\" x2=\"622\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"634\" y1=\"344\" x2=\"634\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"645\" y1=\"344\" x2=\"645\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"657\" y1=\"344\" x2=\"657\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"669\" y1=\"344\" x2=\"669\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"681\" y1=\"344\" x2=\"681\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"692\" y1=\"344\" x2=\"692\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"704\" y1=\"344\" x2=\"704\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"716\" y1=\"344\" x2=\"716\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"727\" y1=\"344\" x2=\"727\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"739\" y1=\"344\" x2=\"739\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"751\" y1=\"344\" x2=\"751\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"763\" y1=\"344\" x2=\"763\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"344\" x2=\"769\" y2=\"344\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"340\" x2=\"769\" y2=\"340\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"336\" x2=\"769\" y2=\"336\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"331\" x2=\"769\" y2=\"331\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"327\" x2=\"769\" y2=\"327\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"323\" x2=\"769\" y2=\"323\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"318\" x2=\"769\" y2=\"318\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"314\" x2=\"769\" y2=\"314\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"310\" x2=\"769\" y2=\"310\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"305\" x2=\"769\" y2=\"305\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"301\" x2=\"769\" y2=\"301\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"297\" x2=\"769\" y2=\"297\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"292\" x2=\"769\" y2=\"292\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"288\" x2=\"769\" y2=\"288\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"284\" x2=\"769\" y2=\"284\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"279\" x2=\"769\" y2=\"279\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"275\" x2=\"769\" y2=\"275\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"271\" x2=\"769\" y2=\"271\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"266\" x2=\"769\" y2=\"266\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"262\" x2=\"769\" y2=\"262\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"258\" x2=\"769\" y2=\"258\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"253\" x2=\"769\" y2=\"253\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"249\" x2=\"769\" y2=\"249\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"244\" x2=\"769\" y2=\"244\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"240\" x2=\"769\" y2=\"240\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"236\" x2=\"769\" y2=\"236\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"231\" x2=\"769\" y2=\"231\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"227\" x2=\"769\" y2=\"227\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"223\" x2=\"769\" y2=\"223\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"218\" x2=\"769\" y2=\"218\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"214\" x2=\"769\" y2=\"214\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"210\" x2=\"769\" y2=\"210\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"205\" x2=\"769\" y2=\"205\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"201\" x2=\"769\" y2=\"201\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"197\" x2=\"769\" y2=\"197\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"192\" x2=\"769\" y2=\"192\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"188\" x2=\"769\" y2=\"188\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"184\" x2=\"769\" y2=\"184\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"179\" x2=\"769\" y2=\"179\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"175\" x2=\"769\" y2=\"175\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"171\" x2=\"769\" y2=\"171\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"166\" x2=\"769\" y2=\"166\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"162\" x2=\"769\" y2=\"162\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"158\" x2=\"769\" y2=\"158\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"153\" x2=\"769\" y2=\"153\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"149\" x2=\"769\" y2=\"149\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"144\" x2=\"769\" y2=\"144\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"140\" x2=\"769\" y2=\"140\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"136\" x2=\"769\" y2=\"136\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"131\" x2=\"769\" y2=\"131\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"127\" x2=\"769\" y2=\"127\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"123\" x2=\"769\" y2=\"123\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"118\" x2=\"769\" y2=\"118\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"114\" x2=\"769\" y2=\"114\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"110\" x2=\"769\" y2=\"110\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"105\" x2=\"769\" y2=\"105\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"101\" x2=\"769\" y2=\"101\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"97\" x2=\"769\" y2=\"97\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"92\" x2=\"769\" y2=\"92\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"88\" x2=\"769\" y2=\"88\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"84\" x2=\"769\" y2=\"84\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"79\" x2=\"769\" y2=\"79\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"75\" x2=\"769\" y2=\"75\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"71\" x2=\"769\" y2=\"71\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"66\" x2=\"769\" y2=\"66\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"62\" x2=\"769\" y2=\"62\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"58\" x2=\"769\" y2=\"58\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"53\" x2=\"769\" y2=\"53\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"49\" x2=\"769\" y2=\"49\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"44\" x2=\"769\" y2=\"44\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"40\" x2=\"769\" y2=\"40\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"36\" x2=\"769\" y2=\"36\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"94\" y1=\"344\" x2=\"94\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"153\" y1=\"344\" x2=\"153\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"211\" y1=\"344\" x2=\"211\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"270\" y1=\"344\" x2=\"270\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"329\" y1=\"344\" x2=\"329\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"387\" y1=\"344\" x2=\"387\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"446\" y1=\"344\" x2=\"446\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"505\" y1=\"344\" x2=\"505\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"563\" y1=\"344\" x2=\"563\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"622\" y1=\"344\" x2=\"622\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"681\" y1=\"344\" x2=\"681\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"739\" y1=\"344\" x2=\"739\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"344\" x2=\"769\" y2=\"344\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"301\" x2=\"769\" y2=\"301\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"258\" x2=\"769\" y2=\"258\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"214\" x2=\"769\" y2=\"214\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"171\" x2=\"769\" y2=\"171\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"127\" x2=\"769\" y2=\"127\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"84\" x2=\"769\" y2=\"84\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"40\" x2=\"769\" y2=\"40\"/>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"64,34 64,344 \"/>\n<text x=\"55\" y=\"344\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n0.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,344 64,344 \"/>\n<text x=\"55\" y=\"301\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n10.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,301 64,301 \"/>\n<text x=\"55\" y=\"258\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n20.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,258 64,258 \"/>\n<text x=\"55\" y=\"214\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n30.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,214 64,214 \"/>\n<text x=\"55\" y=\"171\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n40.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,171 64,171 \"/>\n<text x=\"55\" y=\"127\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n50.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,127 64,127 \"/>\n<text x=\"55\" y=\"84\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n60.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,84 64,84 \"/>\n<text x=\"55\" y=\"40\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n70.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,40 64,40 \"/>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"65,345 769,345 \"/>\n<text x=\"94\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nAtalanta Champions\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"94,345 94,350 \"/>\n<text x=\"153\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nTottenham Champion\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"153,345 153,350 \"/>\n<text x=\"211\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nLeverkusen Champio\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"211,345 211,350 \"/>\n<text x=\"270\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nDynamo Kyiv Champi\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"270,345 270,350 \"/>\n<text x=\"329\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nBenfica Champions \n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"329,345 329,350 \"/>\n<text x=\"387\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nMan United UEFA Eu\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"387,345 387,350 \"/>\n<text x=\"446\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nFC Porto Champions\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"446,345 446,350 \"/>\n<text x=\"505\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nAC Milan Champions\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"505,345 505,350 \"/>\n<text x=\"563\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nGalatasaray Champi\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"563,345 563,350 \"/>\n<text x=\"622\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nLiverpool Champion\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"622,345 622,350 \"/>\n<text x=\"681\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nOlympiacos Champio\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"681,345 681,350 \"/>\n<text x=\"739\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nFC Basel Champions\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"739,345 739,350 \"/>\n<rect x=\"73\" y=\"75\" width=\"41\" height=\"269\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"132\" y=\"175\" width=\"41\" height=\"169\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"191\" y=\"188\" width=\"41\" height=\"156\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"249\" y=\"205\" width=\"41\" height=\"139\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"308\" y=\"210\" width=\"41\" height=\"134\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"367\" y=\"210\" width=\"41\" height=\"134\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"425\" y=\"210\" width=\"41\" height=\"134\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"484\" y=\"214\" width=\"41\" height=\"130\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"543\" y=\"214\" width=\"41\" height=\"130\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"601\" y=\"218\" width=\"41\" height=\"126\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"660\" y=\"218\" width=\"41\" height=\"126\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"719\" y=\"218\" width=\"41\" height=\"126\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n</svg>",
+            "text/plain": "Figure (SVG)"
+          },
+          "metadata": {}
         }
       ]
     },
     {
-      "id": "b93096a5-1350-41ac-9b66-f49be2447af3",
+      "id": "de836462-6150-4516-b11c-439bca745712",
       "cell_type": "markdown",
-      "source": "## Findings\n\n**Yes — emphatically. The team leading after half the fixtures wins the title 57% of the time, and the mid-season table predicts the final one at ρ≈0.87 in the Premier League.**\n\nScope: 897 league-seasons with ≥40 matches, split at the median fixture\ndate. For each we rebuilt the standings from results only (3/1/0,\nGD-then-GF) at the midpoint and compared with the final table.\n\n1. **The mid-season table is highly predictive.** Mean Spearman\n   rank-correlation between mid and final positions: **0.838** across\n   all competitions, median 0.857. In the **Premier League: 0.868**\n   (mean across 34 seasons); Serie A 0.889, Scottish Premiership 0.884,\n   Eredivisie 0.879.\n\n2. **Leading at the halfway point is worth more than half a title.**\n   The mid-season leader went on to win in **510 of 897 seasons (57%)**.\n   Mid-table top-4 sides held a top-4 finish **75%** of the time;\n   mid-table bottom-3 sides stayed bottom-3 **65%** of the time.\n\n3. **But the second half still produces real churn.** Across all\n   league-seasons, the biggest mid→final rises include Tottenham\n   (P44→P5, UCL 2018/19), Liverpool (P32→P3, UCL 2018/19) and\n   Atalanta (P79→P17, UCL 2019/20); in domestic leagues, QPR\n   (P6→P21, Championship 2022/23) and Sheffield Wednesday\n   (P3→P17, Championship 2019/20) are the cautionary tales. The\n   correlation is strong — not deterministic.\n\n4. **Caveats:** (a) cup competitions (Champions League, Europa League)\n   produce noisy \"mid-tables\" — their group/league-phase formats don't\n   map cleanly onto a single-table season, which inflates both the\n   biggest risers and the league-level ρ; read the domestic-league rows\n   for the true signal. (b) \"Half season\" = split at the median fixture\n   *date*, which for leagues with split schedules approximates but\n   doesn't exactly equal gameweek 19 of 38. (c) Standings replay uses\n   standard tiebreaks; real-world tiebreak rules vary by league and era.",
+      "source": "## Discussion\n\n**Yes — emphatically. The team leading after half the fixtures wins the title 57% of the time, and the mid-season table predicts the final one at ρ≈0.87 in the Premier League.**\n\nScope: 897 league-seasons with ≥40 matches, split at the median fixture\ndate. For each we rebuilt the standings from results only (3/1/0,\nGD-then-GF) at the midpoint and compared with the final table.\n\n1. **The mid-season table is highly predictive.** Mean Spearman\n   rank-correlation between mid and final positions: **0.838** across\n   all competitions, median 0.857. In the **Premier League: 0.868**\n   (mean across 34 seasons); Serie A 0.889, Scottish Premiership 0.884,\n   Eredivisie 0.879.\n\n2. **Leading at the halfway point is worth more than half a title.**\n   The mid-season leader went on to win in **510 of 897 seasons (57%)**.\n   Mid-table top-4 sides held a top-4 finish **75%** of the time;\n   mid-table bottom-3 sides stayed bottom-3 **65%** of the time.\n\n3. **But the second half still produces real churn.** Across all\n   league-seasons, the biggest mid→final rises include Tottenham\n   (P44→P5, UCL 2018/19), Liverpool (P32→P3, UCL 2018/19) and\n   Atalanta (P79→P17, UCL 2019/20); in domestic leagues, QPR\n   (P6→P21, Championship 2022/23) and Sheffield Wednesday\n   (P3→P17, Championship 2019/20) are the cautionary tales. The\n   correlation is strong — not deterministic.\n\n4. **Caveats:** (a) cup competitions (Champions League, Europa League)\n   produce noisy \"mid-tables\" — their group/league-phase formats don't\n   map cleanly onto a single-table season, which inflates both the\n   biggest risers and the league-level ρ; read the domestic-league rows\n   for the true signal. (b) \"Half season\" = split at the median fixture\n   *date*, which for leagues with split schedules approximates but\n   doesn't exactly equal gameweek 19 of 38. (c) Standings replay uses\n   standard tiebreaks; real-world tiebreak rules vary by league and era.\n\n**Limitations.** The analysis is limited to the competitions present in the database; player-level metrics exist only for StatsBomb-covered tournaments, and underlying event data may contain errors.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "9e490b0a-5adf-4a72-bb6b-d0e2cd3a39e6",
+      "cell_type": "markdown",
+      "source": "## Conclusion\n\nYes — emphatically. The team leading after half the fixtures wins the title 57% of the time, and the mid-season table predicts the final one at ρ≈0.87 in the Premier League. Together these results answer the research question posed in the Introduction and quantify the pattern across 897 seasons. The notebook provides a fully reproducible pipeline from raw CSV extracts to published figures.\n",
       "metadata": {},
       "outputs": []
     }

@@ -12,9 +12,23 @@
   },
   "cells": [
     {
-      "id": "ffab4b6f-aec4-4cc8-a04c-85d12cbdd4c2",
+      "id": "0e8fff6d-bdeb-43b5-afa6-b6454a4fafcf",
       "cell_type": "markdown",
-      "source": "## The price of a player: a history of football's transfer market\n\n5,354 transfers carry a disclosed fee — the closest thing football has to\na public market price. This notebook tracks **fee inflation**: median and\nrecord fees by year, by position, and by destination league, using\nTransfermarkt's EUR figures joined to our player and team data.",
+      "source": "## Abstract\n\nHow have football transfer fees evolved — and what drives the price? This study answers it using 5,354 disclosed-fee transfers drawn from the Soccers football database. Forwards cost far more than keepers, and fees inflate every year. All computation runs in Rust inside a `.mars` notebook (polars + plotters — charts as inline SVG), and every table and figure is generated from the extracted CSVs.\n\n## Keywords\n\n**Keywords:** football, analysis, transfers, transfermarkt, mars, sqlite\n\n## Table of contents\n\n- [Abstract](#abstract)\n- [Keywords](#keywords)\n- [Introduction](#introduction)\n- [Methods](#methods)\n- [Results](#results)\n  - [Median fee by year + record fee by year](#median-fee-by-year--record-fee-by-year)\n  - [Top-15 fees all time + medians by position and destination league](#top-15-fees-all-time--medians-by-position-and-destination-league)\n  - [By position group](#by-position-group)\n- [Discussion](#discussion)\n- [Conclusion](#conclusion)\n\n## Introduction\n\n5,354 transfers carry a disclosed fee — the closest thing football has to\na public market price. This notebook tracks **fee inflation**: median and\nrecord fees by year, by position, and by destination league, using\nTransfermarkt's EUR figures joined to our player and team data.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "c03ad5e7-db44-44e5-8db4-c93ae6c82ac2",
+      "cell_type": "markdown",
+      "source": "## Methods\n\nData were extracted from the Soccers football database (`packages/data`) as CSV snapshots: `league`, `player`, `team`, `team_league`, `transfer`.\n\nThe analysis runs entirely in Rust inside the notebook: **polars** handles table scans, joins and aggregations; **plotters** renders figures as inline SVG; `mars_table` renders result tables.\n\nStatistical summaries include medians and percentiles.\n\nEach code cell is kept to a single output so results can be read top to bottom.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "1a872d63-f81c-4030-93df-5d3f57f63569",
+      "cell_type": "markdown",
+      "source": "## Results\n\nAll figures and tables below are computed directly from the extracted data. Each code cell produces one output — a table, a chart, or a short text summary.\n",
       "metadata": {},
       "outputs": []
     },
@@ -30,6 +44,13 @@
           "text": "deals with fee since 2005: 5351\n"
         }
       ]
+    },
+    {
+      "id": "178c8aac-5e7a-4cb5-b004-87eeb3d3788c",
+      "cell_type": "markdown",
+      "source": "### Median fee by year + record fee by year\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "5f2d1b6e-9881-45ee-99c3-cab25fd98284",
@@ -232,6 +253,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "0452aadf-5010-4a06-846f-2ea6806f7abb",
+      "cell_type": "markdown",
+      "source": "### Top-15 fees all time + medians by position and destination league\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "5d1c2e92-11f1-45ec-a9bc-65144abcba32",
@@ -535,6 +563,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "d802076a-0c92-441a-8709-18bc15e69bb7",
+      "cell_type": "markdown",
+      "source": "### By position group\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "edac08ee-c831-4e6f-8da1-ae9948c1e529",
@@ -1298,9 +1333,447 @@
       ]
     },
     {
-      "id": "21cc9019-a31e-44b6-9294-b22422b1bc9a",
+      "id": "343395fe-4af7-482b-802c-a912c9b537f6",
+      "cell_type": "code",
+      "source": "use plotters::prelude::*;\n\nfn chart_num(s: &str) -> f64 {\n    let t = s.replace(',', \"\").replace('%', \"\").replace('−', \"-\");\n    let mult = if t.contains(\"bn\") { 1e9 }\n        else if t.contains('€') && t.contains('m') { 1e6 }\n        else { 1.0 };\n    let cleaned: String = t.chars()\n        .filter(|c| c.is_ascii_digit() || *c == '.' || *c == '-')\n        .collect();\n    cleaned.parse().unwrap_or(0.0) * mult\n}\n\n\nlet mut c_items: Vec<(String, f64)> = lrows.iter()\n    .map(|r| (r[0].clone(), chart_num(&r[2].clone())))\n    .collect();\nc_items.retain(|(_, v)| v.is_finite());\nc_items.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());\nc_items.truncate(12);\nlet c_labels: Vec<String> = c_items.iter()\n    .map(|(l, _)| l.chars().take(18).collect()).collect();\nlet c_vals: Vec<f64> = c_items.iter().map(|(_, v)| *v).collect();\nlet c_ymax = c_vals.iter().cloned().fold(0.0_f64, f64::max) * 1.15 + 1e-9;\nlet (c_div, c_unit): (f64, &str) = if c_ymax >= 1e9 { (1e9, \"bn\") }\n    else if c_ymax >= 1e6 { (1e6, \"m\") }\n    else if c_ymax >= 1e3 { (1e3, \"k\") }\n    else { (1.0, \"\") };\nlet c_n = c_vals.len();\nlet figure = plotters::evcxr::evcxr_figure((780, 400), |root| {\n    root.fill(&WHITE)?;\n    let mut chart = ChartBuilder::on(&root)\n        .caption(\"Median fee by destination league\", (\"sans-serif\", 18))\n        .margin(10)\n        .x_label_area_size(45)\n        .y_label_area_size(55)\n        .build_cartesian_2d(-0.5_f64..(c_n as f64 - 0.5), 0.0..c_ymax)?;\n    chart.configure_mesh()\n        .x_labels(c_n)\n        .x_label_formatter(&|x: &f64| c_labels.get(*x as usize).cloned().unwrap_or_default())\n        .y_label_formatter(&|y: &f64| format!(\"{:.1}{}\", y / c_div, c_unit))\n        .draw()?;\n    chart.draw_series(c_vals.iter().enumerate().map(|(i, &v)| {\n        Rectangle::new([(i as f64 - 0.35, 0.0), (i as f64 + 0.35, v)], BLUE.filled())\n    }))?;\n    Ok(())\n});\nfigure.evcxr_display();\n",
+      "metadata": {},
+      "execution_count": 6,
+      "outputs": [
+        {
+          "type": "text",
+          "text": "deals with fee since 2005: 5351\n"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "year",
+            "deals",
+            "median fee",
+            "record",
+            "record move",
+            "player"
+          ],
+          "rows": [
+            [
+              "2005",
+              "6",
+              "€0.4m",
+              "€27.0m",
+              "Sevilla → Real Madrid",
+              "Sergio Ramos García"
+            ],
+            [
+              "2006",
+              "9",
+              "€0.9m",
+              "€3.0m",
+              " → Udinese",
+              "Alexis Alejandro Sánchez Sán"
+            ],
+            [
+              "2007",
+              "28",
+              "€3.0m",
+              "€13.2m",
+              "Watford → Aston Villa",
+              "Ashley Young"
+            ],
+            [
+              "2008",
+              "27",
+              "€2.7m",
+              "€22.5m",
+              "Dinamo Zagreb → Tottenham Hotspur",
+              "Luka Modrić"
+            ],
+            [
+              "2009",
+              "38",
+              "€2.1m",
+              "€94.0m",
+              "Manchester United → Real Madrid",
+              "Cristiano Ronaldo dos Santos"
+            ],
+            [
+              "2010",
+              "56",
+              "€2.6m",
+              "€33.0m",
+              "Benfica → Real Madrid",
+              "Ángel Fabián Di María Hernán"
+            ],
+            [
+              "2011",
+              "105",
+              "€2.5m",
+              "€40.0m",
+              "FC Porto → Atlético Madrid",
+              "Radamel Falcao García Zárate"
+            ],
+            [
+              "2012",
+              "115",
+              "€2.7m",
+              "€42.0m",
+              "AC Milan → Paris Saint-Germain",
+              "Thiago Emiliano da Silva"
+            ],
+            [
+              "2013",
+              "179",
+              "€2.9m",
+              "€64.5m",
+              "Napoli → Paris Saint-Germain",
+              "Edinson Roberto Cavani Gómez"
+            ],
+            [
+              "2014",
+              "210",
+              "€3.0m",
+              "€81.7m",
+              "Liverpool → Barcelona",
+              "Luis Javier Suárez Charris"
+            ],
+            [
+              "2015",
+              "286",
+              "€3.8m",
+              "€76.0m",
+              "VfL Wolfsburg → Manchester City",
+              "Kevin De Bruyne"
+            ],
+            [
+              "2016",
+              "336",
+              "€3.6m",
+              "€105.0m",
+              "Juventus → Manchester United",
+              "Paul Pogba"
+            ],
+            [
+              "2017",
+              "401",
+              "€3.9m",
+              "€148.0m",
+              "Borussia Dortmund → Barcelona",
+              "Ousmane Dembélé"
+            ],
+            [
+              "2018",
+              "422",
+              "€4.0m",
+              "€180.0m",
+              "AS Monaco → Paris Saint-Germain",
+              "Kylian Mbappé Lottin"
+            ],
+            [
+              "2019",
+              "464",
+              "€5.0m",
+              "€127.2m",
+              "Benfica → Atlético Madrid",
+              "João Félix Sequeira"
+            ],
+            [
+              "2020",
+              "380",
+              "€4.3m",
+              "€100.0m",
+              "Bayer Leverkusen → Chelsea",
+              "Kai Havertz"
+            ],
+            [
+              "2021",
+              "337",
+              "€3.5m",
+              "€117.5m",
+              "Aston Villa → Manchester City",
+              "Jack Grealish"
+            ],
+            [
+              "2022",
+              "486",
+              "€4.0m",
+              "€85.4m",
+              "Fiorentina → Juventus",
+              "Dušan Vlahović"
+            ],
+            [
+              "2023",
+              "535",
+              "€5.0m",
+              "€127.0m",
+              "Borussia Dortmund → Real Madrid",
+              "Jude Bellingham"
+            ],
+            [
+              "2024",
+              "405",
+              "€4.0m",
+              "€75.0m",
+              "Manchester City → Atlético Madrid",
+              "Julián Álvarez"
+            ],
+            [
+              "2025",
+              "420",
+              "€5.0m",
+              "€145.0m",
+              "Newcastle United → Liverpool",
+              "Alexander Isak"
+            ],
+            [
+              "2026",
+              "106",
+              "€4.5m",
+              "€80.0m",
+              "Newcastle United → Barcelona",
+              "Anthony Gordon"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "fee",
+            "player",
+            "move",
+            "year"
+          ],
+          "rows": [
+            [
+              "€180.0m",
+              "Kylian Mbappé Lottin",
+              "AS Monaco → Paris Saint-Germain",
+              "2018"
+            ],
+            [
+              "€148.0m",
+              "Ousmane Dembélé",
+              "Borussia Dortmund → Barcelona",
+              "2017"
+            ],
+            [
+              "€145.0m",
+              "Alexander Isak",
+              "Newcastle United → Liverpool",
+              "2025"
+            ],
+            [
+              "€135.0m",
+              "Philippe Coutinho Correia",
+              "Liverpool → Barcelona",
+              "2018"
+            ],
+            [
+              "€127.2m",
+              "João Félix Sequeira",
+              "Benfica → Atlético Madrid",
+              "2019"
+            ],
+            [
+              "€127.0m",
+              "Jude Bellingham",
+              "Borussia Dortmund → Real Madrid",
+              "2023"
+            ],
+            [
+              "€125.0m",
+              "Florian Wirtz",
+              "Bayer Leverkusen → Liverpool",
+              "2025"
+            ],
+            [
+              "€121.0m",
+              "Enzo Fernandez",
+              "Benfica → Chelsea",
+              "2023"
+            ],
+            [
+              "€120.0m",
+              "Antoine Griezmann",
+              "Atlético Madrid → Barcelona",
+              "2019"
+            ],
+            [
+              "€117.5m",
+              "Jack Grealish",
+              "Aston Villa → Manchester City",
+              "2021"
+            ],
+            [
+              "€117.0m",
+              "Cristiano Ronaldo dos Santos A",
+              "Real Madrid → Juventus",
+              "2018"
+            ],
+            [
+              "€116.6m",
+              "Declan Rice",
+              "West Ham United → Arsenal",
+              "2023"
+            ],
+            [
+              "€116.0m",
+              "Moisés Isaac Caicedo Corozo",
+              "Brighton & Hove Albion → Chelsea",
+              "2023"
+            ],
+            [
+              "€113.0m",
+              "Romelu Lukaku Menama",
+              "Inter Milan → Chelsea",
+              "2021"
+            ],
+            [
+              "€105.0m",
+              "Paul Pogba",
+              "Juventus → Manchester United",
+              "2016"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "position",
+            "deals",
+            "median fee"
+          ],
+          "rows": [
+            [
+              "GK",
+              "289",
+              "€2.7m"
+            ],
+            [
+              "DEF",
+              "1242",
+              "€3.7m"
+            ],
+            [
+              "MID",
+              "1617",
+              "€4.0m"
+            ],
+            [
+              "FWD",
+              "1787",
+              "€4.7m"
+            ],
+            [
+              "UNK",
+              "416",
+              "€2.3m"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "destination league",
+            "deals",
+            "median fee"
+          ],
+          "rows": [
+            [
+              "Champions League",
+              "727",
+              "€9.6m"
+            ],
+            [
+              "UEFA Europa League",
+              "695",
+              "€3.0m"
+            ],
+            [
+              "Italian Serie A",
+              "613",
+              "€6.0m"
+            ],
+            [
+              "English Premier League",
+              "501",
+              "€13.0m"
+            ],
+            [
+              "French Ligue 1",
+              "414",
+              "€3.2m"
+            ],
+            [
+              "Spanish La Liga",
+              "410",
+              "€5.0m"
+            ],
+            [
+              "German Bundesliga",
+              "207",
+              "€5.0m"
+            ],
+            [
+              "Turkish Süper Lig",
+              "161",
+              "€2.5m"
+            ],
+            [
+              "MLS",
+              "129",
+              "€1.2m"
+            ],
+            [
+              "English Championship",
+              "116",
+              "€5.7m"
+            ],
+            [
+              "Belgian Pro League",
+              "109",
+              "€2.0m"
+            ],
+            [
+              "Italian Serie B",
+              "103",
+              "€1.6m"
+            ],
+            [
+              "Spanish La Liga 2",
+              "96",
+              "€2.5m"
+            ],
+            [
+              "Liga MX",
+              "93",
+              "€3.4m"
+            ],
+            [
+              "French Ligue 2",
+              "90",
+              "€2.0m"
+            ]
+          ]
+        },
+        {
+          "type": "mime_bundle",
+          "data": {
+            "image/svg+xml": "<svg width=\"780\" height=\"400\" viewBox=\"0 0 780 400\" xmlns=\"http://www.w3.org/2000/svg\">\n<rect x=\"0\" y=\"0\" width=\"780\" height=\"400\" opacity=\"1\" fill=\"#FFFFFF\" stroke=\"none\"/>\n<text x=\"390\" y=\"15\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"14.516129032258064\" opacity=\"1\" fill=\"#000000\">\nMedian fee by destination league\n</text>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"70\" y1=\"344\" x2=\"70\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"82\" y1=\"344\" x2=\"82\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"94\" y1=\"344\" x2=\"94\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"106\" y1=\"344\" x2=\"106\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"117\" y1=\"344\" x2=\"117\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"129\" y1=\"344\" x2=\"129\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"141\" y1=\"344\" x2=\"141\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"153\" y1=\"344\" x2=\"153\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"164\" y1=\"344\" x2=\"164\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"176\" y1=\"344\" x2=\"176\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"188\" y1=\"344\" x2=\"188\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"199\" y1=\"344\" x2=\"199\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"211\" y1=\"344\" x2=\"211\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"223\" y1=\"344\" x2=\"223\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"235\" y1=\"344\" x2=\"235\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"246\" y1=\"344\" x2=\"246\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"258\" y1=\"344\" x2=\"258\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"270\" y1=\"344\" x2=\"270\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"282\" y1=\"344\" x2=\"282\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"293\" y1=\"344\" x2=\"293\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"305\" y1=\"344\" x2=\"305\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"317\" y1=\"344\" x2=\"317\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"329\" y1=\"344\" x2=\"329\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"340\" y1=\"344\" x2=\"340\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"352\" y1=\"344\" x2=\"352\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"364\" y1=\"344\" x2=\"364\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"375\" y1=\"344\" x2=\"375\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"387\" y1=\"344\" x2=\"387\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"399\" y1=\"344\" x2=\"399\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"411\" y1=\"344\" x2=\"411\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"422\" y1=\"344\" x2=\"422\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"434\" y1=\"344\" x2=\"434\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"446\" y1=\"344\" x2=\"446\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"458\" y1=\"344\" x2=\"458\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"469\" y1=\"344\" x2=\"469\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"481\" y1=\"344\" x2=\"481\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"493\" y1=\"344\" x2=\"493\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"505\" y1=\"344\" x2=\"505\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"516\" y1=\"344\" x2=\"516\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"528\" y1=\"344\" x2=\"528\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"540\" y1=\"344\" x2=\"540\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"551\" y1=\"344\" x2=\"551\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"563\" y1=\"344\" x2=\"563\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"575\" y1=\"344\" x2=\"575\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"587\" y1=\"344\" x2=\"587\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"598\" y1=\"344\" x2=\"598\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"610\" y1=\"344\" x2=\"610\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"622\" y1=\"344\" x2=\"622\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"634\" y1=\"344\" x2=\"634\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"645\" y1=\"344\" x2=\"645\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"657\" y1=\"344\" x2=\"657\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"669\" y1=\"344\" x2=\"669\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"681\" y1=\"344\" x2=\"681\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"692\" y1=\"344\" x2=\"692\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"704\" y1=\"344\" x2=\"704\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"716\" y1=\"344\" x2=\"716\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"727\" y1=\"344\" x2=\"727\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"739\" y1=\"344\" x2=\"739\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"751\" y1=\"344\" x2=\"751\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"763\" y1=\"344\" x2=\"763\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"344\" x2=\"769\" y2=\"344\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"340\" x2=\"769\" y2=\"340\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"336\" x2=\"769\" y2=\"336\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"332\" x2=\"769\" y2=\"332\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"328\" x2=\"769\" y2=\"328\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"324\" x2=\"769\" y2=\"324\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"320\" x2=\"769\" y2=\"320\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"315\" x2=\"769\" y2=\"315\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"311\" x2=\"769\" y2=\"311\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"307\" x2=\"769\" y2=\"307\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"303\" x2=\"769\" y2=\"303\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"299\" x2=\"769\" y2=\"299\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"295\" x2=\"769\" y2=\"295\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"291\" x2=\"769\" y2=\"291\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"286\" x2=\"769\" y2=\"286\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"282\" x2=\"769\" y2=\"282\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"278\" x2=\"769\" y2=\"278\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"274\" x2=\"769\" y2=\"274\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"270\" x2=\"769\" y2=\"270\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"266\" x2=\"769\" y2=\"266\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"262\" x2=\"769\" y2=\"262\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"257\" x2=\"769\" y2=\"257\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"253\" x2=\"769\" y2=\"253\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"249\" x2=\"769\" y2=\"249\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"245\" x2=\"769\" y2=\"245\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"241\" x2=\"769\" y2=\"241\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"237\" x2=\"769\" y2=\"237\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"233\" x2=\"769\" y2=\"233\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"228\" x2=\"769\" y2=\"228\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"224\" x2=\"769\" y2=\"224\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"220\" x2=\"769\" y2=\"220\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"216\" x2=\"769\" y2=\"216\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"212\" x2=\"769\" y2=\"212\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"208\" x2=\"769\" y2=\"208\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"203\" x2=\"769\" y2=\"203\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"199\" x2=\"769\" y2=\"199\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"195\" x2=\"769\" y2=\"195\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"191\" x2=\"769\" y2=\"191\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"187\" x2=\"769\" y2=\"187\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"183\" x2=\"769\" y2=\"183\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"179\" x2=\"769\" y2=\"179\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"174\" x2=\"769\" y2=\"174\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"170\" x2=\"769\" y2=\"170\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"166\" x2=\"769\" y2=\"166\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"162\" x2=\"769\" y2=\"162\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"158\" x2=\"769\" y2=\"158\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"154\" x2=\"769\" y2=\"154\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"150\" x2=\"769\" y2=\"150\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"145\" x2=\"769\" y2=\"145\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"141\" x2=\"769\" y2=\"141\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"137\" x2=\"769\" y2=\"137\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"133\" x2=\"769\" y2=\"133\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"129\" x2=\"769\" y2=\"129\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"125\" x2=\"769\" y2=\"125\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"121\" x2=\"769\" y2=\"121\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"116\" x2=\"769\" y2=\"116\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"112\" x2=\"769\" y2=\"112\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"108\" x2=\"769\" y2=\"108\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"104\" x2=\"769\" y2=\"104\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"100\" x2=\"769\" y2=\"100\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"96\" x2=\"769\" y2=\"96\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"92\" x2=\"769\" y2=\"92\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"87\" x2=\"769\" y2=\"87\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"83\" x2=\"769\" y2=\"83\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"79\" x2=\"769\" y2=\"79\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"75\" x2=\"769\" y2=\"75\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"71\" x2=\"769\" y2=\"71\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"67\" x2=\"769\" y2=\"67\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"62\" x2=\"769\" y2=\"62\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"58\" x2=\"769\" y2=\"58\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"54\" x2=\"769\" y2=\"54\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"50\" x2=\"769\" y2=\"50\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"46\" x2=\"769\" y2=\"46\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"42\" x2=\"769\" y2=\"42\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"38\" x2=\"769\" y2=\"38\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"94\" y1=\"344\" x2=\"94\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"153\" y1=\"344\" x2=\"153\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"211\" y1=\"344\" x2=\"211\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"270\" y1=\"344\" x2=\"270\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"329\" y1=\"344\" x2=\"329\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"387\" y1=\"344\" x2=\"387\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"446\" y1=\"344\" x2=\"446\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"505\" y1=\"344\" x2=\"505\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"563\" y1=\"344\" x2=\"563\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"622\" y1=\"344\" x2=\"622\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"681\" y1=\"344\" x2=\"681\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"739\" y1=\"344\" x2=\"739\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"344\" x2=\"769\" y2=\"344\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"303\" x2=\"769\" y2=\"303\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"262\" x2=\"769\" y2=\"262\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"220\" x2=\"769\" y2=\"220\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"179\" x2=\"769\" y2=\"179\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"137\" x2=\"769\" y2=\"137\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"96\" x2=\"769\" y2=\"96\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"54\" x2=\"769\" y2=\"54\"/>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"64,34 64,344 \"/>\n<text x=\"55\" y=\"344\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n0.0m\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,344 64,344 \"/>\n<text x=\"55\" y=\"303\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n2.0m\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,303 64,303 \"/>\n<text x=\"55\" y=\"262\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n4.0m\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,262 64,262 \"/>\n<text x=\"55\" y=\"220\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n6.0m\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,220 64,220 \"/>\n<text x=\"55\" y=\"179\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n8.0m\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,179 64,179 \"/>\n<text x=\"55\" y=\"137\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n10.0m\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,137 64,137 \"/>\n<text x=\"55\" y=\"96\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n12.0m\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,96 64,96 \"/>\n<text x=\"55\" y=\"54\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n14.0m\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,54 64,54 \"/>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"65,345 769,345 \"/>\n<text x=\"94\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nEnglish Premier Le\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"94,345 94,350 \"/>\n<text x=\"153\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nChampions League\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"153,345 153,350 \"/>\n<text x=\"211\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nItalian Serie A\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"211,345 211,350 \"/>\n<text x=\"270\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nEnglish Championsh\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"270,345 270,350 \"/>\n<text x=\"329\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nSpanish La Liga\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"329,345 329,350 \"/>\n<text x=\"387\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nGerman Bundesliga\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"387,345 387,350 \"/>\n<text x=\"446\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nLiga MX\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"446,345 446,350 \"/>\n<text x=\"505\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nFrench Ligue 1\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"505,345 505,350 \"/>\n<text x=\"563\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nUEFA Europa League\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"563,345 563,350 \"/>\n<text x=\"622\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nTurkish Süper Lig\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"622,345 622,350 \"/>\n<text x=\"681\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nSpanish La Liga 2\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"681,345 681,350 \"/>\n<text x=\"739\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nBelgian Pro League\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"739,345 739,350 \"/>\n<rect x=\"73\" y=\"75\" width=\"41\" height=\"269\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"132\" y=\"145\" width=\"41\" height=\"199\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"191\" y=\"220\" width=\"41\" height=\"124\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"249\" y=\"226\" width=\"41\" height=\"118\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"308\" y=\"241\" width=\"41\" height=\"103\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"367\" y=\"241\" width=\"41\" height=\"103\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"425\" y=\"274\" width=\"41\" height=\"70\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"484\" y=\"278\" width=\"41\" height=\"66\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"543\" y=\"282\" width=\"41\" height=\"62\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"601\" y=\"293\" width=\"41\" height=\"51\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"660\" y=\"293\" width=\"41\" height=\"51\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"719\" y=\"303\" width=\"41\" height=\"41\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n</svg>",
+            "text/plain": "Figure (SVG)"
+          },
+          "metadata": {}
+        }
+      ]
+    },
+    {
+      "id": "1af24cd7-4330-4079-be7f-96985cca2a2e",
       "cell_type": "markdown",
-      "source": "## Findings\n\nThe median disclosed fee has roughly **doubled in 15 years** — from\n€2.1m in 2009 to €5.0m in 2023–25 — while the record keeps leaping:\n€27m (Ramos, 2005) → €94m (Ronaldo, 2009) → €148m (Dembélé, 2017) →\n€180m (Mbappé, 2018, still the record).\n\nThree structural facts sit under the headline numbers:\n\n- **Forwards cost ~75% more than keepers**: median €4.7m vs €2.7m.\n  Goalkeepers are the discount position — teams would rather develop\n  them than buy them.\n- **The Premier League is the price-setter**: median fee paid *to*\n  English clubs is €12.0m, triple the Bundesliga's €5.0m and 4× Ligue\n  1's €3.2m. Buying into the EPL is a different market entirely.\n- **Fee disclosure is itself a signal**: only 28% of transfers carry a\n  fee at all — the hidden market (free agents, undisclosed \"fees\",\n  swaps) is bigger than the visible one.\n\nCaveats: fees are Transfermarkt's EUR figures and miss add-ons,\ninstallments and sell-on clauses; pre-2010 coverage is thin (6 deals in\n2005 vs 535 in 2023); \"record\" rows can reflect date anomalies in the\nsource data; position groups come from our StatsBomb taxonomy where\navailable.\n",
+      "source": "## Discussion\n\nThe median disclosed fee has roughly **doubled in 15 years** — from\n€2.1m in 2009 to €5.0m in 2023–25 — while the record keeps leaping:\n€27m (Ramos, 2005) → €94m (Ronaldo, 2009) → €148m (Dembélé, 2017) →\n€180m (Mbappé, 2018, still the record).\n\nThree structural facts sit under the headline numbers:\n\n- **Forwards cost ~75% more than keepers**: median €4.7m vs €2.7m.\n  Goalkeepers are the discount position — teams would rather develop\n  them than buy them.\n- **The Premier League is the price-setter**: median fee paid *to*\n  English clubs is €12.0m, triple the Bundesliga's €5.0m and 4× Ligue\n  1's €3.2m. Buying into the EPL is a different market entirely.\n- **Fee disclosure is itself a signal**: only 28% of transfers carry a\n  fee at all — the hidden market (free agents, undisclosed \"fees\",\n  swaps) is bigger than the visible one.\n\nCaveats: fees are Transfermarkt's EUR figures and miss add-ons,\ninstallments and sell-on clauses; pre-2010 coverage is thin (6 deals in\n2005 vs 535 in 2023); \"record\" rows can reflect date anomalies in the\nsource data; position groups come from our StatsBomb taxonomy where\navailable.\n\n**Limitations.** Transfer fee coverage is incomplete — roughly three quarters of moves have undisclosed fees — and output is measured only where match statistics exist for the player.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "4fd741e8-0766-447e-ae6d-00dba09c8c6e",
+      "cell_type": "markdown",
+      "source": "## Conclusion\n\nThe median disclosed fee has roughly doubled in 15 years — from €2.1m in 2009 to €5.0m in 2023–25. Together these results answer the research question posed in the Introduction and quantify the pattern across 5,354 transfers. The notebook provides a fully reproducible pipeline from raw CSV extracts to published figures.\n",
       "metadata": {},
       "outputs": []
     }

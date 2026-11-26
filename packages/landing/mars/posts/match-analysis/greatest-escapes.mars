@@ -12,9 +12,23 @@
   },
   "cells": [
     {
-      "id": "a2ab2a7d-29f2-47d0-b1b6-63845721854b",
+      "id": "af9c4245-a272-4c06-916f-e34cf0c6bcbb",
       "cell_type": "markdown",
-      "source": "## Greatest escapes: the teams that survived from the drop zone\n\nThe mirror image of the choke. This notebook asks: **how often does a\nteam sit in the bottom three with a month of football left — and live to\ntell the tale?**\n\nMethod: every league-season with ≥40 matches is replayed fixture by\nfixture. At each match we rebuild the table and check which teams are in\nthe bottom three **with ≤10 of their own matches remaining**. A team that\nwas bottom-three at that checkpoint but finished outside the bottom\nthree is an \"escape\". Finished bottom-three anyway = a \"near miss\".\n\nBottom-three is used as the relegation-zone proxy across all leagues —\nrelegation spots vary (2 in Scotland, 4 in some leagues) but bottom-three\nis the consistent danger zone.",
+      "source": "## Abstract\n\nThis study examines the greatest escapes using hundreds of thousands of matches drawn from the Soccers football database. Being bottom-three with ten games left is not a death sentence — but it is close to one. All computation runs in Rust inside a `.mars` notebook (polars + plotters — charts as inline SVG), and every table and figure is generated from the extracted CSVs.\n\n## Keywords\n\n**Keywords:** football, analysis, relegation, standings, mars, sqlite\n\n## Table of contents\n\n- [Abstract](#abstract)\n- [Keywords](#keywords)\n- [Introduction](#introduction)\n- [Methods](#methods)\n- [Results](#results)\n  - [The escape artists](#the-escape-artists)\n- [Discussion](#discussion)\n- [Conclusion](#conclusion)\n\n## Introduction\n\nThe mirror image of the choke. This notebook asks: **how often does a\nteam sit in the bottom three with a month of football left — and live to\ntell the tale?**\n\nMethod: every league-season with ≥40 matches is replayed fixture by\nfixture. At each match we rebuild the table and check which teams are in\nthe bottom three **with ≤10 of their own matches remaining**. A team that\nwas bottom-three at that checkpoint but finished outside the bottom\nthree is an \"escape\". Finished bottom-three anyway = a \"near miss\".\n\nBottom-three is used as the relegation-zone proxy across all leagues —\nrelegation spots vary (2 in Scotland, 4 in some leagues) but bottom-three\nis the consistent danger zone.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "015752bd-5e15-4e13-94d8-e1e7d6f45b23",
+      "cell_type": "markdown",
+      "source": "## Methods\n\nData were extracted from the Soccers football database (`packages/data`) as CSV snapshots: `matches_full`.\n\nThe analysis runs entirely in Rust inside the notebook: **polars** handles table scans, joins and aggregations; **plotters** renders figures as inline SVG; `mars_table` renders result tables.\n\nStatistical summaries include Pearson correlations.\n\nEach code cell is kept to a single output so results can be read top to bottom.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "f50cdd02-e5c7-4c06-abda-972c42aaab94",
+      "cell_type": "markdown",
+      "source": "## Results\n\nAll figures and tables below are computed directly from the extracted data. Each code cell produces one output — a table, a chart, or a short text summary.\n",
       "metadata": {},
       "outputs": []
     },
@@ -27,7 +41,7 @@
       "outputs": [
         {
           "type": "text",
-          "text": "completed matches after dedup: 311832 (1190 dupes dropped)\nteam-seasons: 21299\nteam-seasons that were bottom-3 with <=10 games left: 4735\nescapes (finished outside bottom 3): 1739\nnear misses (stayed bottom 3): 2996\n"
+          "text": "completed matches after dedup: 311832 (1190 dupes dropped)\nteam-seasons: 21299\nteam-seasons that were bottom-3 with <=10 games left: 4739\nescapes (finished outside bottom 3): 1745\nnear misses (stayed bottom 3): 2994\n"
         },
         {
           "type": "table",
@@ -62,8 +76,8 @@
             ],
             [
               "Scottish League One",
-              "2009/10",
-              "Peterhead",
+              "2022/23",
+              "Queen of Sth",
               "10 left",
               "P5/10"
             ],
@@ -76,10 +90,17 @@
             ],
             [
               "Scottish League One",
-              "2022/23",
-              "Queen of Sth",
+              "2009/10",
+              "Peterhead",
               "10 left",
               "P5/10"
+            ],
+            [
+              "German 2. Bundesliga",
+              "2017/18",
+              "Bochum",
+              "10 left",
+              "P6/18"
             ],
             [
               "Indian Super league",
@@ -96,13 +117,6 @@
               "P6/12"
             ],
             [
-              "German 2. Bundesliga",
-              "2017/18",
-              "Bochum",
-              "10 left",
-              "P6/18"
-            ],
-            [
               "Indian Super league",
               "2021/2022",
               "Odisha",
@@ -117,11 +131,18 @@
               "P7/10"
             ],
             [
-              "Bundesliga",
-              "2026/2027",
-              "Tirol",
+              "English League Two",
+              "2026/27",
+              "Exeter",
               "10 left",
-              "P8/12"
+              "P8/24"
+            ],
+            [
+              "Spanish La Liga",
+              "2026/27",
+              "Ath Bilbao",
+              "10 left",
+              "P8/20"
             ],
             [
               "Super League",
@@ -129,13 +150,6 @@
               "Servette",
               "10 left",
               "P8/12"
-            ],
-            [
-              "Italian Serie A",
-              "2000/01",
-              "Brescia",
-              "10 left",
-              "P8/18"
             ],
             [
               "German Bundesliga",
@@ -152,32 +166,18 @@
               "P8/18"
             ],
             [
-              "Spanish La Liga",
-              "2026/27",
-              "Ath Bilbao",
+              "Italian Serie A",
+              "2000/01",
+              "Brescia",
               "10 left",
-              "P8/20"
+              "P8/18"
             ],
             [
-              "English League Two",
-              "2026/27",
-              "Exeter",
+              "Bundesliga",
+              "2026/2027",
+              "Tirol",
               "10 left",
-              "P8/24"
-            ],
-            [
-              "Scottish Premiership",
-              "2002/03",
-              "Livingston",
-              "10 left",
-              "P9/12"
-            ],
-            [
-              "Spanish La Liga 2",
-              "2013/14",
-              "Alcorcon",
-              "10 left",
-              "P9/22"
+              "P8/12"
             ],
             [
               "Dutch Eredivisie",
@@ -187,11 +187,32 @@
               "P9/18"
             ],
             [
+              "Spanish La Liga 2",
+              "2013/14",
+              "Alcorcon",
+              "10 left",
+              "P9/22"
+            ],
+            [
+              "Scottish Premiership",
+              "2002/03",
+              "Livingston",
+              "10 left",
+              "P9/12"
+            ],
+            [
               "Superliga",
               "2014/2015",
               "Odense",
               "10 left",
               "P9/12"
+            ],
+            [
+              "Dutch Eredivisie",
+              "2013/14",
+              "Utrecht",
+              "10 left",
+              "P10/18"
             ],
             [
               "Superliga",
@@ -202,15 +223,8 @@
             ],
             [
               "English Premier League",
-              "1994/95",
-              "Southampton",
-              "10 left",
-              "P10/22"
-            ],
-            [
-              "Serie A",
-              "2026",
-              "Vasco",
+              "2001/02",
+              "Blackburn",
               "10 left",
               "P10/20"
             ],
@@ -222,9 +236,23 @@
               "P10/18"
             ],
             [
-              "English Premier League",
-              "2001/02",
-              "Blackburn",
+              "Allsvenskan",
+              "2024",
+              "Varnamo",
+              "10 left",
+              "P10/17"
+            ],
+            [
+              "Veikkausliiga",
+              "2026",
+              "SJK",
+              "10 left",
+              "P10/13"
+            ],
+            [
+              "Serie A",
+              "2026",
+              "Vasco",
               "10 left",
               "P10/20"
             ],
@@ -236,25 +264,32 @@
               "P10/16"
             ],
             [
-              "Veikkausliiga",
-              "2026",
-              "SJK",
+              "English Premier League",
+              "1994/95",
+              "Southampton",
               "10 left",
-              "P10/13"
+              "P10/22"
             ],
             [
-              "Allsvenskan",
-              "2024",
-              "Varnamo",
+              "Greek Super League",
+              "2019/20",
+              "Lamia",
               "10 left",
-              "P10/17"
+              "P11/14"
             ],
             [
-              "Dutch Eredivisie",
-              "2013/14",
-              "Utrecht",
+              "Italian Serie B",
+              "2025/26",
+              "Mantova",
               "10 left",
-              "P10/18"
+              "P11/20"
+            ],
+            [
+              "Ekstraklasa",
+              "2017/2018",
+              "Pogon Szczecin",
+              "10 left",
+              "P11/16"
             ],
             [
               "Copa De La Liga Profesional",
@@ -262,6 +297,13 @@
               "Argentinos Jrs",
               "10 left",
               "P11/26"
+            ],
+            [
+              "Superliga",
+              "2017/2018",
+              "Randers FC",
+              "10 left",
+              "P11/16"
             ],
             [
               "German Bundesliga",
@@ -278,34 +320,6 @@
               "P11/18"
             ],
             [
-              "Belgian Pro League",
-              "2019/20",
-              "Kortrijk",
-              "10 left",
-              "P11/16"
-            ],
-            [
-              "Greek Super League",
-              "2019/20",
-              "Lamia",
-              "10 left",
-              "P11/14"
-            ],
-            [
-              "Ekstraklasa",
-              "2017/2018",
-              "Pogon Szczecin",
-              "10 left",
-              "P11/16"
-            ],
-            [
-              "Italian Serie B",
-              "2025/26",
-              "Mantova",
-              "10 left",
-              "P11/20"
-            ],
-            [
               "Premier League",
               "2021/2022",
               "Khimki",
@@ -313,9 +327,9 @@
               "P11/18"
             ],
             [
-              "Superliga",
-              "2017/2018",
-              "Randers FC",
+              "Belgian Pro League",
+              "2019/20",
+              "Kortrijk",
               "10 left",
               "P11/16"
             ]
@@ -324,9 +338,9 @@
       ]
     },
     {
-      "id": "1841ebe9-637a-47cc-a705-0b61af99cd90",
+      "id": "4bcd4684-b1f0-44a3-bda5-a57fd6d758a0",
       "cell_type": "markdown",
-      "source": "## The escape artists\n\nSorted by how early they climbed out — the biggest comebacks had the\nmost games left when they were last in the bottom three. Near misses\n(those that stayed down) are counted for the base rate.",
+      "source": "### The escape artists\n\nSorted by how early they climbed out — the biggest comebacks had the\nmost games left when they were last in the bottom three. Near misses\n(those that stayed down) are counted for the base rate.\n",
       "metadata": {},
       "outputs": []
     },
@@ -339,7 +353,7 @@
       "outputs": [
         {
           "type": "text",
-          "text": "completed matches after dedup: 311832 (1190 dupes dropped)\nteam-seasons: 21299\nteam-seasons that were bottom-3 with <=10 games left: 4739\nescapes (finished outside bottom 3): 1744\nnear misses (stayed bottom 3): 2995\nescapes total: 1726\n"
+          "text": "completed matches after dedup: 311832 (1190 dupes dropped)\nteam-seasons: 21299\nteam-seasons that were bottom-3 with <=10 games left: 4737\nescapes (finished outside bottom 3): 1743\nnear misses (stayed bottom 3): 2994\nescapes total: 1730\n"
         },
         {
           "type": "table",
@@ -366,13 +380,6 @@
               "P4/10"
             ],
             [
-              "Scottish League One",
-              "2009/10",
-              "Peterhead",
-              "10 left",
-              "P5/10"
-            ],
-            [
               "German 2. Bundesliga",
               "2026/27",
               "Kaiserslautern",
@@ -390,6 +397,13 @@
               "Scottish League Two",
               "2004/05",
               "Montrose",
+              "10 left",
+              "P5/10"
+            ],
+            [
+              "Scottish League One",
+              "2009/10",
+              "Peterhead",
               "10 left",
               "P5/10"
             ],
@@ -415,13 +429,6 @@
               "P6/12"
             ],
             [
-              "Indian Super league",
-              "2021/2022",
-              "Odisha",
-              "10 left",
-              "P7/11"
-            ],
-            [
               "Scottish Premiership",
               "1994/95",
               "Kilmarnock",
@@ -429,23 +436,23 @@
               "P7/10"
             ],
             [
-              "Italian Serie A",
-              "2000/01",
-              "Brescia",
+              "Indian Super league",
+              "2021/2022",
+              "Odisha",
+              "10 left",
+              "P7/11"
+            ],
+            [
+              "Portuguese Liga Portugal",
+              "2026/27",
+              "Sp Braga",
               "10 left",
               "P8/18"
             ],
             [
-              "German Bundesliga",
-              "2016/17",
-              "Werder Bremen",
-              "10 left",
-              "P8/18"
-            ],
-            [
-              "Bundesliga",
-              "2026/2027",
-              "Tirol",
+              "Super League",
+              "2025/2026",
+              "Servette",
               "10 left",
               "P8/12"
             ],
@@ -457,16 +464,9 @@
               "P8/24"
             ],
             [
-              "Super League",
-              "2025/2026",
-              "Servette",
-              "10 left",
-              "P8/12"
-            ],
-            [
-              "Portuguese Liga Portugal",
-              "2026/27",
-              "Sp Braga",
+              "German Bundesliga",
+              "2016/17",
+              "Werder Bremen",
               "10 left",
               "P8/18"
             ],
@@ -478,11 +478,18 @@
               "P8/20"
             ],
             [
-              "Dutch Eredivisie",
-              "2013/14",
-              "Den Haag",
+              "Bundesliga",
+              "2026/2027",
+              "Tirol",
               "10 left",
-              "P9/18"
+              "P8/12"
+            ],
+            [
+              "Italian Serie A",
+              "2000/01",
+              "Brescia",
+              "10 left",
+              "P8/18"
             ],
             [
               "Spanish La Liga 2",
@@ -492,11 +499,11 @@
               "P9/22"
             ],
             [
-              "Scottish Premiership",
-              "2002/03",
-              "Livingston",
+              "Dutch Eredivisie",
+              "2013/14",
+              "Den Haag",
               "10 left",
-              "P9/12"
+              "P9/18"
             ],
             [
               "Superliga",
@@ -506,32 +513,11 @@
               "P9/12"
             ],
             [
-              "Allsvenskan",
-              "2024",
-              "Varnamo",
+              "Scottish Premiership",
+              "2002/03",
+              "Livingston",
               "10 left",
-              "P10/17"
-            ],
-            [
-              "Dutch Eredivisie",
-              "2013/14",
-              "Utrecht",
-              "10 left",
-              "P10/18"
-            ],
-            [
-              "Greek Super League",
-              "2006/07",
-              "Xanthi",
-              "10 left",
-              "P10/16"
-            ],
-            [
-              "English Premier League",
-              "2001/02",
-              "Blackburn",
-              "10 left",
-              "P10/20"
+              "P9/12"
             ],
             [
               "Veikkausliiga",
@@ -541,23 +527,16 @@
               "P10/13"
             ],
             [
-              "English Premier League",
-              "1994/95",
-              "Southampton",
+              "Greek Super League",
+              "2006/07",
+              "Xanthi",
               "10 left",
-              "P10/22"
+              "P10/16"
             ],
             [
-              "Serie A",
-              "2026",
-              "Vasco",
-              "10 left",
-              "P10/20"
-            ],
-            [
-              "German 2. Bundesliga",
-              "2011/12",
-              "Duisburg",
+              "Dutch Eredivisie",
+              "2013/14",
+              "Utrecht",
               "10 left",
               "P10/18"
             ],
@@ -569,18 +548,39 @@
               "P10/15"
             ],
             [
-              "Copa De La Liga Profesional",
-              "2021",
-              "Argentinos Jrs",
+              "Allsvenskan",
+              "2024",
+              "Varnamo",
               "10 left",
-              "P11/26"
+              "P10/17"
             ],
             [
-              "Ekstraklasa",
-              "2017/2018",
-              "Pogon Szczecin",
+              "English Premier League",
+              "1994/95",
+              "Southampton",
               "10 left",
-              "P11/16"
+              "P10/22"
+            ],
+            [
+              "German 2. Bundesliga",
+              "2011/12",
+              "Duisburg",
+              "10 left",
+              "P10/18"
+            ],
+            [
+              "English Premier League",
+              "2001/02",
+              "Blackburn",
+              "10 left",
+              "P10/20"
+            ],
+            [
+              "Serie A",
+              "2026",
+              "Vasco",
+              "10 left",
+              "P10/20"
             ],
             [
               "German Bundesliga",
@@ -590,25 +590,11 @@
               "P11/18"
             ],
             [
-              "Italian Serie B",
-              "2025/26",
-              "Mantova",
+              "Ekstraklasa",
+              "2017/2018",
+              "Pogon Szczecin",
               "10 left",
-              "P11/20"
-            ],
-            [
-              "Greek Super League",
-              "2019/20",
-              "Lamia",
-              "10 left",
-              "P11/14"
-            ],
-            [
-              "Belgian Pro League",
-              "2003/04",
-              "Lokeren",
-              "10 left",
-              "P11/18"
+              "P11/16"
             ],
             [
               "Premier League",
@@ -618,11 +604,25 @@
               "P11/18"
             ],
             [
-              "Belgian Pro League",
-              "2019/20",
-              "Kortrijk",
+              "Copa De La Liga Profesional",
+              "2021",
+              "Argentinos Jrs",
               "10 left",
-              "P11/16"
+              "P11/26"
+            ],
+            [
+              "Greek Super League",
+              "2019/20",
+              "Lamia",
+              "10 left",
+              "P11/14"
+            ],
+            [
+              "Italian Serie B",
+              "2025/26",
+              "Mantova",
+              "10 left",
+              "P11/20"
             ],
             [
               "Superliga",
@@ -630,6 +630,20 @@
               "Randers FC",
               "10 left",
               "P11/16"
+            ],
+            [
+              "Belgian Pro League",
+              "2019/20",
+              "Kortrijk",
+              "10 left",
+              "P11/16"
+            ],
+            [
+              "Belgian Pro League",
+              "2003/04",
+              "Lokeren",
+              "10 left",
+              "P11/18"
             ]
           ]
         },
@@ -644,9 +658,16 @@
           ],
           "rows": [
             [
-              "Scottish League One",
-              "2005/06",
-              "Ayr",
+              "Super League",
+              "2017/2018",
+              "Sion",
+              "1 left",
+              "P6/10"
+            ],
+            [
+              "Scottish Championship",
+              "1997/98",
+              "St Mirren",
               "1 left",
               "P6/10"
             ],
@@ -656,6 +677,34 @@
               "Hearts",
               "1 left",
               "P6/10"
+            ],
+            [
+              "Scottish League One",
+              "2005/06",
+              "Ayr",
+              "1 left",
+              "P6/10"
+            ],
+            [
+              "Scottish League One",
+              "2013/14",
+              "Airdrie Utd",
+              "1 left",
+              "P6/10"
+            ],
+            [
+              "Scottish League One",
+              "1998/99",
+              "Stirling",
+              "1 left",
+              "P6/10"
+            ],
+            [
+              "Bundesliga",
+              "2025/2026",
+              "Hartberg",
+              "1 left",
+              "P6/12"
             ],
             [
               "Scottish Premiership",
@@ -672,13 +721,6 @@
               "P6/10"
             ],
             [
-              "Scottish Championship",
-              "1997/98",
-              "St Mirren",
-              "1 left",
-              "P6/10"
-            ],
-            [
               "Scottish League One",
               "2002/03",
               "Dumbarton",
@@ -686,65 +728,16 @@
               "P6/10"
             ],
             [
-              "Scottish League One",
-              "1998/99",
-              "Stirling",
-              "1 left",
-              "P6/10"
-            ],
-            [
-              "Super League",
-              "2017/2018",
-              "Sion",
-              "1 left",
-              "P6/10"
-            ],
-            [
-              "Scottish League One",
-              "2013/14",
-              "Airdrie Utd",
-              "1 left",
-              "P6/10"
-            ],
-            [
-              "Bundesliga",
-              "2025/2026",
-              "Hartberg",
-              "1 left",
-              "P6/12"
-            ],
-            [
-              "Bundesliga",
-              "2012/2013",
-              "Neustadt",
-              "1 left",
-              "P7/10"
-            ],
-            [
-              "Scottish Premiership",
-              "2013/14",
-              "Ross County",
-              "1 left",
-              "P7/12"
-            ],
-            [
-              "Scottish League One",
-              "2015/16",
-              "Brechin",
-              "1 left",
-              "P7/10"
-            ],
-            [
-              "Scottish League Two",
-              "2013/14",
-              "Albion Rvs",
-              "1 left",
-              "P7/10"
-            ],
-            [
               "Scottish Championship",
               "1997/98",
               "Ayr",
+              "1 left",
+              "P7/10"
+            ],
+            [
+              "Scottish League One",
+              "2006/07",
+              "Alloa",
               "1 left",
               "P7/10"
             ],
@@ -756,9 +749,30 @@
               "P7/10"
             ],
             [
+              "Scottish League One",
+              "2026/27",
+              "Peterhead",
+              "1 left",
+              "P7/10"
+            ],
+            [
+              "Scottish Premiership",
+              "2013/14",
+              "Ross County",
+              "1 left",
+              "P7/12"
+            ],
+            [
               "Scottish League Two",
-              "2024/25",
-              "Clyde",
+              "2012/13",
+              "Stirling",
+              "1 left",
+              "P7/10"
+            ],
+            [
+              "Scottish League Two",
+              "2003/04",
+              "Queens Park",
               "1 left",
               "P7/10"
             ],
@@ -770,11 +784,18 @@
               "P7/10"
             ],
             [
-              "Scottish Championship",
-              "2011/12",
-              "Raith Rvs",
+              "Bundesliga",
+              "2012/2013",
+              "Neustadt",
               "1 left",
               "P7/10"
+            ],
+            [
+              "Super League",
+              "2021/2022",
+              "Luzern",
+              "1 left",
+              "P7/11"
             ],
             [
               "Scottish Championship",
@@ -785,8 +806,15 @@
             ],
             [
               "Scottish League One",
-              "2026/27",
-              "Peterhead",
+              "2011/12",
+              "Forfar",
+              "1 left",
+              "P7/10"
+            ],
+            [
+              "Scottish League One",
+              "2015/16",
+              "Brechin",
               "1 left",
               "P7/10"
             ],
@@ -798,9 +826,16 @@
               "P7/10"
             ],
             [
+              "Scottish League One",
+              "2008/09",
+              "Arbroath",
+              "1 left",
+              "P7/10"
+            ],
+            [
               "Scottish Championship",
-              "2016/17",
-              "St Mirren",
+              "2011/12",
+              "Raith Rvs",
               "1 left",
               "P7/10"
             ],
@@ -813,29 +848,15 @@
             ],
             [
               "Scottish League Two",
-              "2012/13",
-              "Stirling",
+              "2013/14",
+              "Albion Rvs",
               "1 left",
               "P7/10"
             ],
             [
-              "Super League",
-              "2021/2022",
-              "Luzern",
-              "1 left",
-              "P7/11"
-            ],
-            [
-              "Scottish League One",
-              "2008/09",
-              "Arbroath",
-              "1 left",
-              "P7/10"
-            ],
-            [
-              "Scottish League One",
-              "2006/07",
-              "Alloa",
+              "Scottish Championship",
+              "2016/17",
+              "St Mirren",
               "1 left",
               "P7/10"
             ],
@@ -843,13 +864,6 @@
               "Premier Division",
               "2025",
               "Sligo Rovers",
-              "1 left",
-              "P7/10"
-            ],
-            [
-              "Scottish League Two",
-              "2025/26",
-              "Annan Athletic",
               "1 left",
               "P7/10"
             ]
@@ -866,7 +880,7 @@
       "outputs": [
         {
           "type": "text",
-          "text": "completed matches after dedup: 311832 (1190 dupes dropped)\nteam-seasons: 21299\nteam-seasons that were bottom-3 with <=10 games left: 4741\nescapes (finished outside bottom 3): 1743\nnear misses (stayed bottom 3): 2998\nescapes total: 1729\n"
+          "text": "completed matches after dedup: 311832 (1190 dupes dropped)\nteam-seasons: 21299\nteam-seasons that were bottom-3 with <=10 games left: 4742\nescapes (finished outside bottom 3): 1748\nnear misses (stayed bottom 3): 2994\nescapes total: 1728\n"
         },
         {
           "type": "table",
@@ -893,11 +907,11 @@
               "P4/10"
             ],
             [
-              "Scottish League One",
-              "2009/10",
-              "Peterhead",
+              "German 2. Bundesliga",
+              "2026/27",
+              "Kaiserslautern",
               "10 left",
-              "P5/10"
+              "P5/18"
             ],
             [
               "Scottish League One",
@@ -907,11 +921,11 @@
               "P5/10"
             ],
             [
-              "German 2. Bundesliga",
-              "2026/27",
-              "Kaiserslautern",
+              "Scottish League One",
+              "2009/10",
+              "Peterhead",
               "10 left",
-              "P5/18"
+              "P5/10"
             ],
             [
               "Scottish League Two",
@@ -928,18 +942,18 @@
               "P6/12"
             ],
             [
-              "German 2. Bundesliga",
-              "2017/18",
-              "Bochum",
-              "10 left",
-              "P6/18"
-            ],
-            [
               "Indian Super league",
               "2021/2022",
               "Bengaluru",
               "10 left",
               "P6/11"
+            ],
+            [
+              "German 2. Bundesliga",
+              "2017/18",
+              "Bochum",
+              "10 left",
+              "P6/18"
             ],
             [
               "Scottish Premiership",
@@ -956,11 +970,11 @@
               "P7/11"
             ],
             [
-              "Spanish La Liga",
-              "2026/27",
-              "Ath Bilbao",
+              "Bundesliga",
+              "2026/2027",
+              "Tirol",
               "10 left",
-              "P8/20"
+              "P8/12"
             ],
             [
               "Super League",
@@ -984,6 +998,13 @@
               "P8/18"
             ],
             [
+              "Spanish La Liga",
+              "2026/27",
+              "Ath Bilbao",
+              "10 left",
+              "P8/20"
+            ],
+            [
               "German Bundesliga",
               "2016/17",
               "Werder Bremen",
@@ -991,25 +1012,11 @@
               "P8/18"
             ],
             [
-              "Bundesliga",
-              "2026/2027",
-              "Tirol",
-              "10 left",
-              "P8/12"
-            ],
-            [
               "English League Two",
               "2026/27",
               "Exeter",
               "10 left",
               "P8/24"
-            ],
-            [
-              "Superliga",
-              "2014/2015",
-              "Odense",
-              "10 left",
-              "P9/12"
             ],
             [
               "Dutch Eredivisie",
@@ -1033,11 +1040,25 @@
               "P9/12"
             ],
             [
-              "Allsvenskan",
-              "2024",
-              "Varnamo",
+              "Superliga",
+              "2014/2015",
+              "Odense",
               "10 left",
-              "P10/17"
+              "P9/12"
+            ],
+            [
+              "Greek Super League",
+              "2006/07",
+              "Xanthi",
+              "10 left",
+              "P10/16"
+            ],
+            [
+              "Dutch Eredivisie",
+              "2013/14",
+              "Utrecht",
+              "10 left",
+              "P10/18"
             ],
             [
               "German 2. Bundesliga",
@@ -1045,6 +1066,20 @@
               "Duisburg",
               "10 left",
               "P10/18"
+            ],
+            [
+              "Serie A",
+              "2026",
+              "Vasco",
+              "10 left",
+              "P10/20"
+            ],
+            [
+              "Allsvenskan",
+              "2024",
+              "Varnamo",
+              "10 left",
+              "P10/17"
             ],
             [
               "English Premier League",
@@ -1075,39 +1110,11 @@
               "P10/13"
             ],
             [
-              "Greek Super League",
-              "2006/07",
-              "Xanthi",
+              "Ekstraklasa",
+              "2017/2018",
+              "Pogon Szczecin",
               "10 left",
-              "P10/16"
-            ],
-            [
-              "Dutch Eredivisie",
-              "2013/14",
-              "Utrecht",
-              "10 left",
-              "P10/18"
-            ],
-            [
-              "Serie A",
-              "2026",
-              "Vasco",
-              "10 left",
-              "P10/20"
-            ],
-            [
-              "Copa De La Liga Profesional",
-              "2021",
-              "Argentinos Jrs",
-              "10 left",
-              "P11/26"
-            ],
-            [
-              "German Bundesliga",
-              "2005/06",
-              "Mainz",
-              "10 left",
-              "P11/18"
+              "P11/16"
             ],
             [
               "Superliga",
@@ -1117,9 +1124,9 @@
               "P11/16"
             ],
             [
-              "Premier League",
-              "2021/2022",
-              "Khimki",
+              "Belgian Pro League",
+              "2003/04",
+              "Lokeren",
               "10 left",
               "P11/18"
             ],
@@ -1131,18 +1138,18 @@
               "P11/16"
             ],
             [
-              "Ekstraklasa",
-              "2017/2018",
-              "Pogon Szczecin",
+              "Premier League",
+              "2021/2022",
+              "Khimki",
               "10 left",
-              "P11/16"
+              "P11/18"
             ],
             [
-              "Greek Super League",
-              "2019/20",
-              "Lamia",
+              "German Bundesliga",
+              "2005/06",
+              "Mainz",
               "10 left",
-              "P11/14"
+              "P11/18"
             ],
             [
               "Italian Serie B",
@@ -1152,11 +1159,18 @@
               "P11/20"
             ],
             [
-              "Belgian Pro League",
-              "2003/04",
-              "Lokeren",
+              "Copa De La Liga Profesional",
+              "2021",
+              "Argentinos Jrs",
               "10 left",
-              "P11/18"
+              "P11/26"
+            ],
+            [
+              "Greek Super League",
+              "2019/20",
+              "Lamia",
+              "10 left",
+              "P11/14"
             ]
           ]
         },
@@ -1170,55 +1184,6 @@
             "final position"
           ],
           "rows": [
-            [
-              "Scottish League One",
-              "2005/06",
-              "Ayr",
-              "1 left",
-              "P6/10"
-            ],
-            [
-              "Scottish Premiership",
-              "1997/98",
-              "Aberdeen",
-              "1 left",
-              "P6/10"
-            ],
-            [
-              "Scottish League One",
-              "2002/03",
-              "Dumbarton",
-              "1 left",
-              "P6/10"
-            ],
-            [
-              "Super League",
-              "2017/2018",
-              "Sion",
-              "1 left",
-              "P6/10"
-            ],
-            [
-              "Scottish Championship",
-              "1997/98",
-              "St Mirren",
-              "1 left",
-              "P6/10"
-            ],
-            [
-              "Scottish League One",
-              "2013/14",
-              "Airdrie Utd",
-              "1 left",
-              "P6/10"
-            ],
-            [
-              "Scottish Premiership",
-              "1994/95",
-              "Hearts",
-              "1 left",
-              "P6/10"
-            ],
             [
               "Bundesliga",
               "2025/2026",
@@ -1234,6 +1199,34 @@
               "P6/10"
             ],
             [
+              "Scottish Premiership",
+              "1997/98",
+              "Aberdeen",
+              "1 left",
+              "P6/10"
+            ],
+            [
+              "Scottish Premiership",
+              "1994/95",
+              "Hearts",
+              "1 left",
+              "P6/10"
+            ],
+            [
+              "Scottish League One",
+              "2005/06",
+              "Ayr",
+              "1 left",
+              "P6/10"
+            ],
+            [
+              "Scottish League One",
+              "2013/14",
+              "Airdrie Utd",
+              "1 left",
+              "P6/10"
+            ],
+            [
               "Scottish League One",
               "1998/99",
               "Stirling",
@@ -1241,16 +1234,44 @@
               "P6/10"
             ],
             [
-              "Bundesliga",
-              "2012/2013",
-              "Neustadt",
+              "Scottish League One",
+              "2002/03",
+              "Dumbarton",
               "1 left",
-              "P7/10"
+              "P6/10"
+            ],
+            [
+              "Scottish Championship",
+              "1997/98",
+              "St Mirren",
+              "1 left",
+              "P6/10"
+            ],
+            [
+              "Super League",
+              "2017/2018",
+              "Sion",
+              "1 left",
+              "P6/10"
+            ],
+            [
+              "Scottish Premiership",
+              "2013/14",
+              "Ross County",
+              "1 left",
+              "P7/12"
             ],
             [
               "Scottish League One",
               "2015/16",
               "Brechin",
+              "1 left",
+              "P7/10"
+            ],
+            [
+              "Scottish League Two",
+              "2025/26",
+              "Annan Athletic",
               "1 left",
               "P7/10"
             ],
@@ -1262,37 +1283,9 @@
               "P7/10"
             ],
             [
-              "Premier Division",
-              "2025",
-              "Sligo Rovers",
-              "1 left",
-              "P7/10"
-            ],
-            [
-              "Scottish Championship",
-              "1995/96",
-              "Clydebank",
-              "1 left",
-              "P7/10"
-            ],
-            [
               "Scottish League Two",
-              "2012/13",
-              "Stirling",
-              "1 left",
-              "P7/10"
-            ],
-            [
-              "Scottish Championship",
-              "2011/12",
-              "Raith Rvs",
-              "1 left",
-              "P7/10"
-            ],
-            [
-              "Scottish League Two",
-              "2003/04",
-              "Queens Park",
+              "2013/14",
+              "Albion Rvs",
               "1 left",
               "P7/10"
             ],
@@ -1300,69 +1293,6 @@
               "Scottish League One",
               "2026/27",
               "Peterhead",
-              "1 left",
-              "P7/10"
-            ],
-            [
-              "Scottish Premiership",
-              "2013/14",
-              "Ross County",
-              "1 left",
-              "P7/12"
-            ],
-            [
-              "Scottish League Two",
-              "2025/26",
-              "Annan Athletic",
-              "1 left",
-              "P7/10"
-            ],
-            [
-              "Scottish League Two",
-              "2018/19",
-              "Elgin",
-              "1 left",
-              "P7/10"
-            ],
-            [
-              "Super League",
-              "2021/2022",
-              "Luzern",
-              "1 left",
-              "P7/11"
-            ],
-            [
-              "Scottish Championship",
-              "1997/98",
-              "Ayr",
-              "1 left",
-              "P7/10"
-            ],
-            [
-              "Scottish Championship",
-              "2016/17",
-              "St Mirren",
-              "1 left",
-              "P7/10"
-            ],
-            [
-              "Bundesliga",
-              "2016/2017",
-              "Mattersburg",
-              "1 left",
-              "P7/10"
-            ],
-            [
-              "Scottish League One",
-              "2006/07",
-              "Alloa",
-              "1 left",
-              "P7/10"
-            ],
-            [
-              "Scottish League One",
-              "2008/09",
-              "Arbroath",
               "1 left",
               "P7/10"
             ],
@@ -1375,8 +1305,92 @@
             ],
             [
               "Scottish League Two",
-              "2013/14",
-              "Albion Rvs",
+              "2018/19",
+              "Elgin",
+              "1 left",
+              "P7/10"
+            ],
+            [
+              "Bundesliga",
+              "2012/2013",
+              "Neustadt",
+              "1 left",
+              "P7/10"
+            ],
+            [
+              "Scottish League One",
+              "2008/09",
+              "Arbroath",
+              "1 left",
+              "P7/10"
+            ],
+            [
+              "Scottish Championship",
+              "2011/12",
+              "Raith Rvs",
+              "1 left",
+              "P7/10"
+            ],
+            [
+              "Scottish League One",
+              "2006/07",
+              "Alloa",
+              "1 left",
+              "P7/10"
+            ],
+            [
+              "Scottish League Two",
+              "2003/04",
+              "Queens Park",
+              "1 left",
+              "P7/10"
+            ],
+            [
+              "Scottish Championship",
+              "2016/17",
+              "St Mirren",
+              "1 left",
+              "P7/10"
+            ],
+            [
+              "Scottish Championship",
+              "1995/96",
+              "Clydebank",
+              "1 left",
+              "P7/10"
+            ],
+            [
+              "Super League",
+              "2021/2022",
+              "Luzern",
+              "1 left",
+              "P7/11"
+            ],
+            [
+              "Scottish League Two",
+              "2012/13",
+              "Stirling",
+              "1 left",
+              "P7/10"
+            ],
+            [
+              "Premier Division",
+              "2025",
+              "Sligo Rovers",
+              "1 left",
+              "P7/10"
+            ],
+            [
+              "Scottish League One",
+              "2016/17",
+              "Stranraer",
+              "1 left",
+              "P7/10"
+            ],
+            [
+              "Scottish Championship",
+              "1997/98",
+              "Ayr",
               "1 left",
               "P7/10"
             ]
@@ -1398,6 +1412,12 @@
               "44%"
             ],
             [
+              "German 2. Bundesliga",
+              "175",
+              "73",
+              "42%"
+            ],
+            [
               "Spanish La Liga",
               "175",
               "73",
@@ -1405,12 +1425,6 @@
             ],
             [
               "English League Two",
-              "175",
-              "73",
-              "42%"
-            ],
-            [
-              "German 2. Bundesliga",
               "175",
               "73",
               "42%"
@@ -1435,8 +1449,8 @@
             ],
             [
               "French Ligue 1",
-              "169",
-              "66",
+              "168",
+              "65",
               "39%"
             ],
             [
@@ -1459,21 +1473,21 @@
             ],
             [
               "English League One",
-              "161",
-              "59",
-              "37%"
-            ],
-            [
-              "Champions League",
-              "138",
-              "57",
-              "41%"
+              "160",
+              "58",
+              "36%"
             ],
             [
               "English Premier League",
               "159",
               "57",
               "36%"
+            ],
+            [
+              "Champions League",
+              "135",
+              "54",
+              "40%"
             ],
             [
               "Italian Serie A",
@@ -1506,10 +1520,10 @@
               "28%"
             ],
             [
-              "Scottish League One",
-              "126",
+              "Ekstraklasa",
+              "81",
               "36",
-              "29%"
+              "44%"
             ],
             [
               "MLS",
@@ -1518,10 +1532,10 @@
               "44%"
             ],
             [
-              "Ekstraklasa",
-              "81",
+              "Scottish League One",
+              "126",
               "36",
-              "44%"
+              "29%"
             ],
             [
               "Liga Profesional",
@@ -1596,16 +1610,824 @@
               "28%"
             ],
             [
+              "UEFA Conference League",
+              "36",
+              "18",
+              "50%"
+            ],
+            [
               "Premier League",
               "60",
               "18",
               "30%"
             ],
             [
+              "Veikkausliiga",
+              "62",
+              "17",
+              "27%"
+            ],
+            [
               "Allsvenskan",
               "62",
               "17",
               "27%"
+            ],
+            [
+              "Super League",
+              "60",
+              "15",
+              "25%"
+            ],
+            [
+              "AFC Champions League Elite",
+              "23",
+              "14",
+              "61%"
+            ],
+            [
+              "J1 League",
+              "59",
+              "14",
+              "24%"
+            ],
+            [
+              "Premier Division",
+              "55",
+              "10",
+              "18%"
+            ],
+            [
+              "FIFA World Cup",
+              "16",
+              "10",
+              "62%"
+            ],
+            [
+              "UEFA Euro",
+              "15",
+              "8",
+              "53%"
+            ],
+            [
+              "FA Women's Super League",
+              "18",
+              "6",
+              "33%"
+            ],
+            [
+              "Women's World Cup",
+              "10",
+              "3",
+              "30%"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "3a36f209-b563-4977-9515-5739c06c57e4",
+      "cell_type": "code",
+      "source": "use plotters::prelude::*;\n\nfn chart_num(s: &str) -> f64 {\n    let t = s.replace(',', \"\").replace('%', \"\").replace('−', \"-\");\n    let mult = if t.contains(\"bn\") { 1e9 }\n        else if t.contains('€') && t.contains('m') { 1e6 }\n        else { 1.0 };\n    let cleaned: String = t.chars()\n        .filter(|c| c.is_ascii_digit() || *c == '.' || *c == '-')\n        .collect();\n    cleaned.parse().unwrap_or(0.0) * mult\n}\n\n\nlet mut c_items: Vec<(String, f64)> = lrows.iter()\n    .map(|r| (r[0].clone(), chart_num(&r[3].clone())))\n    .collect();\nc_items.retain(|(_, v)| v.is_finite());\nc_items.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());\nc_items.truncate(12);\nlet c_labels: Vec<String> = c_items.iter()\n    .map(|(l, _)| l.chars().take(18).collect()).collect();\nlet c_vals: Vec<f64> = c_items.iter().map(|(_, v)| *v).collect();\nlet c_ymax = c_vals.iter().cloned().fold(0.0_f64, f64::max) * 1.15 + 1e-9;\nlet (c_div, c_unit): (f64, &str) = if c_ymax >= 1e9 { (1e9, \"bn\") }\n    else if c_ymax >= 1e6 { (1e6, \"m\") }\n    else if c_ymax >= 1e3 { (1e3, \"k\") }\n    else { (1.0, \"\") };\nlet c_n = c_vals.len();\nlet figure = plotters::evcxr::evcxr_figure((780, 400), |root| {\n    root.fill(&WHITE)?;\n    let mut chart = ChartBuilder::on(&root)\n        .caption(\"Escape rate from the bottom three by league\", (\"sans-serif\", 18))\n        .margin(10)\n        .x_label_area_size(45)\n        .y_label_area_size(55)\n        .build_cartesian_2d(-0.5_f64..(c_n as f64 - 0.5), 0.0..c_ymax)?;\n    chart.configure_mesh()\n        .x_labels(c_n)\n        .x_label_formatter(&|x: &f64| c_labels.get(*x as usize).cloned().unwrap_or_default())\n        .y_label_formatter(&|y: &f64| format!(\"{:.1}{}\", y / c_div, c_unit))\n        .draw()?;\n    chart.draw_series(c_vals.iter().enumerate().map(|(i, &v)| {\n        Rectangle::new([(i as f64 - 0.35, 0.0), (i as f64 + 0.35, v)], BLUE.filled())\n    }))?;\n    Ok(())\n});\nfigure.evcxr_display();\n",
+      "metadata": {},
+      "execution_count": 4,
+      "outputs": [
+        {
+          "type": "text",
+          "text": "completed matches after dedup: 311832 (1190 dupes dropped)\nteam-seasons: 21299\nteam-seasons that were bottom-3 with <=10 games left: 4741\nescapes (finished outside bottom 3): 1744\nnear misses (stayed bottom 3): 2997\nescapes total: 1726\n"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "league",
+            "season",
+            "team",
+            "bottom-3 until",
+            "final position"
+          ],
+          "rows": [
+            [
+              "AFC Champions League Elite",
+              "2024/2025",
+              "Yokohama F. Marinos",
+              "10 left",
+              "P3/24"
+            ],
+            [
+              "Scottish League Two",
+              "2025/26",
+              "Forfar",
+              "10 left",
+              "P4/10"
+            ],
+            [
+              "Scottish League Two",
+              "2004/05",
+              "Montrose",
+              "10 left",
+              "P5/10"
+            ],
+            [
+              "German 2. Bundesliga",
+              "2026/27",
+              "Kaiserslautern",
+              "10 left",
+              "P5/18"
+            ],
+            [
+              "Scottish League One",
+              "2022/23",
+              "Queen of Sth",
+              "10 left",
+              "P5/10"
+            ],
+            [
+              "Scottish League One",
+              "2009/10",
+              "Peterhead",
+              "10 left",
+              "P5/10"
+            ],
+            [
+              "Indian Super league",
+              "2021/2022",
+              "Bengaluru",
+              "10 left",
+              "P6/11"
+            ],
+            [
+              "Scottish Premiership",
+              "2009/10",
+              "Hamilton",
+              "10 left",
+              "P6/12"
+            ],
+            [
+              "German 2. Bundesliga",
+              "2017/18",
+              "Bochum",
+              "10 left",
+              "P6/18"
+            ],
+            [
+              "Indian Super league",
+              "2021/2022",
+              "Odisha",
+              "10 left",
+              "P7/11"
+            ],
+            [
+              "Scottish Premiership",
+              "1994/95",
+              "Kilmarnock",
+              "10 left",
+              "P7/10"
+            ],
+            [
+              "Italian Serie A",
+              "2000/01",
+              "Brescia",
+              "10 left",
+              "P8/18"
+            ],
+            [
+              "English League Two",
+              "2026/27",
+              "Exeter",
+              "10 left",
+              "P8/24"
+            ],
+            [
+              "Super League",
+              "2025/2026",
+              "Servette",
+              "10 left",
+              "P8/12"
+            ],
+            [
+              "Spanish La Liga",
+              "2026/27",
+              "Ath Bilbao",
+              "10 left",
+              "P8/20"
+            ],
+            [
+              "Portuguese Liga Portugal",
+              "2026/27",
+              "Sp Braga",
+              "10 left",
+              "P8/18"
+            ],
+            [
+              "Bundesliga",
+              "2026/2027",
+              "Tirol",
+              "10 left",
+              "P8/12"
+            ],
+            [
+              "German Bundesliga",
+              "2016/17",
+              "Werder Bremen",
+              "10 left",
+              "P8/18"
+            ],
+            [
+              "Superliga",
+              "2014/2015",
+              "Odense",
+              "10 left",
+              "P9/12"
+            ],
+            [
+              "Scottish Premiership",
+              "2002/03",
+              "Livingston",
+              "10 left",
+              "P9/12"
+            ],
+            [
+              "Spanish La Liga 2",
+              "2013/14",
+              "Alcorcon",
+              "10 left",
+              "P9/22"
+            ],
+            [
+              "Dutch Eredivisie",
+              "2013/14",
+              "Den Haag",
+              "10 left",
+              "P9/18"
+            ],
+            [
+              "Serie A",
+              "2026",
+              "Vasco",
+              "10 left",
+              "P10/20"
+            ],
+            [
+              "English Premier League",
+              "1994/95",
+              "Southampton",
+              "10 left",
+              "P10/22"
+            ],
+            [
+              "Superliga",
+              "2019/2020",
+              "Academica Clinceni",
+              "10 left",
+              "P10/15"
+            ],
+            [
+              "English Premier League",
+              "2001/02",
+              "Blackburn",
+              "10 left",
+              "P10/20"
+            ],
+            [
+              "German 2. Bundesliga",
+              "2011/12",
+              "Duisburg",
+              "10 left",
+              "P10/18"
+            ],
+            [
+              "Allsvenskan",
+              "2024",
+              "Varnamo",
+              "10 left",
+              "P10/17"
+            ],
+            [
+              "Greek Super League",
+              "2006/07",
+              "Xanthi",
+              "10 left",
+              "P10/16"
+            ],
+            [
+              "Veikkausliiga",
+              "2026",
+              "SJK",
+              "10 left",
+              "P10/13"
+            ],
+            [
+              "Dutch Eredivisie",
+              "2013/14",
+              "Utrecht",
+              "10 left",
+              "P10/18"
+            ],
+            [
+              "Ekstraklasa",
+              "2017/2018",
+              "Pogon Szczecin",
+              "10 left",
+              "P11/16"
+            ],
+            [
+              "German Bundesliga",
+              "2005/06",
+              "Mainz",
+              "10 left",
+              "P11/18"
+            ],
+            [
+              "Greek Super League",
+              "2019/20",
+              "Lamia",
+              "10 left",
+              "P11/14"
+            ],
+            [
+              "Premier League",
+              "2021/2022",
+              "Khimki",
+              "10 left",
+              "P11/18"
+            ],
+            [
+              "Belgian Pro League",
+              "2019/20",
+              "Kortrijk",
+              "10 left",
+              "P11/16"
+            ],
+            [
+              "Copa De La Liga Profesional",
+              "2021",
+              "Argentinos Jrs",
+              "10 left",
+              "P11/26"
+            ],
+            [
+              "Belgian Pro League",
+              "2003/04",
+              "Lokeren",
+              "10 left",
+              "P11/18"
+            ],
+            [
+              "Italian Serie B",
+              "2025/26",
+              "Mantova",
+              "10 left",
+              "P11/20"
+            ],
+            [
+              "Superliga",
+              "2017/2018",
+              "Randers FC",
+              "10 left",
+              "P11/16"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "league",
+            "season",
+            "team",
+            "last bottom-3 at",
+            "final position"
+          ],
+          "rows": [
+            [
+              "Super League",
+              "2017/2018",
+              "Sion",
+              "1 left",
+              "P6/10"
+            ],
+            [
+              "Scottish Premiership",
+              "1994/95",
+              "Hearts",
+              "1 left",
+              "P6/10"
+            ],
+            [
+              "Scottish Premiership",
+              "1997/98",
+              "Aberdeen",
+              "1 left",
+              "P6/10"
+            ],
+            [
+              "Scottish Championship",
+              "1997/98",
+              "St Mirren",
+              "1 left",
+              "P6/10"
+            ],
+            [
+              "Scottish League One",
+              "2005/06",
+              "Ayr",
+              "1 left",
+              "P6/10"
+            ],
+            [
+              "Scottish League One",
+              "2013/14",
+              "Airdrie Utd",
+              "1 left",
+              "P6/10"
+            ],
+            [
+              "Scottish League One",
+              "1998/99",
+              "Stirling",
+              "1 left",
+              "P6/10"
+            ],
+            [
+              "Scottish League One",
+              "2002/03",
+              "Dumbarton",
+              "1 left",
+              "P6/10"
+            ],
+            [
+              "Bundesliga",
+              "2025/2026",
+              "Hartberg",
+              "1 left",
+              "P6/12"
+            ],
+            [
+              "Scottish League Two",
+              "2013/14",
+              "Montrose",
+              "1 left",
+              "P6/10"
+            ],
+            [
+              "Bundesliga",
+              "2012/2013",
+              "Neustadt",
+              "1 left",
+              "P7/10"
+            ],
+            [
+              "Scottish Championship",
+              "2016/17",
+              "St Mirren",
+              "1 left",
+              "P7/10"
+            ],
+            [
+              "Scottish League Two",
+              "2025/26",
+              "Annan Athletic",
+              "1 left",
+              "P7/10"
+            ],
+            [
+              "Scottish Championship",
+              "2011/12",
+              "Raith Rvs",
+              "1 left",
+              "P7/10"
+            ],
+            [
+              "Scottish League One",
+              "2008/09",
+              "Arbroath",
+              "1 left",
+              "P7/10"
+            ],
+            [
+              "Super League",
+              "2021/2022",
+              "Luzern",
+              "1 left",
+              "P7/11"
+            ],
+            [
+              "Scottish League One",
+              "2011/12",
+              "Forfar",
+              "1 left",
+              "P7/10"
+            ],
+            [
+              "Scottish League Two",
+              "2024/25",
+              "Clyde",
+              "1 left",
+              "P7/10"
+            ],
+            [
+              "Scottish League Two",
+              "2018/19",
+              "Elgin",
+              "1 left",
+              "P7/10"
+            ],
+            [
+              "Scottish League One",
+              "2016/17",
+              "Stranraer",
+              "1 left",
+              "P7/10"
+            ],
+            [
+              "Scottish League Two",
+              "2012/13",
+              "Stirling",
+              "1 left",
+              "P7/10"
+            ],
+            [
+              "Scottish League One",
+              "2026/27",
+              "Peterhead",
+              "1 left",
+              "P7/10"
+            ],
+            [
+              "Scottish Championship",
+              "1994/95",
+              "St Mirren",
+              "1 left",
+              "P7/10"
+            ],
+            [
+              "Scottish Championship",
+              "1997/98",
+              "Ayr",
+              "1 left",
+              "P7/10"
+            ],
+            [
+              "Bundesliga",
+              "2016/2017",
+              "Mattersburg",
+              "1 left",
+              "P7/10"
+            ],
+            [
+              "Scottish League Two",
+              "2003/04",
+              "Queens Park",
+              "1 left",
+              "P7/10"
+            ],
+            [
+              "Scottish Premiership",
+              "2013/14",
+              "Ross County",
+              "1 left",
+              "P7/12"
+            ],
+            [
+              "Scottish League One",
+              "2006/07",
+              "Alloa",
+              "1 left",
+              "P7/10"
+            ],
+            [
+              "Scottish Championship",
+              "1995/96",
+              "Clydebank",
+              "1 left",
+              "P7/10"
+            ],
+            [
+              "Scottish League One",
+              "2015/16",
+              "Brechin",
+              "1 left",
+              "P7/10"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "league",
+            "bottom-3 team-seasons",
+            "escapes",
+            "escape rate"
+          ],
+          "rows": [
+            [
+              "English Championship",
+              "181",
+              "79",
+              "44%"
+            ],
+            [
+              "German 2. Bundesliga",
+              "175",
+              "73",
+              "42%"
+            ],
+            [
+              "English League Two",
+              "175",
+              "73",
+              "42%"
+            ],
+            [
+              "Spanish La Liga",
+              "175",
+              "73",
+              "42%"
+            ],
+            [
+              "Italian Serie B",
+              "161",
+              "71",
+              "44%"
+            ],
+            [
+              "German Bundesliga",
+              "171",
+              "69",
+              "40%"
+            ],
+            [
+              "French Ligue 2",
+              "160",
+              "67",
+              "42%"
+            ],
+            [
+              "French Ligue 1",
+              "169",
+              "66",
+              "39%"
+            ],
+            [
+              "Portuguese Liga Portugal",
+              "165",
+              "63",
+              "38%"
+            ],
+            [
+              "Turkish Süper Lig",
+              "162",
+              "63",
+              "39%"
+            ],
+            [
+              "Spanish La Liga 2",
+              "163",
+              "61",
+              "37%"
+            ],
+            [
+              "English League One",
+              "161",
+              "59",
+              "37%"
+            ],
+            [
+              "English Premier League",
+              "159",
+              "57",
+              "36%"
+            ],
+            [
+              "Champions League",
+              "137",
+              "56",
+              "41%"
+            ],
+            [
+              "Italian Serie A",
+              "152",
+              "49",
+              "32%"
+            ],
+            [
+              "Greek Super League",
+              "134",
+              "45",
+              "34%"
+            ],
+            [
+              "Scottish Premiership",
+              "143",
+              "44",
+              "31%"
+            ],
+            [
+              "Belgian Pro League",
+              "140",
+              "43",
+              "31%"
+            ],
+            [
+              "Dutch Eredivisie",
+              "142",
+              "40",
+              "28%"
+            ],
+            [
+              "Ekstraklasa",
+              "81",
+              "36",
+              "44%"
+            ],
+            [
+              "MLS",
+              "82",
+              "36",
+              "44%"
+            ],
+            [
+              "Scottish League One",
+              "126",
+              "36",
+              "29%"
+            ],
+            [
+              "Liga Profesional",
+              "76",
+              "34",
+              "45%"
+            ],
+            [
+              "Scottish Championship",
+              "135",
+              "33",
+              "24%"
+            ],
+            [
+              "Serie A",
+              "75",
+              "30",
+              "40%"
+            ],
+            [
+              "Scottish League Two",
+              "119",
+              "29",
+              "24%"
+            ],
+            [
+              "Liga MX",
+              "72",
+              "27",
+              "38%"
+            ],
+            [
+              "Eliteserien",
+              "70",
+              "25",
+              "36%"
+            ],
+            [
+              "Superliga",
+              "69",
+              "24",
+              "35%"
+            ],
+            [
+              "Superliga",
+              "68",
+              "23",
+              "34%"
+            ],
+            [
+              "Copa De La Liga Profesional",
+              "37",
+              "22",
+              "59%"
+            ],
+            [
+              "Super League",
+              "60",
+              "21",
+              "35%"
+            ],
+            [
+              "Bundesliga",
+              "66",
+              "21",
+              "32%"
+            ],
+            [
+              "UEFA Europa League",
+              "75",
+              "21",
+              "28%"
+            ],
+            [
+              "Premier League",
+              "60",
+              "18",
+              "30%"
             ],
             [
               "Veikkausliiga",
@@ -1618,6 +2440,12 @@
               "35",
               "17",
               "49%"
+            ],
+            [
+              "Allsvenskan",
+              "62",
+              "17",
+              "27%"
             ],
             [
               "Super League",
@@ -1638,22 +2466,22 @@
               "59%"
             ],
             [
-              "FIFA World Cup",
-              "17",
-              "10",
-              "59%"
-            ],
-            [
               "Premier Division",
               "55",
               "10",
               "18%"
             ],
             [
+              "FIFA World Cup",
+              "16",
+              "9",
+              "56%"
+            ],
+            [
               "UEFA Euro",
-              "15",
+              "14",
               "8",
-              "53%"
+              "57%"
             ],
             [
               "FA Women's Super League",
@@ -1662,13 +2490,28 @@
               "33%"
             ]
           ]
+        },
+        {
+          "type": "mime_bundle",
+          "data": {
+            "image/svg+xml": "<svg width=\"780\" height=\"400\" viewBox=\"0 0 780 400\" xmlns=\"http://www.w3.org/2000/svg\">\n<rect x=\"0\" y=\"0\" width=\"780\" height=\"400\" opacity=\"1\" fill=\"#FFFFFF\" stroke=\"none\"/>\n<text x=\"390\" y=\"15\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"14.516129032258064\" opacity=\"1\" fill=\"#000000\">\nEscape rate from the bottom three by league\n</text>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"70\" y1=\"344\" x2=\"70\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"82\" y1=\"344\" x2=\"82\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"94\" y1=\"344\" x2=\"94\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"106\" y1=\"344\" x2=\"106\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"117\" y1=\"344\" x2=\"117\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"129\" y1=\"344\" x2=\"129\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"141\" y1=\"344\" x2=\"141\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"153\" y1=\"344\" x2=\"153\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"164\" y1=\"344\" x2=\"164\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"176\" y1=\"344\" x2=\"176\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"188\" y1=\"344\" x2=\"188\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"199\" y1=\"344\" x2=\"199\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"211\" y1=\"344\" x2=\"211\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"223\" y1=\"344\" x2=\"223\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"235\" y1=\"344\" x2=\"235\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"246\" y1=\"344\" x2=\"246\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"258\" y1=\"344\" x2=\"258\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"270\" y1=\"344\" x2=\"270\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"282\" y1=\"344\" x2=\"282\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"293\" y1=\"344\" x2=\"293\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"305\" y1=\"344\" x2=\"305\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"317\" y1=\"344\" x2=\"317\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"329\" y1=\"344\" x2=\"329\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"340\" y1=\"344\" x2=\"340\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"352\" y1=\"344\" x2=\"352\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"364\" y1=\"344\" x2=\"364\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"375\" y1=\"344\" x2=\"375\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"387\" y1=\"344\" x2=\"387\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"399\" y1=\"344\" x2=\"399\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"411\" y1=\"344\" x2=\"411\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"422\" y1=\"344\" x2=\"422\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"434\" y1=\"344\" x2=\"434\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"446\" y1=\"344\" x2=\"446\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"458\" y1=\"344\" x2=\"458\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"469\" y1=\"344\" x2=\"469\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"481\" y1=\"344\" x2=\"481\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"493\" y1=\"344\" x2=\"493\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"505\" y1=\"344\" x2=\"505\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"516\" y1=\"344\" x2=\"516\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"528\" y1=\"344\" x2=\"528\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"540\" y1=\"344\" x2=\"540\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"551\" y1=\"344\" x2=\"551\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"563\" y1=\"344\" x2=\"563\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"575\" y1=\"344\" x2=\"575\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"587\" y1=\"344\" x2=\"587\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"598\" y1=\"344\" x2=\"598\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"610\" y1=\"344\" x2=\"610\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"622\" y1=\"344\" x2=\"622\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"634\" y1=\"344\" x2=\"634\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"645\" y1=\"344\" x2=\"645\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"657\" y1=\"344\" x2=\"657\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"669\" y1=\"344\" x2=\"669\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"681\" y1=\"344\" x2=\"681\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"692\" y1=\"344\" x2=\"692\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"704\" y1=\"344\" x2=\"704\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"716\" y1=\"344\" x2=\"716\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"727\" y1=\"344\" x2=\"727\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"739\" y1=\"344\" x2=\"739\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"751\" y1=\"344\" x2=\"751\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"763\" y1=\"344\" x2=\"763\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"344\" x2=\"769\" y2=\"344\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"340\" x2=\"769\" y2=\"340\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"335\" x2=\"769\" y2=\"335\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"331\" x2=\"769\" y2=\"331\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"326\" x2=\"769\" y2=\"326\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"322\" x2=\"769\" y2=\"322\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"317\" x2=\"769\" y2=\"317\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"313\" x2=\"769\" y2=\"313\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"308\" x2=\"769\" y2=\"308\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"303\" x2=\"769\" y2=\"303\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"299\" x2=\"769\" y2=\"299\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"294\" x2=\"769\" y2=\"294\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"290\" x2=\"769\" y2=\"290\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"285\" x2=\"769\" y2=\"285\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"281\" x2=\"769\" y2=\"281\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"276\" x2=\"769\" y2=\"276\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"271\" x2=\"769\" y2=\"271\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"267\" x2=\"769\" y2=\"267\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"262\" x2=\"769\" y2=\"262\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"258\" x2=\"769\" y2=\"258\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"253\" x2=\"769\" y2=\"253\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"249\" x2=\"769\" y2=\"249\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"244\" x2=\"769\" y2=\"244\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"239\" x2=\"769\" y2=\"239\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"235\" x2=\"769\" y2=\"235\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"230\" x2=\"769\" y2=\"230\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"226\" x2=\"769\" y2=\"226\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"221\" x2=\"769\" y2=\"221\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"217\" x2=\"769\" y2=\"217\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"212\" x2=\"769\" y2=\"212\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"207\" x2=\"769\" y2=\"207\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"203\" x2=\"769\" y2=\"203\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"198\" x2=\"769\" y2=\"198\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"194\" x2=\"769\" y2=\"194\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"189\" x2=\"769\" y2=\"189\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"185\" x2=\"769\" y2=\"185\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"180\" x2=\"769\" y2=\"180\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"175\" x2=\"769\" y2=\"175\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"171\" x2=\"769\" y2=\"171\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"166\" x2=\"769\" y2=\"166\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"162\" x2=\"769\" y2=\"162\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"157\" x2=\"769\" y2=\"157\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"153\" x2=\"769\" y2=\"153\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"148\" x2=\"769\" y2=\"148\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"143\" x2=\"769\" y2=\"143\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"139\" x2=\"769\" y2=\"139\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"134\" x2=\"769\" y2=\"134\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"130\" x2=\"769\" y2=\"130\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"125\" x2=\"769\" y2=\"125\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"121\" x2=\"769\" y2=\"121\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"116\" x2=\"769\" y2=\"116\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"111\" x2=\"769\" y2=\"111\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"107\" x2=\"769\" y2=\"107\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"102\" x2=\"769\" y2=\"102\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"98\" x2=\"769\" y2=\"98\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"93\" x2=\"769\" y2=\"93\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"89\" x2=\"769\" y2=\"89\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"84\" x2=\"769\" y2=\"84\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"80\" x2=\"769\" y2=\"80\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"75\" x2=\"769\" y2=\"75\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"70\" x2=\"769\" y2=\"70\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"66\" x2=\"769\" y2=\"66\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"61\" x2=\"769\" y2=\"61\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"57\" x2=\"769\" y2=\"57\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"52\" x2=\"769\" y2=\"52\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"48\" x2=\"769\" y2=\"48\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"43\" x2=\"769\" y2=\"43\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"38\" x2=\"769\" y2=\"38\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"94\" y1=\"344\" x2=\"94\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"153\" y1=\"344\" x2=\"153\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"211\" y1=\"344\" x2=\"211\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"270\" y1=\"344\" x2=\"270\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"329\" y1=\"344\" x2=\"329\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"387\" y1=\"344\" x2=\"387\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"446\" y1=\"344\" x2=\"446\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"505\" y1=\"344\" x2=\"505\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"563\" y1=\"344\" x2=\"563\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"622\" y1=\"344\" x2=\"622\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"681\" y1=\"344\" x2=\"681\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"739\" y1=\"344\" x2=\"739\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"344\" x2=\"769\" y2=\"344\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"299\" x2=\"769\" y2=\"299\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"253\" x2=\"769\" y2=\"253\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"207\" x2=\"769\" y2=\"207\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"162\" x2=\"769\" y2=\"162\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"116\" x2=\"769\" y2=\"116\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"70\" x2=\"769\" y2=\"70\"/>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"64,34 64,344 \"/>\n<text x=\"55\" y=\"344\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n0.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,344 64,344 \"/>\n<text x=\"55\" y=\"299\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n10.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,299 64,299 \"/>\n<text x=\"55\" y=\"253\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n20.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,253 64,253 \"/>\n<text x=\"55\" y=\"207\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n30.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,207 64,207 \"/>\n<text x=\"55\" y=\"162\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n40.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,162 64,162 \"/>\n<text x=\"55\" y=\"116\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n50.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,116 64,116 \"/>\n<text x=\"55\" y=\"70\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n60.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,70 64,70 \"/>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"65,345 769,345 \"/>\n<text x=\"94\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nCopa De La Liga Pr\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"94,345 94,350 \"/>\n<text x=\"153\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nAFC Champions Leag\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"153,345 153,350 \"/>\n<text x=\"211\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nUEFA Euro\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"211,345 211,350 \"/>\n<text x=\"270\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nFIFA World Cup\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"270,345 270,350 \"/>\n<text x=\"329\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nUEFA Conference Le\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"329,345 329,350 \"/>\n<text x=\"387\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nLiga Profesional\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"387,345 387,350 \"/>\n<text x=\"446\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nEnglish Championsh\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"446,345 446,350 \"/>\n<text x=\"505\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nItalian Serie B\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"505,345 505,350 \"/>\n<text x=\"563\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nEkstraklasa\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"563,345 563,350 \"/>\n<text x=\"622\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nMLS\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"622,345 622,350 \"/>\n<text x=\"681\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nGerman 2. Bundesli\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"681,345 681,350 \"/>\n<text x=\"739\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nEnglish League Two\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"739,345 739,350 \"/>\n<rect x=\"73\" y=\"75\" width=\"41\" height=\"269\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"132\" y=\"75\" width=\"41\" height=\"269\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"191\" y=\"84\" width=\"41\" height=\"260\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"249\" y=\"89\" width=\"41\" height=\"255\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"308\" y=\"121\" width=\"41\" height=\"223\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"367\" y=\"139\" width=\"41\" height=\"205\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"425\" y=\"143\" width=\"41\" height=\"201\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"484\" y=\"143\" width=\"41\" height=\"201\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"543\" y=\"143\" width=\"41\" height=\"201\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"601\" y=\"143\" width=\"41\" height=\"201\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"660\" y=\"153\" width=\"41\" height=\"191\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"719\" y=\"153\" width=\"41\" height=\"191\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n</svg>",
+            "text/plain": "Figure (SVG)"
+          },
+          "metadata": {}
         }
       ]
     },
     {
-      "id": "59a24985-f41f-4a26-8493-a2b2fdc1e68a",
+      "id": "a73c520d-03f5-4094-8f39-1b01bafe215d",
       "cell_type": "markdown",
-      "source": "## Findings\n\n**Being bottom-three with ten games left is not a death sentence — but it is close to one.**\n\nScope: 21,299 team-seasons across all competitions; standings replayed\nmatch-by-match and evaluated once per matchday. A team-season counted\nwhen it sat in the bottom three at any point with ≤10 games remaining.\n\n1. **The base rate: ~37% escape.** Of 4,744 team-seasons that were\n   bottom-three with ten or fewer games left, **1,745 finished outside\n   the bottom three** and 2,996 stayed down.\n\n2. **The deeper the hole, the deader it gets.** The most dramatic\n   escapes — teams still bottom-three with only 1–2 games left — are\n   dominated by 10-team leagues (Scottish League One/Two, Championship)\n   where one result swings three places. Aberdeen (Scottish Premiership\n   1997/98) and Hearts (1994/95) escaped with a single game in hand.\n   In 18–20 team leagues, escaping from bottom-three at 1 game left is\n   nearly impossible.\n\n3. **Cautionary escapes exist too.** The table of biggest escapes is\n   full of teams that were bottom-three with *ten* games left and\n   finished mid-table — Forfar, Montrose, Peterhead, Kaiserslautern,\n   Werder Bremen (Bundesliga 2016/17, P8/18). Ten games is enough time\n   for a complete reset.\n\n4. **League escape rates cluster at 36–44%.** Championship 44%,\n   Serie B 44%, La Liga 42%, 2. Bundesliga 42%, Ligue 1 39%,\n   Portugal 38% — bigger leagues don't escape more often; squad depth\n   matters more than table size.\n\n5. **Caveats:** \"games left\" is computed per team against its own\n   remaining fixtures — postponed matches and cup scheduling can make\n   the count fuzzy at the boundary; cup competitions (Champions League,\n   World Cup) have non-standard \"bottom-3\" meanings and are included in\n   the raw counts; standings replay uses 3/1/0 with GD/GF tiebreaks.",
+      "source": "## Discussion\n\n**Being bottom-three with ten games left is not a death sentence — but it is close to one.**\n\nScope: 21,299 team-seasons across all competitions; standings replayed\nmatch-by-match and evaluated once per matchday. A team-season counted\nwhen it sat in the bottom three at any point with ≤10 games remaining.\n\n1. **The base rate: ~37% escape.** Of 4,744 team-seasons that were\n   bottom-three with ten or fewer games left, **1,745 finished outside\n   the bottom three** and 2,996 stayed down.\n\n2. **The deeper the hole, the deader it gets.** The most dramatic\n   escapes — teams still bottom-three with only 1–2 games left — are\n   dominated by 10-team leagues (Scottish League One/Two, Championship)\n   where one result swings three places. Aberdeen (Scottish Premiership\n   1997/98) and Hearts (1994/95) escaped with a single game in hand.\n   In 18–20 team leagues, escaping from bottom-three at 1 game left is\n   nearly impossible.\n\n3. **Cautionary escapes exist too.** The table of biggest escapes is\n   full of teams that were bottom-three with *ten* games left and\n   finished mid-table — Forfar, Montrose, Peterhead, Kaiserslautern,\n   Werder Bremen (Bundesliga 2016/17, P8/18). Ten games is enough time\n   for a complete reset.\n\n4. **League escape rates cluster at 36–44%.** Championship 44%,\n   Serie B 44%, La Liga 42%, 2. Bundesliga 42%, Ligue 1 39%,\n   Portugal 38% — bigger leagues don't escape more often; squad depth\n   matters more than table size.\n\n5. **Caveats:** \"games left\" is computed per team against its own\n   remaining fixtures — postponed matches and cup scheduling can make\n   the count fuzzy at the boundary; cup competitions (Champions League,\n   World Cup) have non-standard \"bottom-3\" meanings and are included in\n   the raw counts; standings replay uses 3/1/0 with GD/GF tiebreaks.\n\n**Limitations.** The analysis is limited to the competitions present in the database; player-level metrics exist only for StatsBomb-covered tournaments, and underlying event data may contain errors.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "48317d98-ade3-467c-92ea-2b5364a4aebc",
+      "cell_type": "markdown",
+      "source": "## Conclusion\n\nBeing bottom-three with ten games left is not a death sentence — but it is close to one. Together these results answer the research question posed in the Introduction and quantify the pattern across hundreds of thousands of matches. The notebook provides a fully reproducible pipeline from raw CSV extracts to published figures.\n",
       "metadata": {},
       "outputs": []
     }

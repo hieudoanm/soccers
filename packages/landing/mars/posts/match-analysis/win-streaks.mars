@@ -12,9 +12,23 @@
   },
   "cells": [
     {
-      "id": "505c1a57-9ab4-4376-8fe8-7618e8792223",
+      "id": "4fb91e25-7b43-4fee-9ac8-494a46ef0855",
       "cell_type": "markdown",
-      "source": "## Five in a row: how common are winning streaks?\n\nThe question every fan asks after a good run: *how rare is it to win five\ncompetitive matches in a row?* This notebook rebuilds every team's\nmatch-by-match sequence from **301,353 finished matches** (1958 → present —\nfootball-data.co.uk + StatsBomb open data) and counts the streaks.\n\n**Method.** Each match produces two team-results (home and away). We sort\nevery team-game chronologically, classify W/D/L, and scan for consecutive\nwins — run-length encoding over polars-extracted columns. Friendlies are\nexcluded (league names containing \"friend\").",
+      "source": "## Abstract\n\nHow common are winning streaks — and which teams own the longest runs? This study answers it using 301,353 finished matches drawn from the Soccers football database. The analysis quantifies the pattern directly from the data. All computation runs in Rust inside a `.mars` notebook (polars + plotters — charts as inline SVG), and every table and figure is generated from the extracted CSVs.\n\n## Keywords\n\n**Keywords:** football, analysis, streaks, mars, sqlite\n\n## Table of contents\n\n- [Abstract](#abstract)\n- [Keywords](#keywords)\n- [Introduction](#introduction)\n- [Methods](#methods)\n- [Results](#results)\n  - [Build the team-match timeline](#build-the-team-match-timeline)\n  - [Count the streaks](#count-the-streaks)\n- [Discussion](#discussion)\n- [Conclusion](#conclusion)\n\n## Introduction\n\nThe question every fan asks after a good run: *how rare is it to win five\ncompetitive matches in a row?* This notebook rebuilds every team's\nmatch-by-match sequence from **301,353 finished matches** (1958 → present —\nfootball-data.co.uk + StatsBomb open data) and counts the streaks.\n\n**Method.** Each match produces two team-results (home and away). We sort\nevery team-game chronologically, classify W/D/L, and scan for consecutive\nwins — run-length encoding over polars-extracted columns. Friendlies are\nexcluded (league names containing \"friend\").\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "c7197b18-51c4-44f5-a5be-2cca3e5330ff",
+      "cell_type": "markdown",
+      "source": "## Methods\n\nData were extracted from the Soccers football database (`packages/data`) as CSV snapshots: `matches_full`.\n\nThe analysis runs entirely in Rust inside the notebook: **polars** handles table scans, joins and aggregations; **plotters** renders figures as inline SVG; `mars_table` renders result tables.\n\nEach code cell is kept to a single output so results can be read top to bottom.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "fa2f1886-8123-4b72-8b04-6a7550ecf276",
+      "cell_type": "markdown",
+      "source": "## Results\n\nAll figures and tables below are computed directly from the extracted data. Each code cell produces one output — a table, a chart, or a short text summary.\n",
       "metadata": {},
       "outputs": []
     },
@@ -32,9 +46,9 @@
       ]
     },
     {
-      "id": "fd4da42b-fcdb-45d3-b8cc-0db8b244f346",
+      "id": "de91b035-7b08-46f4-aa40-bc7b101ffb1b",
       "cell_type": "markdown",
-      "source": "## Build the team-match timeline",
+      "source": "### Build the team-match timeline\n",
       "metadata": {},
       "outputs": []
     },
@@ -52,9 +66,9 @@
       ]
     },
     {
-      "id": "87a8ff59-8df2-4303-9a8a-5a2e391b587b",
+      "id": "70d60b75-51f5-496f-a586-a70174b5a713",
       "cell_type": "markdown",
-      "source": "## Count the streaks\n\nEvery time a win-run ends at length ≥ 5 we record (team, length, league,\nstart → end dates).",
+      "source": "### Count the streaks\n\nEvery time a win-run ends at length ≥ 5 we record (team, length, league,\nstart → end dates).\n",
       "metadata": {},
       "outputs": []
     },
@@ -660,9 +674,16 @@
       ]
     },
     {
-      "id": "5dbc3f0b-d958-47ab-aef1-26b2f8e1637f",
+      "id": "23874ad3-3ef7-46e4-8a72-63acbfaec09f",
       "cell_type": "markdown",
-      "source": "## Findings\n\nAcross **602,706 competitive team-matches** we found **4,110 winning\nstreaks of five or more** — and the record book is dominated by a familiar\ncast:\n\n- **Longest streak ever: 25 wins** — Celtic, Scottish Premiership,\n  Aug 2003 → Feb 2004 (the \"Treble\" season's league run).\n- **Runner-up: 22** — Celtic again, 2016/17; then **Barcelona's 21**\n  (2010/11, the Guardiola peak) and **20** (2012/13, the MSN era).\n- **Most streaks overall:** Barcelona (72), Celtic (64), Real Madrid (60),\n  Porto (59), Bayern Munich (53) — serial winners collect streaks the way\n  compounding works.\n\nThe distribution is steeply pyramidal: **1,974** streaks of exactly 5,\n988 of 6, 456 of 7 — each extra win roughly halves the count, until the\n10+ tail (263 streaks) where genuinely special teams live. Five in a row\nis uncommon but not exotic; ten in a row is a season-defining feat.",
+      "source": "## Discussion\n\nAcross **602,706 competitive team-matches** we found **4,110 winning\nstreaks of five or more** — and the record book is dominated by a familiar\ncast:\n\n- **Longest streak ever: 25 wins** — Celtic, Scottish Premiership,\n  Aug 2003 → Feb 2004 (the \"Treble\" season's league run).\n- **Runner-up: 22** — Celtic again, 2016/17; then **Barcelona's 21**\n  (2010/11, the Guardiola peak) and **20** (2012/13, the MSN era).\n- **Most streaks overall:** Barcelona (72), Celtic (64), Real Madrid (60),\n  Porto (59), Bayern Munich (53) — serial winners collect streaks the way\n  compounding works.\n\nThe distribution is steeply pyramidal: **1,974** streaks of exactly 5,\n988 of 6, 456 of 7 — each extra win roughly halves the count, until the\n10+ tail (263 streaks) where genuinely special teams live. Five in a row\nis uncommon but not exotic; ten in a row is a season-defining feat.\n\n**Limitations.** The analysis is limited to the competitions present in the database; player-level metrics exist only for StatsBomb-covered tournaments, and underlying event data may contain errors.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "827c023f-b6c5-4956-a998-48f816a81302",
+      "cell_type": "markdown",
+      "source": "## Conclusion\n\n4,110 winning streaks of five or more — and the record book is dominated by a familiar cast. Longest streak ever: 25 wins — Celtic, Scottish Premiership, Aug 2003 → Feb 2004 (the \"Treble\" season's league run). Together these results answer the research question posed in the Introduction and quantify the pattern across 301,353 finished matches. The notebook provides a fully reproducible pipeline from raw CSV extracts to published figures.\n",
       "metadata": {},
       "outputs": []
     }

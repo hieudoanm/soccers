@@ -12,9 +12,23 @@
   },
   "cells": [
     {
-      "id": "94472f5d-23fa-4704-9053-1016a27578be",
+      "id": "b5dc07fb-0362-42e3-93ea-1eb839843eff",
       "cell_type": "markdown",
-      "source": "## Best of the Eredivisie\n\nA complete record-book of the **Eredivisie** — every statistic worth knowing,\ncomputed from all matches in `data/matches_full.csv`.\n\n**Records covered:** most championships, the champion hall of fame\n(most points, most goals, fewest conceded, best goal difference, biggest\ntitle margin, most wins), the best team-seasons ever, unbeaten\ninvincibles, closest and biggest title races, biggest wins and\nhighest-scoring matches, and the season's top scorers where player-level\ndata exists.",
+      "source": "## Abstract\n\nThis study examines the Eredivisie record book using 10,141 matches drawn from the Soccers football database. Across 33 complete seasons (1993/94 → 2025/26) and 10,141 matches, the Eredivisie record book — a two-horse race for two decades. Most championships: Ajax 14 and PSV 14 — dead level. All computation runs in Rust inside a `.mars` notebook (polars + plotters — charts as inline SVG), and every table and figure is generated from the extracted CSVs.\n\n## Keywords\n\n**Keywords:** football, analysis, records, eredivisie, mars, sqlite\n\n## Table of contents\n\n- [Abstract](#abstract)\n- [Keywords](#keywords)\n- [Introduction](#introduction)\n- [Methods](#methods)\n- [Results](#results)\n  - [Assemble per-season standings for all complete seasons](#assemble-per-season-standings-for-all-complete-seasons)\n  - [Champion hall of fame — six records](#champion-hall-of-fame--six-records)\n  - [Best team-seasons ever by points (any team)](#best-team-seasons-ever-by-points-any-team)\n  - [Unbeaten seasons](#unbeaten-seasons)\n  - [Title races — closest and biggest margins](#title-races--closest-and-biggest-margins)\n  - [Biggest wins & highest scoring matches](#biggest-wins--highest-scoring-matches)\n  - [Top scorers](#top-scorers)\n- [Discussion](#discussion)\n- [Conclusion](#conclusion)\n\n## Introduction\n\nA complete record-book of the **Eredivisie** — every statistic worth knowing,\ncomputed from all matches in `data/matches_full.csv`.\n\n**Records covered:** most championships, the champion hall of fame\n(most points, most goals, fewest conceded, best goal difference, biggest\ntitle margin, most wins), the best team-seasons ever, unbeaten\ninvincibles, closest and biggest title races, biggest wins and\nhighest-scoring matches, and the season's top scorers where player-level\ndata exists.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "fddaeec3-f5c1-4528-9b4b-a3a817a482d5",
+      "cell_type": "markdown",
+      "source": "## Methods\n\nData were extracted from the Soccers football database (`packages/data`) as CSV snapshots: `matches_full`, `player_goals`.\n\nThe analysis runs entirely in Rust inside the notebook: **polars** handles table scans, joins and aggregations; **plotters** renders figures as inline SVG; `mars_table` renders result tables.\n\nEach code cell is kept to a single output so results can be read top to bottom.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "d5fa4700-7d6d-4729-b78e-8dacf8ec5ce3",
+      "cell_type": "markdown",
+      "source": "## Results\n\nAll figures and tables below are computed directly from the extracted data. Each code cell produces one output — a table, a chart, or a short text summary.\n",
       "metadata": {},
       "outputs": []
     },
@@ -43,6 +57,13 @@
           "text": "Dutch Eredivisie matches: 10141\nfinished matches: 10141 (0 duplicate fixtures dropped) | team-season entries: 612\ncomplete seasons: 33 (1993/94 -> 2025/26)\nno player-level scorer data for this competition\n()\n"
         }
       ]
+    },
+    {
+      "id": "df068c23-b55a-4a71-8d39-bf59284cdb51",
+      "cell_type": "markdown",
+      "source": "### Assemble per-season standings for all complete seasons\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "3656c761-1109-4bf4-b6ff-5bfbec61c209",
@@ -91,6 +112,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "58b60eac-7401-4c17-a581-f529f4559d74",
+      "cell_type": "markdown",
+      "source": "### Champion hall of fame — six records\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "2b63d115-567c-4225-93e9-de4654261feb",
@@ -193,6 +221,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "9d365ae2-f1d0-4905-83fe-f6802f8b316e",
+      "cell_type": "markdown",
+      "source": "### Best team-seasons ever by points (any team)\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "b77d486c-86cf-4e40-86b8-7c1ae28c5570",
@@ -388,6 +423,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "2eba1ec2-c3fe-4c91-95d2-47527afdbd83",
+      "cell_type": "markdown",
+      "source": "### Unbeaten seasons\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "12068631-68fe-4aae-81bc-588bd890898b",
@@ -600,6 +642,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "ddafac4f-688f-4539-a472-6a2506b36cf5",
+      "cell_type": "markdown",
+      "source": "### Title races — closest and biggest margins\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "1c3f149b-9a10-4b87-88b2-190c4a8043c3",
@@ -1129,6 +1178,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "85ba8bd5-b6ed-4533-860a-8c60dffd2b22",
+      "cell_type": "markdown",
+      "source": "### Biggest wins & highest scoring matches\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "f3deac69-27e8-4435-ab47-18278a06dde1",
@@ -1798,6 +1854,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "6fcd7347-29fa-4fbb-8d30-769d67397e0f",
+      "cell_type": "markdown",
+      "source": "### Top scorers\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "7e77e068-4efd-4981-a962-d29c30731f30",
@@ -2880,9 +2943,16 @@
       ]
     },
     {
-      "id": "e01b470f-2111-40b2-9ff1-cff2885fb715",
+      "id": "7e77e747-f52a-446a-84b1-e224520480d9",
       "cell_type": "markdown",
-      "source": "## Findings\n\nAcross **33 complete seasons** (1993/94 → 2025/26) and 10,141 matches,\nthe Eredivisie record book — a two-horse race for two decades:\n\n- **Most championships**: Ajax **14** and PSV **14** — dead level. Feyenoord\n  3, AZ 1, Twente 1. Only **five clubs** have ever won the title.\n- **Champion hall of fame**: PSV 2023/24 owns most points (91), most\n  wins, best goal difference (+90) and most goals by a champion (111);\n  Ajax 2018/19 scored the most (119); PSV 2004/05 conceded the fewest\n  (18).\n- **Best season ever**: PSV 2023/24 — 2.68 ppg.\n- **Invincibles**: Ajax 1994/95 went unbeaten (27W 7D, 106–28) — the only\n  invincible season in Eredivisie history.\n- **Closest finishes**: two titles decided on goal difference at level\n  points (PSV–Ajax 2006/07 and 2019/20); three more were one-point\n  margins.\n- **Biggest blowouts**: PSV 2025/26 (+19) and a cluster of +17 margins —\n  the Dutch top is unusually prone to routs.\n- **Records on the pitch**: **two** 10–0 wins (PSV 10–0 Volendam 1997/98\n  and PSV 10–0 Feyenoord 2010/11); the highest-scoring match was VVV\n  Venlo 0–13 Ajax (2020/21).\n- No player-level scoring data exists for the Eredivisie in the StatsBomb\n  subset.\n\n*Method notes: canonical names merged \"Roda JC\"/\"Roda\" etc.; the\nCOVID-shortened 2019/20 season is included (it was a complete competition).",
+      "source": "## Discussion\n\nAcross **33 complete seasons** (1993/94 → 2025/26) and 10,141 matches,\nthe Eredivisie record book — a two-horse race for two decades:\n\n- **Most championships**: Ajax **14** and PSV **14** — dead level. Feyenoord\n  3, AZ 1, Twente 1. Only **five clubs** have ever won the title.\n- **Champion hall of fame**: PSV 2023/24 owns most points (91), most\n  wins, best goal difference (+90) and most goals by a champion (111);\n  Ajax 2018/19 scored the most (119); PSV 2004/05 conceded the fewest\n  (18).\n- **Best season ever**: PSV 2023/24 — 2.68 ppg.\n- **Invincibles**: Ajax 1994/95 went unbeaten (27W 7D, 106–28) — the only\n  invincible season in Eredivisie history.\n- **Closest finishes**: two titles decided on goal difference at level\n  points (PSV–Ajax 2006/07 and 2019/20); three more were one-point\n  margins.\n- **Biggest blowouts**: PSV 2025/26 (+19) and a cluster of +17 margins —\n  the Dutch top is unusually prone to routs.\n- **Records on the pitch**: **two** 10–0 wins (PSV 10–0 Volendam 1997/98\n  and PSV 10–0 Feyenoord 2010/11); the highest-scoring match was VVV\n  Venlo 0–13 Ajax (2020/21).\n- No player-level scoring data exists for the Eredivisie in the StatsBomb\n  subset.\n\n*Method notes: canonical names merged \"Roda JC\"/\"Roda\" etc.; the\nCOVID-shortened 2019/20 season is included (it was a complete competition).\n\n**Limitations.** Records reflect only the matches present in the database; coverage varies by competition and era, so 'records' are archive records, not all-time official marks.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "3dee7276-ce31-42e6-923f-ba481100ba76",
+      "cell_type": "markdown",
+      "source": "## Conclusion\n\nAcross 33 complete seasons (1993/94 → 2025/26) and 10,141 matches, the Eredivisie record book — a two-horse race for two decades. Most championships: Ajax 14 and PSV 14 — dead level. Together these results answer the research question posed in the Introduction and quantify the pattern across 10,141 matches. The notebook provides a fully reproducible pipeline from raw CSV extracts to published figures.\n",
       "metadata": {},
       "outputs": []
     }

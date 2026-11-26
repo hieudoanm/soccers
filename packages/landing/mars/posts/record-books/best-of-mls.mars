@@ -12,9 +12,23 @@
   },
   "cells": [
     {
-      "id": "431f75f7-a0c3-4eee-9a07-9470fe5da43b",
+      "id": "a6e0826d-c4c5-44fd-8676-29dda5d42314",
       "cell_type": "markdown",
-      "source": "## Best of the MLS\n\nA complete record-book of the **MLS** — every statistic worth knowing,\ncomputed from all matches in `data/matches_full.csv`.\n\n**Records covered:** most championships, the champion hall of fame\n(most points, most goals, fewest conceded, best goal difference, biggest\ntitle margin, most wins), the best team-seasons ever, unbeaten\ninvincibles, closest and biggest title races, biggest wins and\nhighest-scoring matches, and the season's top scorers where player-level\ndata exists.",
+      "source": "## Abstract\n\nThis study examines the MLS record book using 6,335 matches drawn from the Soccers football database. Across 14 complete seasons (2012 → 2025) and 6,335 matches, the MLS record book. All computation runs in Rust inside a `.mars` notebook (polars + plotters — charts as inline SVG), and every table and figure is generated from the extracted CSVs.\n\n## Keywords\n\n**Keywords:** football, analysis, records, mls, mars, sqlite\n\n## Table of contents\n\n- [Abstract](#abstract)\n- [Keywords](#keywords)\n- [Introduction](#introduction)\n- [Methods](#methods)\n- [Results](#results)\n  - [Assemble per-season standings for all complete seasons](#assemble-per-season-standings-for-all-complete-seasons)\n  - [Champion hall of fame — six records](#champion-hall-of-fame--six-records)\n  - [Best team-seasons ever by points (any team)](#best-team-seasons-ever-by-points-any-team)\n  - [Unbeaten seasons](#unbeaten-seasons)\n  - [Title races — closest and biggest margins](#title-races--closest-and-biggest-margins)\n  - [Biggest wins & highest scoring matches](#biggest-wins--highest-scoring-matches)\n  - [Top scorers](#top-scorers)\n- [Discussion](#discussion)\n- [Conclusion](#conclusion)\n\n## Introduction\n\nA complete record-book of the **MLS** — every statistic worth knowing,\ncomputed from all matches in `data/matches_full.csv`.\n\n**Records covered:** most championships, the champion hall of fame\n(most points, most goals, fewest conceded, best goal difference, biggest\ntitle margin, most wins), the best team-seasons ever, unbeaten\ninvincibles, closest and biggest title races, biggest wins and\nhighest-scoring matches, and the season's top scorers where player-level\ndata exists.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "2cc89b89-5f44-4d8a-9761-90aedabe979b",
+      "cell_type": "markdown",
+      "source": "## Methods\n\nData were extracted from the Soccers football database (`packages/data`) as CSV snapshots: `matches_full`, `player_goals`.\n\nThe analysis runs entirely in Rust inside the notebook: **polars** handles table scans, joins and aggregations; **plotters** renders figures as inline SVG; `mars_table` renders result tables.\n\nEach code cell is kept to a single output so results can be read top to bottom.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "c9cbd425-8825-460f-8dcf-f0b31cc3eaa2",
+      "cell_type": "markdown",
+      "source": "## Results\n\nAll figures and tables below are computed directly from the extracted data. Each code cell produces one output — a table, a chart, or a short text summary.\n",
       "metadata": {},
       "outputs": []
     },
@@ -43,6 +57,13 @@
           "text": "MLS matches: 6335\nfinished matches: 5816 (0 duplicate fixtures dropped) | team-season entries: 335\ncomplete seasons: 14 (2012 -> 2025)\nno player-level scorer data for this competition\n()\n"
         }
       ]
+    },
+    {
+      "id": "0a9e5160-9e5d-4b73-9011-6ceff46c4fdd",
+      "cell_type": "markdown",
+      "source": "### Assemble per-season standings for all complete seasons\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "b1fb4bc4-1941-4afb-af96-7af3e66d1212",
@@ -106,6 +127,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "9526c52c-7cb8-4435-ab92-4229f2dcae47",
+      "cell_type": "markdown",
+      "source": "### Champion hall of fame — six records\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "a8ad74c2-8d58-44b7-94a9-bc688ae5af97",
@@ -223,6 +251,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "4cc45d89-4b9f-4ab0-b20c-c7c9ce76fa97",
+      "cell_type": "markdown",
+      "source": "### Best team-seasons ever by points (any team)\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "af01f0f8-d7f8-48ea-8ce6-1cfab0f934c8",
@@ -433,6 +468,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "57ee73d9-13b6-45fa-a722-1f3373698394",
+      "cell_type": "markdown",
+      "source": "### Unbeaten seasons\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "0dd75327-cbe5-48cb-bfc2-a4fdd2b0b1cd",
@@ -653,6 +695,13 @@
           "rows": []
         }
       ]
+    },
+    {
+      "id": "f972dcc9-316e-402d-89fd-b49b25bac5bd",
+      "cell_type": "markdown",
+      "source": "### Title races — closest and biggest margins\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "61d1414e-2aa8-46e2-9d95-ea4629f0e697",
@@ -1198,6 +1247,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "f3c22363-0d70-4880-b4ff-651c70f09f43",
+      "cell_type": "markdown",
+      "source": "### Biggest wins & highest scoring matches\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "fe082225-ef4c-4965-bc15-260eea9c2730",
@@ -1883,6 +1939,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "cd8e6913-d3a3-4679-b4bc-9f480fabb690",
+      "cell_type": "markdown",
+      "source": "### Top scorers\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "9bcb377f-6722-4cae-96e6-5082dd2fcac0",
@@ -2989,9 +3052,16 @@
       ]
     },
     {
-      "id": "2292163b-5ff3-4519-90c3-e21964b6694c",
+      "id": "9cec9288-5aa9-4d19-a629-84c4b8ea0962",
       "cell_type": "markdown",
-      "source": "## Findings\n\nAcross **14 complete seasons** (2012 → 2025) and 6,335 matches, the MLS\nrecord book. *Important caveat: MLS decides its champion in playoffs, so\nthe \"titles\" below count the **best regular-season record** (the\nSupporters' Shield standard), not the MLS Cup.*\n\n- **Most regular-season titles**: LA Galaxy, Philadelphia Union and\n  Toronto FC have **two each**; eight more clubs have won once — the most\n  evenly spread championship history in this series.\n- **Best regular season ever**: Atlanta United 2018 — 81 points, most\n  wins and most points by an MLS side.\n- **Most goals by a champion**: Inter Miami 2025 — **101 goals** in 40\n  games, the highest-scoring champion season on record (they went on to\n  lose the MLS Cup final).\n- **Best defense**: Philadelphia Union 2020 conceded just **25 goals**;\n  their 2022 side posted the best goal difference (+49).\n- **Biggest margin**: Toronto FC 2017, 16 clear of Seattle.\n- **Closest finishes**: **three** seasons went to a literal dead heat on\n  points decided by goal difference (2013, 2014, 2022) — MLS parity is\n  real.\n- **Records on the pitch**: four separate 7–0 wins; highest-scoring was\n  DC United 6–4 Real Salt Lake (2015).\n- No player-level scoring data for MLS in the StatsBomb subset.\n\n*Method notes: the incomplete 2026 season is excluded; \"champion\" means\nbest regular-season record — playoff results are not in this dataset.*",
+      "source": "## Discussion\n\nAcross **14 complete seasons** (2012 → 2025) and 6,335 matches, the MLS\nrecord book. *Important caveat: MLS decides its champion in playoffs, so\nthe \"titles\" below count the **best regular-season record** (the\nSupporters' Shield standard), not the MLS Cup.*\n\n- **Most regular-season titles**: LA Galaxy, Philadelphia Union and\n  Toronto FC have **two each**; eight more clubs have won once — the most\n  evenly spread championship history in this series.\n- **Best regular season ever**: Atlanta United 2018 — 81 points, most\n  wins and most points by an MLS side.\n- **Most goals by a champion**: Inter Miami 2025 — **101 goals** in 40\n  games, the highest-scoring champion season on record (they went on to\n  lose the MLS Cup final).\n- **Best defense**: Philadelphia Union 2020 conceded just **25 goals**;\n  their 2022 side posted the best goal difference (+49).\n- **Biggest margin**: Toronto FC 2017, 16 clear of Seattle.\n- **Closest finishes**: **three** seasons went to a literal dead heat on\n  points decided by goal difference (2013, 2014, 2022) — MLS parity is\n  real.\n- **Records on the pitch**: four separate 7–0 wins; highest-scoring was\n  DC United 6–4 Real Salt Lake (2015).\n- No player-level scoring data for MLS in the StatsBomb subset.\n\n*Method notes: the incomplete 2026 season is excluded; \"champion\" means\nbest regular-season record — playoff results are not in this dataset.*\n\n**Limitations.** Records reflect only the matches present in the database; coverage varies by competition and era, so 'records' are archive records, not all-time official marks.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "a2347865-dc87-42bf-860b-447db0ba1bc7",
+      "cell_type": "markdown",
+      "source": "## Conclusion\n\nAcross 14 complete seasons (2012 → 2025) and 6,335 matches, the MLS record book. Together these results answer the research question posed in the Introduction and quantify the pattern across 6,335 matches. The notebook provides a fully reproducible pipeline from raw CSV extracts to published figures.\n",
       "metadata": {},
       "outputs": []
     }

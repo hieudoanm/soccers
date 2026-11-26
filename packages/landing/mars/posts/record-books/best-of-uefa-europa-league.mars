@@ -12,9 +12,23 @@
   },
   "cells": [
     {
-      "id": "f1933469-e030-48c9-97e7-cf78e01aac3a",
+      "id": "61241ed4-94c4-468b-bd2f-9a897d2c8c5b",
       "cell_type": "markdown",
-      "source": "## Best of the UEFA Europa League\n\nA record book of the **UEFA Europa League** — continental club competition champions,\nfinals and records computed from `data/matches_full.csv`.\n\nClub competition coverage from 2009/10 onward (ESPN import) — the in-progress 2026/27 season is excluded.\n\n**Records covered:** most titles, every edition's champion and final\nscore, the champion's full tournament record, biggest wins,\nhighest-scoring matches, champion records (most goals, fewest conceded,\nbest goal difference, most wins, fewest losses), unbeaten champions,\nthe closest finals, and top scorers where player-level data exists.",
+      "source": "## Abstract\n\nThis study examines the UEFA Europa League record book using the full match archive drawn from the Soccers football database. Four of the eight closest finals went to penalties. All computation runs in Rust inside a `.mars` notebook (polars + plotters — charts as inline SVG), and every table and figure is generated from the extracted CSVs.\n\n## Keywords\n\n**Keywords:** football, analysis, records, mars, sqlite\n\n## Table of contents\n\n- [Abstract](#abstract)\n- [Keywords](#keywords)\n- [Introduction](#introduction)\n- [Methods](#methods)\n- [Results](#results)\n  - [Tournament editions](#tournament-editions)\n  - [Every edition — champion, final score, champion's tournament record](#every-edition--champion-final-score-champions-tournament-record)\n  - [Records across all editions](#records-across-all-editions)\n  - [Champion records: most goals for, fewest against, best GD, most wins](#champion-records-most-goals-for-fewest-against-best-gd-most-wins)\n  - [Unbeaten champions](#unbeaten-champions)\n  - [Closest finals (smallest margin or draw)](#closest-finals-smallest-margin-or-draw)\n  - [Top scorers (latest edition with player data — SCORERS picks best-covered year)](#top-scorers-latest-edition-with-player-data--scorers-picks-best-covered-year)\n- [Discussion](#discussion)\n- [Conclusion](#conclusion)\n\n## Introduction\n\nA record book of the **UEFA Europa League** — continental club competition champions,\nfinals and records computed from `data/matches_full.csv`.\n\nClub competition coverage from 2009/10 onward (ESPN import) — the in-progress 2026/27 season is excluded.\n\n**Records covered:** most titles, every edition's champion and final\nscore, the champion's full tournament record, biggest wins,\nhighest-scoring matches, champion records (most goals, fewest conceded,\nbest goal difference, most wins, fewest losses), unbeaten champions,\nthe closest finals, and top scorers where player-level data exists.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "1aef08f4-6b5f-4b29-9d13-68be79a40573",
+      "cell_type": "markdown",
+      "source": "## Methods\n\nData were extracted from the Soccers football database (`packages/data`) as CSV snapshots: `matches_full`, `player_goals`.\n\nThe analysis runs entirely in Rust inside the notebook: **polars** handles table scans, joins and aggregations; **plotters** renders figures as inline SVG; `mars_table` renders result tables.\n\nEach code cell is kept to a single output so results can be read top to bottom.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "4d818755-e19e-4278-8cbb-3f5d318217db",
+      "cell_type": "markdown",
+      "source": "## Results\n\nAll figures and tables below are computed directly from the extracted data. Each code cell produces one output — a table, a chart, or a short text summary.\n",
       "metadata": {},
       "outputs": []
     },
@@ -43,6 +57,13 @@
           "text": "UEFA Europa League matches: 5646\nfinished matches: 5572 (2 duplicate fixtures dropped) | team-season entries: 2407\ncomplete seasons: 14 (2009/2010 -> 2025/2026)\ntop scorers available for season year 1988 (StatsBomb coverage)\n()\n"
         }
       ]
+    },
+    {
+      "id": "bddb6664-c5ba-4b0f-90c7-c5319cae14c9",
+      "cell_type": "markdown",
+      "source": "### Tournament editions\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "17e49902-6e8f-4c8a-9d56-baf8fd93bd75",
@@ -106,6 +127,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "7eb89b0d-7d06-48f9-881b-837f830f8c57",
+      "cell_type": "markdown",
+      "source": "### Every edition — champion, final score, champion's tournament record\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "102d6c40-3b2c-4cbf-8066-60dc8dec8026",
@@ -307,6 +335,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "0c445ad6-4cbb-4925-9e5e-8b23f4208353",
+      "cell_type": "markdown",
+      "source": "### Records across all editions\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "bf53fe42-5bd9-4784-a212-a89d60a3bd70",
@@ -861,6 +896,13 @@
       ]
     },
     {
+      "id": "ba0202a2-18f0-4eab-9958-4d72fc15c43f",
+      "cell_type": "markdown",
+      "source": "### Champion records: most goals for, fewest against, best GD, most wins\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
       "id": "0d588cd0-e9ea-42d1-b46a-dba411ebb8ae",
       "cell_type": "code",
       "source": "// champion records: most goals for, fewest against, best GD, most wins\nlet mut champ_stats: Vec<(String, String, i64, i64, i64, i64, i64)> = Vec::new(); // season, champ, gf, ga, w, d, l\nfor e in &editions {\n    if e.champion.is_empty() || e.champion == \"decided on penalties\" { continue; }\n    let mut w = 0i64; let mut d = 0i64; let mut l = 0i64;\n    let mut gf = 0i64; let mut ga = 0i64;\n    for m in &e.matches {\n        let (hg, ag) = if m.h == e.champion { (m.hg, m.ag) }\n            else if m.a == e.champion { (m.ag, m.hg) }\n            else { continue };\n        gf += hg; ga += ag;\n        if hg > ag { w += 1; } else if hg == ag { d += 1; } else { l += 1; }\n    }\n    champ_stats.push((e.season.clone(), e.champion.clone(), gf, ga, w, d, l));\n}\nlet rec_rows: Vec<Vec<String>> = vec![\n    (\"most goals scored\", champ_stats.iter().max_by_key(|c| c.2).unwrap()),\n    (\"fewest goals conceded\", champ_stats.iter().min_by_key(|c| c.3).unwrap()),\n    (\"best goal difference\", champ_stats.iter().max_by_key(|c| c.2 - c.3).unwrap()),\n    (\"most wins\", champ_stats.iter().max_by_key(|c| c.4).unwrap()),\n    (\"fewest losses\", champ_stats.iter().min_by_key(|c| c.6).unwrap()),\n]\n.iter()\n.map(|(label, c)| vec![label.to_string(), format!(\"{} {}\", c.1, c.0), format!(\"{}W {}D {}L\", c.4, c.5, c.6), format!(\"{}/{}\", c.2, c.3), (c.2 - c.3).to_string()])\n.collect();\nmars_table(&[\"record\", \"champion edition\", \"record\", \"gf/ga\", \"gd\"], &rec_rows);\n",
@@ -1207,6 +1249,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "73047a4a-d592-4e72-b6f3-60030d41f00c",
+      "cell_type": "markdown",
+      "source": "### Unbeaten champions\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "60fe7cee-e41b-408a-8212-a64ec497a5c7",
@@ -1596,6 +1645,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "7271d559-ea95-4f24-ad5e-e08a29e35397",
+      "cell_type": "markdown",
+      "source": "### Closest finals (smallest margin or draw)\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "74b05643-91cc-48ad-87bb-29c9bae12cdc",
@@ -2035,6 +2091,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "bc7b5e50-8783-4e5a-ba56-ba56f05c6f95",
+      "cell_type": "markdown",
+      "source": "### Top scorers (latest edition with player data — SCORERS picks best-covered year)\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "27e468e7-2a3b-4b57-95f4-495eb54a9e13",
@@ -3378,9 +3441,16 @@
       ]
     },
     {
-      "id": "94dc4e31-db25-45c0-9639-5b37d8120c98",
+      "id": "5671b2a4-ec9a-42b4-9f19-8f6289c584be",
       "cell_type": "markdown",
-      "source": "## What the record book says\n\n17 completed editions (2009/10 → 2025/26) — every edition's champion is\nthe team that won the final (the competition's last match each season).\n\n- **Sevilla are the Europa League's kings**: 5 titles (2015, 2016, 2020,\n  2023, plus the competition's first under this branding in 2014) —\n  more than any other club. Atlético Madrid (3) and Chelsea (2) follow.\n- **The specialist factory**: after Sevilla, six different clubs have won\n  exactly once — Porto, Man United, Eintracht Frankfurt, Villarreal,\n  Atalanta and Aston Villa — proof this is the tournament where\n  outsiders actually lift trophies.\n- **Unbeaten champions**: five editions were won without defeat —\n  Sevilla twice (2015, 2020), Chelsea 2019, and Villarreal 2021 (who won\n  the final on penalties after going unbeaten all tournament).\n- **Best champion season**: Atlético 2011/12 went 14W-1D-1L (35/10) —\n  the best record and goal difference of any UEL champion.\n- **Biggest wins**: PSV 9–0 Zeta and Brøndby 9–0 Juvenes/Dogana —\n  qualifying-stage blowouts against minnows.\n- **Four of the eight closest finals went to penalties**, including\n  Sevilla's 2014, 2023 and Villarreal's 2021 shootout wins.\n\n*Source: ESPN import via `dev.db`; player-level stats too sparse for a\ntop-scorers table.*",
+      "source": "## Discussion\n\n17 completed editions (2009/10 → 2025/26) — every edition's champion is\nthe team that won the final (the competition's last match each season).\n\n- **Sevilla are the Europa League's kings**: 5 titles (2015, 2016, 2020,\n  2023, plus the competition's first under this branding in 2014) —\n  more than any other club. Atlético Madrid (3) and Chelsea (2) follow.\n- **The specialist factory**: after Sevilla, six different clubs have won\n  exactly once — Porto, Man United, Eintracht Frankfurt, Villarreal,\n  Atalanta and Aston Villa — proof this is the tournament where\n  outsiders actually lift trophies.\n- **Unbeaten champions**: five editions were won without defeat —\n  Sevilla twice (2015, 2020), Chelsea 2019, and Villarreal 2021 (who won\n  the final on penalties after going unbeaten all tournament).\n- **Best champion season**: Atlético 2011/12 went 14W-1D-1L (35/10) —\n  the best record and goal difference of any UEL champion.\n- **Biggest wins**: PSV 9–0 Zeta and Brøndby 9–0 Juvenes/Dogana —\n  qualifying-stage blowouts against minnows.\n- **Four of the eight closest finals went to penalties**, including\n  Sevilla's 2014, 2023 and Villarreal's 2021 shootout wins.\n\n*Source: ESPN import via `dev.db`; player-level stats too sparse for a\ntop-scorers table.*\n\n**Limitations.** Records reflect only the matches present in the database; coverage varies by competition and era, so 'records' are archive records, not all-time official marks.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "249dc9c5-9dbc-404d-9521-673e501127a0",
+      "cell_type": "markdown",
+      "source": "## Conclusion\n\nFour of the eight closest finals went to penalties. Together these results answer the research question posed in the Introduction and quantify the pattern across the full match archive. The notebook provides a fully reproducible pipeline from raw CSV extracts to published figures.\n",
       "metadata": {},
       "outputs": []
     }

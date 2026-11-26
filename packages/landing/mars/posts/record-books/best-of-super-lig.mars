@@ -12,9 +12,23 @@
   },
   "cells": [
     {
-      "id": "f9da885d-19b6-4339-a8da-e5a980c26706",
+      "id": "73ff55a2-9741-4680-abde-ca73c8fdf8f3",
       "cell_type": "markdown",
-      "source": "## Best of the Süper Lig\n\nA complete record-book of the **Süper Lig** — every statistic worth knowing,\ncomputed from all matches in `data/matches_full.csv`.\n\n**Records covered:** most championships, the champion hall of fame\n(most points, most goals, fewest conceded, best goal difference, biggest\ntitle margin, most wins), the best team-seasons ever, unbeaten\ninvincibles, closest and biggest title races, biggest wins and\nhighest-scoring matches, and the season's top scorers where player-level\ndata exists.",
+      "source": "## Abstract\n\nThis study examines the Süper Lig record book using 10,200 matches drawn from the Soccers football database. Across 32 complete seasons (1994/95 → 2025/26) and 10,200 matches, the Süper Lig record book. Most championships: Galatasaray 16, Fenerbahçe 7, Beşiktaş 6 — the \"Big Three\" have won 29 of 32 titles. All computation runs in Rust inside a `.mars` notebook (polars + plotters — charts as inline SVG), and every table and figure is generated from the extracted CSVs.\n\n## Keywords\n\n**Keywords:** football, analysis, records, super-lig, mars, sqlite\n\n## Table of contents\n\n- [Abstract](#abstract)\n- [Keywords](#keywords)\n- [Introduction](#introduction)\n- [Methods](#methods)\n- [Results](#results)\n  - [Assemble per-season standings for all complete seasons](#assemble-per-season-standings-for-all-complete-seasons)\n  - [Champion hall of fame — six records](#champion-hall-of-fame--six-records)\n  - [Best team-seasons ever by points (any team)](#best-team-seasons-ever-by-points-any-team)\n  - [Unbeaten seasons](#unbeaten-seasons)\n  - [Title races — closest and biggest margins](#title-races--closest-and-biggest-margins)\n  - [Biggest wins & highest scoring matches](#biggest-wins--highest-scoring-matches)\n  - [Top scorers](#top-scorers)\n- [Discussion](#discussion)\n- [Conclusion](#conclusion)\n\n## Introduction\n\nA complete record-book of the **Süper Lig** — every statistic worth knowing,\ncomputed from all matches in `data/matches_full.csv`.\n\n**Records covered:** most championships, the champion hall of fame\n(most points, most goals, fewest conceded, best goal difference, biggest\ntitle margin, most wins), the best team-seasons ever, unbeaten\ninvincibles, closest and biggest title races, biggest wins and\nhighest-scoring matches, and the season's top scorers where player-level\ndata exists.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "c70ca01b-3fd6-4fa8-b1c0-fd055c197fb2",
+      "cell_type": "markdown",
+      "source": "## Methods\n\nData were extracted from the Soccers football database (`packages/data`) as CSV snapshots: `matches_full`, `player_goals`.\n\nThe analysis runs entirely in Rust inside the notebook: **polars** handles table scans, joins and aggregations; **plotters** renders figures as inline SVG; `mars_table` renders result tables.\n\nEach code cell is kept to a single output so results can be read top to bottom.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "5f813e1f-d795-4cfe-9cb6-22a218412703",
+      "cell_type": "markdown",
+      "source": "## Results\n\nAll figures and tables below are computed directly from the extracted data. Each code cell produces one output — a table, a chart, or a short text summary.\n",
       "metadata": {},
       "outputs": []
     },
@@ -43,6 +57,13 @@
           "text": "Turkish Süper Lig matches: 10200\nfinished matches: 10200 (0 duplicate fixtures dropped) | team-season entries: 602\ncomplete seasons: 32 (1994/95 -> 2025/26)\nno player-level scorer data for this competition\n()\n"
         }
       ]
+    },
+    {
+      "id": "9d92e397-2e2d-4846-8cff-77958e9868b3",
+      "cell_type": "markdown",
+      "source": "### Assemble per-season standings for all complete seasons\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "f4bdb866-a370-45ec-a54a-f87390abb2b9",
@@ -96,6 +117,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "b98dd942-47e0-48f9-a7d8-dac574856cb9",
+      "cell_type": "markdown",
+      "source": "### Champion hall of fame — six records\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "6fca1e70-86a9-40cd-aebd-56fed5aef4ce",
@@ -203,6 +231,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "4eba3bd3-a2ce-4cd4-b1c4-7c95087345cb",
+      "cell_type": "markdown",
+      "source": "### Best team-seasons ever by points (any team)\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "d13a9534-f713-4fed-ba5e-2c9825cc7e3b",
@@ -403,6 +438,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "362bd1a2-d7c1-43dd-a764-10ce443b1e90",
+      "cell_type": "markdown",
+      "source": "### Unbeaten seasons\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "4182194a-69c4-4faf-afd4-daeb5cdca946",
@@ -613,6 +655,13 @@
           "rows": []
         }
       ]
+    },
+    {
+      "id": "be3a29be-7c02-4909-8d0d-eeb693f062c9",
+      "cell_type": "markdown",
+      "source": "### Title races — closest and biggest margins\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "e10da478-80f2-43e6-988d-dd71135c7435",
@@ -1138,6 +1187,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "7f0395e8-57d8-4683-ba78-3d9873a38d54",
+      "cell_type": "markdown",
+      "source": "### Biggest wins & highest scoring matches\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "193a0381-ecf4-4a43-a432-548bcd08e266",
@@ -1803,6 +1859,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "b27d5531-e5cc-408e-882b-fc7569505cc3",
+      "cell_type": "markdown",
+      "source": "### Top scorers\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "c3f23487-94d3-45db-adaf-1a2f8ea97b17",
@@ -2879,9 +2942,16 @@
       ]
     },
     {
-      "id": "f7ac0eda-a81d-4817-84c7-dfb2ebd0ffcf",
+      "id": "9c8482d1-81c1-4963-9889-0ce74f6e5320",
       "cell_type": "markdown",
-      "source": "## Findings\n\nAcross **32 complete seasons** (1994/95 → 2025/26) and 10,200 matches, the\nSüper Lig record book:\n\n- **Most championships**: Galatasaray **16**, Fenerbahçe 7, Beşiktaş 6 —\n  the \"Big Three\" have won **29 of 32** titles. Bursaspor, İstanbul\n  Başakşehir and Trabzonspor have one each.\n- **Champion hall of fame**: Galatasaray 2023/24 owns most points (102),\n  most goals (92) and best goal difference (+66); Fenerbahçe 1995/96\n  conceded the fewest (19); Galatasaray 2024/25 produced the biggest\n  margin (+11).\n- **Best season ever**: Galatasaray 2023/24 — 102 points, 2.68 ppg.\n- **No invincible seasons** — remarkable given the dominance at the top;\n  even record-breaking Gala sides dropped points.\n- **Closest finishes**: two titles decided on goal difference at level\n  points (Fenerbahçe 2010/11 over Trabzonspor, Beşiktaş 2020/21 over\n  Galatasaray — one of the great modern finishes); three more one-point\n  margins.\n- **Biggest blowouts**: modest by European standards — the biggest margin\n  is just +11 (Galatasaray 2024/25).\n- **Records on the pitch**: three 8–0 wins including Fenerbahçe 8–0\n  Eyüpspor (2026/27); highest-scoring was Kayserispor 5–6 Trabzonspor\n  (1997/98).\n- No player-level scoring data for the Süper Lig in the StatsBomb subset.\n\n*Method notes: canonical names merged (\"Gaziantep\"/\"Gaziantepspor\" etc.);\nthe league's format changes across eras are handled per-season.",
+      "source": "## Discussion\n\nAcross **32 complete seasons** (1994/95 → 2025/26) and 10,200 matches, the\nSüper Lig record book:\n\n- **Most championships**: Galatasaray **16**, Fenerbahçe 7, Beşiktaş 6 —\n  the \"Big Three\" have won **29 of 32** titles. Bursaspor, İstanbul\n  Başakşehir and Trabzonspor have one each.\n- **Champion hall of fame**: Galatasaray 2023/24 owns most points (102),\n  most goals (92) and best goal difference (+66); Fenerbahçe 1995/96\n  conceded the fewest (19); Galatasaray 2024/25 produced the biggest\n  margin (+11).\n- **Best season ever**: Galatasaray 2023/24 — 102 points, 2.68 ppg.\n- **No invincible seasons** — remarkable given the dominance at the top;\n  even record-breaking Gala sides dropped points.\n- **Closest finishes**: two titles decided on goal difference at level\n  points (Fenerbahçe 2010/11 over Trabzonspor, Beşiktaş 2020/21 over\n  Galatasaray — one of the great modern finishes); three more one-point\n  margins.\n- **Biggest blowouts**: modest by European standards — the biggest margin\n  is just +11 (Galatasaray 2024/25).\n- **Records on the pitch**: three 8–0 wins including Fenerbahçe 8–0\n  Eyüpspor (2026/27); highest-scoring was Kayserispor 5–6 Trabzonspor\n  (1997/98).\n- No player-level scoring data for the Süper Lig in the StatsBomb subset.\n\n*Method notes: canonical names merged (\"Gaziantep\"/\"Gaziantepspor\" etc.);\nthe league's format changes across eras are handled per-season.\n\n**Limitations.** Records reflect only the matches present in the database; coverage varies by competition and era, so 'records' are archive records, not all-time official marks.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "fc18ea26-466f-4a36-9e1f-9fa83950a1dd",
+      "cell_type": "markdown",
+      "source": "## Conclusion\n\nAcross 32 complete seasons (1994/95 → 2025/26) and 10,200 matches, the Süper Lig record book. Most championships: Galatasaray 16, Fenerbahçe 7, Beşiktaş 6 — the \"Big Three\" have won 29 of 32 titles. Together these results answer the research question posed in the Introduction and quantify the pattern across 10,200 matches. The notebook provides a fully reproducible pipeline from raw CSV extracts to published figures.\n",
       "metadata": {},
       "outputs": []
     }

@@ -12,9 +12,23 @@
   },
   "cells": [
     {
-      "id": "370d0268-9ab3-4869-99e7-333c269d2d40",
+      "id": "b5901d80-bc19-4a3e-a8e1-8e00b6c58c13",
       "cell_type": "markdown",
-      "source": "## Best of the Scottish Premiership\n\nA complete record-book of the **Scottish Premiership** — every statistic worth knowing,\ncomputed from all matches in `data/matches_full.csv`.\n\n**Records covered:** most championships, the champion hall of fame\n(most points, most goals, fewest conceded, best goal difference, biggest\ntitle margin, most wins), the best team-seasons ever, unbeaten\ninvincibles, closest and biggest title races, biggest wins and\nhighest-scoring matches, and the season's top scorers where player-level\ndata exists.",
+      "source": "## Abstract\n\nThis study examines the Scottish Premiership record book using 7,040 matches drawn from the Soccers football database. Across 32 complete seasons (1994/95 → 2025/26) and 7,040 matches, the Scottish Premiership record book — the most one-sided league in world football. Most championships: Celtic 21 and Rangers 11 — the Old Firm have won all 32 titles between them. All computation runs in Rust inside a `.mars` notebook (polars + plotters — charts as inline SVG), and every table and figure is generated from the extracted CSVs.\n\n## Keywords\n\n**Keywords:** football, analysis, records, scottish-premiership, mars, sqlite\n\n## Table of contents\n\n- [Abstract](#abstract)\n- [Keywords](#keywords)\n- [Introduction](#introduction)\n- [Methods](#methods)\n- [Results](#results)\n  - [Assemble per-season standings for all complete seasons](#assemble-per-season-standings-for-all-complete-seasons)\n  - [Champion hall of fame — six records](#champion-hall-of-fame--six-records)\n  - [Best team-seasons ever by points (any team)](#best-team-seasons-ever-by-points-any-team)\n  - [Unbeaten seasons](#unbeaten-seasons)\n  - [Title races — closest and biggest margins](#title-races--closest-and-biggest-margins)\n  - [Biggest wins & highest scoring matches](#biggest-wins--highest-scoring-matches)\n  - [Top scorers](#top-scorers)\n- [Discussion](#discussion)\n- [Conclusion](#conclusion)\n\n## Introduction\n\nA complete record-book of the **Scottish Premiership** — every statistic worth knowing,\ncomputed from all matches in `data/matches_full.csv`.\n\n**Records covered:** most championships, the champion hall of fame\n(most points, most goals, fewest conceded, best goal difference, biggest\ntitle margin, most wins), the best team-seasons ever, unbeaten\ninvincibles, closest and biggest title races, biggest wins and\nhighest-scoring matches, and the season's top scorers where player-level\ndata exists.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "26e366d9-5310-4ed3-acd4-5963e6944132",
+      "cell_type": "markdown",
+      "source": "## Methods\n\nData were extracted from the Soccers football database (`packages/data`) as CSV snapshots: `matches_full`, `player_goals`.\n\nThe analysis runs entirely in Rust inside the notebook: **polars** handles table scans, joins and aggregations; **plotters** renders figures as inline SVG; `mars_table` renders result tables.\n\nEach code cell is kept to a single output so results can be read top to bottom.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "5657a7b2-a1ff-4af4-a561-8068160ec5dd",
+      "cell_type": "markdown",
+      "source": "## Results\n\nAll figures and tables below are computed directly from the extracted data. Each code cell produces one output — a table, a chart, or a short text summary.\n",
       "metadata": {},
       "outputs": []
     },
@@ -43,6 +57,13 @@
           "text": "Scottish Premiership matches: 7040\nfinished matches: 7040 (0 duplicate fixtures dropped) | team-season entries: 384\ncomplete seasons: 32 (1994/95 -> 2025/26)\nno player-level scorer data for this competition\n()\n"
         }
       ]
+    },
+    {
+      "id": "8c5a1e24-4d84-4820-80fc-0f7c09b501f8",
+      "cell_type": "markdown",
+      "source": "### Assemble per-season standings for all complete seasons\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "e172d46c-3fbf-44b7-bfbd-80016a8c40da",
@@ -76,6 +97,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "b0b0fdcb-2a65-4a0b-889e-3dd640146fac",
+      "cell_type": "markdown",
+      "source": "### Champion hall of fame — six records\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "f84567c4-8466-403c-b604-ff798c94df32",
@@ -163,6 +191,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "85a9bb24-df40-426a-acdc-90d13fa4b560",
+      "cell_type": "markdown",
+      "source": "### Best team-seasons ever by points (any team)\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "cf39d3f2-f3e7-458d-bd3a-4dc9b0955268",
@@ -343,6 +378,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "8bd98ecf-468d-4691-ac1c-a88b12fe4e09",
+      "cell_type": "markdown",
+      "source": "### Unbeaten seasons\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "750105b9-2551-434c-bb8e-00889054d9b7",
@@ -546,6 +588,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "66e8fc4c-9ec1-4516-bc25-96d1570d8ac6",
+      "cell_type": "markdown",
+      "source": "### Title races — closest and biggest margins\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "961d3208-7628-48bd-8be4-020606134f6d",
@@ -1057,6 +1106,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "b5785fac-a891-4cac-b5a6-a511f4617047",
+      "cell_type": "markdown",
+      "source": "### Biggest wins & highest scoring matches\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "aa2398e6-993c-4b56-9d47-264d5ba00eed",
@@ -1708,6 +1764,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "40fb5510-6794-4014-a0db-c936581ce6c7",
+      "cell_type": "markdown",
+      "source": "### Top scorers\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "2cc8cea6-f649-4810-8544-ba97a1155ea4",
@@ -2763,9 +2826,16 @@
       ]
     },
     {
-      "id": "3b60a87e-6aab-4af4-87be-f2b7561bd6ff",
+      "id": "fd87d0f5-a889-4d1b-9917-d2e4da4817a6",
       "cell_type": "markdown",
-      "source": "## Findings\n\nAcross **32 complete seasons** (1994/95 → 2025/26) and 7,040 matches, the\nScottish Premiership record book — the most one-sided league in world\nfootball:\n\n- **Most championships**: Celtic **21** and Rangers **11** — the Old Firm\n  have won **all 32 titles** between them. No other club has lifted the\n  Scottish championship in this entire era.\n- **Champion hall of fame**: Celtic 2016/17 owns most points (106), most\n  wins and biggest margin (+30 over Aberdeen); Celtic 2022/23 scored the\n  most goals (114); Rangers 2020/21 conceded the fewest (13); Celtic\n  2024/25 posted the best goal difference (+86).\n- **Best season ever**: Celtic 2016/17 — 106 points, 2.79 ppg, the\n  highest champion ppg of any league in this series.\n- **Invincibles**: **two** unbeaten seasons — Celtic 2016/17 (34W 4D) and\n  Rangers 2020/21 (32W 6D), both in the modern era.\n- **Closest finishes**: Rangers 2002/03 and 2004/05 both went to a\n  final-round decider at level points; three more one-point margins —\n  even in a two-team league the margins are razor-thin.\n- **Biggest blowouts**: Celtic 2016/17 (+30) and Celtic 2013/14 (+29) —\n  when the Old Firm don't win it, they win it big.\n- **Records on the pitch**: Celtic 9–0 Aberdeen (2010/11) is the biggest\n  win; Motherwell 6–6 Hibernian (2009/10) the highest-scoring match.\n- No player-level scoring data for the Scottish Premiership in the\n  StatsBomb subset.\n\n*Method notes: canonical names merged; note \"Dundee\" and \"Dundee United\"\nare correctly kept as separate clubs.*",
+      "source": "## Discussion\n\nAcross **32 complete seasons** (1994/95 → 2025/26) and 7,040 matches, the\nScottish Premiership record book — the most one-sided league in world\nfootball:\n\n- **Most championships**: Celtic **21** and Rangers **11** — the Old Firm\n  have won **all 32 titles** between them. No other club has lifted the\n  Scottish championship in this entire era.\n- **Champion hall of fame**: Celtic 2016/17 owns most points (106), most\n  wins and biggest margin (+30 over Aberdeen); Celtic 2022/23 scored the\n  most goals (114); Rangers 2020/21 conceded the fewest (13); Celtic\n  2024/25 posted the best goal difference (+86).\n- **Best season ever**: Celtic 2016/17 — 106 points, 2.79 ppg, the\n  highest champion ppg of any league in this series.\n- **Invincibles**: **two** unbeaten seasons — Celtic 2016/17 (34W 4D) and\n  Rangers 2020/21 (32W 6D), both in the modern era.\n- **Closest finishes**: Rangers 2002/03 and 2004/05 both went to a\n  final-round decider at level points; three more one-point margins —\n  even in a two-team league the margins are razor-thin.\n- **Biggest blowouts**: Celtic 2016/17 (+30) and Celtic 2013/14 (+29) —\n  when the Old Firm don't win it, they win it big.\n- **Records on the pitch**: Celtic 9–0 Aberdeen (2010/11) is the biggest\n  win; Motherwell 6–6 Hibernian (2009/10) the highest-scoring match.\n- No player-level scoring data for the Scottish Premiership in the\n  StatsBomb subset.\n\n*Method notes: canonical names merged; note \"Dundee\" and \"Dundee United\"\nare correctly kept as separate clubs.*\n\n**Limitations.** Records reflect only the matches present in the database; coverage varies by competition and era, so 'records' are archive records, not all-time official marks.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "1251efed-d5de-4cfc-9f4e-d5cc69fc7627",
+      "cell_type": "markdown",
+      "source": "## Conclusion\n\n1994/95 → 2025/26) and 7,040 matches, the Scottish Premiership record book — the most one-sided league in world football. Most championships: Celtic 21 and Rangers 11 — the Old Firm have won all 32 titles between them. Together these results answer the research question posed in the Introduction and quantify the pattern across 7,040 matches. The notebook provides a fully reproducible pipeline from raw CSV extracts to published figures.\n",
       "metadata": {},
       "outputs": []
     }

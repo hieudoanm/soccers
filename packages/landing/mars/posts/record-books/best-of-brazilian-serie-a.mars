@@ -12,9 +12,23 @@
   },
   "cells": [
     {
-      "id": "d8f56887-3cfc-46bc-b3be-7251d32b879e",
+      "id": "294de113-644f-47fd-b7cf-c64e6f0cd3b8",
       "cell_type": "markdown",
-      "source": "## Best of the Brazilian Série A\n\nA complete record-book of the **Brazilian Série A** — every statistic worth knowing,\ncomputed from all matches in `data/matches_full.csv`.\n\n**Records covered:** most championships, the champion hall of fame\n(most points, most goals, fewest conceded, best goal difference, biggest\ntitle margin, most wins), the best team-seasons ever, unbeaten\ninvincibles, closest and biggest title races, biggest wins and\nhighest-scoring matches, and the season's top scorers where player-level\ndata exists.",
+      "source": "## Abstract\n\nThis study examines the Brazilian Série A record book using 5,678 matches drawn from the Soccers football database. Across 14 complete seasons (2012 → 2025) and 5,678 matches, the Brazilian Série A record book. Most championships: Palmeiras 4 and Flamengo 3 — the two giants have won half of all titles. All computation runs in Rust inside a `.mars` notebook (polars + plotters — charts as inline SVG), and every table and figure is generated from the extracted CSVs.\n\n## Keywords\n\n**Keywords:** football, analysis, records, brazilian-serie-a, mars, sqlite\n\n## Table of contents\n\n- [Abstract](#abstract)\n- [Keywords](#keywords)\n- [Introduction](#introduction)\n- [Methods](#methods)\n- [Results](#results)\n  - [Assemble per-season standings for all complete seasons](#assemble-per-season-standings-for-all-complete-seasons)\n  - [Champion hall of fame — six records](#champion-hall-of-fame--six-records)\n  - [Best team-seasons ever by points (any team)](#best-team-seasons-ever-by-points-any-team)\n  - [Unbeaten seasons](#unbeaten-seasons)\n  - [Title races — closest and biggest margins](#title-races--closest-and-biggest-margins)\n  - [Biggest wins & highest scoring matches](#biggest-wins--highest-scoring-matches)\n  - [Top scorers](#top-scorers)\n- [Discussion](#discussion)\n- [Conclusion](#conclusion)\n\n## Introduction\n\nA complete record-book of the **Brazilian Série A** — every statistic worth knowing,\ncomputed from all matches in `data/matches_full.csv`.\n\n**Records covered:** most championships, the champion hall of fame\n(most points, most goals, fewest conceded, best goal difference, biggest\ntitle margin, most wins), the best team-seasons ever, unbeaten\ninvincibles, closest and biggest title races, biggest wins and\nhighest-scoring matches, and the season's top scorers where player-level\ndata exists.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "cf0e9a16-12e7-48cc-810d-3a462070da82",
+      "cell_type": "markdown",
+      "source": "## Methods\n\nData were extracted from the Soccers football database (`packages/data`) as CSV snapshots: `matches_full`, `player_goals`.\n\nThe analysis runs entirely in Rust inside the notebook: **polars** handles table scans, joins and aggregations; **plotters** renders figures as inline SVG; `mars_table` renders result tables.\n\nEach code cell is kept to a single output so results can be read top to bottom.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "bfc244f2-0655-4c49-b2c8-c36cc887af8a",
+      "cell_type": "markdown",
+      "source": "## Results\n\nAll figures and tables below are computed directly from the extracted data. Each code cell produces one output — a table, a chart, or a short text summary.\n",
       "metadata": {},
       "outputs": []
     },
@@ -43,6 +57,13 @@
           "text": "Serie A matches: 5678\nfinished matches: 5319 (0 duplicate fixtures dropped) | team-season entries: 280\ncomplete seasons: 14 (2012 -> 2025)\nno player-level scorer data for this competition\n()\n"
         }
       ]
+    },
+    {
+      "id": "f4c26d37-7ee3-4e61-bff5-b5a791e477b6",
+      "cell_type": "markdown",
+      "source": "### Assemble per-season standings for all complete seasons\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "8a4f9392-d5ce-49ae-bc4f-61d9e50e937c",
@@ -101,6 +122,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "6f290850-b3bc-44f1-b1d3-e31d56615d51",
+      "cell_type": "markdown",
+      "source": "### Champion hall of fame — six records\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "b5f81331-e558-4fa1-b11a-d2f67c58eb8e",
@@ -213,6 +241,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "39b2d287-cf91-45bc-a3f4-26b9633a597a",
+      "cell_type": "markdown",
+      "source": "### Best team-seasons ever by points (any team)\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "22428a59-cd63-44e9-951c-1679e465c45d",
@@ -418,6 +453,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "434903ac-9a30-425f-8508-90641aa9e4c1",
+      "cell_type": "markdown",
+      "source": "### Unbeaten seasons\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "51b42c42-38cb-413a-b7ce-f8e6452aabe4",
@@ -633,6 +675,13 @@
           "rows": []
         }
       ]
+    },
+    {
+      "id": "0b959ee2-b95c-4841-8252-b38fb1647915",
+      "cell_type": "markdown",
+      "source": "### Title races — closest and biggest margins\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "e4e488d2-6926-4bac-8664-a91a1b6c5ac8",
@@ -1168,6 +1217,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "19f161a4-5c12-4e5f-992e-d07df6fe9a47",
+      "cell_type": "markdown",
+      "source": "### Biggest wins & highest scoring matches\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "ba9f062c-1296-4181-989c-3dabb5efe403",
@@ -1843,6 +1899,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "eac11439-a467-4811-a042-655b0c80b6a9",
+      "cell_type": "markdown",
+      "source": "### Top scorers\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "1a7b51bd-95ac-4661-93f3-57b9989a19d3",
@@ -2934,9 +2997,16 @@
       ]
     },
     {
-      "id": "684b05f4-6a55-4d63-b00e-df24e6d86a41",
+      "id": "a9937dd2-3959-49e4-a1eb-ad677abae43e",
       "cell_type": "markdown",
-      "source": "## Findings\n\nAcross **14 complete seasons** (2012 → 2025) and 5,678 matches, the\nBrazilian Série A record book:\n\n- **Most championships**: Palmeiras **4** and Flamengo **3** — the two\n  giants have won **half** of all titles. Corinthians and Cruzeiro have\n  two each; Atlético-MG, Botafogo and Fluminense one apiece. Only **seven\n  clubs** have ever won the Brasileirão in this era.\n- **Champion hall of fame**: Flamengo 2019 owns most points (90), most\n  goals (86), biggest margin (+16) and best ppg (2.37); Palmeiras 2018\n  conceded the fewest (26); Flamengo 2025 posted the best goal\n  difference (+51).\n- **Best season ever**: Flamengo 2019 — 90 points, 2.37 ppg, the most\n  dominant side in modern Brazilian football.\n- **No invincible seasons** — even the great sides drop points in\n  Brazil's volatile league.\n- **Closest finishes**: Flamengo 2020 won by **one point** over\n  Internacional; four more margins of six points or fewer.\n- **Biggest blowouts**: Flamengo 2019 (+16) and Atlético-MG 2021 (+13)\n  lead a list where margins above 10 points are rare — parity is the\n  league's defining feature.\n- **Records on the pitch**: Flamengo 8–0 Vitória (2025) is the biggest\n  win; Goiás 4–6 Bahia (2023) the highest-scoring match.\n- No player-level scoring data for the Brasileirão in the StatsBomb\n  subset.\n\n*Method notes: the incomplete 2026 season is excluded; canonical names\nmerged (\"Flamengo RJ\" etc.).",
+      "source": "## Discussion\n\nAcross **14 complete seasons** (2012 → 2025) and 5,678 matches, the\nBrazilian Série A record book:\n\n- **Most championships**: Palmeiras **4** and Flamengo **3** — the two\n  giants have won **half** of all titles. Corinthians and Cruzeiro have\n  two each; Atlético-MG, Botafogo and Fluminense one apiece. Only **seven\n  clubs** have ever won the Brasileirão in this era.\n- **Champion hall of fame**: Flamengo 2019 owns most points (90), most\n  goals (86), biggest margin (+16) and best ppg (2.37); Palmeiras 2018\n  conceded the fewest (26); Flamengo 2025 posted the best goal\n  difference (+51).\n- **Best season ever**: Flamengo 2019 — 90 points, 2.37 ppg, the most\n  dominant side in modern Brazilian football.\n- **No invincible seasons** — even the great sides drop points in\n  Brazil's volatile league.\n- **Closest finishes**: Flamengo 2020 won by **one point** over\n  Internacional; four more margins of six points or fewer.\n- **Biggest blowouts**: Flamengo 2019 (+16) and Atlético-MG 2021 (+13)\n  lead a list where margins above 10 points are rare — parity is the\n  league's defining feature.\n- **Records on the pitch**: Flamengo 8–0 Vitória (2025) is the biggest\n  win; Goiás 4–6 Bahia (2023) the highest-scoring match.\n- No player-level scoring data for the Brasileirão in the StatsBomb\n  subset.\n\n*Method notes: the incomplete 2026 season is excluded; canonical names\nmerged (\"Flamengo RJ\" etc.).\n\n**Limitations.** Records reflect only the matches present in the database; coverage varies by competition and era, so 'records' are archive records, not all-time official marks.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "1108f1c8-a111-4927-8907-77d616a614bf",
+      "cell_type": "markdown",
+      "source": "## Conclusion\n\nAcross 14 complete seasons (2012 → 2025) and 5,678 matches, the Brazilian Série A record book. Most championships: Palmeiras 4 and Flamengo 3 — the two giants have won half of all titles. Together these results answer the research question posed in the Introduction and quantify the pattern across 5,678 matches. The notebook provides a fully reproducible pipeline from raw CSV extracts to published figures.\n",
       "metadata": {},
       "outputs": []
     }

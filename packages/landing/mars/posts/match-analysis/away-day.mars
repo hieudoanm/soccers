@@ -12,9 +12,23 @@
   },
   "cells": [
     {
-      "id": "849dd01f-b651-49a1-902a-066b022a0379",
+      "id": "63215d3e-fbdb-4052-ad29-cb6fb45c1aa7",
       "cell_type": "markdown",
-      "source": "## The Away-Day Nightmare\n\nIs the away shirt really a curse? This notebook splits every team's\nrecord into home and away halves across **301,353 finished matches** and\nasks three things: who has the biggest home/away split, which leagues are\nharshest on visitors, and whether playing away hurts *scoring* more than\nit helps the opponent *scoring*.",
+      "source": "## Abstract\n\nIs the away shirt really a curse? This study answers it using 301,353 matches drawn from the Soccers football database. Across 301,353 matches, the away-day penalty is real and mostly a *scoring* problem. All computation runs in Rust inside a `.mars` notebook (polars + plotters — charts as inline SVG), and every table and figure is generated from the extracted CSVs.\n\n## Keywords\n\n**Keywords:** football, analysis, home-advantage, mars, sqlite\n\n## Table of contents\n\n- [Abstract](#abstract)\n- [Keywords](#keywords)\n- [Introduction](#introduction)\n- [Methods](#methods)\n- [Results](#results)\n  - [Home/away splits per team and per league](#homeaway-splits-per-team-and-per-league)\n- [Discussion](#discussion)\n- [Conclusion](#conclusion)\n\n## Introduction\n\nIs the away shirt really a curse? This notebook splits every team's\nrecord into home and away halves across **301,353 finished matches** and\nasks three things: who has the biggest home/away split, which leagues are\nharshest on visitors, and whether playing away hurts *scoring* more than\nit helps the opponent *scoring*.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "c93a5c7d-81b5-4829-ba4d-d8e661b7fd8b",
+      "cell_type": "markdown",
+      "source": "## Methods\n\nData were extracted from the Soccers football database (`packages/data`) as CSV snapshots: `matches_full`.\n\nThe analysis runs entirely in Rust inside the notebook: **polars** handles table scans, joins and aggregations; **plotters** renders figures as inline SVG; `mars_table` renders result tables.\n\nEach code cell is kept to a single output so results can be read top to bottom.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "c451d52f-6c59-42ec-8911-c90b6dc0ef54",
+      "cell_type": "markdown",
+      "source": "## Results\n\nAll figures and tables below are computed directly from the extracted data. Each code cell produces one output — a table, a chart, or a short text summary.\n",
       "metadata": {},
       "outputs": []
     },
@@ -32,9 +46,9 @@
       ]
     },
     {
-      "id": "374b7a31-8aa6-46e5-9b5b-b4d4b4f36d62",
+      "id": "f3b31a5b-f9a8-4ded-a5ea-fcbf4a4539d5",
       "cell_type": "markdown",
-      "source": "## Home/away splits per team and per league",
+      "source": "### Home/away splits per team and per league\n",
       "metadata": {},
       "outputs": []
     },
@@ -623,9 +637,16 @@
       ]
     },
     {
-      "id": "6a3bb45c-34e7-491a-b944-2b0583f00934",
+      "id": "a427c659-52f2-4a09-afef-83a93d413378",
       "cell_type": "markdown",
-      "source": "## Findings\n\nAcross **301,353 matches**, the away-day penalty is real and mostly a\n*scoring* problem:\n\n- Teams score **1.50 goals/game at home vs 1.14 away** — a 24% collapse\n  in output. Goals conceded mirror it exactly (1.14 home vs 1.50 away).\n- **Biggest home/away win-rate gaps** (min. 40 games each side):\n  **Meppen +37.9 pts** (50.6% home vs 12.6% away), Catania +37.0,\n  Panahaiki +36.8 — mostly smaller-league sides where home advantage is\n  amplified by travel, pitch size and partisan crowds.\n- **Hardest leagues for visitors:** Italian Serie B (23.8% away wins),\n  French Ligue 2 (24.6%), Serie A (24.7%), La Liga 2 (25.4%). The\n  \"big five\" leagues all sit under 28% — away wins are simply rare.\n\nThe honest takeaway: almost every team is worse away — the question is\nwhether the *gap* is abnormally large. For Meppen-class teams the home\nshirt is worth ~4 extra wins per 10 games.",
+      "source": "## Discussion\n\nAcross **301,353 matches**, the away-day penalty is real and mostly a\n*scoring* problem:\n\n- Teams score **1.50 goals/game at home vs 1.14 away** — a 24% collapse\n  in output. Goals conceded mirror it exactly (1.14 home vs 1.50 away).\n- **Biggest home/away win-rate gaps** (min. 40 games each side):\n  **Meppen +37.9 pts** (50.6% home vs 12.6% away), Catania +37.0,\n  Panahaiki +36.8 — mostly smaller-league sides where home advantage is\n  amplified by travel, pitch size and partisan crowds.\n- **Hardest leagues for visitors:** Italian Serie B (23.8% away wins),\n  French Ligue 2 (24.6%), Serie A (24.7%), La Liga 2 (25.4%). The\n  \"big five\" leagues all sit under 28% — away wins are simply rare.\n\nThe honest takeaway: almost every team is worse away — the question is\nwhether the *gap* is abnormally large. For Meppen-class teams the home\nshirt is worth ~4 extra wins per 10 games.\n\n**Limitations.** The analysis is limited to the competitions present in the database; player-level metrics exist only for StatsBomb-covered tournaments, and underlying event data may contain errors.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "8b470557-8c8f-4c20-883a-ab0668172d67",
+      "cell_type": "markdown",
+      "source": "## Conclusion\n\nAcross 301,353 matches, the away-day penalty is real and mostly a *scoring* problem: teams score 1.50 goals per game at home but just 1.14 away — a 24% collapse in output. Together these results answer the research question posed in the Introduction and quantify the pattern across 301,353 matches. The notebook provides a fully reproducible pipeline from raw CSV extracts to published figures.\n",
       "metadata": {},
       "outputs": []
     }

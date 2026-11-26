@@ -12,9 +12,23 @@
   },
   "cells": [
     {
-      "id": "db5dd8f2-3176-44c9-83d9-0e7564e45f90",
+      "id": "61722ec6-2c69-460e-a5e1-5d1c7857509c",
       "cell_type": "markdown",
-      "source": "## Title defences and dynasties: how rare is repeating?\n\nThe hardest thing in football is winning twice. This notebook computes\nthe champion of every league-season in the dataset (~590\nleague-seasons, ~40 leagues, 1990s→2026) and asks:\n\n- How often does the champion retain the title the following season?\n- Which teams own the longest championship streaks?\n- Are dynasties becoming more or less common over time?\n\nRetention rate = P(next season's champion is the same team | the league\nhad a champion last season). Streaks count *consecutive* titles in the\nsame league — a gap year (missing data season) breaks the chain only if\na different team won in between.",
+      "source": "## Abstract\n\nHow rare is repeating? This study answers it using hundreds of thousands of matches drawn from the Soccers football database. Defending the title is the hardest thing in club football — only 1 in 4 champions goes back-to-back. All computation runs in Rust inside a `.mars` notebook (polars + plotters — charts as inline SVG), and every table and figure is generated from the extracted CSVs.\n\n## Keywords\n\n**Keywords:** football, analysis, title, dynasty, standings\n\n## Table of contents\n\n- [Abstract](#abstract)\n- [Keywords](#keywords)\n- [Introduction](#introduction)\n- [Methods](#methods)\n- [Results](#results)\n  - [Era check: are dynasties dying out?](#era-check-are-dynasties-dying-out)\n- [Discussion](#discussion)\n- [Conclusion](#conclusion)\n\n## Introduction\n\nThe hardest thing in football is winning twice. This notebook computes\nthe champion of every league-season in the dataset (~590\nleague-seasons, ~40 leagues, 1990s→2026) and asks:\n\n- How often does the champion retain the title the following season?\n- Which teams own the longest championship streaks?\n- Are dynasties becoming more or less common over time?\n\nRetention rate = P(next season's champion is the same team | the league\nhad a champion last season). Streaks count *consecutive* titles in the\nsame league — a gap year (missing data season) breaks the chain only if\na different team won in between.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "93bfb7bd-a2af-4ec7-9cd0-b3ee0ded88d1",
+      "cell_type": "markdown",
+      "source": "## Methods\n\nData were extracted from the Soccers football database (`packages/data`) as CSV snapshots: `matches_full`.\n\nThe analysis runs entirely in Rust inside the notebook: **polars** handles table scans, joins and aggregations; **plotters** renders figures as inline SVG; `mars_table` renders result tables.\n\nStatistical summaries include Pearson correlations.\n\nEach code cell is kept to a single output so results can be read top to bottom.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "0320098a-39de-4ef6-8ae6-7e550b08b437",
+      "cell_type": "markdown",
+      "source": "## Results\n\nAll figures and tables below are computed directly from the extracted data. Each code cell produces one output — a table, a chart, or a short text summary.\n",
       "metadata": {},
       "outputs": []
     },
@@ -666,25 +680,25 @@
               "52%"
             ],
             [
-              "Super League",
-              "12",
-              "6",
-              "50%"
-            ],
-            [
               "Premier Division",
               "14",
               "7",
               "50%"
             ],
             [
-              "Dutch Eredivisie",
+              "Super League",
+              "12",
+              "6",
+              "50%"
+            ],
+            [
+              "French Ligue 1",
               "33",
               "16",
               "48%"
             ],
             [
-              "French Ligue 1",
+              "Dutch Eredivisie",
               "33",
               "16",
               "48%"
@@ -708,13 +722,13 @@
               "45%"
             ],
             [
-              "Veikkausliiga",
+              "Ekstraklasa",
               "14",
               "6",
               "43%"
             ],
             [
-              "Ekstraklasa",
+              "Veikkausliiga",
               "14",
               "6",
               "43%"
@@ -744,6 +758,12 @@
               "33%"
             ],
             [
+              "Belgian Pro League",
+              "31",
+              "9",
+              "29%"
+            ],
+            [
               "Serie A",
               "14",
               "4",
@@ -756,19 +776,13 @@
               "29%"
             ],
             [
-              "Belgian Pro League",
-              "31",
-              "9",
-              "29%"
-            ],
-            [
-              "J1 League",
+              "Allsvenskan",
               "14",
               "4",
               "29%"
             ],
             [
-              "Allsvenskan",
+              "J1 League",
               "14",
               "4",
               "29%"
@@ -798,20 +812,32 @@
               "7%"
             ],
             [
-              "Scottish League Two",
-              "29",
+              "UEFA Europa League",
+              "17",
               "0",
               "0%"
             ],
             [
-              "German 2. Bundesliga",
+              "Liga Profesional",
+              "13",
+              "0",
+              "0%"
+            ],
+            [
+              "Scottish Championship",
               "33",
               "0",
               "0%"
             ],
             [
-              "UEFA Europa League",
-              "17",
+              "English League Two",
+              "33",
+              "0",
+              "0%"
+            ],
+            [
+              "English League One",
+              "33",
               "0",
               "0%"
             ],
@@ -822,7 +848,25 @@
               "0%"
             ],
             [
-              "English League Two",
+              "Scottish League Two",
+              "29",
+              "0",
+              "0%"
+            ],
+            [
+              "Scottish League One",
+              "29",
+              "0",
+              "0%"
+            ],
+            [
+              "French Ligue 2",
+              "30",
+              "0",
+              "0%"
+            ],
+            [
+              "German 2. Bundesliga",
               "33",
               "0",
               "0%"
@@ -838,45 +882,15 @@
               "33",
               "0",
               "0%"
-            ],
-            [
-              "English League One",
-              "33",
-              "0",
-              "0%"
-            ],
-            [
-              "Scottish League One",
-              "29",
-              "0",
-              "0%"
-            ],
-            [
-              "Scottish Championship",
-              "33",
-              "0",
-              "0%"
-            ],
-            [
-              "Liga Profesional",
-              "13",
-              "0",
-              "0%"
-            ],
-            [
-              "French Ligue 2",
-              "30",
-              "0",
-              "0%"
             ]
           ]
         }
       ]
     },
     {
-      "id": "2185fdd6-43ab-4cfa-bf1b-2a208abc1289",
+      "id": "d578ea59-6bd7-4dfb-b791-9ae5ed332641",
       "cell_type": "markdown",
-      "source": "## Era check: are dynasties dying out?\n\nSplit the dataset into decades and ask whether repeat champions are\nbecoming rarer — the parity era thesis — or whether a few leagues still\nproduce them every year.",
+      "source": "### Era check: are dynasties dying out?\n\nSplit the dataset into decades and ask whether repeat champions are\nbecoming rarer — the parity era thesis — or whether a few leagues still\nproduce them every year.\n",
       "metadata": {},
       "outputs": []
     },
@@ -1223,25 +1237,25 @@
               "52%"
             ],
             [
-              "Premier Division",
-              "14",
-              "7",
-              "50%"
-            ],
-            [
               "Super League",
               "12",
               "6",
               "50%"
             ],
             [
-              "French Ligue 1",
+              "Premier Division",
+              "14",
+              "7",
+              "50%"
+            ],
+            [
+              "Dutch Eredivisie",
               "33",
               "16",
               "48%"
             ],
             [
-              "Dutch Eredivisie",
+              "French Ligue 1",
               "33",
               "16",
               "48%"
@@ -1355,13 +1369,13 @@
               "7%"
             ],
             [
-              "French Ligue 2",
-              "30",
+              "English Championship",
+              "33",
               "0",
               "0%"
             ],
             [
-              "English League One",
+              "Spanish La Liga 2",
               "33",
               "0",
               "0%"
@@ -1373,14 +1387,14 @@
               "0%"
             ],
             [
-              "Scottish League Two",
+              "Italian Serie B",
               "29",
               "0",
               "0%"
             ],
             [
-              "English Championship",
-              "33",
+              "Scottish League Two",
+              "29",
               "0",
               "0%"
             ],
@@ -1391,14 +1405,26 @@
               "0%"
             ],
             [
+              "Scottish League One",
+              "29",
+              "0",
+              "0%"
+            ],
+            [
+              "French Ligue 2",
+              "30",
+              "0",
+              "0%"
+            ],
+            [
               "German 2. Bundesliga",
               "33",
               "0",
               "0%"
             ],
             [
-              "Scottish League One",
-              "29",
+              "English League Two",
+              "33",
               "0",
               "0%"
             ],
@@ -1409,19 +1435,7 @@
               "0%"
             ],
             [
-              "Spanish La Liga 2",
-              "33",
-              "0",
-              "0%"
-            ],
-            [
-              "Italian Serie B",
-              "29",
-              "0",
-              "0%"
-            ],
-            [
-              "English League Two",
+              "English League One",
               "33",
               "0",
               "0%"
@@ -1471,9 +1485,614 @@
       ]
     },
     {
-      "id": "35d8a81d-cddf-4c5e-8d55-71aee0c0dd08",
+      "id": "8c98524c-dc75-48f2-b010-595b6b8f6237",
+      "cell_type": "code",
+      "source": "use plotters::prelude::*;\n\nfn chart_num(s: &str) -> f64 {\n    let t = s.replace(',', \"\").replace('%', \"\").replace('−', \"-\");\n    let mult = if t.contains(\"bn\") { 1e9 }\n        else if t.contains('€') && t.contains('m') { 1e6 }\n        else { 1.0 };\n    let cleaned: String = t.chars()\n        .filter(|c| c.is_ascii_digit() || *c == '.' || *c == '-')\n        .collect();\n    cleaned.parse().unwrap_or(0.0) * mult\n}\n\n\nlet mut c_items: Vec<(String, f64)> = rrows.iter()\n    .map(|r| (r[0].clone(), chart_num(&r[3].clone())))\n    .collect();\nc_items.retain(|(_, v)| v.is_finite());\nc_items.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());\nc_items.truncate(12);\nlet c_labels: Vec<String> = c_items.iter()\n    .map(|(l, _)| l.chars().take(18).collect()).collect();\nlet c_vals: Vec<f64> = c_items.iter().map(|(_, v)| *v).collect();\nlet c_ymax = c_vals.iter().cloned().fold(0.0_f64, f64::max) * 1.15 + 1e-9;\nlet (c_div, c_unit): (f64, &str) = if c_ymax >= 1e9 { (1e9, \"bn\") }\n    else if c_ymax >= 1e6 { (1e6, \"m\") }\n    else if c_ymax >= 1e3 { (1e3, \"k\") }\n    else { (1.0, \"\") };\nlet c_n = c_vals.len();\nlet figure = plotters::evcxr::evcxr_figure((780, 400), |root| {\n    root.fill(&WHITE)?;\n    let mut chart = ChartBuilder::on(&root)\n        .caption(\"Title retention rate by league\", (\"sans-serif\", 18))\n        .margin(10)\n        .x_label_area_size(45)\n        .y_label_area_size(55)\n        .build_cartesian_2d(-0.5_f64..(c_n as f64 - 0.5), 0.0..c_ymax)?;\n    chart.configure_mesh()\n        .x_labels(c_n)\n        .x_label_formatter(&|x: &f64| c_labels.get(*x as usize).cloned().unwrap_or_default())\n        .y_label_formatter(&|y: &f64| format!(\"{:.1}{}\", y / c_div, c_unit))\n        .draw()?;\n    chart.draw_series(c_vals.iter().enumerate().map(|(i, &v)| {\n        Rectangle::new([(i as f64 - 0.35, 0.0), (i as f64 + 0.35, v)], BLUE.filled())\n    }))?;\n    Ok(())\n});\nfigure.evcxr_display();\n",
+      "metadata": {},
+      "execution_count": 4,
+      "outputs": [
+        {
+          "type": "text",
+          "text": "completed matches after dedup: 311832 (1190 dupes dropped)\nleague-seasons with a champion: 999\ntitle retention rate: 238/947 = 25.1%\navg winning margin — retained titles: 8.2 | all titles: 6.6\n"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "league",
+            "team",
+            "consecutive titles",
+            "span",
+            "avg pts"
+          ],
+          "rows": [
+            [
+              "Bundesliga",
+              "Salzburg",
+              "11",
+              "2013/2014 → 2023/2024",
+              "77"
+            ],
+            [
+              "German Bundesliga",
+              "Bayern Munich",
+              "11",
+              "2012/13 → 2022/23",
+              "82"
+            ],
+            [
+              "Italian Serie A",
+              "Juventus",
+              "9",
+              "2011/12 → 2019/20",
+              "90"
+            ],
+            [
+              "Scottish Premiership",
+              "Celtic",
+              "9",
+              "2011/12 → 2019/20",
+              "89"
+            ],
+            [
+              "French Ligue 1",
+              "Lyon",
+              "7",
+              "2001/02 → 2007/08",
+              "77"
+            ],
+            [
+              "Greek Super League",
+              "Olympiakos",
+              "7",
+              "2010/11 → 2016/17",
+              "77"
+            ],
+            [
+              "French Ligue 1",
+              "Paris SG",
+              "6",
+              "2021/22 → 2026/27",
+              "72"
+            ],
+            [
+              "Greek Super League",
+              "Olympiakos",
+              "6",
+              "1996/97 → 2006/07",
+              "82"
+            ],
+            [
+              "Premier League",
+              "Zenit",
+              "6",
+              "2018/2019 → 2023/2024",
+              "66"
+            ],
+            [
+              "Scottish Premiership",
+              "Celtic",
+              "6",
+              "2021/22 → 2026/27",
+              "82"
+            ],
+            [
+              "Belgian Pro League",
+              "Anderlecht",
+              "5",
+              "2008/09 → 2012/13",
+              "69"
+            ],
+            [
+              "Portuguese Liga Portugal",
+              "Porto",
+              "5",
+              "1994/95 → 1998/99",
+              "83"
+            ],
+            [
+              "Superliga",
+              "CFR Cluj",
+              "5",
+              "2017/2018 → 2021/2022",
+              "82"
+            ],
+            [
+              "Super League",
+              "Basel",
+              "5",
+              "2012/2013 → 2016/2017",
+              "78"
+            ],
+            [
+              "Turkish Süper Lig",
+              "Galatasaray",
+              "5",
+              "2022/23 → 2026/27",
+              "79"
+            ],
+            [
+              "Super League",
+              "Guangzhou Evergrande",
+              "4",
+              "2014 → 2017",
+              "66"
+            ],
+            [
+              "English Premier League",
+              "Man City",
+              "4",
+              "2020/21 → 2023/24",
+              "90"
+            ],
+            [
+              "French Ligue 1",
+              "Paris SG",
+              "4",
+              "2012/13 → 2015/16",
+              "89"
+            ],
+            [
+              "Premier Division",
+              "Shamrock Rovers",
+              "4",
+              "2020 → 2023",
+              "69"
+            ],
+            [
+              "Italian Serie A",
+              "Inter",
+              "4",
+              "2006/07 → 2009/10",
+              "87"
+            ],
+            [
+              "Dutch Eredivisie",
+              "PSV Eindhoven",
+              "4",
+              "2004/05 → 2007/08",
+              "80"
+            ],
+            [
+              "Dutch Eredivisie",
+              "Ajax",
+              "4",
+              "2010/11 → 2013/14",
+              "74"
+            ],
+            [
+              "Dutch Eredivisie",
+              "Ajax",
+              "4",
+              "2018/19 → 2021/22",
+              "78"
+            ],
+            [
+              "Dutch Eredivisie",
+              "PSV Eindhoven",
+              "4",
+              "2023/24 → 2026/27",
+              "71"
+            ],
+            [
+              "Eliteserien",
+              "Rosenborg",
+              "4",
+              "2015 → 2018",
+              "66"
+            ],
+            [
+              "Portuguese Liga Portugal",
+              "Porto",
+              "4",
+              "2005/06 → 2008/09",
+              "73"
+            ],
+            [
+              "Portuguese Liga Portugal",
+              "Benfica",
+              "4",
+              "2013/14 → 2016/17",
+              "82"
+            ],
+            [
+              "Super League",
+              "Young Boys",
+              "4",
+              "2017/2018 → 2020/2021",
+              "84"
+            ],
+            [
+              "Turkish Süper Lig",
+              "Galatasaray",
+              "4",
+              "1996/97 → 1999/00",
+              "78"
+            ],
+            [
+              "Super League",
+              "Shanghai Port",
+              "3",
+              "2023 → 2025",
+              "69"
+            ],
+            [
+              "English Premier League",
+              "Man United",
+              "3",
+              "1998/99 → 2000/01",
+              "83"
+            ],
+            [
+              "English Premier League",
+              "Man United",
+              "3",
+              "2006/07 → 2008/09",
+              "89"
+            ],
+            [
+              "Veikkausliiga",
+              "HJK",
+              "3",
+              "2012 → 2014",
+              "70"
+            ],
+            [
+              "Veikkausliiga",
+              "HJK",
+              "3",
+              "2020 → 2022",
+              "55"
+            ],
+            [
+              "French Ligue 1",
+              "Paris SG",
+              "3",
+              "2017/18 → 2019/20",
+              "84"
+            ],
+            [
+              "German Bundesliga",
+              "Bayern Munich",
+              "3",
+              "1998/99 → 2000/01",
+              "71"
+            ],
+            [
+              "Greek Super League",
+              "Olympiakos",
+              "3",
+              "2019/20 → 2021/22",
+              "88"
+            ],
+            [
+              "Premier Division",
+              "Dundalk",
+              "3",
+              "2014 → 2016",
+              "76"
+            ],
+            [
+              "Dutch Eredivisie",
+              "Ajax",
+              "3",
+              "1993/94 → 1995/96",
+              "84"
+            ],
+            [
+              "Ekstraklasa",
+              "Legia",
+              "3",
+              "2015/2016 → 2017/2018",
+              "72"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "league",
+            "opportunities",
+            "retained",
+            "retention %"
+          ],
+          "rows": [
+            [
+              "Bundesliga",
+              "14",
+              "10",
+              "71%"
+            ],
+            [
+              "Scottish Premiership",
+              "32",
+              "21",
+              "66%"
+            ],
+            [
+              "Super League",
+              "14",
+              "8",
+              "57%"
+            ],
+            [
+              "Superliga",
+              "14",
+              "8",
+              "57%"
+            ],
+            [
+              "Greek Super League",
+              "27",
+              "14",
+              "52%"
+            ],
+            [
+              "Premier Division",
+              "14",
+              "7",
+              "50%"
+            ],
+            [
+              "Super League",
+              "12",
+              "6",
+              "50%"
+            ],
+            [
+              "German Bundesliga",
+              "33",
+              "16",
+              "48%"
+            ],
+            [
+              "Dutch Eredivisie",
+              "33",
+              "16",
+              "48%"
+            ],
+            [
+              "French Ligue 1",
+              "33",
+              "16",
+              "48%"
+            ],
+            [
+              "Premier League",
+              "13",
+              "6",
+              "46%"
+            ],
+            [
+              "Portuguese Liga Portugal",
+              "33",
+              "15",
+              "45%"
+            ],
+            [
+              "Veikkausliiga",
+              "14",
+              "6",
+              "43%"
+            ],
+            [
+              "Ekstraklasa",
+              "14",
+              "6",
+              "43%"
+            ],
+            [
+              "Italian Serie A",
+              "33",
+              "14",
+              "42%"
+            ],
+            [
+              "Eliteserien",
+              "14",
+              "5",
+              "36%"
+            ],
+            [
+              "Turkish Süper Lig",
+              "32",
+              "11",
+              "34%"
+            ],
+            [
+              "English Premier League",
+              "33",
+              "11",
+              "33%"
+            ],
+            [
+              "Allsvenskan",
+              "14",
+              "4",
+              "29%"
+            ],
+            [
+              "Liga MX",
+              "14",
+              "4",
+              "29%"
+            ],
+            [
+              "Serie A",
+              "14",
+              "4",
+              "29%"
+            ],
+            [
+              "Belgian Pro League",
+              "31",
+              "9",
+              "29%"
+            ],
+            [
+              "J1 League",
+              "14",
+              "4",
+              "29%"
+            ],
+            [
+              "Spanish La Liga",
+              "33",
+              "9",
+              "27%"
+            ],
+            [
+              "Superliga",
+              "14",
+              "2",
+              "14%"
+            ],
+            [
+              "Champions League",
+              "25",
+              "2",
+              "8%"
+            ],
+            [
+              "MLS",
+              "14",
+              "1",
+              "7%"
+            ],
+            [
+              "Italian Serie B",
+              "29",
+              "0",
+              "0%"
+            ],
+            [
+              "Scottish Championship",
+              "33",
+              "0",
+              "0%"
+            ],
+            [
+              "Scottish League One",
+              "29",
+              "0",
+              "0%"
+            ],
+            [
+              "UEFA Europa League",
+              "17",
+              "0",
+              "0%"
+            ],
+            [
+              "French Ligue 2",
+              "30",
+              "0",
+              "0%"
+            ],
+            [
+              "Spanish La Liga 2",
+              "33",
+              "0",
+              "0%"
+            ],
+            [
+              "English League Two",
+              "33",
+              "0",
+              "0%"
+            ],
+            [
+              "German 2. Bundesliga",
+              "33",
+              "0",
+              "0%"
+            ],
+            [
+              "English Championship",
+              "33",
+              "0",
+              "0%"
+            ],
+            [
+              "Scottish League Two",
+              "29",
+              "0",
+              "0%"
+            ],
+            [
+              "English League One",
+              "33",
+              "0",
+              "0%"
+            ],
+            [
+              "Liga Profesional",
+              "13",
+              "0",
+              "0%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "decade",
+            "opportunities",
+            "retained",
+            "retention %",
+            "unique champions"
+          ],
+          "rows": [
+            [
+              "1990s",
+              "106",
+              "22",
+              "21%",
+              "77"
+            ],
+            [
+              "2000s",
+              "218",
+              "41",
+              "19%",
+              "140"
+            ],
+            [
+              "2010s",
+              "341",
+              "101",
+              "30%",
+              "195"
+            ],
+            [
+              "2020s",
+              "287",
+              "77",
+              "27%",
+              "191"
+            ]
+          ]
+        },
+        {
+          "type": "mime_bundle",
+          "data": {
+            "image/svg+xml": "<svg width=\"780\" height=\"400\" viewBox=\"0 0 780 400\" xmlns=\"http://www.w3.org/2000/svg\">\n<rect x=\"0\" y=\"0\" width=\"780\" height=\"400\" opacity=\"1\" fill=\"#FFFFFF\" stroke=\"none\"/>\n<text x=\"390\" y=\"15\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"14.516129032258064\" opacity=\"1\" fill=\"#000000\">\nTitle retention rate by league\n</text>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"70\" y1=\"344\" x2=\"70\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"82\" y1=\"344\" x2=\"82\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"94\" y1=\"344\" x2=\"94\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"106\" y1=\"344\" x2=\"106\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"117\" y1=\"344\" x2=\"117\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"129\" y1=\"344\" x2=\"129\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"141\" y1=\"344\" x2=\"141\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"153\" y1=\"344\" x2=\"153\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"164\" y1=\"344\" x2=\"164\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"176\" y1=\"344\" x2=\"176\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"188\" y1=\"344\" x2=\"188\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"199\" y1=\"344\" x2=\"199\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"211\" y1=\"344\" x2=\"211\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"223\" y1=\"344\" x2=\"223\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"235\" y1=\"344\" x2=\"235\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"246\" y1=\"344\" x2=\"246\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"258\" y1=\"344\" x2=\"258\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"270\" y1=\"344\" x2=\"270\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"282\" y1=\"344\" x2=\"282\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"293\" y1=\"344\" x2=\"293\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"305\" y1=\"344\" x2=\"305\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"317\" y1=\"344\" x2=\"317\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"329\" y1=\"344\" x2=\"329\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"340\" y1=\"344\" x2=\"340\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"352\" y1=\"344\" x2=\"352\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"364\" y1=\"344\" x2=\"364\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"375\" y1=\"344\" x2=\"375\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"387\" y1=\"344\" x2=\"387\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"399\" y1=\"344\" x2=\"399\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"411\" y1=\"344\" x2=\"411\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"422\" y1=\"344\" x2=\"422\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"434\" y1=\"344\" x2=\"434\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"446\" y1=\"344\" x2=\"446\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"458\" y1=\"344\" x2=\"458\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"469\" y1=\"344\" x2=\"469\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"481\" y1=\"344\" x2=\"481\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"493\" y1=\"344\" x2=\"493\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"505\" y1=\"344\" x2=\"505\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"516\" y1=\"344\" x2=\"516\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"528\" y1=\"344\" x2=\"528\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"540\" y1=\"344\" x2=\"540\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"551\" y1=\"344\" x2=\"551\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"563\" y1=\"344\" x2=\"563\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"575\" y1=\"344\" x2=\"575\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"587\" y1=\"344\" x2=\"587\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"598\" y1=\"344\" x2=\"598\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"610\" y1=\"344\" x2=\"610\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"622\" y1=\"344\" x2=\"622\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"634\" y1=\"344\" x2=\"634\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"645\" y1=\"344\" x2=\"645\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"657\" y1=\"344\" x2=\"657\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"669\" y1=\"344\" x2=\"669\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"681\" y1=\"344\" x2=\"681\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"692\" y1=\"344\" x2=\"692\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"704\" y1=\"344\" x2=\"704\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"716\" y1=\"344\" x2=\"716\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"727\" y1=\"344\" x2=\"727\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"739\" y1=\"344\" x2=\"739\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"751\" y1=\"344\" x2=\"751\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"763\" y1=\"344\" x2=\"763\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"344\" x2=\"769\" y2=\"344\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"341\" x2=\"769\" y2=\"341\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"337\" x2=\"769\" y2=\"337\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"333\" x2=\"769\" y2=\"333\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"329\" x2=\"769\" y2=\"329\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"326\" x2=\"769\" y2=\"326\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"322\" x2=\"769\" y2=\"322\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"318\" x2=\"769\" y2=\"318\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"314\" x2=\"769\" y2=\"314\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"310\" x2=\"769\" y2=\"310\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"307\" x2=\"769\" y2=\"307\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"303\" x2=\"769\" y2=\"303\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"299\" x2=\"769\" y2=\"299\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"295\" x2=\"769\" y2=\"295\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"291\" x2=\"769\" y2=\"291\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"288\" x2=\"769\" y2=\"288\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"284\" x2=\"769\" y2=\"284\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"280\" x2=\"769\" y2=\"280\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"276\" x2=\"769\" y2=\"276\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"272\" x2=\"769\" y2=\"272\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"269\" x2=\"769\" y2=\"269\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"265\" x2=\"769\" y2=\"265\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"261\" x2=\"769\" y2=\"261\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"257\" x2=\"769\" y2=\"257\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"253\" x2=\"769\" y2=\"253\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"250\" x2=\"769\" y2=\"250\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"246\" x2=\"769\" y2=\"246\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"242\" x2=\"769\" y2=\"242\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"238\" x2=\"769\" y2=\"238\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"234\" x2=\"769\" y2=\"234\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"231\" x2=\"769\" y2=\"231\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"227\" x2=\"769\" y2=\"227\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"223\" x2=\"769\" y2=\"223\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"219\" x2=\"769\" y2=\"219\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"215\" x2=\"769\" y2=\"215\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"212\" x2=\"769\" y2=\"212\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"208\" x2=\"769\" y2=\"208\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"204\" x2=\"769\" y2=\"204\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"200\" x2=\"769\" y2=\"200\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"196\" x2=\"769\" y2=\"196\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"193\" x2=\"769\" y2=\"193\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"189\" x2=\"769\" y2=\"189\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"185\" x2=\"769\" y2=\"185\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"181\" x2=\"769\" y2=\"181\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"177\" x2=\"769\" y2=\"177\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"174\" x2=\"769\" y2=\"174\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"170\" x2=\"769\" y2=\"170\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"166\" x2=\"769\" y2=\"166\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"162\" x2=\"769\" y2=\"162\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"158\" x2=\"769\" y2=\"158\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"155\" x2=\"769\" y2=\"155\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"151\" x2=\"769\" y2=\"151\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"147\" x2=\"769\" y2=\"147\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"143\" x2=\"769\" y2=\"143\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"139\" x2=\"769\" y2=\"139\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"136\" x2=\"769\" y2=\"136\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"132\" x2=\"769\" y2=\"132\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"128\" x2=\"769\" y2=\"128\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"124\" x2=\"769\" y2=\"124\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"120\" x2=\"769\" y2=\"120\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"117\" x2=\"769\" y2=\"117\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"113\" x2=\"769\" y2=\"113\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"109\" x2=\"769\" y2=\"109\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"105\" x2=\"769\" y2=\"105\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"102\" x2=\"769\" y2=\"102\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"98\" x2=\"769\" y2=\"98\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"94\" x2=\"769\" y2=\"94\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"90\" x2=\"769\" y2=\"90\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"86\" x2=\"769\" y2=\"86\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"83\" x2=\"769\" y2=\"83\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"79\" x2=\"769\" y2=\"79\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"75\" x2=\"769\" y2=\"75\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"71\" x2=\"769\" y2=\"71\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"67\" x2=\"769\" y2=\"67\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"64\" x2=\"769\" y2=\"64\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"60\" x2=\"769\" y2=\"60\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"56\" x2=\"769\" y2=\"56\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"52\" x2=\"769\" y2=\"52\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"48\" x2=\"769\" y2=\"48\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"45\" x2=\"769\" y2=\"45\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"41\" x2=\"769\" y2=\"41\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"37\" x2=\"769\" y2=\"37\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"94\" y1=\"344\" x2=\"94\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"153\" y1=\"344\" x2=\"153\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"211\" y1=\"344\" x2=\"211\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"270\" y1=\"344\" x2=\"270\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"329\" y1=\"344\" x2=\"329\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"387\" y1=\"344\" x2=\"387\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"446\" y1=\"344\" x2=\"446\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"505\" y1=\"344\" x2=\"505\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"563\" y1=\"344\" x2=\"563\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"622\" y1=\"344\" x2=\"622\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"681\" y1=\"344\" x2=\"681\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"739\" y1=\"344\" x2=\"739\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"344\" x2=\"769\" y2=\"344\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"307\" x2=\"769\" y2=\"307\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"269\" x2=\"769\" y2=\"269\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"231\" x2=\"769\" y2=\"231\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"193\" x2=\"769\" y2=\"193\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"155\" x2=\"769\" y2=\"155\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"117\" x2=\"769\" y2=\"117\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"79\" x2=\"769\" y2=\"79\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"41\" x2=\"769\" y2=\"41\"/>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"64,34 64,344 \"/>\n<text x=\"55\" y=\"344\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n0.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,344 64,344 \"/>\n<text x=\"55\" y=\"307\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n10.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,307 64,307 \"/>\n<text x=\"55\" y=\"269\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n20.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,269 64,269 \"/>\n<text x=\"55\" y=\"231\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n30.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,231 64,231 \"/>\n<text x=\"55\" y=\"193\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n40.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,193 64,193 \"/>\n<text x=\"55\" y=\"155\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n50.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,155 64,155 \"/>\n<text x=\"55\" y=\"117\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n60.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,117 64,117 \"/>\n<text x=\"55\" y=\"79\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n70.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,79 64,79 \"/>\n<text x=\"55\" y=\"41\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n80.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,41 64,41 \"/>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"65,345 769,345 \"/>\n<text x=\"94\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nBundesliga\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"94,345 94,350 \"/>\n<text x=\"153\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nScottish Premiersh\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"153,345 153,350 \"/>\n<text x=\"211\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nSuper League\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"211,345 211,350 \"/>\n<text x=\"270\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nSuperliga\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"270,345 270,350 \"/>\n<text x=\"329\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nGreek Super League\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"329,345 329,350 \"/>\n<text x=\"387\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nPremier Division\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"387,345 387,350 \"/>\n<text x=\"446\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nSuper League\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"446,345 446,350 \"/>\n<text x=\"505\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nGerman Bundesliga\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"505,345 505,350 \"/>\n<text x=\"563\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nDutch Eredivisie\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"563,345 563,350 \"/>\n<text x=\"622\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nFrench Ligue 1\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"622,345 622,350 \"/>\n<text x=\"681\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nPremier League\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"681,345 681,350 \"/>\n<text x=\"739\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nPortuguese Liga Po\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"739,345 739,350 \"/>\n<rect x=\"73\" y=\"75\" width=\"41\" height=\"269\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"132\" y=\"94\" width=\"41\" height=\"250\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"191\" y=\"128\" width=\"41\" height=\"216\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"249\" y=\"128\" width=\"41\" height=\"216\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"308\" y=\"147\" width=\"41\" height=\"197\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"367\" y=\"155\" width=\"41\" height=\"189\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"425\" y=\"155\" width=\"41\" height=\"189\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"484\" y=\"162\" width=\"41\" height=\"182\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"543\" y=\"162\" width=\"41\" height=\"182\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"601\" y=\"162\" width=\"41\" height=\"182\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"660\" y=\"170\" width=\"41\" height=\"174\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"719\" y=\"174\" width=\"41\" height=\"170\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n</svg>",
+            "text/plain": "Figure (SVG)"
+          },
+          "metadata": {}
+        }
+      ]
+    },
+    {
+      "id": "3acbbd7c-5d28-4ef8-a5a4-d95672c30979",
       "cell_type": "markdown",
-      "source": "## Findings\n\n**Defending the title is the hardest thing in club football — only 1 in 4 champions goes back-to-back.**\n\nScope: 999 league-seasons with a determinable champion; 947 offered a\ndefending champion a chance to retain.\n\n1. **The base rate is 25.1%** — 238 of 947 title defences succeeded.\n   The other three-quarters of champions are dethroned.\n\n2. **Dynasties are real but concentrated.** Longest consecutive-title\n   runs: RB Salzburg 11 (2013/14→2023/24), Bayern Munich 11 (2012/13→\n   2022/23), Juventus 9, Celtic 9 (both 2011/12→2019/20). Five-peat-or-\n   better is a short list — the table is dominated by a handful of\n   superclubs.\n\n3. **Some leagues are structurally easier to defend.** Austria's\n   Bundesliga: 71% retention (10/14). Scottish Premiership: 66% (21/32)\n   — the Old Firm duopoly. The big-5 leagues sit at 42–48%; Ligue 1\n   48%, Serie A 42%, EPL ('Premier League' label, incl. Russia) 46%.\n\n4. **Defended titles are slightly more dominant.** Champions who\n   retained averaged an **8.2-point** winning margin vs **6.6** across\n   all titles — retention correlates with winning comfortably.\n\n5. **The 2010s were the dynasty decade.** Retention by decade: 21%\n   (1990s) → 19% (2000s) → **30%** (2010s) → 27% (2020s), with unique\n   champions per decade rising 77 → 140 → 195 → 191. The modern game\n   is more parity-driven *and* produced more dynasties — both at once,\n   because a few superclubs monopolised the top while the rest churned.\n\n6. **Caveats:** league labels are source-dependent ('Bundesliga' =\n   Austria, 'German Bundesliga' = Germany, 'Premier League' = Russia);\n   short-history leagues have small opportunity counts; seasons ending\n   mid-table or with shared champions are excluded.",
+      "source": "## Discussion\n\n**Defending the title is the hardest thing in club football — only 1 in 4 champions goes back-to-back.**\n\nScope: 999 league-seasons with a determinable champion; 947 offered a\ndefending champion a chance to retain.\n\n1. **The base rate is 25.1%** — 238 of 947 title defences succeeded.\n   The other three-quarters of champions are dethroned.\n\n2. **Dynasties are real but concentrated.** Longest consecutive-title\n   runs: RB Salzburg 11 (2013/14→2023/24), Bayern Munich 11 (2012/13→\n   2022/23), Juventus 9, Celtic 9 (both 2011/12→2019/20). Five-peat-or-\n   better is a short list — the table is dominated by a handful of\n   superclubs.\n\n3. **Some leagues are structurally easier to defend.** Austria's\n   Bundesliga: 71% retention (10/14). Scottish Premiership: 66% (21/32)\n   — the Old Firm duopoly. The big-5 leagues sit at 42–48%; Ligue 1\n   48%, Serie A 42%, EPL ('Premier League' label, incl. Russia) 46%.\n\n4. **Defended titles are slightly more dominant.** Champions who\n   retained averaged an **8.2-point** winning margin vs **6.6** across\n   all titles — retention correlates with winning comfortably.\n\n5. **The 2010s were the dynasty decade.** Retention by decade: 21%\n   (1990s) → 19% (2000s) → **30%** (2010s) → 27% (2020s), with unique\n   champions per decade rising 77 → 140 → 195 → 191. The modern game\n   is more parity-driven *and* produced more dynasties — both at once,\n   because a few superclubs monopolised the top while the rest churned.\n\n6. **Caveats:** league labels are source-dependent ('Bundesliga' =\n   Austria, 'German Bundesliga' = Germany, 'Premier League' = Russia);\n   short-history leagues have small opportunity counts; seasons ending\n   mid-table or with shared champions are excluded.\n\n**Limitations.** The analysis is limited to the competitions present in the database; player-level metrics exist only for StatsBomb-covered tournaments, and underlying event data may contain errors.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "40415dd0-f9d0-4b39-870f-98cd2f586e13",
+      "cell_type": "markdown",
+      "source": "## Conclusion\n\nDefending the title is the hardest thing in club football — only 1 in 4 champions goes back-to-back. Together these results answer the research question posed in the Introduction and quantify the pattern across hundreds of thousands of matches. The notebook provides a fully reproducible pipeline from raw CSV extracts to published figures.\n",
       "metadata": {},
       "outputs": []
     }

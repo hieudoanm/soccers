@@ -12,9 +12,23 @@
   },
   "cells": [
     {
-      "id": "a26844e6-4065-4a76-8276-dff208b6e12b",
+      "id": "da756085-3dc7-490d-a80b-a59f4016b07b",
       "cell_type": "markdown",
-      "source": "## Best of the AFC Champions League Elite\n\nA record book of the **AFC Champions League Elite** — continental club competition champions,\nfinals and records computed from `data/matches_full.csv`.\n\nThe Elite rebrand started in 2024/25 — three seasons covered; 2026/27 is in progress and excluded. (The old AFC Champions League is a different competition and is not included.)\n\n**Records covered:** most titles, every edition's champion and final\nscore, the champion's full tournament record, biggest wins,\nhighest-scoring matches, champion records (most goals, fewest conceded,\nbest goal difference, most wins, fewest losses), unbeaten champions,\nthe closest finals, and top scorers where player-level data exists.",
+      "source": "## Abstract\n\nThis study examines the AFC Champions League Elite record book using the full match archive drawn from the Soccers football database. Al Ahli 2024/25 was the most dominant season. All computation runs in Rust inside a `.mars` notebook (polars + plotters — charts as inline SVG), and every table and figure is generated from the extracted CSVs.\n\n## Keywords\n\n**Keywords:** football, analysis, records, mars, sqlite\n\n## Table of contents\n\n- [Abstract](#abstract)\n- [Keywords](#keywords)\n- [Introduction](#introduction)\n- [Methods](#methods)\n- [Results](#results)\n  - [Tournament editions](#tournament-editions)\n  - [Every edition — champion, final score, champion's tournament record](#every-edition--champion-final-score-champions-tournament-record)\n  - [Records across all editions](#records-across-all-editions)\n  - [Champion records: most goals for, fewest against, best GD, most wins](#champion-records-most-goals-for-fewest-against-best-gd-most-wins)\n  - [Unbeaten champions](#unbeaten-champions)\n  - [Closest finals (smallest margin or draw)](#closest-finals-smallest-margin-or-draw)\n  - [Top scorers (latest edition with player data — SCORERS picks best-covered year)](#top-scorers-latest-edition-with-player-data--scorers-picks-best-covered-year)\n- [Discussion](#discussion)\n- [Conclusion](#conclusion)\n\n## Introduction\n\nA record book of the **AFC Champions League Elite** — continental club competition champions,\nfinals and records computed from `data/matches_full.csv`.\n\nThe Elite rebrand started in 2024/25 — three seasons covered; 2026/27 is in progress and excluded. (The old AFC Champions League is a different competition and is not included.)\n\n**Records covered:** most titles, every edition's champion and final\nscore, the champion's full tournament record, biggest wins,\nhighest-scoring matches, champion records (most goals, fewest conceded,\nbest goal difference, most wins, fewest losses), unbeaten champions,\nthe closest finals, and top scorers where player-level data exists.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "bf328df3-9d41-42fc-9b5f-19c658147271",
+      "cell_type": "markdown",
+      "source": "## Methods\n\nData were extracted from the Soccers football database (`packages/data`) as CSV snapshots: `matches_full`, `player_goals`.\n\nThe analysis runs entirely in Rust inside the notebook: **polars** handles table scans, joins and aggregations; **plotters** renders figures as inline SVG; `mars_table` renders result tables.\n\nEach code cell is kept to a single output so results can be read top to bottom.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "ec78c1c0-7248-4233-8085-096faa6ac19e",
+      "cell_type": "markdown",
+      "source": "## Results\n\nAll figures and tables below are computed directly from the extracted data. Each code cell produces one output — a table, a chart, or a short text summary.\n",
       "metadata": {},
       "outputs": []
     },
@@ -45,6 +59,13 @@
       ]
     },
     {
+      "id": "596cadf1-7773-48d1-9889-5170cd5587fc",
+      "cell_type": "markdown",
+      "source": "### Tournament editions\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
       "id": "c4241d79-33ad-4f50-9403-ac9116a9dc71",
       "cell_type": "code",
       "source": "// ---- tournament editions ----\n#[derive(Clone)]\nstruct TMatch {\n    date: String,\n    h: String,\n    a: String,\n    hg: i64,\n    ag: i64,\n}\n\nstruct Edition {\n    season: String,\n    n: usize,\n    matches: Vec<TMatch>,\n    champion: String,\n    runner_up: String,\n    final_hg: i64,\n    final_ag: i64,\n    pens: bool,\n}\n\nlet mut by_season: BTreeMap<String, Vec<TMatch>> = BTreeMap::new();\nfor (s, h, a, d, hg, ag) in &all_matches {\n    by_season.entry(s.clone()).or_default().push(TMatch {\n        date: d.clone(), h: h.clone(), a: a.clone(), hg: *hg, ag: *ag,\n    });\n}\n\nlet mut editions: Vec<Edition> = Vec::new();\nfor (sname, mut ms) in by_season {\n    if ms.is_empty() {\n        continue;\n    }\n    ms.sort_by(|x, y| x.date.cmp(&y.date));\n    let last = ms.last().unwrap();\n    // champions are only recorded for editions with substantial coverage;\n    // scattered finals/group games can't identify the winner reliably\n    let pens_winners: &[(&str, &str)] = &[];\n    let (champ, runner, pens) = if ms.len() < 10 {\n        (String::new(), String::new(), false)\n    } else if last.hg > last.ag {\n        (last.h.clone(), last.a.clone(), false)\n    } else if last.hg < last.ag {\n        (last.a.clone(), last.h.clone(), false)\n    } else if let Some((_, w)) = pens_winners.iter().find(|(y, _)| *y == sname) {\n        let ru = if last.h == *w { last.a.clone() } else { last.h.clone() };\n        (w.to_string(), ru, true)\n    } else {\n        (\"decided on penalties\".to_string(), String::new(), true)\n    };\n    editions.push(Edition {\n        season: sname,\n        n: ms.len(),\n        champion: champ,\n        runner_up: runner,\n        final_hg: last.hg,\n        final_ag: last.ag,\n        pens,\n        matches: ms,\n    });\n}\nprintln!(\"editions: {}\", editions.len());\nfor e in &editions {\n    println!(\"  {}: {} matches, champion-ish: {} (final {}-{}{})\", e.season, e.n, e.champion, e.final_hg, e.final_ag, if e.pens { \" pens\" } else { \"\" });\n}\n\n// T1: most titles per nation\nlet mut titles: BTreeMap<String, Vec<String>> = BTreeMap::new();\nfor e in &editions {\n    if !e.champion.is_empty() && e.champion != \"decided on penalties\" {\n        titles.entry(e.champion.clone()).or_default().push(e.season.clone());\n    }\n}\nlet mut tv: Vec<(String, Vec<String>)> = titles.into_iter().collect();\ntv.sort_by(|a, b| b.1.len().cmp(&a.1.len()).then(a.0.cmp(&b.0)));\nlet title_rows: Vec<Vec<String>> = tv.iter().take(8)\n    .map(|(t, ss)| vec![t.clone(), ss.len().to_string(), ss.iter().rev().take(4).cloned().collect::<Vec<_>>().join(\", \")])\n    .collect();\nmars_table(&[\"nation\", \"titles\", \"most recent\"], &title_rows);\n",
@@ -71,6 +92,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "a27c2b85-eef7-436f-95ad-e006d1dd2f36",
+      "cell_type": "markdown",
+      "source": "### Every edition — champion, final score, champion's tournament record\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "cc4f5377-15a1-4ae2-8b6e-898fa43c8d9a",
@@ -125,6 +153,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "52d307f5-a900-4cbd-b752-f34ad96ff342",
+      "cell_type": "markdown",
+      "source": "### Records across all editions\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "000aa895-2db9-47b3-8e13-0408b203faf0",
@@ -385,6 +420,13 @@
       ]
     },
     {
+      "id": "1b976f2f-23d3-476e-8eef-4e3d8f046f82",
+      "cell_type": "markdown",
+      "source": "### Champion records: most goals for, fewest against, best GD, most wins\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
       "id": "1f5af4f8-1094-4e2d-a149-5c5740eff24e",
       "cell_type": "code",
       "source": "// champion records: most goals for, fewest against, best GD, most wins\nlet mut champ_stats: Vec<(String, String, i64, i64, i64, i64, i64)> = Vec::new(); // season, champ, gf, ga, w, d, l\nfor e in &editions {\n    if e.champion.is_empty() || e.champion == \"decided on penalties\" { continue; }\n    let mut w = 0i64; let mut d = 0i64; let mut l = 0i64;\n    let mut gf = 0i64; let mut ga = 0i64;\n    for m in &e.matches {\n        let (hg, ag) = if m.h == e.champion { (m.hg, m.ag) }\n            else if m.a == e.champion { (m.ag, m.hg) }\n            else { continue };\n        gf += hg; ga += ag;\n        if hg > ag { w += 1; } else if hg == ag { d += 1; } else { l += 1; }\n    }\n    champ_stats.push((e.season.clone(), e.champion.clone(), gf, ga, w, d, l));\n}\nlet rec_rows: Vec<Vec<String>> = vec![\n    (\"most goals scored\", champ_stats.iter().max_by_key(|c| c.2).unwrap()),\n    (\"fewest goals conceded\", champ_stats.iter().min_by_key(|c| c.3).unwrap()),\n    (\"best goal difference\", champ_stats.iter().max_by_key(|c| c.2 - c.3).unwrap()),\n    (\"most wins\", champ_stats.iter().max_by_key(|c| c.4).unwrap()),\n    (\"fewest losses\", champ_stats.iter().min_by_key(|c| c.6).unwrap()),\n]\n.iter()\n.map(|(label, c)| vec![label.to_string(), format!(\"{} {}\", c.1, c.0), format!(\"{}W {}D {}L\", c.4, c.5, c.6), format!(\"{}/{}\", c.2, c.3), (c.2 - c.3).to_string()])\n.collect();\nmars_table(&[\"record\", \"champion edition\", \"record\", \"gf/ga\", \"gd\"], &rec_rows);\n",
@@ -584,6 +626,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "2a8f03f7-d76c-47e5-a521-a5ef278e5691",
+      "cell_type": "markdown",
+      "source": "### Unbeaten champions\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "95a9886f-2ca7-4f07-878b-133046389942",
@@ -802,6 +851,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "a1109e61-b2b3-4ea5-aa71-d516de44c0ad",
+      "cell_type": "markdown",
+      "source": "### Closest finals (smallest margin or draw)\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "e6bfa15d-368e-4eff-ba43-3eeecd68ff7c",
@@ -1040,6 +1096,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "cba1d16e-c187-4d02-8081-1183e20e959c",
+      "cell_type": "markdown",
+      "source": "### Top scorers (latest edition with player data — SCORERS picks best-covered year)\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "78713f86-55b0-4838-8431-1570722f31dd",
@@ -1780,9 +1843,16 @@
       ]
     },
     {
-      "id": "c7519607-c59c-4bdd-a242-c557d161fb1e",
+      "id": "581d05df-2095-4605-ab00-7f347f9110d6",
       "cell_type": "markdown",
-      "source": "## What the record book says\n\nThree seasons exist (2024/25 → 2026/27 in progress); the two completed\neditions are covered in full.\n\n- **Al Ahli are back-to-back champions**: winners of both the 2025 and\n  2026 editions — the only club to lift the new Elite trophy, and the\n  first dynasty of the competition's new era.\n- **Al Ahli 2024/25 was the most dominant season**: 12W-1D-0L (34/10),\n  unbeaten, sweeping every champion record in the dataset.\n- **The 2026 final was a one-goal game**: Al Ahli 1–0 Machida Zelvia —\n  tighter than their 2–0 win over Kawasaki Frontale in 2025.\n- **Biggest wins**: Al Hilal 7–0 Gwangju and Al Ittihad 7–0 Al-Gharafa —\n  Saudi clubs set the margin record.\n- **Highest-scoring match**: Gwangju 7–3 Yokohama F. Marinos (10 goals)\n  — the tournament's wildest game.\n\n*Source: ESPN import via `dev.db`; only the Elite era (2024/25 onward)\nis included — the old AFC Champions League is a different competition.\nPlayer-level stats too sparse for a top-scorers table.*",
+      "source": "## Discussion\n\nThree seasons exist (2024/25 → 2026/27 in progress); the two completed\neditions are covered in full.\n\n- **Al Ahli are back-to-back champions**: winners of both the 2025 and\n  2026 editions — the only club to lift the new Elite trophy, and the\n  first dynasty of the competition's new era.\n- **Al Ahli 2024/25 was the most dominant season**: 12W-1D-0L (34/10),\n  unbeaten, sweeping every champion record in the dataset.\n- **The 2026 final was a one-goal game**: Al Ahli 1–0 Machida Zelvia —\n  tighter than their 2–0 win over Kawasaki Frontale in 2025.\n- **Biggest wins**: Al Hilal 7–0 Gwangju and Al Ittihad 7–0 Al-Gharafa —\n  Saudi clubs set the margin record.\n- **Highest-scoring match**: Gwangju 7–3 Yokohama F. Marinos (10 goals)\n  — the tournament's wildest game.\n\n*Source: ESPN import via `dev.db`; only the Elite era (2024/25 onward)\nis included — the old AFC Champions League is a different competition.\nPlayer-level stats too sparse for a top-scorers table.*\n\n**Limitations.** Records reflect only the matches present in the database; coverage varies by competition and era, so 'records' are archive records, not all-time official marks.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "7b1626b8-5270-45e2-828d-703091756441",
+      "cell_type": "markdown",
+      "source": "## Conclusion\n\nAl Ahli 2024/25 was the most dominant season. Together these results answer the research question posed in the Introduction and quantify the pattern across the full match archive. The notebook provides a fully reproducible pipeline from raw CSV extracts to published figures.\n",
       "metadata": {},
       "outputs": []
     }

@@ -12,9 +12,23 @@
   },
   "cells": [
     {
-      "id": "acf52a9a-f9bd-4771-aaa3-ef04e3e4bff8",
+      "id": "44f924a6-deb5-4a37-81e0-445b7ad63fa8",
       "cell_type": "markdown",
-      "source": "## Selling vs buying clubs: the transfer market's hunters and farms\n\nAggregating all 19,436 transfers by club produces a market map at team\nlevel: who spends, who sells, and who runs a **development-and-flip**\noperation — buying young or buying cheap, selling at a huge markup.\n\nThis notebook ranks clubs by net spend (fees paid minus fees received),\nnet talent flow (players in minus players out), and identifies the\nserial sellers whose business model *is* the transfer market.\n\nCaveats: only ~28% of transfers carry a fee, so fee columns understate\ntrue money flows; \"net talent\" counts all moves including loans-free\ntransfers and free agents; club names are fuzzy-matched from\nTransfermarkt and can occasionally conflate same-named clubs.\n",
+      "source": "## Abstract\n\nWhich clubs spend big — and which clubs quietly sell talent? This study answers it using 19,436 transfers drawn from the Soccers football database. The analysis quantifies the pattern directly from the data. All computation runs in Rust inside a `.mars` notebook (polars + plotters — charts as inline SVG), and every table and figure is generated from the extracted CSVs.\n\n## Keywords\n\n**Keywords:** football, analysis, transfers, transfermarkt, mars, sqlite\n\n## Table of contents\n\n- [Abstract](#abstract)\n- [Keywords](#keywords)\n- [Introduction](#introduction)\n- [Methods](#methods)\n- [Results](#results)\n  - [Top net spenders (money in > money out)](#top-net-spenders-money-in--money-out)\n  - [Top net sellers (money out > money in) — the farms](#top-net-sellers-money-out--money-in--the-farms)\n  - [Net talent flow: most players sold minus bought (min 15 total moves)](#net-talent-flow-most-players-sold-minus-bought-min-15-total-moves)\n  - [The factories: high sell-fee, low buy-fee ratio (min €20m sold)](#the-factories-high-sell-fee-low-buy-fee-ratio-min-20m-sold)\n- [Discussion](#discussion)\n- [Conclusion](#conclusion)\n\n## Introduction\n\nAggregating all 19,436 transfers by club produces a market map at team\nlevel: who spends, who sells, and who runs a **development-and-flip**\noperation — buying young or buying cheap, selling at a huge markup.\n\nThis notebook ranks clubs by net spend (fees paid minus fees received),\nnet talent flow (players in minus players out), and identifies the\nserial sellers whose business model *is* the transfer market.\n\nCaveats: only ~28% of transfers carry a fee, so fee columns understate\ntrue money flows; \"net talent\" counts all moves including loans-free\ntransfers and free agents; club names are fuzzy-matched from\nTransfermarkt and can occasionally conflate same-named clubs.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "74dc94f6-5fc9-459b-823a-13791e65a17d",
+      "cell_type": "markdown",
+      "source": "## Methods\n\nData were extracted from the Soccers football database (`packages/data`) as CSV snapshots: `country`, `team`, `transfer`.\n\nThe analysis runs entirely in Rust inside the notebook: **polars** handles table scans, joins and aggregations; **plotters** renders figures as inline SVG; `mars_table` renders result tables.\n\nEach code cell is kept to a single output so results can be read top to bottom.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "341a2f3b-32e4-4c0d-a9d5-0ee957984a5f",
+      "cell_type": "markdown",
+      "source": "## Results\n\nAll figures and tables below are computed directly from the extracted data. Each code cell produces one output — a table, a chart, or a short text summary.\n",
       "metadata": {},
       "outputs": []
     },
@@ -30,6 +44,13 @@
           "text": "clubs tracked: 584, international moves: 8645\n"
         }
       ]
+    },
+    {
+      "id": "6a3e75bc-ca75-4cd6-ba1d-0013eeba8c81",
+      "cell_type": "markdown",
+      "source": "### Top net spenders (money in > money out)\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "c688db04-acd6-4132-90ea-0a56b930d88d",
@@ -237,6 +258,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "2ec9e1eb-7dfe-416c-a8b5-a0e20ea90b07",
+      "cell_type": "markdown",
+      "source": "### Top net sellers (money out > money in) — the farms\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "ffad3bf3-470d-4f6c-bf09-c4ab8addef9c",
@@ -638,6 +666,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "ed2f1a4b-f3c0-4b8c-ad0c-5b2b3cd47bbe",
+      "cell_type": "markdown",
+      "source": "### Net talent flow: most players sold minus bought (min 15 total moves)\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "15a476be-302b-4dbd-9d90-be377dba3c65",
@@ -1096,6 +1131,608 @@
               "€224.9m"
             ],
             [
+              "Ajax Amsterdam",
+              "",
+              "61",
+              "74",
+              "13",
+              "€857.1m",
+              "€355.9m"
+            ],
+            [
+              "Lyon",
+              "France",
+              "89",
+              "102",
+              "13",
+              "€723.5m",
+              "€403.5m"
+            ],
+            [
+              "Metz",
+              "France",
+              "38",
+              "50",
+              "12",
+              "€139.1m",
+              "€37.4m"
+            ],
+            [
+              "Stade Rennais",
+              "",
+              "103",
+              "115",
+              "12",
+              "€682.1m",
+              "€517.9m"
+            ],
+            [
+              "Benfica",
+              "Portugal",
+              "112",
+              "124",
+              "12",
+              "€1.07bn",
+              "€400.0m"
+            ],
+            [
+              "Nordsjaelland",
+              "Denmark",
+              "3",
+              "15",
+              "12",
+              "€105.9m",
+              "€0.3m"
+            ],
+            [
+              "Sochaux",
+              "France",
+              "11",
+              "23",
+              "12",
+              "€13.2m",
+              "€0.0m"
+            ],
+            [
+              "Bordeaux",
+              "France",
+              "41",
+              "52",
+              "11",
+              "€138.5m",
+              "€37.2m"
+            ],
+            [
+              "Bastia",
+              "France",
+              "9",
+              "20",
+              "11",
+              "€20.8m",
+              "€0.2m"
+            ],
+            [
+              "Valenciennes",
+              "France",
+              "11",
+              "21",
+              "10",
+              "€11.3m",
+              "€0.0m"
+            ],
+            [
+              "AZ Alkmaar",
+              "Netherlands",
+              "14",
+              "24",
+              "10",
+              "€180.2m",
+              "€11.1m"
+            ],
+            [
+              "Angers",
+              "France",
+              "41",
+              "51",
+              "10",
+              "€139.8m",
+              "€22.7m"
+            ],
+            [
+              "Dinamo Zagreb",
+              "",
+              "40",
+              "50",
+              "10",
+              "€249.5m",
+              "€21.4m"
+            ],
+            [
+              "Caen",
+              "France",
+              "15",
+              "25",
+              "10",
+              "€60.0m",
+              "€5.8m"
+            ],
+            [
+              "NK Lokomotiva",
+              "",
+              "9",
+              "19",
+              "10",
+              "€15.1m",
+              "€0.0m"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "231a9a0a-c7e4-4039-bb6b-49eb5f6de311",
+      "cell_type": "markdown",
+      "source": "### The factories: high sell-fee, low buy-fee ratio (min €20m sold)\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "025d6cc6-f209-42e7-8862-44901e1c2f0a",
+      "cell_type": "code",
+      "source": "// the factories: high sell-fee, low buy-fee ratio (min €20m sold)\nlet mut fac: Vec<(&i64,&Club)> = clubs.iter()\n    .filter(|(_,c)| c.sold_fee >= 20_000_000.0).map(|(k,v)|(k,v)).collect();\nfac.sort_by(|a,b| {\n    let ra = if a.1.bought_fee>0.0 {a.1.sold_fee/a.1.bought_fee} else {f64::MAX};\n    let rb = if b.1.bought_fee>0.0 {b.1.sold_fee/b.1.bought_fee} else {f64::MAX};\n    rb.partial_cmp(&ra).unwrap()\n});\nlet facrows: Vec<Vec<String>> = fac.iter().take(15).map(|(id,c)| vec![\n    tname.get(*id).cloned().unwrap_or_default().chars().take(28).collect(),\n    tcty.get(*id).cloned().unwrap_or_default(),\n    c.sold_n.to_string(), c.bought_n.to_string(),\n    eur(c.sold_fee), eur(c.bought_fee),\n    if c.bought_fee>0.0 { format!(\"{:.1}x\", c.sold_fee/c.bought_fee) } else { \"∞\".into() },\n]).collect();\nmars_table(&[\"club\",\"country\",\"sold\",\"bought\",\"fees in\",\"fees out\",\"sell/buy\"], &facrows);\n",
+      "metadata": {},
+      "execution_count": 5,
+      "outputs": [
+        {
+          "type": "text",
+          "text": "clubs tracked: 584, international moves: 8645\n"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "club",
+            "country",
+            "in",
+            "out",
+            "fees paid",
+            "fees received",
+            "net spend"
+          ],
+          "rows": [
+            [
+              "Manchester United",
+              "England",
+              "97",
+              "87",
+              "€1.85bn",
+              "€567.4m",
+              "€1.28bn"
+            ],
+            [
+              "Manchester City",
+              "England",
+              "122",
+              "115",
+              "€1.95bn",
+              "€724.0m",
+              "€1.23bn"
+            ],
+            [
+              "Arsenal",
+              "England",
+              "96",
+              "88",
+              "€1.42bn",
+              "€301.0m",
+              "€1.12bn"
+            ],
+            [
+              "Chelsea",
+              "England",
+              "183",
+              "185",
+              "€2.07bn",
+              "€1.04bn",
+              "€1.03bn"
+            ],
+            [
+              "Paris Saint-Germain",
+              "France",
+              "118",
+              "123",
+              "€1.56bn",
+              "€553.6m",
+              "€1.01bn"
+            ],
+            [
+              "Liverpool",
+              "England",
+              "86",
+              "78",
+              "€1.50bn",
+              "€699.4m",
+              "€799.5m"
+            ],
+            [
+              "Tottenham Hotspur",
+              "England",
+              "117",
+              "100",
+              "€1.25bn",
+              "€516.5m",
+              "€735.0m"
+            ],
+            [
+              "Barcelona",
+              "Spain",
+              "154",
+              "175",
+              "€1.41bn",
+              "€771.7m",
+              "€643.3m"
+            ],
+            [
+              "AC Milan",
+              "",
+              "121",
+              "103",
+              "€914.1m",
+              "€369.1m",
+              "€544.9m"
+            ],
+            [
+              "Juventus",
+              "Italy",
+              "143",
+              "130",
+              "€1.33bn",
+              "€808.1m",
+              "€518.8m"
+            ],
+            [
+              "Bayern Munich",
+              "Germany",
+              "88",
+              "86",
+              "€1.04bn",
+              "€641.0m",
+              "€403.1m"
+            ],
+            [
+              "Napoli",
+              "Italy",
+              "118",
+              "102",
+              "€895.2m",
+              "€546.4m",
+              "€348.8m"
+            ],
+            [
+              "Al Hilal",
+              "",
+              "20",
+              "10",
+              "€345.2m",
+              "€6.5m",
+              "€338.7m"
+            ],
+            [
+              "Real Madrid",
+              "Spain",
+              "80",
+              "81",
+              "€1.01bn",
+              "€681.3m",
+              "€330.9m"
+            ],
+            [
+              "West Ham United",
+              "England",
+              "75",
+              "64",
+              "€730.0m",
+              "€424.1m",
+              "€305.9m"
+            ],
+            [
+              "Al Nassr",
+              "",
+              "25",
+              "14",
+              "€303.0m",
+              "€31.5m",
+              "€271.5m"
+            ],
+            [
+              "Inter Milan",
+              "Italy",
+              "167",
+              "157",
+              "€853.8m",
+              "€586.4m",
+              "€267.3m"
+            ],
+            [
+              "Aston Villa",
+              "England",
+              "96",
+              "80",
+              "€667.1m",
+              "€403.7m",
+              "€263.4m"
+            ],
+            [
+              "Atlético Madrid",
+              "Spain",
+              "123",
+              "122",
+              "€984.6m",
+              "€755.5m",
+              "€229.1m"
+            ],
+            [
+              "Al Ahli",
+              "",
+              "19",
+              "12",
+              "€200.8m",
+              "€10.4m",
+              "€190.5m"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "club",
+            "country",
+            "in",
+            "out",
+            "fees paid",
+            "fees received",
+            "net spend"
+          ],
+          "rows": [
+            [
+              "Benfica",
+              "Portugal",
+              "112",
+              "124",
+              "€400.0m",
+              "€1.07bn",
+              "€-673.4m"
+            ],
+            [
+              "Ajax Amsterdam",
+              "",
+              "61",
+              "74",
+              "€355.9m",
+              "€857.1m",
+              "€-501.1m"
+            ],
+            [
+              "Lille",
+              "France",
+              "93",
+              "103",
+              "€262.5m",
+              "€758.6m",
+              "€-496.1m"
+            ],
+            [
+              "Salzburg",
+              "Austria",
+              "46",
+              "65",
+              "€85.7m",
+              "€490.7m",
+              "€-405.0m"
+            ],
+            [
+              "Sporting CP",
+              "",
+              "67",
+              "82",
+              "€224.9m",
+              "€614.4m",
+              "€-389.5m"
+            ],
+            [
+              "AS Monaco",
+              "Monaco",
+              "124",
+              "132",
+              "€782.4m",
+              "€1.11bn",
+              "€-329.1m"
+            ],
+            [
+              "Lyon",
+              "France",
+              "89",
+              "102",
+              "€403.5m",
+              "€723.5m",
+              "€-319.9m"
+            ],
+            [
+              "FC Porto",
+              "",
+              "95",
+              "96",
+              "€264.3m",
+              "€572.0m",
+              "€-307.7m"
+            ],
+            [
+              "Real Sociedad",
+              "Spain",
+              "47",
+              "54",
+              "€171.2m",
+              "€426.6m",
+              "€-255.4m"
+            ],
+            [
+              "Eintracht Frankfurt",
+              "Germany",
+              "100",
+              "84",
+              "€307.4m",
+              "€561.8m",
+              "€-254.4m"
+            ],
+            [
+              "Udinese",
+              "Italy",
+              "94",
+              "97",
+              "€114.7m",
+              "€343.2m",
+              "€-228.5m"
+            ],
+            [
+              "Dinamo Zagreb",
+              "",
+              "40",
+              "50",
+              "€21.4m",
+              "€249.5m",
+              "€-228.1m"
+            ],
+            [
+              "PSV Eindhoven",
+              "Netherlands",
+              "58",
+              "54",
+              "€205.1m",
+              "€426.7m",
+              "€-221.7m"
+            ],
+            [
+              "VfB Stuttgart",
+              "",
+              "85",
+              "82",
+              "€204.2m",
+              "€421.8m",
+              "€-217.6m"
+            ],
+            [
+              "Atalanta",
+              "Italy",
+              "101",
+              "100",
+              "€450.0m",
+              "€665.8m",
+              "€-215.8m"
+            ],
+            [
+              "Sevilla",
+              "Spain",
+              "119",
+              "112",
+              "€449.9m",
+              "€656.8m",
+              "€-206.9m"
+            ],
+            [
+              "FC Basel",
+              "",
+              "45",
+              "50",
+              "€51.7m",
+              "€257.6m",
+              "€-205.9m"
+            ],
+            [
+              "Genoa",
+              "Italy",
+              "102",
+              "103",
+              "€136.2m",
+              "€328.3m",
+              "€-192.2m"
+            ],
+            [
+              "Borussia Dortmund",
+              "Germany",
+              "94",
+              "94",
+              "€817.9m",
+              "€1.00bn",
+              "€-185.7m"
+            ],
+            [
+              "AZ Alkmaar",
+              "Netherlands",
+              "14",
+              "24",
+              "€11.1m",
+              "€180.2m",
+              "€-169.1m"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "club",
+            "country",
+            "in",
+            "out",
+            "net out",
+            "fees received",
+            "fees paid"
+          ],
+          "rows": [
+            [
+              "Barcelona",
+              "Spain",
+              "154",
+              "175",
+              "21",
+              "€771.7m",
+              "€1.41bn"
+            ],
+            [
+              "Salzburg",
+              "Austria",
+              "46",
+              "65",
+              "19",
+              "€490.7m",
+              "€85.7m"
+            ],
+            [
+              "Toulouse",
+              "France",
+              "44",
+              "60",
+              "16",
+              "€184.8m",
+              "€44.7m"
+            ],
+            [
+              "Sporting CP",
+              "",
+              "67",
+              "82",
+              "15",
+              "€614.4m",
+              "€224.9m"
+            ],
+            [
+              "Reims",
+              "France",
+              "58",
+              "73",
+              "15",
+              "€216.9m",
+              "€72.7m"
+            ],
+            [
               "Lyon",
               "France",
               "89",
@@ -1114,15 +1751,6 @@
               "€355.9m"
             ],
             [
-              "Nordsjaelland",
-              "Denmark",
-              "3",
-              "15",
-              "12",
-              "€105.9m",
-              "€0.3m"
-            ],
-            [
               "Stade Rennais",
               "",
               "103",
@@ -1130,6 +1758,24 @@
               "12",
               "€682.1m",
               "€517.9m"
+            ],
+            [
+              "Benfica",
+              "Portugal",
+              "112",
+              "124",
+              "12",
+              "€1.07bn",
+              "€400.0m"
+            ],
+            [
+              "Nordsjaelland",
+              "Denmark",
+              "3",
+              "15",
+              "12",
+              "€105.9m",
+              "€0.3m"
             ],
             [
               "Sochaux",
@@ -1150,15 +1796,6 @@
               "€37.4m"
             ],
             [
-              "Benfica",
-              "Portugal",
-              "112",
-              "124",
-              "12",
-              "€1.07bn",
-              "€400.0m"
-            ],
-            [
               "Bastia",
               "France",
               "9",
@@ -1177,15 +1814,6 @@
               "€37.2m"
             ],
             [
-              "Lille",
-              "France",
-              "93",
-              "103",
-              "10",
-              "€758.6m",
-              "€262.5m"
-            ],
-            [
               "NK Lokomotiva",
               "",
               "9",
@@ -1193,15 +1821,6 @@
               "10",
               "€15.1m",
               "€0.0m"
-            ],
-            [
-              "AZ Alkmaar",
-              "Netherlands",
-              "14",
-              "24",
-              "10",
-              "€180.2m",
-              "€11.1m"
             ],
             [
               "Valenciennes",
@@ -1213,13 +1832,13 @@
               "€0.0m"
             ],
             [
-              "Dinamo Zagreb",
-              "",
-              "40",
-              "50",
+              "Angers",
+              "France",
+              "41",
+              "51",
               "10",
-              "€249.5m",
-              "€21.4m"
+              "€139.8m",
+              "€22.7m"
             ],
             [
               "Caen",
@@ -1229,17 +1848,184 @@
               "10",
               "€60.0m",
               "€5.8m"
+            ],
+            [
+              "Lille",
+              "France",
+              "93",
+              "103",
+              "10",
+              "€758.6m",
+              "€262.5m"
+            ],
+            [
+              "AZ Alkmaar",
+              "Netherlands",
+              "14",
+              "24",
+              "10",
+              "€180.2m",
+              "€11.1m"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "club",
+            "country",
+            "sold",
+            "bought",
+            "fees in",
+            "fees out",
+            "sell/buy"
+          ],
+          "rows": [
+            [
+              "Mechelen",
+              "Belgium",
+              "8",
+              "6",
+              "€20.8m",
+              "€0.0m",
+              "∞"
+            ],
+            [
+              "Lanus",
+              "Argentina",
+              "8",
+              "6",
+              "€27.1m",
+              "€0.0m",
+              "∞"
+            ],
+            [
+              "Nordsjaelland",
+              "Denmark",
+              "15",
+              "3",
+              "€105.9m",
+              "€0.3m",
+              "392.3x"
+            ],
+            [
+              "Nacional",
+              "Portugal",
+              "23",
+              "17",
+              "€33.1m",
+              "€0.3m",
+              "127.3x"
+            ],
+            [
+              "Bastia",
+              "France",
+              "20",
+              "9",
+              "€20.8m",
+              "€0.2m",
+              "83.2x"
+            ],
+            [
+              "Hajduk Split",
+              "",
+              "22",
+              "17",
+              "€31.4m",
+              "€0.4m",
+              "78.5x"
+            ],
+            [
+              "Le Havre",
+              "France",
+              "34",
+              "31",
+              "€33.9m",
+              "€1.3m",
+              "26.0x"
+            ],
+            [
+              "Porto",
+              "Portugal",
+              "15",
+              "13",
+              "€44.1m",
+              "€2.0m",
+              "22.1x"
+            ],
+            [
+              "Partizan Belgrade",
+              "",
+              "20",
+              "13",
+              "€64.6m",
+              "€3.8m",
+              "16.8x"
+            ],
+            [
+              "Lech Poznan",
+              "Poland",
+              "21",
+              "13",
+              "€45.3m",
+              "€2.7m",
+              "16.8x"
+            ],
+            [
+              "AZ Alkmaar",
+              "Netherlands",
+              "24",
+              "14",
+              "€180.2m",
+              "€11.1m",
+              "16.2x"
+            ],
+            [
+              "Parana",
+              "Brazil",
+              "10",
+              "9",
+              "€79.2m",
+              "€5.7m",
+              "13.9x"
+            ],
+            [
+              "Viktoria Plzen",
+              "",
+              "15",
+              "9",
+              "€34.7m",
+              "€2.5m",
+              "13.7x"
+            ],
+            [
+              "Bochum",
+              "Germany",
+              "40",
+              "41",
+              "€34.1m",
+              "€2.5m",
+              "13.4x"
+            ],
+            [
+              "FC Groningen",
+              "",
+              "20",
+              "12",
+              "€42.8m",
+              "€3.5m",
+              "12.3x"
             ]
           ]
         }
       ]
     },
     {
-      "id": "025d6cc6-f209-42e7-8862-44901e1c2f0a",
+      "id": "a8fce8b3-5b8d-4d1e-9fef-5831ccbf8e63",
       "cell_type": "code",
-      "source": "// the factories: high sell-fee, low buy-fee ratio (min €20m sold)\nlet mut fac: Vec<(&i64,&Club)> = clubs.iter()\n    .filter(|(_,c)| c.sold_fee >= 20_000_000.0).map(|(k,v)|(k,v)).collect();\nfac.sort_by(|a,b| {\n    let ra = if a.1.bought_fee>0.0 {a.1.sold_fee/a.1.bought_fee} else {f64::MAX};\n    let rb = if b.1.bought_fee>0.0 {b.1.sold_fee/b.1.bought_fee} else {f64::MAX};\n    rb.partial_cmp(&ra).unwrap()\n});\nlet facrows: Vec<Vec<String>> = fac.iter().take(15).map(|(id,c)| vec![\n    tname.get(*id).cloned().unwrap_or_default().chars().take(28).collect(),\n    tcty.get(*id).cloned().unwrap_or_default(),\n    c.sold_n.to_string(), c.bought_n.to_string(),\n    eur(c.sold_fee), eur(c.bought_fee),\n    if c.bought_fee>0.0 { format!(\"{:.1}x\", c.sold_fee/c.bought_fee) } else { \"∞\".into() },\n]).collect();\nmars_table(&[\"club\",\"country\",\"sold\",\"bought\",\"fees in\",\"fees out\",\"sell/buy\"], &facrows);\n",
+      "source": "use plotters::prelude::*;\n\nfn chart_num(s: &str) -> f64 {\n    let t = s.replace(',', \"\").replace('%', \"\").replace('−', \"-\");\n    let mult = if t.contains(\"bn\") { 1e9 }\n        else if t.contains('€') && t.contains('m') { 1e6 }\n        else { 1.0 };\n    let cleaned: String = t.chars()\n        .filter(|c| c.is_ascii_digit() || *c == '.' || *c == '-')\n        .collect();\n    cleaned.parse().unwrap_or(0.0) * mult\n}\n\n\nlet mut c_items: Vec<(String, f64)> = srows.iter()\n    .map(|r| (r[0].clone(), chart_num(&r[5].clone())))\n    .collect();\nc_items.retain(|(_, v)| v.is_finite());\nc_items.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());\nc_items.truncate(12);\nlet c_labels: Vec<String> = c_items.iter()\n    .map(|(l, _)| l.chars().take(18).collect()).collect();\nlet c_vals: Vec<f64> = c_items.iter().map(|(_, v)| *v).collect();\nlet c_ymax = c_vals.iter().cloned().fold(0.0_f64, f64::max) * 1.15 + 1e-9;\nlet (c_div, c_unit): (f64, &str) = if c_ymax >= 1e9 { (1e9, \"bn\") }\n    else if c_ymax >= 1e6 { (1e6, \"m\") }\n    else if c_ymax >= 1e3 { (1e3, \"k\") }\n    else { (1.0, \"\") };\nlet c_n = c_vals.len();\nlet figure = plotters::evcxr::evcxr_figure((780, 400), |root| {\n    root.fill(&WHITE)?;\n    let mut chart = ChartBuilder::on(&root)\n        .caption(\"Transfer fees received — biggest player-trading clubs\", (\"sans-serif\", 18))\n        .margin(10)\n        .x_label_area_size(45)\n        .y_label_area_size(55)\n        .build_cartesian_2d(-0.5_f64..(c_n as f64 - 0.5), 0.0..c_ymax)?;\n    chart.configure_mesh()\n        .x_labels(c_n)\n        .x_label_formatter(&|x: &f64| c_labels.get(*x as usize).cloned().unwrap_or_default())\n        .y_label_formatter(&|y: &f64| format!(\"{:.1}{}\", y / c_div, c_unit))\n        .draw()?;\n    chart.draw_series(c_vals.iter().enumerate().map(|(i, &v)| {\n        Rectangle::new([(i as f64 - 0.35, 0.0), (i as f64 + 0.35, v)], BLUE.filled())\n    }))?;\n    Ok(())\n});\nfigure.evcxr_display();\n",
       "metadata": {},
-      "execution_count": 5,
+      "execution_count": 6,
       "outputs": [
         {
           "type": "text",
@@ -1709,13 +2495,13 @@
               "€355.9m"
             ],
             [
-              "Nordsjaelland",
-              "Denmark",
-              "3",
-              "15",
+              "Benfica",
+              "Portugal",
+              "112",
+              "124",
               "12",
-              "€105.9m",
-              "€0.3m"
+              "€1.07bn",
+              "€400.0m"
             ],
             [
               "Stade Rennais",
@@ -1727,13 +2513,13 @@
               "€517.9m"
             ],
             [
-              "Benfica",
-              "Portugal",
-              "112",
-              "124",
+              "Nordsjaelland",
+              "Denmark",
+              "3",
+              "15",
               "12",
-              "€1.07bn",
-              "€400.0m"
+              "€105.9m",
+              "€0.3m"
             ],
             [
               "Sochaux",
@@ -1772,13 +2558,13 @@
               "€0.2m"
             ],
             [
-              "NK Lokomotiva",
-              "",
-              "9",
-              "19",
+              "Angers",
+              "France",
+              "41",
+              "51",
               "10",
-              "€15.1m",
-              "€0.0m"
+              "€139.8m",
+              "€22.7m"
             ],
             [
               "AZ Alkmaar",
@@ -1790,13 +2576,13 @@
               "€11.1m"
             ],
             [
-              "Caen",
-              "France",
-              "15",
-              "25",
+              "Dinamo Zagreb",
+              "",
+              "40",
+              "50",
               "10",
-              "€60.0m",
-              "€5.8m"
+              "€249.5m",
+              "€21.4m"
             ],
             [
               "Valenciennes",
@@ -1808,22 +2594,22 @@
               "€0.0m"
             ],
             [
-              "Angers",
+              "Caen",
               "France",
-              "41",
-              "51",
+              "15",
+              "25",
               "10",
-              "€139.8m",
-              "€22.7m"
+              "€60.0m",
+              "€5.8m"
             ],
             [
-              "Dinamo Zagreb",
+              "NK Lokomotiva",
               "",
-              "40",
-              "50",
+              "9",
+              "19",
               "10",
-              "€249.5m",
-              "€21.4m"
+              "€15.1m",
+              "€0.0m"
             ]
           ]
         },
@@ -1975,13 +2761,28 @@
               "12.3x"
             ]
           ]
+        },
+        {
+          "type": "mime_bundle",
+          "data": {
+            "image/svg+xml": "<svg width=\"780\" height=\"400\" viewBox=\"0 0 780 400\" xmlns=\"http://www.w3.org/2000/svg\">\n<rect x=\"0\" y=\"0\" width=\"780\" height=\"400\" opacity=\"1\" fill=\"#FFFFFF\" stroke=\"none\"/>\n<text x=\"390\" y=\"15\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"14.516129032258064\" opacity=\"1\" fill=\"#000000\">\nTransfer fees received — biggest player-trading clubs\n</text>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"70\" y1=\"344\" x2=\"70\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"82\" y1=\"344\" x2=\"82\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"94\" y1=\"344\" x2=\"94\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"106\" y1=\"344\" x2=\"106\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"117\" y1=\"344\" x2=\"117\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"129\" y1=\"344\" x2=\"129\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"141\" y1=\"344\" x2=\"141\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"153\" y1=\"344\" x2=\"153\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"164\" y1=\"344\" x2=\"164\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"176\" y1=\"344\" x2=\"176\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"188\" y1=\"344\" x2=\"188\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"199\" y1=\"344\" x2=\"199\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"211\" y1=\"344\" x2=\"211\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"223\" y1=\"344\" x2=\"223\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"235\" y1=\"344\" x2=\"235\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"246\" y1=\"344\" x2=\"246\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"258\" y1=\"344\" x2=\"258\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"270\" y1=\"344\" x2=\"270\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"282\" y1=\"344\" x2=\"282\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"293\" y1=\"344\" x2=\"293\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"305\" y1=\"344\" x2=\"305\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"317\" y1=\"344\" x2=\"317\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"329\" y1=\"344\" x2=\"329\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"340\" y1=\"344\" x2=\"340\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"352\" y1=\"344\" x2=\"352\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"364\" y1=\"344\" x2=\"364\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"375\" y1=\"344\" x2=\"375\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"387\" y1=\"344\" x2=\"387\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"399\" y1=\"344\" x2=\"399\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"411\" y1=\"344\" x2=\"411\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"422\" y1=\"344\" x2=\"422\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"434\" y1=\"344\" x2=\"434\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"446\" y1=\"344\" x2=\"446\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"458\" y1=\"344\" x2=\"458\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"469\" y1=\"344\" x2=\"469\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"481\" y1=\"344\" x2=\"481\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"493\" y1=\"344\" x2=\"493\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"505\" y1=\"344\" x2=\"505\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"516\" y1=\"344\" x2=\"516\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"528\" y1=\"344\" x2=\"528\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"540\" y1=\"344\" x2=\"540\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"551\" y1=\"344\" x2=\"551\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"563\" y1=\"344\" x2=\"563\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"575\" y1=\"344\" x2=\"575\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"587\" y1=\"344\" x2=\"587\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"598\" y1=\"344\" x2=\"598\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"610\" y1=\"344\" x2=\"610\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"622\" y1=\"344\" x2=\"622\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"634\" y1=\"344\" x2=\"634\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"645\" y1=\"344\" x2=\"645\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"657\" y1=\"344\" x2=\"657\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"669\" y1=\"344\" x2=\"669\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"681\" y1=\"344\" x2=\"681\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"692\" y1=\"344\" x2=\"692\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"704\" y1=\"344\" x2=\"704\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"716\" y1=\"344\" x2=\"716\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"727\" y1=\"344\" x2=\"727\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"739\" y1=\"344\" x2=\"739\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"751\" y1=\"344\" x2=\"751\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"763\" y1=\"344\" x2=\"763\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"344\" x2=\"769\" y2=\"344\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"339\" x2=\"769\" y2=\"339\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"334\" x2=\"769\" y2=\"334\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"329\" x2=\"769\" y2=\"329\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"324\" x2=\"769\" y2=\"324\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"319\" x2=\"769\" y2=\"319\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"313\" x2=\"769\" y2=\"313\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"308\" x2=\"769\" y2=\"308\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"303\" x2=\"769\" y2=\"303\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"298\" x2=\"769\" y2=\"298\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"293\" x2=\"769\" y2=\"293\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"287\" x2=\"769\" y2=\"287\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"282\" x2=\"769\" y2=\"282\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"277\" x2=\"769\" y2=\"277\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"272\" x2=\"769\" y2=\"272\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"267\" x2=\"769\" y2=\"267\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"262\" x2=\"769\" y2=\"262\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"256\" x2=\"769\" y2=\"256\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"251\" x2=\"769\" y2=\"251\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"246\" x2=\"769\" y2=\"246\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"241\" x2=\"769\" y2=\"241\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"236\" x2=\"769\" y2=\"236\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"230\" x2=\"769\" y2=\"230\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"225\" x2=\"769\" y2=\"225\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"220\" x2=\"769\" y2=\"220\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"215\" x2=\"769\" y2=\"215\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"210\" x2=\"769\" y2=\"210\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"205\" x2=\"769\" y2=\"205\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"199\" x2=\"769\" y2=\"199\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"194\" x2=\"769\" y2=\"194\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"189\" x2=\"769\" y2=\"189\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"184\" x2=\"769\" y2=\"184\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"179\" x2=\"769\" y2=\"179\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"173\" x2=\"769\" y2=\"173\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"168\" x2=\"769\" y2=\"168\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"163\" x2=\"769\" y2=\"163\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"158\" x2=\"769\" y2=\"158\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"153\" x2=\"769\" y2=\"153\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"148\" x2=\"769\" y2=\"148\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"142\" x2=\"769\" y2=\"142\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"137\" x2=\"769\" y2=\"137\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"132\" x2=\"769\" y2=\"132\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"127\" x2=\"769\" y2=\"127\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"122\" x2=\"769\" y2=\"122\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"116\" x2=\"769\" y2=\"116\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"111\" x2=\"769\" y2=\"111\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"106\" x2=\"769\" y2=\"106\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"101\" x2=\"769\" y2=\"101\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"96\" x2=\"769\" y2=\"96\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"90\" x2=\"769\" y2=\"90\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"85\" x2=\"769\" y2=\"85\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"80\" x2=\"769\" y2=\"80\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"75\" x2=\"769\" y2=\"75\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"70\" x2=\"769\" y2=\"70\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"65\" x2=\"769\" y2=\"65\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"59\" x2=\"769\" y2=\"59\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"54\" x2=\"769\" y2=\"54\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"49\" x2=\"769\" y2=\"49\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"44\" x2=\"769\" y2=\"44\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"39\" x2=\"769\" y2=\"39\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"94\" y1=\"344\" x2=\"94\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"153\" y1=\"344\" x2=\"153\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"211\" y1=\"344\" x2=\"211\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"270\" y1=\"344\" x2=\"270\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"329\" y1=\"344\" x2=\"329\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"387\" y1=\"344\" x2=\"387\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"446\" y1=\"344\" x2=\"446\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"505\" y1=\"344\" x2=\"505\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"563\" y1=\"344\" x2=\"563\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"622\" y1=\"344\" x2=\"622\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"681\" y1=\"344\" x2=\"681\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"739\" y1=\"344\" x2=\"739\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"344\" x2=\"769\" y2=\"344\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"293\" x2=\"769\" y2=\"293\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"241\" x2=\"769\" y2=\"241\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"189\" x2=\"769\" y2=\"189\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"137\" x2=\"769\" y2=\"137\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"85\" x2=\"769\" y2=\"85\"/>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"64,34 64,344 \"/>\n<text x=\"55\" y=\"344\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n0.0bn\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,344 64,344 \"/>\n<text x=\"55\" y=\"293\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n0.2bn\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,293 64,293 \"/>\n<text x=\"55\" y=\"241\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n0.4bn\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,241 64,241 \"/>\n<text x=\"55\" y=\"189\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n0.6bn\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,189 64,189 \"/>\n<text x=\"55\" y=\"137\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n0.8bn\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,137 64,137 \"/>\n<text x=\"55\" y=\"85\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n1.0bn\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,85 64,85 \"/>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"65,345 769,345 \"/>\n<text x=\"94\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nChelsea\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"94,345 94,350 \"/>\n<text x=\"153\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nJuventus\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"153,345 153,350 \"/>\n<text x=\"211\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nBarcelona\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"211,345 211,350 \"/>\n<text x=\"270\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nAtlético Madrid\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"270,345 270,350 \"/>\n<text x=\"329\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nManchester City\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"329,345 329,350 \"/>\n<text x=\"387\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nLiverpool\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"387,345 387,350 \"/>\n<text x=\"446\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nReal Madrid\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"446,345 446,350 \"/>\n<text x=\"505\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nBayern Munich\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"505,345 505,350 \"/>\n<text x=\"563\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nInter Milan\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"563,345 563,350 \"/>\n<text x=\"622\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nManchester United\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"622,345 622,350 \"/>\n<text x=\"681\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nParis Saint-Germai\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"681,345 681,350 \"/>\n<text x=\"739\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nNapoli\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"739,345 739,350 \"/>\n<rect x=\"73\" y=\"75\" width=\"41\" height=\"269\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"132\" y=\"135\" width=\"41\" height=\"209\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"191\" y=\"144\" width=\"41\" height=\"200\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"249\" y=\"149\" width=\"41\" height=\"195\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"308\" y=\"157\" width=\"41\" height=\"187\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"367\" y=\"163\" width=\"41\" height=\"181\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"425\" y=\"168\" width=\"41\" height=\"176\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"484\" y=\"178\" width=\"41\" height=\"166\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"543\" y=\"193\" width=\"41\" height=\"151\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"601\" y=\"197\" width=\"41\" height=\"147\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"660\" y=\"201\" width=\"41\" height=\"143\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"719\" y=\"203\" width=\"41\" height=\"141\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n</svg>",
+            "text/plain": "Figure (SVG)"
+          },
+          "metadata": {}
         }
       ]
     },
     {
-      "id": "822fb558-9919-4f34-8578-592e9682d44b",
+      "id": "4783770c-fc1e-458b-83f6-021ab4902c4b",
       "cell_type": "markdown",
-      "source": "## Findings\n\n584 clubs, 19,436 transfers, 8,645 international moves:\n\n- **The Premier League is the spending league**: Manchester United\n  (+€1.28bn net), Manchester City (+€1.23bn), Arsenal (+€1.12bn),\n  Chelsea (+€1.03bn) and Liverpool (+€800m) fill the top five\n  net-spend slots — five of the six biggest spenders on earth are\n  English.\n- **The farms are familiar names**: Salzburg (65 out / 46 in,\n  €490m received vs €86m paid), Sporting CP (€614m in vs €225m out),\n  Ajax (€857m vs €356m), Benfica (€1.07bn received — the biggest\n  seller by fee in the dataset).\n- **The sell/buy ratio exposes the business model**: Nordsjælland\n  earns 392× what it spends, AZ Alkmaar 16×, Porto 22× — these clubs\n  aren't football teams with transfer departments, they're\n  development companies that happen to play matches.\n- **France is the volume hub**: Toulouse, Reims, Metz, Sochaux,\n  Bordeaux, Bastia all appear in the net-talent-out table — Ligue 1's\n  lower-table churn is a player-export engine.\n\nCaveats: fee columns only capture the ~28% of transfers with\ndisclosed money — true spending is higher everywhere; some clubs show\nblank country (country matching gaps in the source data); \"net spend\"\nignores wages, which are the real cost of a transfer; loan deals and\nfree agents count as moves without fees.\n",
+      "source": "## Discussion\n\n584 clubs, 19,436 transfers, 8,645 international moves:\n\n- **The Premier League is the spending league**: Manchester United\n  (+€1.28bn net), Manchester City (+€1.23bn), Arsenal (+€1.12bn),\n  Chelsea (+€1.03bn) and Liverpool (+€800m) fill the top five\n  net-spend slots — five of the six biggest spenders on earth are\n  English.\n- **The farms are familiar names**: Salzburg (65 out / 46 in,\n  €490m received vs €86m paid), Sporting CP (€614m in vs €225m out),\n  Ajax (€857m vs €356m), Benfica (€1.07bn received — the biggest\n  seller by fee in the dataset).\n- **The sell/buy ratio exposes the business model**: Nordsjælland\n  earns 392× what it spends, AZ Alkmaar 16×, Porto 22× — these clubs\n  aren't football teams with transfer departments, they're\n  development companies that happen to play matches.\n- **France is the volume hub**: Toulouse, Reims, Metz, Sochaux,\n  Bordeaux, Bastia all appear in the net-talent-out table — Ligue 1's\n  lower-table churn is a player-export engine.\n\nCaveats: fee columns only capture the ~28% of transfers with\ndisclosed money — true spending is higher everywhere; some clubs show\nblank country (country matching gaps in the source data); \"net spend\"\nignores wages, which are the real cost of a transfer; loan deals and\nfree agents count as moves without fees.\n\n**Limitations.** Transfer fee coverage is incomplete — roughly three quarters of moves have undisclosed fees — and output is measured only where match statistics exist for the player.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "6ce89494-db73-471d-80a6-9fdba8dcc9d7",
+      "cell_type": "markdown",
+      "source": "## Conclusion\n\nThe Premier League is the spending league. Together these results answer the research question posed in the Introduction and quantify the pattern across 19,436 transfers. The notebook provides a fully reproducible pipeline from raw CSV extracts to published figures.\n",
       "metadata": {},
       "outputs": []
     }

@@ -12,9 +12,23 @@
   },
   "cells": [
     {
-      "id": "07e135ad-57d0-421c-93ac-6bd403942e37",
+      "id": "4148b381-d263-4ddf-a1ae-20c874b25ba4",
       "cell_type": "markdown",
-      "source": "## Does possession actually help you win?\n\nThe cliché: *control the ball, control the game, win the match.* This\nnotebook tests it on every match in the dataset where ESPN\nmatch-level statistics exist — possession, shots, shots on target,\ncorners and fouls — enriched into `match_team_stat` by\n`import-espn-stats.ts`.\n\n**Data caveat up front:** possession coverage is concentrated in the\nESPN era (~2001 onward) and is deepest in Europe's big leagues. The\nPremier League is the primary lens; all other covered leagues are used\nas a robustness check. `possession = 0` rows are treated as missing —\nESPN emits zeros for untracked stats, and no team legitimately records\n0% possession.",
+      "source": "## Abstract\n\nDoes possession actually help you win? This study answers it using hundreds of thousands of matches drawn from the Soccers football database. Possession is a team-quality marker more than a match-winner. All computation runs in Rust inside a `.mars` notebook (polars + plotters — charts as inline SVG), and every table and figure is generated from the extracted CSVs.\n\n## Keywords\n\n**Keywords:** football, analysis, possession, mars, sqlite\n\n## Table of contents\n\n- [Abstract](#abstract)\n- [Keywords](#keywords)\n- [Introduction](#introduction)\n- [Methods](#methods)\n- [Results](#results)\n  - [Coverage](#coverage)\n  - [The band test: does more possession mean more wins?](#the-band-test-does-more-possession-mean-more-wins)\n  - [Is the relationship linear — or are there diminishing returns?](#is-the-relationship-linear--or-are-there-diminishing-returns)\n  - [The paradox cases: dominating possession and still losing](#the-paradox-cases-dominating-possession-and-still-losing)\n  - [Is possession just a proxy for something better?](#is-possession-just-a-proxy-for-something-better)\n  - [Context: home advantage and opponent strength](#context-home-advantage-and-opponent-strength)\n  - [Home vs away: is possession worth more in one venue?](#home-vs-away-is-possession-worth-more-in-one-venue)\n  - [The season-level view and the historical trend](#the-season-level-view-and-the-historical-trend)\n- [Discussion](#discussion)\n- [Conclusion](#conclusion)\n\n## Introduction\n\nThe cliché: *control the ball, control the game, win the match.* This\nnotebook tests it on every match in the dataset where ESPN\nmatch-level statistics exist — possession, shots, shots on target,\ncorners and fouls — enriched into `match_team_stat` by\n`import-espn-stats.ts`.\n\n**Data caveat up front:** possession coverage is concentrated in the\nESPN era (~2001 onward) and is deepest in Europe's big leagues. The\nPremier League is the primary lens; all other covered leagues are used\nas a robustness check. `possession = 0` rows are treated as missing —\nESPN emits zeros for untracked stats, and no team legitimately records\n0% possession.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "a6addd18-c961-4509-8554-36efd3982eda",
+      "cell_type": "markdown",
+      "source": "## Methods\n\nData were extracted from the Soccers football database (`packages/data`) as CSV snapshots: `match_team_stat`, `matches_full`.\n\nThe analysis runs entirely in Rust inside the notebook: **polars** handles table scans, joins and aggregations; **plotters** renders figures as inline SVG; `mars_table` renders result tables.\n\nStatistical summaries include Pearson correlations.\n\nEach code cell is kept to a single output so results can be read top to bottom.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "3d87dc7a-e0d0-4691-baba-1794e7e0c0eb",
+      "cell_type": "markdown",
+      "source": "## Results\n\nAll figures and tables below are computed directly from the extracted data. Each code cell produces one output — a table, a chart, or a short text summary.\n",
       "metadata": {},
       "outputs": []
     },
@@ -117,9 +131,9 @@
       ]
     },
     {
-      "id": "131aa369-d124-4aa4-b6ab-43bb9bcda758",
+      "id": "c176f286-1643-43ac-b8d3-52fe879057cc",
       "cell_type": "markdown",
-      "source": "## Coverage\n\nPossession exists only where ESPN tracks it — effectively the 2000s\nonward, and patchier outside the major leagues. The Premier League has\nnear-complete coverage from 2001/02; lower-profile leagues have\nsporadic seasons. Everything below is computed only on matches where\n**both** teams have a valid possession figure.",
+      "source": "### Coverage\n\nPossession exists only where ESPN tracks it — effectively the 2000s\nonward, and patchier outside the major leagues. The Premier League has\nnear-complete coverage from 2001/02; lower-profile leagues have\nsporadic seasons. Everything below is computed only on matches where\n**both** teams have a valid possession figure.\n",
       "metadata": {},
       "outputs": []
     },
@@ -335,9 +349,9 @@
       ]
     },
     {
-      "id": "8bf31f2c-8e95-44d8-a071-7dbbe73e5a5e",
+      "id": "39623b8e-fae8-4369-b69c-94664017cce0",
       "cell_type": "markdown",
-      "source": "## The band test: does more possession mean more wins?\n\nEach match contributes two observations — one per team — with that\nt team's possession and its result (win/draw/loss). Bands are the\nteam's own possession share.",
+      "source": "### The band test: does more possession mean more wins?\n\nEach match contributes two observations — one per team — with that\nt team's possession and its result (win/draw/loss). Bands are the\nteam's own possession share.\n",
       "metadata": {},
       "outputs": []
     },
@@ -989,9 +1003,9 @@
       ]
     },
     {
-      "id": "b3ead333-d13d-4585-ad84-ae7d65a81123",
+      "id": "379b44d3-0eb0-4791-a803-b7c02ab491a1",
       "cell_type": "markdown",
-      "source": "## Is the relationship linear — or are there diminishing returns?\n\nBin matches by **possession differential** (home minus away) and look\nat the home win rate. If possession truly drives results, the curve\nshould keep climbing; a flattening top end would mean the last few\npercentage points of possession are worth little.",
+      "source": "### Is the relationship linear — or are there diminishing returns?\n\nBin matches by **possession differential** (home minus away) and look\nat the home win rate. If possession truly drives results, the curve\nshould keep climbing; a flattening top end would mean the last few\npercentage points of possession are worth little.\n",
       "metadata": {},
       "outputs": []
     },
@@ -1973,9 +1987,9 @@
       ]
     },
     {
-      "id": "2046c135-f330-4b72-9a72-96c389b2c200",
+      "id": "316b1679-e355-48be-a900-224de2e7737b",
       "cell_type": "markdown",
-      "source": "## The paradox cases: dominating possession and still losing\n\nTwo failure modes worth counting: teams that **win despite low\npossession** (<40%) and teams that **lose despite high possession**\n(>60%). If possession were destiny, both would be rare.",
+      "source": "### The paradox cases: dominating possession and still losing\n\nTwo failure modes worth counting: teams that **win despite low\npossession** (<40%) and teams that **lose despite high possession**\n(>60%). If possession were destiny, both would be rare.\n",
       "metadata": {},
       "outputs": []
     },
@@ -3291,9 +3305,9 @@
       ]
     },
     {
-      "id": "ffde4a5b-bb80-4048-aa52-ab7e67e9891c",
+      "id": "cb44b654-b93f-4998-8cc2-7405a6cc9d24",
       "cell_type": "markdown",
-      "source": "## Is possession just a proxy for something better?\n\nPossession correlates with shots, which correlate with xG, which\ncorrelates with goals. The question that matters: **holding shots and\nxG constant, does possession add anything?** A cheaper version of that\ntest — compare how well each metric's *share* predicts the win.",
+      "source": "### Is possession just a proxy for something better?\n\nPossession correlates with shots, which correlate with xG, which\ncorrelates with goals. The question that matters: **holding shots and\nxG constant, does possession add anything?** A cheaper version of that\ntest — compare how well each metric's *share* predicts the win.\n",
       "metadata": {},
       "outputs": []
     },
@@ -4042,9 +4056,9 @@
       ]
     },
     {
-      "id": "d09a4974-4a9e-4fcd-92f3-11bdfa4adc19",
+      "id": "59ede747-dda9-42ab-8f35-45dd030046d5",
       "cell_type": "markdown",
-      "source": "## Context: home advantage and opponent strength\n\nTwo confounds the band table ignores. **Home teams already win more**,\nso a home-side possession edge may partly be venue, not control.\nAnd **possession is easier against weak teams** — a side that pins a\nrelegation candidate will post inflated numbers. Split by venue and by\nopponent strength (the opponent's final season points, top vs bottom\nhalf within its league-season).",
+      "source": "### Context: home advantage and opponent strength\n\nTwo confounds the band table ignores. **Home teams already win more**,\nso a home-side possession edge may partly be venue, not control.\nAnd **possession is easier against weak teams** — a side that pins a\nrelegation candidate will post inflated numbers. Split by venue and by\nopponent strength (the opponent's final season points, top vs bottom\nhalf within its league-season).\n",
       "metadata": {},
       "outputs": []
     },
@@ -4848,9 +4862,9 @@
       ]
     },
     {
-      "id": "030fa531-b6b4-4a12-bbea-604fea02023d",
+      "id": "91f98188-3ea7-4689-8bb5-6137ab2511b5",
       "cell_type": "markdown",
-      "source": "## Home vs away: is possession worth more in one venue?\n\nA team with 60% at home is often just riding home advantage; the same\n60% away from home is a genuinely dominant performance. Compare the\nwin-rate curve for home and away teams separately.",
+      "source": "### Home vs away: is possession worth more in one venue?\n\nA team with 60% at home is often just riding home advantage; the same\n60% away from home is a genuinely dominant performance. Compare the\nwin-rate curve for home and away teams separately.\n",
       "metadata": {},
       "outputs": []
     },
@@ -5606,48 +5620,48 @@
           "rows": [
             [
               "<35",
-              "270 / 1159",
+              "255 / 1174",
               "46% / 22%"
             ],
             [
               "35-40",
-              "404 / 1032",
+              "396 / 1040",
               "49% / 22%"
             ],
             [
               "40-45",
-              "854 / 1442",
+              "848 / 1448",
               "48% / 22%"
             ],
             [
               "45-50",
-              "1400 / 1749",
+              "1406 / 1743",
               "45% / 26%"
             ],
             [
               "50-55",
-              "1768 / 1477",
+              "1781 / 1464",
               "45% / 30%"
             ],
             [
               "55-60",
-              "1539 / 902",
+              "1544 / 897",
               "48% / 33%"
             ],
             [
               "60-65",
-              "1000 / 505",
+              "996 / 509",
               "53% / 35%"
             ],
             [
               "65-70",
-              "630 / 251",
-              "50% / 33%"
+              "629 / 252",
+              "50% / 34%"
             ],
             [
               ">70",
-              "459 / 131",
-              "58% / 39%"
+              "456 / 134",
+              "58% / 40%"
             ]
           ]
         },
@@ -5727,9 +5741,9 @@
       ]
     },
     {
-      "id": "9a15250d-9a20-4b92-8668-ee7a6fbe2cd3",
+      "id": "fedbed66-e5c4-4cab-a89f-2bcfd6052cc7",
       "cell_type": "markdown",
-      "source": "## The season-level view and the historical trend\n\nMatch-level noise is huge — one deflected shot swings a game. Smooth\nit twice: (1) correlate each team's **season-average possession** with\nits final points across all EPL team-seasons; (2) track the yearly\ncorrelation between possession differential and home wins to see\nwhether possession has become more or less decisive over time.",
+      "source": "### The season-level view and the historical trend\n\nMatch-level noise is huge — one deflected shot swings a game. Smooth\nit twice: (1) correlate each team's **season-average possession** with\nits final points across all EPL team-seasons; (2) track the yearly\ncorrelation between possession differential and home wins to see\nwhether possession has become more or less decisive over time.\n",
       "metadata": {},
       "outputs": []
     },
@@ -6485,12 +6499,12 @@
           "rows": [
             [
               "<35",
-              "265 / 1164",
+              "259 / 1170",
               "46% / 22%"
             ],
             [
               "35-40",
-              "406 / 1030",
+              "404 / 1032",
               "48% / 22%"
             ],
             [
@@ -6500,33 +6514,33 @@
             ],
             [
               "45-50",
-              "1401 / 1748",
+              "1404 / 1745",
               "46% / 26%"
             ],
             [
               "50-55",
-              "1763 / 1482",
-              "45% / 31%"
+              "1775 / 1470",
+              "45% / 30%"
             ],
             [
               "55-60",
-              "1546 / 895",
+              "1539 / 902",
               "48% / 33%"
             ],
             [
               "60-65",
               "999 / 506",
-              "53% / 34%"
+              "53% / 35%"
             ],
             [
               "65-70",
-              "627 / 254",
-              "50% / 35%"
+              "625 / 256",
+              "50% / 36%"
             ],
             [
               ">70",
-              "457 / 133",
-              "58% / 40%"
+              "458 / 132",
+              "59% / 39%"
             ]
           ]
         },
@@ -6746,9 +6760,1036 @@
       ]
     },
     {
-      "id": "84dd15ef-5e39-487c-b9e9-c120828aebf7",
+      "id": "9bba1375-823a-49e0-a5ba-bcf916f17fe0",
+      "cell_type": "code",
+      "source": "use plotters::prelude::*;\n\nfn chart_num(s: &str) -> f64 {\n    let t = s.replace(',', \"\").replace('%', \"\").replace('−', \"-\");\n    let mult = if t.contains(\"bn\") { 1e9 }\n        else if t.contains('€') && t.contains('m') { 1e6 }\n        else { 1.0 };\n    let cleaned: String = t.chars()\n        .filter(|c| c.is_ascii_digit() || *c == '.' || *c == '-')\n        .collect();\n    cleaned.parse().unwrap_or(0.0) * mult\n}\n\n\nlet mut c_items: Vec<(String, f64)> = all_bands.iter()\n    .map(|r| (r[0].clone(), chart_num(&r[2].clone())))\n    .collect();\nc_items.retain(|(_, v)| v.is_finite());\nc_items.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());\nc_items.truncate(12);\nlet c_labels: Vec<String> = c_items.iter()\n    .map(|(l, _)| l.chars().take(18).collect()).collect();\nlet c_vals: Vec<f64> = c_items.iter().map(|(_, v)| *v).collect();\nlet c_ymax = c_vals.iter().cloned().fold(0.0_f64, f64::max) * 1.15 + 1e-9;\nlet (c_div, c_unit): (f64, &str) = if c_ymax >= 1e9 { (1e9, \"bn\") }\n    else if c_ymax >= 1e6 { (1e6, \"m\") }\n    else if c_ymax >= 1e3 { (1e3, \"k\") }\n    else { (1.0, \"\") };\nlet c_n = c_vals.len();\nlet figure = plotters::evcxr::evcxr_figure((780, 400), |root| {\n    root.fill(&WHITE)?;\n    let mut chart = ChartBuilder::on(&root)\n        .caption(\"Win rate by possession band — all leagues\", (\"sans-serif\", 18))\n        .margin(10)\n        .x_label_area_size(45)\n        .y_label_area_size(55)\n        .build_cartesian_2d(-0.5_f64..(c_n as f64 - 0.5), 0.0..c_ymax)?;\n    chart.configure_mesh()\n        .x_labels(c_n)\n        .x_label_formatter(&|x: &f64| c_labels.get(*x as usize).cloned().unwrap_or_default())\n        .y_label_formatter(&|y: &f64| format!(\"{:.1}{}\", y / c_div, c_unit))\n        .draw()?;\n    chart.draw_series(c_vals.iter().enumerate().map(|(i, &v)| {\n        Rectangle::new([(i as f64 - 0.35, 0.0), (i as f64 + 0.35, v)], BLUE.filled())\n    }))?;\n    Ok(())\n});\nfigure.evcxr_display();\n",
+      "metadata": {},
+      "execution_count": 13,
+      "outputs": [
+        {
+          "type": "text",
+          "text": "stat rows indexed: 374660\nmatches with valid possession (both teams): 111836\nEPL matches with possession: 8486 | all leagues: 111836\nEPL team-matches: wins 6334 | wins with <40%% poss: 802 (12.7%% of wins)\nEPL losses 6334 | losses with >60%% poss: 802 (12.7%% of losses)\nteam-observations with shots: 223620\nEPL: corr(home possession, home win) = 0.119\nEPL: corr(home shot share,   home win) = 0.258\nEPL xG subset (148 matches): corr(poss)=0.148 corr(shots)=0.185 corr(xG)=0.438\nopponent strength = top-half finishers in same league-season (points)\nEPL team-seasons: 431 | corr(avg possession, season points) = 0.704\n"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "league",
+            "matches",
+            "season span"
+          ],
+          "rows": [
+            [
+              "English Championship",
+              "12005",
+              "2003/04 → 2026/27"
+            ],
+            [
+              "English League One",
+              "10707",
+              "2006/07 → 2026/27"
+            ],
+            [
+              "English League Two",
+              "9879",
+              "2006/07 → 2026/27"
+            ],
+            [
+              "English Premier League",
+              "8486",
+              "2001/02 → 2026/27"
+            ],
+            [
+              "Spanish La Liga",
+              "7247",
+              "2004/05 → 2026/27"
+            ],
+            [
+              "Italian Serie A",
+              "7241",
+              "2006/07 → 2026/27"
+            ],
+            [
+              "French Ligue 1",
+              "6465",
+              "2006/07 → 2026/27"
+            ],
+            [
+              "MLS",
+              "6260",
+              "2012 → 2026"
+            ],
+            [
+              "German Bundesliga",
+              "4639",
+              "2005/06 → 2026/27"
+            ],
+            [
+              "Liga MX",
+              "4542",
+              "2012/2013 → 2026/2027"
+            ],
+            [
+              "Scottish Premiership",
+              "4316",
+              "2006/07 → 2026/27"
+            ],
+            [
+              "Serie A",
+              "3946",
+              "2014 → 2026"
+            ],
+            [
+              "German 2. Bundesliga",
+              "3246",
+              "2008/09 → 2026/27"
+            ],
+            [
+              "Dutch Eredivisie",
+              "2993",
+              "2008/09 → 2026/27"
+            ],
+            [
+              "Portuguese Liga Portugal",
+              "2794",
+              "2008/09 → 2026/27"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "EPL season",
+            "matches with possession"
+          ],
+          "rows": [
+            [
+              "2001/02",
+              "1"
+            ],
+            [
+              "2002/03",
+              "378"
+            ],
+            [
+              "2003/04",
+              "381"
+            ],
+            [
+              "2004/05",
+              "380"
+            ],
+            [
+              "2005/06",
+              "380"
+            ],
+            [
+              "2006/07",
+              "380"
+            ],
+            [
+              "2007/08",
+              "380"
+            ],
+            [
+              "2008/09",
+              "380"
+            ],
+            [
+              "2009/10",
+              "379"
+            ],
+            [
+              "2010/11",
+              "379"
+            ],
+            [
+              "2011/12",
+              "207"
+            ],
+            [
+              "2012/13",
+              "338"
+            ],
+            [
+              "2013/14",
+              "344"
+            ],
+            [
+              "2014/15",
+              "380"
+            ],
+            [
+              "2015/16",
+              "417"
+            ],
+            [
+              "2016/17",
+              "4"
+            ],
+            [
+              "2017/18",
+              "380"
+            ],
+            [
+              "2018/19",
+              "378"
+            ],
+            [
+              "2019/20",
+              "376"
+            ],
+            [
+              "2020/21",
+              "372"
+            ],
+            [
+              "2021/22",
+              "351"
+            ],
+            [
+              "2022/23",
+              "293"
+            ],
+            [
+              "2023/24",
+              "370"
+            ],
+            [
+              "2024/25",
+              "368"
+            ],
+            [
+              "2025/26",
+              "380"
+            ],
+            [
+              "2026/27",
+              "110"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "possession",
+            "n",
+            "win%",
+            "draw%",
+            "loss%"
+          ],
+          "rows": [
+            [
+              "<35",
+              "1429",
+              "26.6%",
+              "24.5%",
+              "48.9%"
+            ],
+            [
+              "35-40",
+              "1436",
+              "29.4%",
+              "24.1%",
+              "46.5%"
+            ],
+            [
+              "40-45",
+              "2296",
+              "31.7%",
+              "26.1%",
+              "42.2%"
+            ],
+            [
+              "45-50",
+              "3149",
+              "34.8%",
+              "25.6%",
+              "39.5%"
+            ],
+            [
+              "50-55",
+              "3245",
+              "38.5%",
+              "26.0%",
+              "35.5%"
+            ],
+            [
+              "55-60",
+              "2441",
+              "42.2%",
+              "26.1%",
+              "31.7%"
+            ],
+            [
+              "60-65",
+              "1505",
+              "47.0%",
+              "24.1%",
+              "28.9%"
+            ],
+            [
+              "65-70",
+              "881",
+              "45.5%",
+              "25.2%",
+              "29.3%"
+            ],
+            [
+              ">70",
+              "590",
+              "54.1%",
+              "23.2%",
+              "22.7%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "possession (all leagues)",
+            "n",
+            "win%",
+            "draw%",
+            "loss%"
+          ],
+          "rows": [
+            [
+              "<35",
+              "14158",
+              "31.7%",
+              "25.8%",
+              "42.5%"
+            ],
+            [
+              "35-40",
+              "18028",
+              "35.9%",
+              "26.1%",
+              "38.0%"
+            ],
+            [
+              "40-45",
+              "30971",
+              "35.8%",
+              "25.8%",
+              "38.4%"
+            ],
+            [
+              "45-50",
+              "45664",
+              "35.6%",
+              "26.0%",
+              "38.3%"
+            ],
+            [
+              "50-55",
+              "48544",
+              "37.6%",
+              "26.6%",
+              "35.8%"
+            ],
+            [
+              "55-60",
+              "32774",
+              "38.5%",
+              "25.9%",
+              "35.6%"
+            ],
+            [
+              "60-65",
+              "18873",
+              "38.4%",
+              "26.0%",
+              "35.6%"
+            ],
+            [
+              "65-70",
+              "9659",
+              "39.8%",
+              "26.2%",
+              "34.0%"
+            ],
+            [
+              ">70",
+              "5001",
+              "48.0%",
+              "24.8%",
+              "27.2%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "possession diff (home − away)",
+            "matches",
+            "home win%"
+          ],
+          "rows": [
+            [
+              "-35 to -30",
+              "196",
+              "33.2%"
+            ],
+            [
+              "-30 to -25",
+              "280",
+              "37.9%"
+            ],
+            [
+              "-25 to -20",
+              "335",
+              "35.5%"
+            ],
+            [
+              "-20 to -15",
+              "479",
+              "37.2%"
+            ],
+            [
+              "-15 to -10",
+              "535",
+              "45.8%"
+            ],
+            [
+              "-10 to -5",
+              "733",
+              "39.4%"
+            ],
+            [
+              "-5 to +0",
+              "762",
+              "43.8%"
+            ],
+            [
+              "+0 to +5",
+              "899",
+              "44.4%"
+            ],
+            [
+              "+5 to +10",
+              "778",
+              "45.8%"
+            ],
+            [
+              "+10 to +15",
+              "796",
+              "49.9%"
+            ],
+            [
+              "+15 to +20",
+              "565",
+              "48.8%"
+            ],
+            [
+              "+20 to +25",
+              "475",
+              "55.4%"
+            ],
+            [
+              "+25 to +30",
+              "389",
+              "52.2%"
+            ],
+            [
+              "+30 to +35",
+              "311",
+              "47.9%"
+            ],
+            [
+              "+35 to +40",
+              "223",
+              "52.9%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "possession diff — all leagues",
+            "matches",
+            "home win%"
+          ],
+          "rows": [
+            [
+              "-35 to -30",
+              "2274",
+              "41.1%"
+            ],
+            [
+              "-30 to -25",
+              "3155",
+              "44.8%"
+            ],
+            [
+              "-25 to -20",
+              "4158",
+              "45.5%"
+            ],
+            [
+              "-20 to -15",
+              "6062",
+              "45.4%"
+            ],
+            [
+              "-15 to -10",
+              "7137",
+              "45.9%"
+            ],
+            [
+              "-10 to -5",
+              "10221",
+              "42.7%"
+            ],
+            [
+              "-5 to +0",
+              "11045",
+              "43.9%"
+            ],
+            [
+              "+0 to +5",
+              "14423",
+              "43.6%"
+            ],
+            [
+              "+5 to +10",
+              "11157",
+              "45.0%"
+            ],
+            [
+              "+10 to +15",
+              "10891",
+              "45.1%"
+            ],
+            [
+              "+15 to +20",
+              "7864",
+              "44.0%"
+            ],
+            [
+              "+20 to +25",
+              "6607",
+              "45.0%"
+            ],
+            [
+              "+25 to +30",
+              "4633",
+              "43.0%"
+            ],
+            [
+              "+30 to +35",
+              "3629",
+              "45.1%"
+            ],
+            [
+              "+35 to +40",
+              "2213",
+              "43.8%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "team (EPL, all seasons)",
+            "wins <40% poss",
+            "total wins",
+            "low-poss win share"
+          ],
+          "rows": [
+            [
+              "Nott'm Forest",
+              "29",
+              "46",
+              "63%"
+            ],
+            [
+              "Cardiff",
+              "9",
+              "17",
+              "53%"
+            ],
+            [
+              "Burnley",
+              "34",
+              "81",
+              "42%"
+            ],
+            [
+              "Hull",
+              "14",
+              "36",
+              "39%"
+            ],
+            [
+              "Crystal Palace",
+              "53",
+              "150",
+              "35%"
+            ],
+            [
+              "Sheffield United",
+              "12",
+              "34",
+              "35%"
+            ],
+            [
+              "Stoke",
+              "31",
+              "98",
+              "32%"
+            ],
+            [
+              "West Brom",
+              "30",
+              "96",
+              "31%"
+            ],
+            [
+              "Brentford",
+              "17",
+              "63",
+              "27%"
+            ],
+            [
+              "Bournemouth",
+              "26",
+              "100",
+              "26%"
+            ],
+            [
+              "Wolves",
+              "29",
+              "118",
+              "25%"
+            ],
+            [
+              "Watford",
+              "14",
+              "57",
+              "25%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "team (EPL, all seasons)",
+            "losses >60% poss",
+            "total losses",
+            "high-poss loss share"
+          ],
+          "rows": [
+            [
+              "Chelsea",
+              "74",
+              "174",
+              "43%"
+            ],
+            [
+              "Liverpool",
+              "61",
+              "167",
+              "37%"
+            ],
+            [
+              "Arsenal",
+              "53",
+              "150",
+              "35%"
+            ],
+            [
+              "Brighton",
+              "37",
+              "126",
+              "29%"
+            ],
+            [
+              "Man City",
+              "60",
+              "208",
+              "29%"
+            ],
+            [
+              "Man United",
+              "45",
+              "175",
+              "26%"
+            ],
+            [
+              "Tottenham",
+              "65",
+              "269",
+              "24%"
+            ],
+            [
+              "Swansea",
+              "20",
+              "94",
+              "21%"
+            ],
+            [
+              "Leicester",
+              "28",
+              "148",
+              "19%"
+            ],
+            [
+              "Southampton",
+              "34",
+              "228",
+              "15%"
+            ],
+            [
+              "Leeds",
+              "14",
+              "104",
+              "13%"
+            ],
+            [
+              "Everton",
+              "35",
+              "291",
+              "12%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "shot share %",
+            "n",
+            "win%",
+            "draw%",
+            "loss%"
+          ],
+          "rows": [
+            [
+              "<35",
+              "39909",
+              "20.6%",
+              "25.0%",
+              "54.4%"
+            ],
+            [
+              "35-45",
+              "44623",
+              "30.4%",
+              "26.2%",
+              "43.4%"
+            ],
+            [
+              "45-55",
+              "53054",
+              "36.2%",
+              "27.4%",
+              "36.4%"
+            ],
+            [
+              "55-65",
+              "45113",
+              "43.2%",
+              "26.2%",
+              "30.6%"
+            ],
+            [
+              ">65",
+              "40921",
+              "54.2%",
+              "25.1%",
+              "20.8%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "possession",
+            "n vs weak / strong",
+            "win% vs weak / strong"
+          ],
+          "rows": [
+            [
+              "<35",
+              "254 / 1175",
+              "46% / 22%"
+            ],
+            [
+              "35-40",
+              "402 / 1034",
+              "48% / 22%"
+            ],
+            [
+              "40-45",
+              "845 / 1451",
+              "48% / 22%"
+            ],
+            [
+              "45-50",
+              "1404 / 1745",
+              "46% / 26%"
+            ],
+            [
+              "50-55",
+              "1768 / 1477",
+              "45% / 30%"
+            ],
+            [
+              "55-60",
+              "1544 / 897",
+              "48% / 33%"
+            ],
+            [
+              "60-65",
+              "1007 / 498",
+              "53% / 35%"
+            ],
+            [
+              "65-70",
+              "628 / 253",
+              "50% / 34%"
+            ],
+            [
+              ">70",
+              "460 / 130",
+              "58% / 39%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "possession",
+            "home win% / loss%",
+            "away win% / loss%"
+          ],
+          "rows": [
+            [
+              "<35",
+              "34.5%",
+              "42.1%",
+              "21.2%",
+              "53.5%"
+            ],
+            [
+              "35-40",
+              "36.6%",
+              "37.2%",
+              "24.0%",
+              "53.5%"
+            ],
+            [
+              "40-45",
+              "41.7%",
+              "32.7%",
+              "23.8%",
+              "49.6%"
+            ],
+            [
+              "45-50",
+              "41.7%",
+              "32.5%",
+              "28.7%",
+              "45.9%"
+            ],
+            [
+              "50-55",
+              "45.0%",
+              "29.3%",
+              "31.5%",
+              "42.2%"
+            ],
+            [
+              "55-60",
+              "49.4%",
+              "23.9%",
+              "33.1%",
+              "41.6%"
+            ],
+            [
+              "60-65",
+              "53.9%",
+              "23.5%",
+              "37.6%",
+              "36.2%"
+            ],
+            [
+              "65-70",
+              "50.0%",
+              "23.8%",
+              "38.6%",
+              "37.8%"
+            ],
+            [
+              ">70",
+              "58.7%",
+              "17.8%",
+              "47.3%",
+              "29.9%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "EPL season",
+            "corr(poss diff, home win)",
+            "matches"
+          ],
+          "rows": [
+            [
+              "2001/02",
+              "NaN",
+              "1"
+            ],
+            [
+              "2002/03",
+              "0.031",
+              "378"
+            ],
+            [
+              "2003/04",
+              "0.259",
+              "381"
+            ],
+            [
+              "2004/05",
+              "0.245",
+              "380"
+            ],
+            [
+              "2005/06",
+              "0.183",
+              "380"
+            ],
+            [
+              "2006/07",
+              "0.198",
+              "380"
+            ],
+            [
+              "2007/08",
+              "0.279",
+              "380"
+            ],
+            [
+              "2008/09",
+              "0.172",
+              "380"
+            ],
+            [
+              "2009/10",
+              "0.109",
+              "379"
+            ],
+            [
+              "2010/11",
+              "0.021",
+              "379"
+            ],
+            [
+              "2011/12",
+              "0.138",
+              "207"
+            ],
+            [
+              "2012/13",
+              "0.112",
+              "338"
+            ],
+            [
+              "2013/14",
+              "0.132",
+              "344"
+            ],
+            [
+              "2014/15",
+              "0.064",
+              "380"
+            ],
+            [
+              "2015/16",
+              "-0.005",
+              "417"
+            ],
+            [
+              "2016/17",
+              "-0.706",
+              "4"
+            ],
+            [
+              "2017/18",
+              "0.164",
+              "380"
+            ],
+            [
+              "2018/19",
+              "0.187",
+              "378"
+            ],
+            [
+              "2019/20",
+              "0.095",
+              "376"
+            ],
+            [
+              "2020/21",
+              "0.096",
+              "372"
+            ],
+            [
+              "2021/22",
+              "0.181",
+              "351"
+            ],
+            [
+              "2022/23",
+              "0.115",
+              "293"
+            ],
+            [
+              "2023/24",
+              "0.213",
+              "370"
+            ],
+            [
+              "2024/25",
+              "0.018",
+              "368"
+            ],
+            [
+              "2025/26",
+              "-0.005",
+              "380"
+            ],
+            [
+              "2026/27",
+              "0.037",
+              "110"
+            ]
+          ]
+        },
+        {
+          "type": "mime_bundle",
+          "data": {
+            "image/svg+xml": "<svg width=\"780\" height=\"400\" viewBox=\"0 0 780 400\" xmlns=\"http://www.w3.org/2000/svg\">\n<rect x=\"0\" y=\"0\" width=\"780\" height=\"400\" opacity=\"1\" fill=\"#FFFFFF\" stroke=\"none\"/>\n<text x=\"390\" y=\"15\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"14.516129032258064\" opacity=\"1\" fill=\"#000000\">\nWin rate by possession band — all leagues\n</text>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"72\" y1=\"344\" x2=\"72\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"88\" y1=\"344\" x2=\"88\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"104\" y1=\"344\" x2=\"104\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"119\" y1=\"344\" x2=\"119\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"135\" y1=\"344\" x2=\"135\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"151\" y1=\"344\" x2=\"151\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"166\" y1=\"344\" x2=\"166\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"182\" y1=\"344\" x2=\"182\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"197\" y1=\"344\" x2=\"197\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"213\" y1=\"344\" x2=\"213\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"229\" y1=\"344\" x2=\"229\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"244\" y1=\"344\" x2=\"244\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"260\" y1=\"344\" x2=\"260\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"276\" y1=\"344\" x2=\"276\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"291\" y1=\"344\" x2=\"291\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"307\" y1=\"344\" x2=\"307\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"323\" y1=\"344\" x2=\"323\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"338\" y1=\"344\" x2=\"338\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"354\" y1=\"344\" x2=\"354\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"370\" y1=\"344\" x2=\"370\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"385\" y1=\"344\" x2=\"385\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"401\" y1=\"344\" x2=\"401\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"417\" y1=\"344\" x2=\"417\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"432\" y1=\"344\" x2=\"432\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"448\" y1=\"344\" x2=\"448\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"463\" y1=\"344\" x2=\"463\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"479\" y1=\"344\" x2=\"479\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"495\" y1=\"344\" x2=\"495\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"510\" y1=\"344\" x2=\"510\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"526\" y1=\"344\" x2=\"526\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"542\" y1=\"344\" x2=\"542\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"557\" y1=\"344\" x2=\"557\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"573\" y1=\"344\" x2=\"573\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"589\" y1=\"344\" x2=\"589\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"604\" y1=\"344\" x2=\"604\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"620\" y1=\"344\" x2=\"620\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"636\" y1=\"344\" x2=\"636\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"651\" y1=\"344\" x2=\"651\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"667\" y1=\"344\" x2=\"667\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"682\" y1=\"344\" x2=\"682\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"698\" y1=\"344\" x2=\"698\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"714\" y1=\"344\" x2=\"714\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"729\" y1=\"344\" x2=\"729\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"745\" y1=\"344\" x2=\"745\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"344\" x2=\"769\" y2=\"344\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"339\" x2=\"769\" y2=\"339\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"333\" x2=\"769\" y2=\"333\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"328\" x2=\"769\" y2=\"328\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"322\" x2=\"769\" y2=\"322\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"316\" x2=\"769\" y2=\"316\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"311\" x2=\"769\" y2=\"311\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"305\" x2=\"769\" y2=\"305\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"300\" x2=\"769\" y2=\"300\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"294\" x2=\"769\" y2=\"294\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"288\" x2=\"769\" y2=\"288\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"283\" x2=\"769\" y2=\"283\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"277\" x2=\"769\" y2=\"277\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"271\" x2=\"769\" y2=\"271\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"266\" x2=\"769\" y2=\"266\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"260\" x2=\"769\" y2=\"260\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"255\" x2=\"769\" y2=\"255\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"249\" x2=\"769\" y2=\"249\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"243\" x2=\"769\" y2=\"243\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"238\" x2=\"769\" y2=\"238\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"232\" x2=\"769\" y2=\"232\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"227\" x2=\"769\" y2=\"227\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"221\" x2=\"769\" y2=\"221\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"215\" x2=\"769\" y2=\"215\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"210\" x2=\"769\" y2=\"210\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"204\" x2=\"769\" y2=\"204\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"198\" x2=\"769\" y2=\"198\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"193\" x2=\"769\" y2=\"193\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"187\" x2=\"769\" y2=\"187\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"182\" x2=\"769\" y2=\"182\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"176\" x2=\"769\" y2=\"176\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"170\" x2=\"769\" y2=\"170\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"165\" x2=\"769\" y2=\"165\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"159\" x2=\"769\" y2=\"159\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"154\" x2=\"769\" y2=\"154\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"148\" x2=\"769\" y2=\"148\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"142\" x2=\"769\" y2=\"142\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"137\" x2=\"769\" y2=\"137\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"131\" x2=\"769\" y2=\"131\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"125\" x2=\"769\" y2=\"125\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"120\" x2=\"769\" y2=\"120\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"114\" x2=\"769\" y2=\"114\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"109\" x2=\"769\" y2=\"109\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"103\" x2=\"769\" y2=\"103\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"97\" x2=\"769\" y2=\"97\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"92\" x2=\"769\" y2=\"92\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"86\" x2=\"769\" y2=\"86\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"81\" x2=\"769\" y2=\"81\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"75\" x2=\"769\" y2=\"75\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"69\" x2=\"769\" y2=\"69\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"64\" x2=\"769\" y2=\"64\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"58\" x2=\"769\" y2=\"58\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"52\" x2=\"769\" y2=\"52\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"47\" x2=\"769\" y2=\"47\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"41\" x2=\"769\" y2=\"41\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"36\" x2=\"769\" y2=\"36\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"104\" y1=\"344\" x2=\"104\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"182\" y1=\"344\" x2=\"182\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"260\" y1=\"344\" x2=\"260\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"338\" y1=\"344\" x2=\"338\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"417\" y1=\"344\" x2=\"417\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"495\" y1=\"344\" x2=\"495\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"573\" y1=\"344\" x2=\"573\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"651\" y1=\"344\" x2=\"651\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"729\" y1=\"344\" x2=\"729\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"344\" x2=\"769\" y2=\"344\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"288\" x2=\"769\" y2=\"288\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"232\" x2=\"769\" y2=\"232\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"176\" x2=\"769\" y2=\"176\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"120\" x2=\"769\" y2=\"120\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"64\" x2=\"769\" y2=\"64\"/>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"64,34 64,344 \"/>\n<text x=\"55\" y=\"344\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n0.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,344 64,344 \"/>\n<text x=\"55\" y=\"288\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n10.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,288 64,288 \"/>\n<text x=\"55\" y=\"232\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n20.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,232 64,232 \"/>\n<text x=\"55\" y=\"176\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n30.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,176 64,176 \"/>\n<text x=\"55\" y=\"120\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n40.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,120 64,120 \"/>\n<text x=\"55\" y=\"64\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n50.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,64 64,64 \"/>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"65,345 769,345 \"/>\n<text x=\"104\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n&gt;70\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"104,345 104,350 \"/>\n<text x=\"182\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n65-70\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"182,345 182,350 \"/>\n<text x=\"260\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n55-60\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"260,345 260,350 \"/>\n<text x=\"338\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n60-65\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"338,345 338,350 \"/>\n<text x=\"417\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n50-55\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"417,345 417,350 \"/>\n<text x=\"495\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n35-40\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"495,345 495,350 \"/>\n<text x=\"573\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n40-45\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"573,345 573,350 \"/>\n<text x=\"651\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n45-50\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"651,345 651,350 \"/>\n<text x=\"729\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n&lt;35\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"729,345 729,350 \"/>\n<rect x=\"76\" y=\"75\" width=\"55\" height=\"269\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"154\" y=\"121\" width=\"55\" height=\"223\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"233\" y=\"128\" width=\"54\" height=\"216\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"311\" y=\"129\" width=\"55\" height=\"215\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"389\" y=\"133\" width=\"55\" height=\"211\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"467\" y=\"143\" width=\"55\" height=\"201\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"546\" y=\"143\" width=\"54\" height=\"201\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"624\" y=\"145\" width=\"55\" height=\"199\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"702\" y=\"166\" width=\"55\" height=\"178\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n</svg>",
+            "text/plain": "Figure (SVG)"
+          },
+          "metadata": {}
+        }
+      ]
+    },
+    {
+      "id": "74f0a50d-20b8-4cf1-bcd9-3138cde90d7e",
       "cell_type": "markdown",
-      "source": "## Findings\n\n**Does possession help you win? Yes — but much less than the cliché\nsuggests, and mostly by proxy.**\n\n1. **The relationship is real but modest.** In the Premier League, a\n   team's win rate climbs from 26.6% with under 35% possession to\n   54.1% above 70% — a near-doubling, but a >70% possessor still drops\n   points nearly a quarter of the time. Across all covered leagues the\n   curve is flatter still (31.7% → 48.0%).\n\n2. **Possession is a team-quality marker more than a match-winner.**\n   Correlating each team's *season-average* possession with its final\n   points gives ρ = 0.704 across 431 EPL team-seasons — possession tells\n   you who's good. But within a single match, possession correlates\n   with winning at only ρ = 0.119, while **shot share correlates at\n   0.258** — shots predict victory more than twice as well. On the\n   small xG-covered subset, xG share reaches 0.438.\n\n3. **The extremes cut both ways.** 12.7% of EPL wins were earned with\n   under 40% possession; the same share of losses came with over 60%.\n   Nottingham Forest won 63% of their matches despite low possession;\n   Chelsea lost 43% of theirs *while dominating the ball*.\n\n4. **Context matters.** Possession is nearly worthless against weak\n   opponents (win rate ~45-58% across all bands — anyone can have the\n   ball vs a bad team) but separates winners from losers against strong\n   ones (22% → 40%). Away from home, even >70% possession wins only\n   47.3% of the time versus 58.7% at home.\n\n5. **No historical trend.** The yearly correlation between possession\n   differential and home wins fluctuates between ~0.02 and ~0.28 with\n   no directional movement — possession has not become more (or less)\n   decisive across two decades.\n\n**Verdict:** possession is football's most quoted stat and one of its\nweakest match-level predictors. It measures *who you are* far better\nthan *what will happen today* — and when it comes to predicting a\nsingle result, shots and xG do the job at roughly 2–4× the strength.",
+      "source": "## Discussion\n\n**Does possession help you win? Yes — but much less than the cliché\nsuggests, and mostly by proxy.**\n\n1. **The relationship is real but modest.** In the Premier League, a\n   team's win rate climbs from 26.6% with under 35% possession to\n   54.1% above 70% — a near-doubling, but a >70% possessor still drops\n   points nearly a quarter of the time. Across all covered leagues the\n   curve is flatter still (31.7% → 48.0%).\n\n2. **Possession is a team-quality marker more than a match-winner.**\n   Correlating each team's *season-average* possession with its final\n   points gives ρ = 0.704 across 431 EPL team-seasons — possession tells\n   you who's good. But within a single match, possession correlates\n   with winning at only ρ = 0.119, while **shot share correlates at\n   0.258** — shots predict victory more than twice as well. On the\n   small xG-covered subset, xG share reaches 0.438.\n\n3. **The extremes cut both ways.** 12.7% of EPL wins were earned with\n   under 40% possession; the same share of losses came with over 60%.\n   Nottingham Forest won 63% of their matches despite low possession;\n   Chelsea lost 43% of theirs *while dominating the ball*.\n\n4. **Context matters.** Possession is nearly worthless against weak\n   opponents (win rate ~45-58% across all bands — anyone can have the\n   ball vs a bad team) but separates winners from losers against strong\n   ones (22% → 40%). Away from home, even >70% possession wins only\n   47.3% of the time versus 58.7% at home.\n\n5. **No historical trend.** The yearly correlation between possession\n   differential and home wins fluctuates between ~0.02 and ~0.28 with\n   no directional movement — possession has not become more (or less)\n   decisive across two decades.\n\n**Verdict:** possession is football's most quoted stat and one of its\nweakest match-level predictors. It measures *who you are* far better\nthan *what will happen today* — and when it comes to predicting a\nsingle result, shots and xG do the job at roughly 2–4× the strength.\n\n**Limitations.** The analysis is limited to the competitions present in the database; player-level metrics exist only for StatsBomb-covered tournaments, and underlying event data may contain errors.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "a9c9d540-e3b0-4693-a360-509d1c113fec",
+      "cell_type": "markdown",
+      "source": "## Conclusion\n\nPossession is a team-quality marker more than a match-winner. Together these results answer the research question posed in the Introduction and quantify the pattern across hundreds of thousands of matches. The notebook provides a fully reproducible pipeline from raw CSV extracts to published figures.\n",
       "metadata": {},
       "outputs": []
     }

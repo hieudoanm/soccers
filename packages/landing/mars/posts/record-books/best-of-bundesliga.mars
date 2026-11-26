@@ -12,9 +12,23 @@
   },
   "cells": [
     {
-      "id": "8dc5c3e0-9670-4659-a35c-5ebe905dcb85",
+      "id": "50ae8eaf-469f-448b-af89-5cf8ee5fc5d7",
       "cell_type": "markdown",
-      "source": "## Best of the Bundesliga\n\nA complete record-book of the **Bundesliga** — every statistic worth knowing,\ncomputed from all matches in `data/matches_full.csv`.\n\n**Records covered:** most championships, the champion hall of fame\n(most points, most goals, fewest conceded, best goal difference, biggest\ntitle margin, most wins), the best team-seasons ever, unbeaten\ninvincibles, closest and biggest title races, biggest wins and\nhighest-scoring matches, and the season's top scorers where player-level\ndata exists.",
+      "source": "## Abstract\n\nThis study examines the Bundesliga record book using 10,256 matches drawn from the Soccers football database. Across 33 complete seasons (1993/94 → 2025/26) and 10,256 matches, the Bundesliga record book — home of the most dominant champion in world football. Most championships: Bayern Munich 23 of 32 — including eight straight titles (2013/14 → 2020/21). All computation runs in Rust inside a `.mars` notebook (polars + plotters — charts as inline SVG), and every table and figure is generated from the extracted CSVs.\n\n## Keywords\n\n**Keywords:** football, analysis, records, bundesliga, mars, sqlite\n\n## Table of contents\n\n- [Abstract](#abstract)\n- [Keywords](#keywords)\n- [Introduction](#introduction)\n- [Methods](#methods)\n- [Results](#results)\n  - [Assemble per-season standings for all complete seasons](#assemble-per-season-standings-for-all-complete-seasons)\n  - [Champion hall of fame — six records](#champion-hall-of-fame--six-records)\n  - [Best team-seasons ever by points (any team)](#best-team-seasons-ever-by-points-any-team)\n  - [Unbeaten seasons](#unbeaten-seasons)\n  - [Title races — closest and biggest margins](#title-races--closest-and-biggest-margins)\n  - [Biggest wins & highest scoring matches](#biggest-wins--highest-scoring-matches)\n  - [Top scorers](#top-scorers)\n- [Discussion](#discussion)\n- [Conclusion](#conclusion)\n\n## Introduction\n\nA complete record-book of the **Bundesliga** — every statistic worth knowing,\ncomputed from all matches in `data/matches_full.csv`.\n\n**Records covered:** most championships, the champion hall of fame\n(most points, most goals, fewest conceded, best goal difference, biggest\ntitle margin, most wins), the best team-seasons ever, unbeaten\ninvincibles, closest and biggest title races, biggest wins and\nhighest-scoring matches, and the season's top scorers where player-level\ndata exists.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "8613967b-ba3b-47d8-824e-16a685a2e065",
+      "cell_type": "markdown",
+      "source": "## Methods\n\nData were extracted from the Soccers football database (`packages/data`) as CSV snapshots: `matches_full`, `player_goals`.\n\nThe analysis runs entirely in Rust inside the notebook: **polars** handles table scans, joins and aggregations; **plotters** renders figures as inline SVG; `mars_table` renders result tables.\n\nEach code cell is kept to a single output so results can be read top to bottom.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "84342e69-4443-4e50-85ae-c58021730638",
+      "cell_type": "markdown",
+      "source": "## Results\n\nAll figures and tables below are computed directly from the extracted data. Each code cell produces one output — a table, a chart, or a short text summary.\n",
       "metadata": {},
       "outputs": []
     },
@@ -43,6 +57,13 @@
           "text": "German Bundesliga matches: 10256\nfinished matches: 10188 (68 duplicate fixtures dropped) | team-season entries: 612\ncomplete seasons: 33 (1993/94 -> 2025/26)\ntop scorers available for season year 2023 (StatsBomb coverage)\n()\n"
         }
       ]
+    },
+    {
+      "id": "339e02ca-3e98-407a-b07b-a57f02f3ebfd",
+      "cell_type": "markdown",
+      "source": "### Assemble per-season standings for all complete seasons\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "c28a2126-a87a-4c8e-a19f-1d211157f78e",
@@ -101,6 +122,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "e4063573-6500-48c1-bd35-41f2123f5da7",
+      "cell_type": "markdown",
+      "source": "### Champion hall of fame — six records\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "11c75d20-0a34-4e21-b561-f4bbca29c077",
@@ -213,6 +241,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "7524e751-0af8-48e3-9972-479041c46198",
+      "cell_type": "markdown",
+      "source": "### Best team-seasons ever by points (any team)\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "d59cdc63-6a54-4f7f-9f11-dac97de20e48",
@@ -418,6 +453,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "856cd925-7ca1-4cd7-9913-ffaa3d52a65f",
+      "cell_type": "markdown",
+      "source": "### Unbeaten seasons\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "62443196-02cc-48ed-a370-38ae307f7000",
@@ -640,6 +682,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "e4328dbf-ba34-47a4-8839-4ae541324eeb",
+      "cell_type": "markdown",
+      "source": "### Title races — closest and biggest margins\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "ac7d1baa-607a-44ce-b5e0-d45cec6e6232",
@@ -1189,6 +1238,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "7a50e42b-f20d-4b27-92d4-85b7241d7cce",
+      "cell_type": "markdown",
+      "source": "### Biggest wins & highest scoring matches\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "788b43a2-414b-418a-b629-6eefdc66fb5b",
@@ -1878,6 +1934,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "d847e37e-3b55-4d32-8d90-67140d963f41",
+      "cell_type": "markdown",
+      "source": "### Top scorers\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "fb3e43ab-b090-4aff-9a59-ded61c83fcd0",
@@ -3077,9 +3140,16 @@
       ]
     },
     {
-      "id": "009d0cf6-1634-4e6a-b109-6c501cbef6e0",
+      "id": "00a96e4f-33ba-4e95-95d0-bf21e6d7e38b",
       "cell_type": "markdown",
-      "source": "## Findings\n\nAcross **32 complete seasons** (1993/94 → 2025/26) and 10,256 matches,\nthe Bundesliga record book — home of the most dominant champion in world\nfootball:\n\n- **Most championships**: Bayern Munich **23 of 32** — including eight\n  straight titles (2013/14 → 2020/21). Dortmund 5, and one each for\n  Leverkusen (2023/24), Kaiserslautern, Stuttgart, Werder Bremen and\n  Wolfsburg.\n- **Champion hall of fame**: Bayern 2012/13 owns most points (91), most\n  wins and biggest margin (+25 over Dortmund); Bayern 2025/26 scored a\n  record **122 goals** and posted the best goal difference (+86);\n  Bayern 2015/16 conceded the fewest (17).\n- **Best season ever**: Bayern 2012/13 — 91 points in a 34-game season,\n  2.68 ppg.\n- **Invincibles**: Leverkusen's 2023/24 \"Neverkusen\" side went unbeaten\n  (28W 6D) — only the second unbeaten season in Bundesliga history, and\n  the first by a non-Bayern side in the modern era.\n- **Closest finishes**: three titles decided on goal difference at level\n  points — Bayern over Kaiserslautern 1993/94, Bayern over Leverkusen\n  1999/2000, and the famous Bayern–Dortmund 2022/23 decider.\n- **Biggest blowouts**: Bayern 2012/13, 25 clear — the largest title\n  margin in the league's history.\n- **Records on the pitch**: **five** separate 8–0 wins (Bayern alone\n  accounts for four); highest-scoring was Schalke 7–4 Leverkusen (2005/06)\n  and Bayern 9–2 Hamburg (2012/13).\n- **Top scorers** (StatsBomb coverage, 2023/24): Boniface 14, Wirtz 11,\n  Grimaldo 10, Frimpong 9, Schick 7.\n\n*Method notes: canonical names merged the two sources' conventions\n(\"Bayer Leverkusen\"/\"Leverkusen\" etc.) so the 2023/24 title is correctly\ncredited once; 2026/27 in progress excluded.*",
+      "source": "## Discussion\n\nAcross **32 complete seasons** (1993/94 → 2025/26) and 10,256 matches,\nthe Bundesliga record book — home of the most dominant champion in world\nfootball:\n\n- **Most championships**: Bayern Munich **23 of 32** — including eight\n  straight titles (2013/14 → 2020/21). Dortmund 5, and one each for\n  Leverkusen (2023/24), Kaiserslautern, Stuttgart, Werder Bremen and\n  Wolfsburg.\n- **Champion hall of fame**: Bayern 2012/13 owns most points (91), most\n  wins and biggest margin (+25 over Dortmund); Bayern 2025/26 scored a\n  record **122 goals** and posted the best goal difference (+86);\n  Bayern 2015/16 conceded the fewest (17).\n- **Best season ever**: Bayern 2012/13 — 91 points in a 34-game season,\n  2.68 ppg.\n- **Invincibles**: Leverkusen's 2023/24 \"Neverkusen\" side went unbeaten\n  (28W 6D) — only the second unbeaten season in Bundesliga history, and\n  the first by a non-Bayern side in the modern era.\n- **Closest finishes**: three titles decided on goal difference at level\n  points — Bayern over Kaiserslautern 1993/94, Bayern over Leverkusen\n  1999/2000, and the famous Bayern–Dortmund 2022/23 decider.\n- **Biggest blowouts**: Bayern 2012/13, 25 clear — the largest title\n  margin in the league's history.\n- **Records on the pitch**: **five** separate 8–0 wins (Bayern alone\n  accounts for four); highest-scoring was Schalke 7–4 Leverkusen (2005/06)\n  and Bayern 9–2 Hamburg (2012/13).\n- **Top scorers** (StatsBomb coverage, 2023/24): Boniface 14, Wirtz 11,\n  Grimaldo 10, Frimpong 9, Schick 7.\n\n*Method notes: canonical names merged the two sources' conventions\n(\"Bayer Leverkusen\"/\"Leverkusen\" etc.) so the 2023/24 title is correctly\ncredited once; 2026/27 in progress excluded.*\n\n**Limitations.** Records reflect only the matches present in the database; coverage varies by competition and era, so 'records' are archive records, not all-time official marks.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "52341183-2c45-4b4d-a23b-579517ab97bb",
+      "cell_type": "markdown",
+      "source": "## Conclusion\n\n1993/94 → 2025/26) and 10,256 matches, the Bundesliga record book — home of the most dominant champion in world football. Most championships: Bayern Munich 23 of 32 — including eight straight titles (2013/14 → 2020/21). Together these results answer the research question posed in the Introduction and quantify the pattern across 10,256 matches. The notebook provides a fully reproducible pipeline from raw CSV extracts to published figures.\n",
       "metadata": {},
       "outputs": []
     }

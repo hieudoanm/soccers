@@ -10,7 +10,30 @@ tags: ['football', 'analysis', 'relegation', 'standings', 'mars', 'sqlite']
 
 # Greatest escapes: the teams that survived from the drop zone
 
-## Greatest escapes: the teams that survived from the drop zone
+## Abstract
+
+This study examines the greatest escapes using hundreds of thousands of matches
+drawn from the Soccers football database. Being bottom-three with ten games left
+is not a death sentence — but it is close to one. All computation runs in Rust
+inside a `.mars` notebook (polars + plotters — charts as inline SVG), and every
+table and figure is generated from the extracted CSVs.
+
+## Keywords
+
+**Keywords:** football, analysis, relegation, standings, mars, sqlite
+
+## Table of contents
+
+- [Abstract](#abstract)
+- [Keywords](#keywords)
+- [Introduction](#introduction)
+- [Methods](#methods)
+- [Results](#results)
+  - [The escape artists](#the-escape-artists)
+- [Discussion](#discussion)
+- [Conclusion](#conclusion)
+
+## Introduction
 
 The mirror image of the choke. This notebook asks: **how often does a team sit
 in the bottom three with a month of football left — and live to tell the tale?**
@@ -24,6 +47,24 @@ bottom-three anyway = a "near miss".
 Bottom-three is used as the relegation-zone proxy across all leagues —
 relegation spots vary (2 in Scotland, 4 in some leagues) but bottom-three is the
 consistent danger zone.
+
+## Methods
+
+Data were extracted from the Soccers football database (`packages/data`) as CSV
+snapshots: `matches_full`.
+
+The analysis runs entirely in Rust inside the notebook: **polars** handles table
+scans, joins and aggregations; **plotters** renders figures as inline SVG;
+`mars_table` renders result tables.
+
+Statistical summaries include Pearson correlations.
+
+Each code cell is kept to a single output so results can be read top to bottom.
+
+## Results
+
+All figures and tables below are computed directly from the extracted data. Each
+code cell produces one output — a table, a chart, or a short text summary.
 
 ```rust
 
@@ -358,9 +399,9 @@ mars_table(&["league","season","team","bottom-3 until","final position"], &rows)
 ```text
 completed matches after dedup: 311832 (1190 dupes dropped)
 team-seasons: 21299
-team-seasons that were bottom-3 with <=10 games left: 4735
-escapes (finished outside bottom 3): 1739
-near misses (stayed bottom 3): 2996
+team-seasons that were bottom-3 with <=10 games left: 4739
+escapes (finished outside bottom 3): 1745
+near misses (stayed bottom 3): 2994
 ```
 
 | league                      | season    | team                | bottom-3 until | final position |
@@ -368,45 +409,45 @@ near misses (stayed bottom 3): 2996
 | AFC Champions League Elite  | 2024/2025 | Yokohama F. Marinos | 10 left        | P3/24          |
 | Scottish League Two         | 2025/26   | Forfar              | 10 left        | P4/10          |
 | Scottish League Two         | 2004/05   | Montrose            | 10 left        | P5/10          |
-| Scottish League One         | 2009/10   | Peterhead           | 10 left        | P5/10          |
-| German 2. Bundesliga        | 2026/27   | Kaiserslautern      | 10 left        | P5/18          |
 | Scottish League One         | 2022/23   | Queen of Sth        | 10 left        | P5/10          |
+| German 2. Bundesliga        | 2026/27   | Kaiserslautern      | 10 left        | P5/18          |
+| Scottish League One         | 2009/10   | Peterhead           | 10 left        | P5/10          |
+| German 2. Bundesliga        | 2017/18   | Bochum              | 10 left        | P6/18          |
 | Indian Super league         | 2021/2022 | Bengaluru           | 10 left        | P6/11          |
 | Scottish Premiership        | 2009/10   | Hamilton            | 10 left        | P6/12          |
-| German 2. Bundesliga        | 2017/18   | Bochum              | 10 left        | P6/18          |
 | Indian Super league         | 2021/2022 | Odisha              | 10 left        | P7/11          |
 | Scottish Premiership        | 1994/95   | Kilmarnock          | 10 left        | P7/10          |
-| Bundesliga                  | 2026/2027 | Tirol               | 10 left        | P8/12          |
+| English League Two          | 2026/27   | Exeter              | 10 left        | P8/24          |
+| Spanish La Liga             | 2026/27   | Ath Bilbao          | 10 left        | P8/20          |
 | Super League                | 2025/2026 | Servette            | 10 left        | P8/12          |
-| Italian Serie A             | 2000/01   | Brescia             | 10 left        | P8/18          |
 | German Bundesliga           | 2016/17   | Werder Bremen       | 10 left        | P8/18          |
 | Portuguese Liga Portugal    | 2026/27   | Sp Braga            | 10 left        | P8/18          |
-| Spanish La Liga             | 2026/27   | Ath Bilbao          | 10 left        | P8/20          |
-| English League Two          | 2026/27   | Exeter              | 10 left        | P8/24          |
-| Scottish Premiership        | 2002/03   | Livingston          | 10 left        | P9/12          |
-| Spanish La Liga 2           | 2013/14   | Alcorcon            | 10 left        | P9/22          |
+| Italian Serie A             | 2000/01   | Brescia             | 10 left        | P8/18          |
+| Bundesliga                  | 2026/2027 | Tirol               | 10 left        | P8/12          |
 | Dutch Eredivisie            | 2013/14   | Den Haag            | 10 left        | P9/18          |
+| Spanish La Liga 2           | 2013/14   | Alcorcon            | 10 left        | P9/22          |
+| Scottish Premiership        | 2002/03   | Livingston          | 10 left        | P9/12          |
 | Superliga                   | 2014/2015 | Odense              | 10 left        | P9/12          |
-| Superliga                   | 2019/2020 | Academica Clinceni  | 10 left        | P10/15         |
-| English Premier League      | 1994/95   | Southampton         | 10 left        | P10/22         |
-| Serie A                     | 2026      | Vasco               | 10 left        | P10/20         |
-| German 2. Bundesliga        | 2011/12   | Duisburg            | 10 left        | P10/18         |
-| English Premier League      | 2001/02   | Blackburn           | 10 left        | P10/20         |
-| Greek Super League          | 2006/07   | Xanthi              | 10 left        | P10/16         |
-| Veikkausliiga               | 2026      | SJK                 | 10 left        | P10/13         |
-| Allsvenskan                 | 2024      | Varnamo             | 10 left        | P10/17         |
 | Dutch Eredivisie            | 2013/14   | Utrecht             | 10 left        | P10/18         |
+| Superliga                   | 2019/2020 | Academica Clinceni  | 10 left        | P10/15         |
+| English Premier League      | 2001/02   | Blackburn           | 10 left        | P10/20         |
+| German 2. Bundesliga        | 2011/12   | Duisburg            | 10 left        | P10/18         |
+| Allsvenskan                 | 2024      | Varnamo             | 10 left        | P10/17         |
+| Veikkausliiga               | 2026      | SJK                 | 10 left        | P10/13         |
+| Serie A                     | 2026      | Vasco               | 10 left        | P10/20         |
+| Greek Super League          | 2006/07   | Xanthi              | 10 left        | P10/16         |
+| English Premier League      | 1994/95   | Southampton         | 10 left        | P10/22         |
+| Greek Super League          | 2019/20   | Lamia               | 10 left        | P11/14         |
+| Italian Serie B             | 2025/26   | Mantova             | 10 left        | P11/20         |
+| Ekstraklasa                 | 2017/2018 | Pogon Szczecin      | 10 left        | P11/16         |
 | Copa De La Liga Profesional | 2021      | Argentinos Jrs      | 10 left        | P11/26         |
+| Superliga                   | 2017/2018 | Randers FC          | 10 left        | P11/16         |
 | German Bundesliga           | 2005/06   | Mainz               | 10 left        | P11/18         |
 | Belgian Pro League          | 2003/04   | Lokeren             | 10 left        | P11/18         |
-| Belgian Pro League          | 2019/20   | Kortrijk            | 10 left        | P11/16         |
-| Greek Super League          | 2019/20   | Lamia               | 10 left        | P11/14         |
-| Ekstraklasa                 | 2017/2018 | Pogon Szczecin      | 10 left        | P11/16         |
-| Italian Serie B             | 2025/26   | Mantova             | 10 left        | P11/20         |
 | Premier League              | 2021/2022 | Khimki              | 10 left        | P11/18         |
-| Superliga                   | 2017/2018 | Randers FC          | 10 left        | P11/16         |
+| Belgian Pro League          | 2019/20   | Kortrijk            | 10 left        | P11/16         |
 
-## The escape artists
+### The escape artists
 
 Sorted by how early they climbed out — the biggest comebacks had the most games
 left when they were last in the bottom three. Near misses (those that stayed
@@ -483,44 +524,44 @@ mars_table(&["league","season","team","last bottom-3 at","final position"], &row
 ```text
 completed matches after dedup: 311832 (1190 dupes dropped)
 team-seasons: 21299
-team-seasons that were bottom-3 with <=10 games left: 4739
-escapes (finished outside bottom 3): 1744
-near misses (stayed bottom 3): 2995
-escapes total: 1726
+team-seasons that were bottom-3 with <=10 games left: 4737
+escapes (finished outside bottom 3): 1743
+near misses (stayed bottom 3): 2994
+escapes total: 1730
 ```
 
-| league                | season    | team           | last bottom-3 at | final position |
-| --------------------- | --------- | -------------- | ---------------- | -------------- |
-| Scottish League One   | 2005/06   | Ayr            | 1 left           | P6/10          |
-| Scottish Premiership  | 1994/95   | Hearts         | 1 left           | P6/10          |
-| Scottish Premiership  | 1997/98   | Aberdeen       | 1 left           | P6/10          |
-| Scottish League Two   | 2013/14   | Montrose       | 1 left           | P6/10          |
-| Scottish Championship | 1997/98   | St Mirren      | 1 left           | P6/10          |
-| Scottish League One   | 2002/03   | Dumbarton      | 1 left           | P6/10          |
-| Scottish League One   | 1998/99   | Stirling       | 1 left           | P6/10          |
-| Super League          | 2017/2018 | Sion           | 1 left           | P6/10          |
-| Scottish League One   | 2013/14   | Airdrie Utd    | 1 left           | P6/10          |
-| Bundesliga            | 2025/2026 | Hartberg       | 1 left           | P6/12          |
-| Bundesliga            | 2012/2013 | Neustadt       | 1 left           | P7/10          |
-| Scottish Premiership  | 2013/14   | Ross County    | 1 left           | P7/12          |
-| Scottish League One   | 2015/16   | Brechin        | 1 left           | P7/10          |
-| Scottish League Two   | 2013/14   | Albion Rvs     | 1 left           | P7/10          |
-| Scottish Championship | 1997/98   | Ayr            | 1 left           | P7/10          |
-| Scottish League One   | 2016/17   | Stranraer      | 1 left           | P7/10          |
-| Scottish League Two   | 2024/25   | Clyde          | 1 left           | P7/10          |
-| Scottish League Two   | 2018/19   | Elgin          | 1 left           | P7/10          |
-| Scottish Championship | 2011/12   | Raith Rvs      | 1 left           | P7/10          |
-| Scottish Championship | 1995/96   | Clydebank      | 1 left           | P7/10          |
-| Scottish League One   | 2026/27   | Peterhead      | 1 left           | P7/10          |
-| Scottish Championship | 1994/95   | St Mirren      | 1 left           | P7/10          |
-| Scottish Championship | 2016/17   | St Mirren      | 1 left           | P7/10          |
-| Bundesliga            | 2016/2017 | Mattersburg    | 1 left           | P7/10          |
-| Scottish League Two   | 2012/13   | Stirling       | 1 left           | P7/10          |
-| Super League          | 2021/2022 | Luzern         | 1 left           | P7/11          |
-| Scottish League One   | 2008/09   | Arbroath       | 1 left           | P7/10          |
-| Scottish League One   | 2006/07   | Alloa          | 1 left           | P7/10          |
-| Premier Division      | 2025      | Sligo Rovers   | 1 left           | P7/10          |
-| Scottish League Two   | 2025/26   | Annan Athletic | 1 left           | P7/10          |
+| league                | season    | team         | last bottom-3 at | final position |
+| --------------------- | --------- | ------------ | ---------------- | -------------- |
+| Super League          | 2017/2018 | Sion         | 1 left           | P6/10          |
+| Scottish Championship | 1997/98   | St Mirren    | 1 left           | P6/10          |
+| Scottish Premiership  | 1994/95   | Hearts       | 1 left           | P6/10          |
+| Scottish League One   | 2005/06   | Ayr          | 1 left           | P6/10          |
+| Scottish League One   | 2013/14   | Airdrie Utd  | 1 left           | P6/10          |
+| Scottish League One   | 1998/99   | Stirling     | 1 left           | P6/10          |
+| Bundesliga            | 2025/2026 | Hartberg     | 1 left           | P6/12          |
+| Scottish Premiership  | 1997/98   | Aberdeen     | 1 left           | P6/10          |
+| Scottish League Two   | 2013/14   | Montrose     | 1 left           | P6/10          |
+| Scottish League One   | 2002/03   | Dumbarton    | 1 left           | P6/10          |
+| Scottish Championship | 1997/98   | Ayr          | 1 left           | P7/10          |
+| Scottish League One   | 2006/07   | Alloa        | 1 left           | P7/10          |
+| Scottish League One   | 2016/17   | Stranraer    | 1 left           | P7/10          |
+| Scottish League One   | 2026/27   | Peterhead    | 1 left           | P7/10          |
+| Scottish Premiership  | 2013/14   | Ross County  | 1 left           | P7/12          |
+| Scottish League Two   | 2012/13   | Stirling     | 1 left           | P7/10          |
+| Scottish League Two   | 2003/04   | Queens Park  | 1 left           | P7/10          |
+| Scottish League Two   | 2018/19   | Elgin        | 1 left           | P7/10          |
+| Bundesliga            | 2012/2013 | Neustadt     | 1 left           | P7/10          |
+| Super League          | 2021/2022 | Luzern       | 1 left           | P7/11          |
+| Scottish Championship | 1995/96   | Clydebank    | 1 left           | P7/10          |
+| Scottish League One   | 2011/12   | Forfar       | 1 left           | P7/10          |
+| Scottish League One   | 2015/16   | Brechin      | 1 left           | P7/10          |
+| Scottish Championship | 1994/95   | St Mirren    | 1 left           | P7/10          |
+| Scottish League One   | 2008/09   | Arbroath     | 1 left           | P7/10          |
+| Scottish Championship | 2011/12   | Raith Rvs    | 1 left           | P7/10          |
+| Bundesliga            | 2016/2017 | Mattersburg  | 1 left           | P7/10          |
+| Scottish League Two   | 2013/14   | Albion Rvs   | 1 left           | P7/10          |
+| Scottish Championship | 2016/17   | St Mirren    | 1 left           | P7/10          |
+| Premier Division      | 2025      | Sligo Rovers | 1 left           | P7/10          |
 
 ```rust
 // per-league escape rate
@@ -535,36 +576,36 @@ mars_table(&["league","bottom-3 team-seasons","escapes","escape rate"], &lrows);
 ```text
 completed matches after dedup: 311832 (1190 dupes dropped)
 team-seasons: 21299
-team-seasons that were bottom-3 with <=10 games left: 4741
-escapes (finished outside bottom 3): 1743
-near misses (stayed bottom 3): 2998
-escapes total: 1729
+team-seasons that were bottom-3 with <=10 games left: 4742
+escapes (finished outside bottom 3): 1748
+near misses (stayed bottom 3): 2994
+escapes total: 1728
 ```
 
 | league                      | bottom-3 team-seasons | escapes | escape rate |
 | --------------------------- | --------------------- | ------- | ----------- |
 | English Championship        | 181                   | 79      | 44%         |
+| German 2. Bundesliga        | 175                   | 73      | 42%         |
 | Spanish La Liga             | 175                   | 73      | 42%         |
 | English League Two          | 175                   | 73      | 42%         |
-| German 2. Bundesliga        | 175                   | 73      | 42%         |
 | Italian Serie B             | 161                   | 71      | 44%         |
 | German Bundesliga           | 171                   | 69      | 40%         |
 | French Ligue 2              | 160                   | 67      | 42%         |
-| French Ligue 1              | 169                   | 66      | 39%         |
+| French Ligue 1              | 168                   | 65      | 39%         |
 | Portuguese Liga Portugal    | 166                   | 64      | 39%         |
 | Turkish Süper Lig           | 162                   | 63      | 39%         |
 | Spanish La Liga 2           | 163                   | 61      | 37%         |
-| English League One          | 161                   | 59      | 37%         |
-| Champions League            | 138                   | 57      | 41%         |
+| English League One          | 160                   | 58      | 36%         |
 | English Premier League      | 159                   | 57      | 36%         |
+| Champions League            | 135                   | 54      | 40%         |
 | Italian Serie A             | 152                   | 49      | 32%         |
 | Greek Super League          | 134                   | 45      | 34%         |
 | Scottish Premiership        | 143                   | 44      | 31%         |
 | Belgian Pro League          | 140                   | 43      | 31%         |
 | Dutch Eredivisie            | 142                   | 40      | 28%         |
-| Scottish League One         | 126                   | 36      | 29%         |
-| MLS                         | 82                    | 36      | 44%         |
 | Ekstraklasa                 | 81                    | 36      | 44%         |
+| MLS                         | 82                    | 36      | 44%         |
+| Scottish League One         | 126                   | 36      | 29%         |
 | Liga Profesional            | 76                    | 34      | 45%         |
 | Scottish Championship       | 135                   | 33      | 24%         |
 | Serie A                     | 75                    | 30      | 40%         |
@@ -577,19 +618,82 @@ escapes total: 1729
 | Bundesliga                  | 66                    | 21      | 32%         |
 | Super League                | 60                    | 21      | 35%         |
 | UEFA Europa League          | 75                    | 21      | 28%         |
+| UEFA Conference League      | 36                    | 18      | 50%         |
 | Premier League              | 60                    | 18      | 30%         |
-| Allsvenskan                 | 62                    | 17      | 27%         |
 | Veikkausliiga               | 62                    | 17      | 27%         |
-| UEFA Conference League      | 35                    | 17      | 49%         |
+| Allsvenskan                 | 62                    | 17      | 27%         |
 | Super League                | 60                    | 15      | 25%         |
+| AFC Champions League Elite  | 23                    | 14      | 61%         |
 | J1 League                   | 59                    | 14      | 24%         |
-| AFC Champions League Elite  | 22                    | 13      | 59%         |
-| FIFA World Cup              | 17                    | 10      | 59%         |
 | Premier Division            | 55                    | 10      | 18%         |
+| FIFA World Cup              | 16                    | 10      | 62%         |
 | UEFA Euro                   | 15                    | 8       | 53%         |
 | FA Women's Super League     | 18                    | 6       | 33%         |
+| Women's World Cup           | 10                    | 3       | 30%         |
 
-## Findings
+```rust
+use plotters::prelude::*;
+
+fn chart_num(s: &str) -> f64 {
+    let t = s.replace(',', "").replace('%', "").replace('−', "-");
+    let mult = if t.contains("bn") { 1e9 }
+        else if t.contains('€') && t.contains('m') { 1e6 }
+        else { 1.0 };
+    let cleaned: String = t.chars()
+        .filter(|c| c.is_ascii_digit() || *c == '.' || *c == '-')
+        .collect();
+    cleaned.parse().unwrap_or(0.0) * mult
+}
+
+
+let mut c_items: Vec<(String, f64)> = lrows.iter()
+    .map(|r| (r[0].clone(), chart_num(&r[3].clone())))
+    .collect();
+c_items.retain(|(_, v)| v.is_finite());
+c_items.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
+c_items.truncate(12);
+let c_labels: Vec<String> = c_items.iter()
+    .map(|(l, _)| l.chars().take(18).collect()).collect();
+let c_vals: Vec<f64> = c_items.iter().map(|(_, v)| *v).collect();
+let c_ymax = c_vals.iter().cloned().fold(0.0_f64, f64::max) * 1.15 + 1e-9;
+let (c_div, c_unit): (f64, &str) = if c_ymax >= 1e9 { (1e9, "bn") }
+    else if c_ymax >= 1e6 { (1e6, "m") }
+    else if c_ymax >= 1e3 { (1e3, "k") }
+    else { (1.0, "") };
+let c_n = c_vals.len();
+let figure = plotters::evcxr::evcxr_figure((780, 400), |root| {
+    root.fill(&WHITE)?;
+    let mut chart = ChartBuilder::on(&root)
+        .caption("Escape rate from the bottom three by league", ("sans-serif", 18))
+        .margin(10)
+        .x_label_area_size(45)
+        .y_label_area_size(55)
+        .build_cartesian_2d(-0.5_f64..(c_n as f64 - 0.5), 0.0..c_ymax)?;
+    chart.configure_mesh()
+        .x_labels(c_n)
+        .x_label_formatter(&|x: &f64| c_labels.get(*x as usize).cloned().unwrap_or_default())
+        .y_label_formatter(&|y: &f64| format!("{:.1}{}", y / c_div, c_unit))
+        .draw()?;
+    chart.draw_series(c_vals.iter().enumerate().map(|(i, &v)| {
+        Rectangle::new([(i as f64 - 0.35, 0.0), (i as f64 + 0.35, v)], BLUE.filled())
+    }))?;
+    Ok(())
+});
+figure.evcxr_display();
+```
+
+```text
+completed matches after dedup: 311832 (1190 dupes dropped)
+team-seasons: 21299
+team-seasons that were bottom-3 with <=10 games left: 4741
+escapes (finished outside bottom 3): 1744
+near misses (stayed bottom 3): 2997
+escapes total: 1726
+```
+
+![Notebook output](data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNzgwIiBoZWlnaHQ9IjQwMCIgdmlld0JveD0iMCAwIDc4MCA0MDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHg9IjAiIHk9IjAiIHdpZHRoPSI3ODAiIGhlaWdodD0iNDAwIiBvcGFjaXR5PSIxIiBmaWxsPSIjRkZGRkZGIiBzdHJva2U9Im5vbmUiLz4KPHRleHQgeD0iMzkwIiB5PSIxNSIgZHk9IjAuNzZlbSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTQuNTE2MTI5MDMyMjU4MDY0IiBvcGFjaXR5PSIxIiBmaWxsPSIjMDAwMDAwIj4KRXNjYXBlIHJhdGUgZnJvbSB0aGUgYm90dG9tIHRocmVlIGJ5IGxlYWd1ZQo8L3RleHQ+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI3MCIgeTE9IjM0NCIgeDI9IjcwIiB5Mj0iMzQiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjgyIiB5MT0iMzQ0IiB4Mj0iODIiIHkyPSIzNCIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iOTQiIHkxPSIzNDQiIHgyPSI5NCIgeTI9IjM0Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSIxMDYiIHkxPSIzNDQiIHgyPSIxMDYiIHkyPSIzNCIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iMTE3IiB5MT0iMzQ0IiB4Mj0iMTE3IiB5Mj0iMzQiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjEyOSIgeTE9IjM0NCIgeDI9IjEyOSIgeTI9IjM0Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSIxNDEiIHkxPSIzNDQiIHgyPSIxNDEiIHkyPSIzNCIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iMTUzIiB5MT0iMzQ0IiB4Mj0iMTUzIiB5Mj0iMzQiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjE2NCIgeTE9IjM0NCIgeDI9IjE2NCIgeTI9IjM0Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSIxNzYiIHkxPSIzNDQiIHgyPSIxNzYiIHkyPSIzNCIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iMTg4IiB5MT0iMzQ0IiB4Mj0iMTg4IiB5Mj0iMzQiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjE5OSIgeTE9IjM0NCIgeDI9IjE5OSIgeTI9IjM0Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSIyMTEiIHkxPSIzNDQiIHgyPSIyMTEiIHkyPSIzNCIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iMjIzIiB5MT0iMzQ0IiB4Mj0iMjIzIiB5Mj0iMzQiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjIzNSIgeTE9IjM0NCIgeDI9IjIzNSIgeTI9IjM0Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSIyNDYiIHkxPSIzNDQiIHgyPSIyNDYiIHkyPSIzNCIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iMjU4IiB5MT0iMzQ0IiB4Mj0iMjU4IiB5Mj0iMzQiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjI3MCIgeTE9IjM0NCIgeDI9IjI3MCIgeTI9IjM0Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSIyODIiIHkxPSIzNDQiIHgyPSIyODIiIHkyPSIzNCIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iMjkzIiB5MT0iMzQ0IiB4Mj0iMjkzIiB5Mj0iMzQiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjMwNSIgeTE9IjM0NCIgeDI9IjMwNSIgeTI9IjM0Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSIzMTciIHkxPSIzNDQiIHgyPSIzMTciIHkyPSIzNCIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iMzI5IiB5MT0iMzQ0IiB4Mj0iMzI5IiB5Mj0iMzQiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjM0MCIgeTE9IjM0NCIgeDI9IjM0MCIgeTI9IjM0Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSIzNTIiIHkxPSIzNDQiIHgyPSIzNTIiIHkyPSIzNCIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iMzY0IiB5MT0iMzQ0IiB4Mj0iMzY0IiB5Mj0iMzQiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjM3NSIgeTE9IjM0NCIgeDI9IjM3NSIgeTI9IjM0Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSIzODciIHkxPSIzNDQiIHgyPSIzODciIHkyPSIzNCIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iMzk5IiB5MT0iMzQ0IiB4Mj0iMzk5IiB5Mj0iMzQiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjQxMSIgeTE9IjM0NCIgeDI9IjQxMSIgeTI9IjM0Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI0MjIiIHkxPSIzNDQiIHgyPSI0MjIiIHkyPSIzNCIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNDM0IiB5MT0iMzQ0IiB4Mj0iNDM0IiB5Mj0iMzQiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjQ0NiIgeTE9IjM0NCIgeDI9IjQ0NiIgeTI9IjM0Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI0NTgiIHkxPSIzNDQiIHgyPSI0NTgiIHkyPSIzNCIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNDY5IiB5MT0iMzQ0IiB4Mj0iNDY5IiB5Mj0iMzQiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjQ4MSIgeTE9IjM0NCIgeDI9IjQ4MSIgeTI9IjM0Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI0OTMiIHkxPSIzNDQiIHgyPSI0OTMiIHkyPSIzNCIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNTA1IiB5MT0iMzQ0IiB4Mj0iNTA1IiB5Mj0iMzQiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjUxNiIgeTE9IjM0NCIgeDI9IjUxNiIgeTI9IjM0Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI1MjgiIHkxPSIzNDQiIHgyPSI1MjgiIHkyPSIzNCIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNTQwIiB5MT0iMzQ0IiB4Mj0iNTQwIiB5Mj0iMzQiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjU1MSIgeTE9IjM0NCIgeDI9IjU1MSIgeTI9IjM0Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI1NjMiIHkxPSIzNDQiIHgyPSI1NjMiIHkyPSIzNCIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNTc1IiB5MT0iMzQ0IiB4Mj0iNTc1IiB5Mj0iMzQiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjU4NyIgeTE9IjM0NCIgeDI9IjU4NyIgeTI9IjM0Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI1OTgiIHkxPSIzNDQiIHgyPSI1OTgiIHkyPSIzNCIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNjEwIiB5MT0iMzQ0IiB4Mj0iNjEwIiB5Mj0iMzQiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjYyMiIgeTE9IjM0NCIgeDI9IjYyMiIgeTI9IjM0Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI2MzQiIHkxPSIzNDQiIHgyPSI2MzQiIHkyPSIzNCIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNjQ1IiB5MT0iMzQ0IiB4Mj0iNjQ1IiB5Mj0iMzQiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjY1NyIgeTE9IjM0NCIgeDI9IjY1NyIgeTI9IjM0Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI2NjkiIHkxPSIzNDQiIHgyPSI2NjkiIHkyPSIzNCIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNjgxIiB5MT0iMzQ0IiB4Mj0iNjgxIiB5Mj0iMzQiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjY5MiIgeTE9IjM0NCIgeDI9IjY5MiIgeTI9IjM0Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI3MDQiIHkxPSIzNDQiIHgyPSI3MDQiIHkyPSIzNCIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNzE2IiB5MT0iMzQ0IiB4Mj0iNzE2IiB5Mj0iMzQiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjcyNyIgeTE9IjM0NCIgeDI9IjcyNyIgeTI9IjM0Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI3MzkiIHkxPSIzNDQiIHgyPSI3MzkiIHkyPSIzNCIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNzUxIiB5MT0iMzQ0IiB4Mj0iNzUxIiB5Mj0iMzQiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9Ijc2MyIgeTE9IjM0NCIgeDI9Ijc2MyIgeTI9IjM0Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI2NSIgeTE9IjM0NCIgeDI9Ijc2OSIgeTI9IjM0NCIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNjUiIHkxPSIzNDAiIHgyPSI3NjkiIHkyPSIzNDAiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjY1IiB5MT0iMzM1IiB4Mj0iNzY5IiB5Mj0iMzM1Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI2NSIgeTE9IjMzMSIgeDI9Ijc2OSIgeTI9IjMzMSIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNjUiIHkxPSIzMjYiIHgyPSI3NjkiIHkyPSIzMjYiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjY1IiB5MT0iMzIyIiB4Mj0iNzY5IiB5Mj0iMzIyIi8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI2NSIgeTE9IjMxNyIgeDI9Ijc2OSIgeTI9IjMxNyIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNjUiIHkxPSIzMTMiIHgyPSI3NjkiIHkyPSIzMTMiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjY1IiB5MT0iMzA4IiB4Mj0iNzY5IiB5Mj0iMzA4Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI2NSIgeTE9IjMwMyIgeDI9Ijc2OSIgeTI9IjMwMyIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNjUiIHkxPSIyOTkiIHgyPSI3NjkiIHkyPSIyOTkiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjY1IiB5MT0iMjk0IiB4Mj0iNzY5IiB5Mj0iMjk0Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI2NSIgeTE9IjI5MCIgeDI9Ijc2OSIgeTI9IjI5MCIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNjUiIHkxPSIyODUiIHgyPSI3NjkiIHkyPSIyODUiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjY1IiB5MT0iMjgxIiB4Mj0iNzY5IiB5Mj0iMjgxIi8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI2NSIgeTE9IjI3NiIgeDI9Ijc2OSIgeTI9IjI3NiIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNjUiIHkxPSIyNzEiIHgyPSI3NjkiIHkyPSIyNzEiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjY1IiB5MT0iMjY3IiB4Mj0iNzY5IiB5Mj0iMjY3Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI2NSIgeTE9IjI2MiIgeDI9Ijc2OSIgeTI9IjI2MiIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNjUiIHkxPSIyNTgiIHgyPSI3NjkiIHkyPSIyNTgiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjY1IiB5MT0iMjUzIiB4Mj0iNzY5IiB5Mj0iMjUzIi8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI2NSIgeTE9IjI0OSIgeDI9Ijc2OSIgeTI9IjI0OSIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNjUiIHkxPSIyNDQiIHgyPSI3NjkiIHkyPSIyNDQiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjY1IiB5MT0iMjM5IiB4Mj0iNzY5IiB5Mj0iMjM5Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI2NSIgeTE9IjIzNSIgeDI9Ijc2OSIgeTI9IjIzNSIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNjUiIHkxPSIyMzAiIHgyPSI3NjkiIHkyPSIyMzAiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjY1IiB5MT0iMjI2IiB4Mj0iNzY5IiB5Mj0iMjI2Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI2NSIgeTE9IjIyMSIgeDI9Ijc2OSIgeTI9IjIyMSIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNjUiIHkxPSIyMTciIHgyPSI3NjkiIHkyPSIyMTciLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjY1IiB5MT0iMjEyIiB4Mj0iNzY5IiB5Mj0iMjEyIi8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI2NSIgeTE9IjIwNyIgeDI9Ijc2OSIgeTI9IjIwNyIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNjUiIHkxPSIyMDMiIHgyPSI3NjkiIHkyPSIyMDMiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjY1IiB5MT0iMTk4IiB4Mj0iNzY5IiB5Mj0iMTk4Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI2NSIgeTE9IjE5NCIgeDI9Ijc2OSIgeTI9IjE5NCIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNjUiIHkxPSIxODkiIHgyPSI3NjkiIHkyPSIxODkiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjY1IiB5MT0iMTg1IiB4Mj0iNzY5IiB5Mj0iMTg1Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI2NSIgeTE9IjE4MCIgeDI9Ijc2OSIgeTI9IjE4MCIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNjUiIHkxPSIxNzUiIHgyPSI3NjkiIHkyPSIxNzUiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjY1IiB5MT0iMTcxIiB4Mj0iNzY5IiB5Mj0iMTcxIi8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI2NSIgeTE9IjE2NiIgeDI9Ijc2OSIgeTI9IjE2NiIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNjUiIHkxPSIxNjIiIHgyPSI3NjkiIHkyPSIxNjIiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjY1IiB5MT0iMTU3IiB4Mj0iNzY5IiB5Mj0iMTU3Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI2NSIgeTE9IjE1MyIgeDI9Ijc2OSIgeTI9IjE1MyIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNjUiIHkxPSIxNDgiIHgyPSI3NjkiIHkyPSIxNDgiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjY1IiB5MT0iMTQzIiB4Mj0iNzY5IiB5Mj0iMTQzIi8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI2NSIgeTE9IjEzOSIgeDI9Ijc2OSIgeTI9IjEzOSIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNjUiIHkxPSIxMzQiIHgyPSI3NjkiIHkyPSIxMzQiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjY1IiB5MT0iMTMwIiB4Mj0iNzY5IiB5Mj0iMTMwIi8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI2NSIgeTE9IjEyNSIgeDI9Ijc2OSIgeTI9IjEyNSIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNjUiIHkxPSIxMjEiIHgyPSI3NjkiIHkyPSIxMjEiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjY1IiB5MT0iMTE2IiB4Mj0iNzY5IiB5Mj0iMTE2Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI2NSIgeTE9IjExMSIgeDI9Ijc2OSIgeTI9IjExMSIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNjUiIHkxPSIxMDciIHgyPSI3NjkiIHkyPSIxMDciLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjY1IiB5MT0iMTAyIiB4Mj0iNzY5IiB5Mj0iMTAyIi8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI2NSIgeTE9Ijk4IiB4Mj0iNzY5IiB5Mj0iOTgiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjY1IiB5MT0iOTMiIHgyPSI3NjkiIHkyPSI5MyIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNjUiIHkxPSI4OSIgeDI9Ijc2OSIgeTI9Ijg5Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI2NSIgeTE9Ijg0IiB4Mj0iNzY5IiB5Mj0iODQiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjY1IiB5MT0iODAiIHgyPSI3NjkiIHkyPSI4MCIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNjUiIHkxPSI3NSIgeDI9Ijc2OSIgeTI9Ijc1Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI2NSIgeTE9IjcwIiB4Mj0iNzY5IiB5Mj0iNzAiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjY1IiB5MT0iNjYiIHgyPSI3NjkiIHkyPSI2NiIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNjUiIHkxPSI2MSIgeDI9Ijc2OSIgeTI9IjYxIi8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI2NSIgeTE9IjU3IiB4Mj0iNzY5IiB5Mj0iNTciLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjY1IiB5MT0iNTIiIHgyPSI3NjkiIHkyPSI1MiIvPgo8bGluZSBvcGFjaXR5PSIwLjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNjUiIHkxPSI0OCIgeDI9Ijc2OSIgeTI9IjQ4Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI2NSIgeTE9IjQzIiB4Mj0iNzY5IiB5Mj0iNDMiLz4KPGxpbmUgb3BhY2l0eT0iMC4xIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjY1IiB5MT0iMzgiIHgyPSI3NjkiIHkyPSIzOCIvPgo8bGluZSBvcGFjaXR5PSIwLjIiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iOTQiIHkxPSIzNDQiIHgyPSI5NCIgeTI9IjM0Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMiIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSIxNTMiIHkxPSIzNDQiIHgyPSIxNTMiIHkyPSIzNCIvPgo8bGluZSBvcGFjaXR5PSIwLjIiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iMjExIiB5MT0iMzQ0IiB4Mj0iMjExIiB5Mj0iMzQiLz4KPGxpbmUgb3BhY2l0eT0iMC4yIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjI3MCIgeTE9IjM0NCIgeDI9IjI3MCIgeTI9IjM0Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMiIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSIzMjkiIHkxPSIzNDQiIHgyPSIzMjkiIHkyPSIzNCIvPgo8bGluZSBvcGFjaXR5PSIwLjIiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iMzg3IiB5MT0iMzQ0IiB4Mj0iMzg3IiB5Mj0iMzQiLz4KPGxpbmUgb3BhY2l0eT0iMC4yIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjQ0NiIgeTE9IjM0NCIgeDI9IjQ0NiIgeTI9IjM0Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMiIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI1MDUiIHkxPSIzNDQiIHgyPSI1MDUiIHkyPSIzNCIvPgo8bGluZSBvcGFjaXR5PSIwLjIiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNTYzIiB5MT0iMzQ0IiB4Mj0iNTYzIiB5Mj0iMzQiLz4KPGxpbmUgb3BhY2l0eT0iMC4yIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjYyMiIgeTE9IjM0NCIgeDI9IjYyMiIgeTI9IjM0Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMiIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI2ODEiIHkxPSIzNDQiIHgyPSI2ODEiIHkyPSIzNCIvPgo8bGluZSBvcGFjaXR5PSIwLjIiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNzM5IiB5MT0iMzQ0IiB4Mj0iNzM5IiB5Mj0iMzQiLz4KPGxpbmUgb3BhY2l0eT0iMC4yIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjY1IiB5MT0iMzQ0IiB4Mj0iNzY5IiB5Mj0iMzQ0Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMiIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI2NSIgeTE9IjI5OSIgeDI9Ijc2OSIgeTI9IjI5OSIvPgo8bGluZSBvcGFjaXR5PSIwLjIiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNjUiIHkxPSIyNTMiIHgyPSI3NjkiIHkyPSIyNTMiLz4KPGxpbmUgb3BhY2l0eT0iMC4yIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjY1IiB5MT0iMjA3IiB4Mj0iNzY5IiB5Mj0iMjA3Ii8+CjxsaW5lIG9wYWNpdHk9IjAuMiIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHgxPSI2NSIgeTE9IjE2MiIgeDI9Ijc2OSIgeTI9IjE2MiIvPgo8bGluZSBvcGFjaXR5PSIwLjIiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiB4MT0iNjUiIHkxPSIxMTYiIHgyPSI3NjkiIHkyPSIxMTYiLz4KPGxpbmUgb3BhY2l0eT0iMC4yIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgeDE9IjY1IiB5MT0iNzAiIHgyPSI3NjkiIHkyPSI3MCIvPgo8cG9seWxpbmUgZmlsbD0ibm9uZSIgb3BhY2l0eT0iMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHBvaW50cz0iNjQsMzQgNjQsMzQ0ICIvPgo8dGV4dCB4PSI1NSIgeT0iMzQ0IiBkeT0iMC41ZXgiIHRleHQtYW5jaG9yPSJlbmQiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjkuNjc3NDE5MzU0ODM4NzEiIG9wYWNpdHk9IjEiIGZpbGw9IiMwMDAwMDAiPgowLjAKPC90ZXh0Pgo8cG9seWxpbmUgZmlsbD0ibm9uZSIgb3BhY2l0eT0iMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHBvaW50cz0iNTksMzQ0IDY0LDM0NCAiLz4KPHRleHQgeD0iNTUiIHk9IjI5OSIgZHk9IjAuNWV4IiB0ZXh0LWFuY2hvcj0iZW5kIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSI5LjY3NzQxOTM1NDgzODcxIiBvcGFjaXR5PSIxIiBmaWxsPSIjMDAwMDAwIj4KMTAuMAo8L3RleHQ+Cjxwb2x5bGluZSBmaWxsPSJub25lIiBvcGFjaXR5PSIxIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgcG9pbnRzPSI1OSwyOTkgNjQsMjk5ICIvPgo8dGV4dCB4PSI1NSIgeT0iMjUzIiBkeT0iMC41ZXgiIHRleHQtYW5jaG9yPSJlbmQiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjkuNjc3NDE5MzU0ODM4NzEiIG9wYWNpdHk9IjEiIGZpbGw9IiMwMDAwMDAiPgoyMC4wCjwvdGV4dD4KPHBvbHlsaW5lIGZpbGw9Im5vbmUiIG9wYWNpdHk9IjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiBwb2ludHM9IjU5LDI1MyA2NCwyNTMgIi8+Cjx0ZXh0IHg9IjU1IiB5PSIyMDciIGR5PSIwLjVleCIgdGV4dC1hbmNob3I9ImVuZCIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iOS42Nzc0MTkzNTQ4Mzg3MSIgb3BhY2l0eT0iMSIgZmlsbD0iIzAwMDAwMCI+CjMwLjAKPC90ZXh0Pgo8cG9seWxpbmUgZmlsbD0ibm9uZSIgb3BhY2l0eT0iMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHBvaW50cz0iNTksMjA3IDY0LDIwNyAiLz4KPHRleHQgeD0iNTUiIHk9IjE2MiIgZHk9IjAuNWV4IiB0ZXh0LWFuY2hvcj0iZW5kIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSI5LjY3NzQxOTM1NDgzODcxIiBvcGFjaXR5PSIxIiBmaWxsPSIjMDAwMDAwIj4KNDAuMAo8L3RleHQ+Cjxwb2x5bGluZSBmaWxsPSJub25lIiBvcGFjaXR5PSIxIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgcG9pbnRzPSI1OSwxNjIgNjQsMTYyICIvPgo8dGV4dCB4PSI1NSIgeT0iMTE2IiBkeT0iMC41ZXgiIHRleHQtYW5jaG9yPSJlbmQiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjkuNjc3NDE5MzU0ODM4NzEiIG9wYWNpdHk9IjEiIGZpbGw9IiMwMDAwMDAiPgo1MC4wCjwvdGV4dD4KPHBvbHlsaW5lIGZpbGw9Im5vbmUiIG9wYWNpdHk9IjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiBwb2ludHM9IjU5LDExNiA2NCwxMTYgIi8+Cjx0ZXh0IHg9IjU1IiB5PSI3MCIgZHk9IjAuNWV4IiB0ZXh0LWFuY2hvcj0iZW5kIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSI5LjY3NzQxOTM1NDgzODcxIiBvcGFjaXR5PSIxIiBmaWxsPSIjMDAwMDAwIj4KNjAuMAo8L3RleHQ+Cjxwb2x5bGluZSBmaWxsPSJub25lIiBvcGFjaXR5PSIxIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgcG9pbnRzPSI1OSw3MCA2NCw3MCAiLz4KPHBvbHlsaW5lIGZpbGw9Im5vbmUiIG9wYWNpdHk9IjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiBwb2ludHM9IjY1LDM0NSA3NjksMzQ1ICIvPgo8dGV4dCB4PSI5NCIgeT0iMzU1IiBkeT0iMC43NmVtIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSI5LjY3NzQxOTM1NDgzODcxIiBvcGFjaXR5PSIxIiBmaWxsPSIjMDAwMDAwIj4KQ29wYSBEZSBMYSBMaWdhIFByCjwvdGV4dD4KPHBvbHlsaW5lIGZpbGw9Im5vbmUiIG9wYWNpdHk9IjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiBwb2ludHM9Ijk0LDM0NSA5NCwzNTAgIi8+Cjx0ZXh0IHg9IjE1MyIgeT0iMzU1IiBkeT0iMC43NmVtIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSI5LjY3NzQxOTM1NDgzODcxIiBvcGFjaXR5PSIxIiBmaWxsPSIjMDAwMDAwIj4KQUZDIENoYW1waW9ucyBMZWFnCjwvdGV4dD4KPHBvbHlsaW5lIGZpbGw9Im5vbmUiIG9wYWNpdHk9IjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiBwb2ludHM9IjE1MywzNDUgMTUzLDM1MCAiLz4KPHRleHQgeD0iMjExIiB5PSIzNTUiIGR5PSIwLjc2ZW0iIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjkuNjc3NDE5MzU0ODM4NzEiIG9wYWNpdHk9IjEiIGZpbGw9IiMwMDAwMDAiPgpVRUZBIEV1cm8KPC90ZXh0Pgo8cG9seWxpbmUgZmlsbD0ibm9uZSIgb3BhY2l0eT0iMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHBvaW50cz0iMjExLDM0NSAyMTEsMzUwICIvPgo8dGV4dCB4PSIyNzAiIHk9IjM1NSIgZHk9IjAuNzZlbSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iOS42Nzc0MTkzNTQ4Mzg3MSIgb3BhY2l0eT0iMSIgZmlsbD0iIzAwMDAwMCI+CkZJRkEgV29ybGQgQ3VwCjwvdGV4dD4KPHBvbHlsaW5lIGZpbGw9Im5vbmUiIG9wYWNpdHk9IjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiBwb2ludHM9IjI3MCwzNDUgMjcwLDM1MCAiLz4KPHRleHQgeD0iMzI5IiB5PSIzNTUiIGR5PSIwLjc2ZW0iIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjkuNjc3NDE5MzU0ODM4NzEiIG9wYWNpdHk9IjEiIGZpbGw9IiMwMDAwMDAiPgpVRUZBIENvbmZlcmVuY2UgTGUKPC90ZXh0Pgo8cG9seWxpbmUgZmlsbD0ibm9uZSIgb3BhY2l0eT0iMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHBvaW50cz0iMzI5LDM0NSAzMjksMzUwICIvPgo8dGV4dCB4PSIzODciIHk9IjM1NSIgZHk9IjAuNzZlbSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iOS42Nzc0MTkzNTQ4Mzg3MSIgb3BhY2l0eT0iMSIgZmlsbD0iIzAwMDAwMCI+CkxpZ2EgUHJvZmVzaW9uYWwKPC90ZXh0Pgo8cG9seWxpbmUgZmlsbD0ibm9uZSIgb3BhY2l0eT0iMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHBvaW50cz0iMzg3LDM0NSAzODcsMzUwICIvPgo8dGV4dCB4PSI0NDYiIHk9IjM1NSIgZHk9IjAuNzZlbSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iOS42Nzc0MTkzNTQ4Mzg3MSIgb3BhY2l0eT0iMSIgZmlsbD0iIzAwMDAwMCI+CkVuZ2xpc2ggQ2hhbXBpb25zaAo8L3RleHQ+Cjxwb2x5bGluZSBmaWxsPSJub25lIiBvcGFjaXR5PSIxIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgcG9pbnRzPSI0NDYsMzQ1IDQ0NiwzNTAgIi8+Cjx0ZXh0IHg9IjUwNSIgeT0iMzU1IiBkeT0iMC43NmVtIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSI5LjY3NzQxOTM1NDgzODcxIiBvcGFjaXR5PSIxIiBmaWxsPSIjMDAwMDAwIj4KSXRhbGlhbiBTZXJpZSBCCjwvdGV4dD4KPHBvbHlsaW5lIGZpbGw9Im5vbmUiIG9wYWNpdHk9IjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiBwb2ludHM9IjUwNSwzNDUgNTA1LDM1MCAiLz4KPHRleHQgeD0iNTYzIiB5PSIzNTUiIGR5PSIwLjc2ZW0iIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjkuNjc3NDE5MzU0ODM4NzEiIG9wYWNpdHk9IjEiIGZpbGw9IiMwMDAwMDAiPgpFa3N0cmFrbGFzYQo8L3RleHQ+Cjxwb2x5bGluZSBmaWxsPSJub25lIiBvcGFjaXR5PSIxIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgcG9pbnRzPSI1NjMsMzQ1IDU2MywzNTAgIi8+Cjx0ZXh0IHg9IjYyMiIgeT0iMzU1IiBkeT0iMC43NmVtIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSI5LjY3NzQxOTM1NDgzODcxIiBvcGFjaXR5PSIxIiBmaWxsPSIjMDAwMDAwIj4KTUxTCjwvdGV4dD4KPHBvbHlsaW5lIGZpbGw9Im5vbmUiIG9wYWNpdHk9IjEiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIiBwb2ludHM9IjYyMiwzNDUgNjIyLDM1MCAiLz4KPHRleHQgeD0iNjgxIiB5PSIzNTUiIGR5PSIwLjc2ZW0iIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjkuNjc3NDE5MzU0ODM4NzEiIG9wYWNpdHk9IjEiIGZpbGw9IiMwMDAwMDAiPgpHZXJtYW4gMi4gQnVuZGVzbGkKPC90ZXh0Pgo8cG9seWxpbmUgZmlsbD0ibm9uZSIgb3BhY2l0eT0iMSIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjEiIHBvaW50cz0iNjgxLDM0NSA2ODEsMzUwICIvPgo8dGV4dCB4PSI3MzkiIHk9IjM1NSIgZHk9IjAuNzZlbSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iOS42Nzc0MTkzNTQ4Mzg3MSIgb3BhY2l0eT0iMSIgZmlsbD0iIzAwMDAwMCI+CkVuZ2xpc2ggTGVhZ3VlIFR3bwo8L3RleHQ+Cjxwb2x5bGluZSBmaWxsPSJub25lIiBvcGFjaXR5PSIxIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMSIgcG9pbnRzPSI3MzksMzQ1IDczOSwzNTAgIi8+CjxyZWN0IHg9IjczIiB5PSI3NSIgd2lkdGg9IjQxIiBoZWlnaHQ9IjI2OSIgb3BhY2l0eT0iMSIgZmlsbD0iIzAwMDBGRiIgc3Ryb2tlPSJub25lIi8+CjxyZWN0IHg9IjEzMiIgeT0iNzUiIHdpZHRoPSI0MSIgaGVpZ2h0PSIyNjkiIG9wYWNpdHk9IjEiIGZpbGw9IiMwMDAwRkYiIHN0cm9rZT0ibm9uZSIvPgo8cmVjdCB4PSIxOTEiIHk9Ijg0IiB3aWR0aD0iNDEiIGhlaWdodD0iMjYwIiBvcGFjaXR5PSIxIiBmaWxsPSIjMDAwMEZGIiBzdHJva2U9Im5vbmUiLz4KPHJlY3QgeD0iMjQ5IiB5PSI4OSIgd2lkdGg9IjQxIiBoZWlnaHQ9IjI1NSIgb3BhY2l0eT0iMSIgZmlsbD0iIzAwMDBGRiIgc3Ryb2tlPSJub25lIi8+CjxyZWN0IHg9IjMwOCIgeT0iMTIxIiB3aWR0aD0iNDEiIGhlaWdodD0iMjIzIiBvcGFjaXR5PSIxIiBmaWxsPSIjMDAwMEZGIiBzdHJva2U9Im5vbmUiLz4KPHJlY3QgeD0iMzY3IiB5PSIxMzkiIHdpZHRoPSI0MSIgaGVpZ2h0PSIyMDUiIG9wYWNpdHk9IjEiIGZpbGw9IiMwMDAwRkYiIHN0cm9rZT0ibm9uZSIvPgo8cmVjdCB4PSI0MjUiIHk9IjE0MyIgd2lkdGg9IjQxIiBoZWlnaHQ9IjIwMSIgb3BhY2l0eT0iMSIgZmlsbD0iIzAwMDBGRiIgc3Ryb2tlPSJub25lIi8+CjxyZWN0IHg9IjQ4NCIgeT0iMTQzIiB3aWR0aD0iNDEiIGhlaWdodD0iMjAxIiBvcGFjaXR5PSIxIiBmaWxsPSIjMDAwMEZGIiBzdHJva2U9Im5vbmUiLz4KPHJlY3QgeD0iNTQzIiB5PSIxNDMiIHdpZHRoPSI0MSIgaGVpZ2h0PSIyMDEiIG9wYWNpdHk9IjEiIGZpbGw9IiMwMDAwRkYiIHN0cm9rZT0ibm9uZSIvPgo8cmVjdCB4PSI2MDEiIHk9IjE0MyIgd2lkdGg9IjQxIiBoZWlnaHQ9IjIwMSIgb3BhY2l0eT0iMSIgZmlsbD0iIzAwMDBGRiIgc3Ryb2tlPSJub25lIi8+CjxyZWN0IHg9IjY2MCIgeT0iMTUzIiB3aWR0aD0iNDEiIGhlaWdodD0iMTkxIiBvcGFjaXR5PSIxIiBmaWxsPSIjMDAwMEZGIiBzdHJva2U9Im5vbmUiLz4KPHJlY3QgeD0iNzE5IiB5PSIxNTMiIHdpZHRoPSI0MSIgaGVpZ2h0PSIxOTEiIG9wYWNpdHk9IjEiIGZpbGw9IiMwMDAwRkYiIHN0cm9rZT0ibm9uZSIvPgo8L3N2Zz4=)
+
+## Discussion
 
 **Being bottom-three with ten games left is not a death sentence — but it is
 close to one.**
@@ -623,3 +727,15 @@ sat in the bottom three at any point with ≤10 games remaining.
    the boundary; cup competitions (Champions League, World Cup) have
    non-standard "bottom-3" meanings and are included in the raw counts;
    standings replay uses 3/1/0 with GD/GF tiebreaks.
+
+**Limitations.** The analysis is limited to the competitions present in the
+database; player-level metrics exist only for StatsBomb-covered tournaments, and
+underlying event data may contain errors.
+
+## Conclusion
+
+Being bottom-three with ten games left is not a death sentence — but it is close
+to one. Together these results answer the research question posed in the
+Introduction and quantify the pattern across hundreds of thousands of matches.
+The notebook provides a fully reproducible pipeline from raw CSV extracts to
+published figures.

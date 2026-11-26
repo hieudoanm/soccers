@@ -12,16 +12,30 @@
   },
   "cells": [
     {
-      "id": "b0b9bb49-965e-4262-a9cc-2c9add5d098c",
+      "id": "2fae6a28-b190-4e8a-ac72-7f75b4572ccd",
       "cell_type": "markdown",
-      "source": "## Clean sheets: the other way to be defensively elite\n\nEvery analyst ranks defences by goals conceded. But the cleaner\nquestion: **which teams actually keep clean sheets \u2014 and does it matter\nmore than the raw GA number?**\n\nUsing all ~313k matches (every league, every season), this notebook\ncomputes per team-season: matches played, goals for/against, clean\nsheets, clean-sheet %, points and final rank \u2014 then asks whether\nclean-sheet rate predicts success better than goals-conceded rank, and\nwhich defensive seasons are the best on record.",
+      "source": "## Abstract\n\nThis study examines the clean sheets using hundreds of thousands of matches drawn from the Soccers football database. Clean sheets are a top-team luxury — and the best single proxy for defensive excellence we can measure. All computation runs in Rust inside a `.mars` notebook (polars + plotters — charts as inline SVG), and every table and figure is generated from the extracted CSVs.\n\n## Keywords\n\n**Keywords:** football, analysis, clean-sheets, defence, standings\n\n## Table of contents\n\n- [Abstract](#abstract)\n- [Keywords](#keywords)\n- [Introduction](#introduction)\n- [Methods](#methods)\n- [Results](#results)\n  - [The best defensive seasons on record](#the-best-defensive-seasons-on-record)\n  - [Does clean-sheet rate beat goals-conceded rank?](#does-clean-sheet-rate-beat-goals-conceded-rank)\n  - [Do champions keep the most clean sheets?](#do-champions-keep-the-most-clean-sheets)\n- [Discussion](#discussion)\n- [Conclusion](#conclusion)\n\n## Introduction\n\nEvery analyst ranks defences by goals conceded. But the cleaner\nquestion: **which teams actually keep clean sheets — and does it matter\nmore than the raw GA number?**\n\nUsing all ~313k matches (every league, every season), this notebook\ncomputes per team-season: matches played, goals for/against, clean\nsheets, clean-sheet %, points and final rank — then asks whether\nclean-sheet rate predicts success better than goals-conceded rank, and\nwhich defensive seasons are the best on record.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "a9ad40ff-d466-4df6-90f6-efb91717a5fb",
+      "cell_type": "markdown",
+      "source": "## Methods\n\nData were extracted from the Soccers football database (`packages/data`) as CSV snapshots: `matches_full`.\n\nThe analysis runs entirely in Rust inside the notebook: **polars** handles table scans, joins and aggregations; **plotters** renders figures as inline SVG; `mars_table` renders result tables.\n\nStatistical summaries include Pearson correlations.\n\nEach code cell is kept to a single output so results can be read top to bottom.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "c9140cdc-2391-4325-b1b2-b265fd88f1b9",
+      "cell_type": "markdown",
+      "source": "## Results\n\nAll figures and tables below are computed directly from the extracted data. Each code cell produces one output — a table, a chart, or a short text summary.\n",
       "metadata": {},
       "outputs": []
     },
     {
       "id": "c9a048b2-e7ff-4bb7-ae46-9f3f37cb9881",
       "cell_type": "code",
-      "source": "\nuse polars::prelude::*;\nuse std::collections::HashMap;\nuse std::collections::HashSet;\n\nlet mf = LazyCsvReader::new(\"data/matches_full.csv\")\n    .finish().expect(\"matches_full.csv\")\n    .collect().expect(\"collect matches\");\n\nfn col_str(df: &DataFrame, name: &str) -> Vec<String> {\n    df.column(name).unwrap().str().unwrap().iter()\n        .map(|o| o.unwrap_or(\"\").to_string()).collect()\n}\nfn col_i64(df: &DataFrame, name: &str) -> Vec<i64> {\n    let c = df.column(name).unwrap().clone();\n    let c = if c.dtype() == &DataType::Null { c.cast(&DataType::Int64).unwrap() } else { c };\n    c.i64().unwrap().iter().map(|o| o.unwrap_or(-1)).collect()\n}\n\nlet s_id = col_i64(&mf, \"id\");\nlet s_hg = col_i64(&mf, \"hg\");\nlet s_ag = col_i64(&mf, \"ag\");\nlet s_country = col_str(&mf, \"country\");\nlet s_league = col_str(&mf, \"league\");\nlet s_season = col_str(&mf, \"season\");\nlet s_date = col_str(&mf, \"date\");\nlet s_home_raw = col_str(&mf, \"home\");\nlet s_away_raw = col_str(&mf, \"away\");\n\nfn canon(name: &str) -> &str {\n    match name {\n        // England\n        \"Manchester United\" | \"Man Utd\" => \"Man United\",\n        \"Manchester City\" => \"Man City\",\n        \"Newcastle United\" => \"Newcastle\",\n        \"Tottenham Hotspur\" => \"Tottenham\",\n        \"West Ham United\" => \"West Ham\",\n        \"Leicester City\" => \"Leicester\",\n        \"Norwich City\" => \"Norwich\",\n        \"Stoke City\" => \"Stoke\",\n        \"West Bromwich Albion\" => \"West Brom\",\n        \"Swansea City\" => \"Swansea\",\n        \"Leeds United\" => \"Leeds\",\n        \"Wolverhampton Wanderers\" => \"Wolves\",\n        \"Nott'm Forest\" => \"Nottingham Forest\",\n        \"Birmingham City\" => \"Birmingham\",\n        \"Blackburn Rovers\" => \"Blackburn\",\n        \"Bolton Wanderers\" => \"Bolton\",\n        \"Charlton Athletic\" => \"Charlton\",\n        // Spain\n        \"Athletic Club\" => \"Ath Bilbao\",\n        \"Atl\\u{e9}tico Madrid\" => \"Ath Madrid\",\n        \"Real Betis\" => \"Betis\",\n        \"Celta Vigo\" => \"Celta\",\n        \"Real Sociedad\" => \"Sociedad\",\n        \"Real Valladolid\" => \"Valladolid\",\n        \"Real Zaragoza\" => \"Zaragoza\",\n        \"Rayo Vallecano\" => \"Vallecano\",\n        \"CD Numancia de Soria\" => \"Numancia\",\n        \"Real Murcia CF\" => \"Murcia\",\n        \"Recreativo Huelva\" => \"Recreativo\",\n        \"Sporting Gij\\u{f3}n\" => \"Sp Gijon\",\n        \"Espanol\" => \"Espanyol\",\n        \"Gimn\\u{e0}stic Tarragona\" => \"Gimnastic\",\n        \"Villarreal\" | \"Villareel\" => \"Villarreal\",\n        \"Santander\" => \"Racing Santander\",\n        // Italy\n        \"Inter Milan\" => \"Inter\",\n        \"Verona\" => \"Hellas Verona\",\n        // Germany\n        \"Bayer Leverkusen\" => \"Leverkusen\",\n        \"Borussia Dortmund\" => \"Dortmund\",\n        \"Eintracht Frankfurt\" => \"Ein Frankfurt\",\n        \"FSV Mainz 05\" => \"Mainz\",\n        \"Hamburger SV\" => \"Hamburg\",\n        \"Hertha Berlin\" => \"Hertha\",\n        \"Leipzig\" => \"RB Leipzig\",\n        \"Borussia M\\u{f6}nchengladbach\" | \"M'gladbach\" => \"M'Gladbach\",\n        \"Darmstadt 98\" => \"Darmstadt\",\n        \"Fortuna Dusseldorf\" => \"Dusseldorf\",\n        \"Hannover 96\" => \"Hannover\",\n        // France\n        \"Olympique de Marseille\" => \"Marseille\",\n        \"AS Monaco\" => \"Monaco\",\n        \"OGC Nice\" => \"Nice\",\n        \"Stade de Reims\" => \"Reims\",\n        \"Paris Saint-Germain\" => \"Paris SG\",\n        \"Stade Brestois\" => \"Brest\",\n        \"Stade Malherbe Caen\" => \"Caen\",\n        \"Clermont Foot\" => \"Clermont\",\n        \"CA Bastia\" => \"Bastia\",\n        \"Saint-\\u{c9}tienne\" => \"St Etienne\",\n        // Netherlands\n        \"Roda JC\" => \"Roda\",\n        \"Sparta Rotterdam\" => \"Sparta\",\n        // Portugal\n        \"Desp. Chaves\" => \"Chaves\",\n        \"Campomaior\" => \"Campomaiorense\",\n        \"Madeira\" => \"Uniao Madeira\",\n        \"AVS\" => \"Academico Viseu\",\n        // Belgium\n        \"Lommel SK\" => \"Lommel\",\n        \"RWD Molenbeek\" => \"Molenbeek\",\n        \"Mouscron\" | \"Mouscron-Peruwelz\" => \"RAAL La Louviere\",\n        // Turkiye\n        \"Antalya\" => \"Antalyaspor\",\n        \"Gaziantep\" => \"Gaziantepspor\",\n        \"Kayseri\" => \"Kayserispor\",\n        \"Malatyaspor\" => \"Yeni Malatyaspor\",\n        other => other,\n    }\n}\n\n\n\n\n\n\n// canonical team names (football-data style) \u2014 collapses name-variant dupes\nlet s_home: Vec<String> = s_home_raw.iter().map(|n| canon(n).to_string()).collect();\nlet s_away: Vec<String> = s_away_raw.iter().map(|n| canon(n).to_string()).collect();\n\n// synthetic team ids keyed by (country|league|canonical name) so variants\n// of the same club share one id within a competition\nlet mut tid_map: HashMap<String, i64> = HashMap::new();\nlet mut s_hid = vec![-1i64; mf.height()];\nlet mut s_aid = vec![-1i64; mf.height()];\nfor i in 0..mf.height() {\n    for (nm, is_home) in [(&s_home[i], true), (&s_away[i], false)] {\n        let key = format!(\"{}|{}|{}\", s_country[i], s_league[i], nm);\n        let next = tid_map.len() as i64;\n        let id = *tid_map.entry(key).or_insert(next);\n        if is_home { s_hid[i] = id; } else { s_aid[i] = id; }\n    }\n}\n\n// dedup fixtures: same league-season, canonical pairing, date and score\n// appears twice when two importers used different name variants\nlet mut seen: HashSet<(String, String, String, String, String, String, i64, i64)> = HashSet::new();\nlet mut valid: Vec<usize> = Vec::new();\nlet mut n_dupes = 0usize;\nfor i in 0..mf.height() {\n    if s_hg[i] < 0 || s_ag[i] < 0 { continue; }\n    let key = (s_country[i].clone(), s_league[i].clone(), s_season[i].clone(),\n               s_home[i].clone(), s_away[i].clone(), s_date[i][..10].to_string(), s_hg[i], s_ag[i]);\n    // unordered pairing: canonical order home<away not guaranteed; use both directions check\n    if seen.contains(&key) || seen.contains(&(key.0.clone(), key.1.clone(), key.2.clone(), key.4.clone(), key.3.clone(), key.5.clone(), key.6, key.7)) {\n        n_dupes += 1; continue;\n    }\n    seen.insert(key);\n    valid.push(i);\n}\nprintln!(\"completed matches after dedup: {} ({} dupes dropped)\", valid.len(), n_dupes);\n\nfn pearson(xs: &[f64], ys: &[f64]) -> f64 {\n    let n = xs.len() as f64;\n    if n < 3.0 { return f64::NAN; }\n    let mx = xs.iter().sum::<f64>() / n;\n    let my = ys.iter().sum::<f64>() / n;\n    let mut sxy = 0.0; let mut sxx = 0.0; let mut syy = 0.0;\n    for i in 0..xs.len() {\n        let dx = xs[i] - mx; let dy = ys[i] - my;\n        sxy += dx * dy; sxx += dx * dx; syy += dy * dy;\n    }\n    if sxx <= 0.0 || syy <= 0.0 { return f64::NAN; }\n    sxy / (sxx.sqrt() * syy.sqrt())\n}\n\n// standings order best->worst for (tid, pts, gd, gf)\nfn rank_teams(teams: &[(i64, i64, i64, i64)]) -> Vec<usize> {\n    let mut v: Vec<usize> = (0..teams.len()).collect();\n    v.sort_by(|&a, &b| {\n        teams[b].1.cmp(&teams[a].1)\n            .then(teams[b].2.cmp(&teams[a].2))\n            .then(teams[b].3.cmp(&teams[a].3))\n    });\n    v\n}\n\n// replay one league-season's matches (idxs sorted by date) -> final standings + max lead per team\nfn replay_lgsn(idxs: &[usize], hid: &[i64], aid: &[i64], hg: &[i64], ag: &[i64],\n               home: &[String], away: &[String]) -> (Vec<(i64,i64,i64,i64)>, HashMap<i64,String>, HashMap<i64,i64>) {\n    let mut st: HashMap<i64, (i64, i64, i64)> = HashMap::new();\n    let mut names: HashMap<i64, String> = HashMap::new();\n    let mut maxlead: HashMap<i64, i64> = HashMap::new();\n    for &i in idxs {\n        for (tid, gf, ga, nm) in [(hid[i], hg[i], ag[i], &home[i]), (aid[i], ag[i], hg[i], &away[i])] {\n            names.insert(tid, nm.clone());\n            let e = st.entry(tid).or_insert((0, 0, 0));\n            e.1 += gf; e.2 += ga;\n            e.0 += if gf > ga { 3 } else if gf == ga { 1 } else { 0 };\n        }\n        let mut teams: Vec<(i64, i64, i64, i64)> = st.iter().map(|(&t, &(p, gf, ga))| (t, p, gf - ga, gf)).collect();\n        let order = rank_teams(&teams);\n        if order.len() >= 2 {\n            let lead = teams[order[0]].1 - teams[order[1]].1;\n            let top = teams[order[0]].0;\n            let cur = maxlead.entry(top).or_insert(0);\n            if lead > *cur { *cur = lead; }\n        }\n        teams.clear();\n    }\n    let mut teams: Vec<(i64, i64, i64, i64)> = st.iter().map(|(&t, &(p, gf, ga))| (t, p, gf - ga, gf)).collect();\n    let order = rank_teams(&teams);\n    let mut sorted: Vec<(i64,i64,i64,i64)> = order.iter().map(|&o| teams[o]).collect();\n    (sorted, names, maxlead)\n}\n\n// team-season aggregates from ALL matches\nstruct TS { lg:String, sn:String, tid:i64, team:String, played:i64, gf:i64, ga:i64, cs:i64, pts:i64 }\nlet mut agg: HashMap<(String,String,i64), TS> = HashMap::new();\nfor &i in &valid {\n    for (tid, gf, ga, nm, opp_ga) in [\n        (s_hid[i], s_hg[i], s_ag[i], &s_home[i], s_ag[i]),\n        (s_aid[i], s_ag[i], s_hg[i], &s_away[i], s_hg[i]),\n    ] {\n        let lgk = format!(\"{}|{}\", s_country[i], s_league[i]);\n        let snk = s_season[i].clone();\n        let key = (lgk.clone(), snk.clone(), tid);\n        let e = agg.entry(key).or_insert(TS{lg:lgk,sn:snk,tid,team:nm.clone(),played:0,gf:0,ga:0,cs:0,pts:0});\n        e.played += 1; e.gf += gf; e.ga += ga;\n        if opp_ga == 0 { e.cs += 1; }\n        e.pts += if gf > ga {3} else if gf == ga {1} else {0};\n    }\n}\nprintln!(\"team-seasons: {}\", agg.len());\n\n// filter: played >= 25 (avoids partial/cup weirdness) -> Vec\nlet mut ts: Vec<&TS> = agg.values().filter(|t| t.played >= 25).collect();\nprintln!(\"team-seasons with >=25 matches: {}\", ts.len());",
+      "source": "\nuse polars::prelude::*;\nuse std::collections::HashMap;\nuse std::collections::HashSet;\n\nlet mf = LazyCsvReader::new(\"data/matches_full.csv\")\n    .finish().expect(\"matches_full.csv\")\n    .collect().expect(\"collect matches\");\n\nfn col_str(df: &DataFrame, name: &str) -> Vec<String> {\n    df.column(name).unwrap().str().unwrap().iter()\n        .map(|o| o.unwrap_or(\"\").to_string()).collect()\n}\nfn col_i64(df: &DataFrame, name: &str) -> Vec<i64> {\n    let c = df.column(name).unwrap().clone();\n    let c = if c.dtype() == &DataType::Null { c.cast(&DataType::Int64).unwrap() } else { c };\n    c.i64().unwrap().iter().map(|o| o.unwrap_or(-1)).collect()\n}\n\nlet s_id = col_i64(&mf, \"id\");\nlet s_hg = col_i64(&mf, \"hg\");\nlet s_ag = col_i64(&mf, \"ag\");\nlet s_country = col_str(&mf, \"country\");\nlet s_league = col_str(&mf, \"league\");\nlet s_season = col_str(&mf, \"season\");\nlet s_date = col_str(&mf, \"date\");\nlet s_home_raw = col_str(&mf, \"home\");\nlet s_away_raw = col_str(&mf, \"away\");\n\nfn canon(name: &str) -> &str {\n    match name {\n        // England\n        \"Manchester United\" | \"Man Utd\" => \"Man United\",\n        \"Manchester City\" => \"Man City\",\n        \"Newcastle United\" => \"Newcastle\",\n        \"Tottenham Hotspur\" => \"Tottenham\",\n        \"West Ham United\" => \"West Ham\",\n        \"Leicester City\" => \"Leicester\",\n        \"Norwich City\" => \"Norwich\",\n        \"Stoke City\" => \"Stoke\",\n        \"West Bromwich Albion\" => \"West Brom\",\n        \"Swansea City\" => \"Swansea\",\n        \"Leeds United\" => \"Leeds\",\n        \"Wolverhampton Wanderers\" => \"Wolves\",\n        \"Nott'm Forest\" => \"Nottingham Forest\",\n        \"Birmingham City\" => \"Birmingham\",\n        \"Blackburn Rovers\" => \"Blackburn\",\n        \"Bolton Wanderers\" => \"Bolton\",\n        \"Charlton Athletic\" => \"Charlton\",\n        // Spain\n        \"Athletic Club\" => \"Ath Bilbao\",\n        \"Atl\\u{e9}tico Madrid\" => \"Ath Madrid\",\n        \"Real Betis\" => \"Betis\",\n        \"Celta Vigo\" => \"Celta\",\n        \"Real Sociedad\" => \"Sociedad\",\n        \"Real Valladolid\" => \"Valladolid\",\n        \"Real Zaragoza\" => \"Zaragoza\",\n        \"Rayo Vallecano\" => \"Vallecano\",\n        \"CD Numancia de Soria\" => \"Numancia\",\n        \"Real Murcia CF\" => \"Murcia\",\n        \"Recreativo Huelva\" => \"Recreativo\",\n        \"Sporting Gij\\u{f3}n\" => \"Sp Gijon\",\n        \"Espanol\" => \"Espanyol\",\n        \"Gimn\\u{e0}stic Tarragona\" => \"Gimnastic\",\n        \"Villarreal\" | \"Villareel\" => \"Villarreal\",\n        \"Santander\" => \"Racing Santander\",\n        // Italy\n        \"Inter Milan\" => \"Inter\",\n        \"Verona\" => \"Hellas Verona\",\n        // Germany\n        \"Bayer Leverkusen\" => \"Leverkusen\",\n        \"Borussia Dortmund\" => \"Dortmund\",\n        \"Eintracht Frankfurt\" => \"Ein Frankfurt\",\n        \"FSV Mainz 05\" => \"Mainz\",\n        \"Hamburger SV\" => \"Hamburg\",\n        \"Hertha Berlin\" => \"Hertha\",\n        \"Leipzig\" => \"RB Leipzig\",\n        \"Borussia M\\u{f6}nchengladbach\" | \"M'gladbach\" => \"M'Gladbach\",\n        \"Darmstadt 98\" => \"Darmstadt\",\n        \"Fortuna Dusseldorf\" => \"Dusseldorf\",\n        \"Hannover 96\" => \"Hannover\",\n        // France\n        \"Olympique de Marseille\" => \"Marseille\",\n        \"AS Monaco\" => \"Monaco\",\n        \"OGC Nice\" => \"Nice\",\n        \"Stade de Reims\" => \"Reims\",\n        \"Paris Saint-Germain\" => \"Paris SG\",\n        \"Stade Brestois\" => \"Brest\",\n        \"Stade Malherbe Caen\" => \"Caen\",\n        \"Clermont Foot\" => \"Clermont\",\n        \"CA Bastia\" => \"Bastia\",\n        \"Saint-\\u{c9}tienne\" => \"St Etienne\",\n        // Netherlands\n        \"Roda JC\" => \"Roda\",\n        \"Sparta Rotterdam\" => \"Sparta\",\n        // Portugal\n        \"Desp. Chaves\" => \"Chaves\",\n        \"Campomaior\" => \"Campomaiorense\",\n        \"Madeira\" => \"Uniao Madeira\",\n        \"AVS\" => \"Academico Viseu\",\n        // Belgium\n        \"Lommel SK\" => \"Lommel\",\n        \"RWD Molenbeek\" => \"Molenbeek\",\n        \"Mouscron\" | \"Mouscron-Peruwelz\" => \"RAAL La Louviere\",\n        // Turkiye\n        \"Antalya\" => \"Antalyaspor\",\n        \"Gaziantep\" => \"Gaziantepspor\",\n        \"Kayseri\" => \"Kayserispor\",\n        \"Malatyaspor\" => \"Yeni Malatyaspor\",\n        other => other,\n    }\n}\n\n\n\n\n\n\n// canonical team names (football-data style) — collapses name-variant dupes\nlet s_home: Vec<String> = s_home_raw.iter().map(|n| canon(n).to_string()).collect();\nlet s_away: Vec<String> = s_away_raw.iter().map(|n| canon(n).to_string()).collect();\n\n// synthetic team ids keyed by (country|league|canonical name) so variants\n// of the same club share one id within a competition\nlet mut tid_map: HashMap<String, i64> = HashMap::new();\nlet mut s_hid = vec![-1i64; mf.height()];\nlet mut s_aid = vec![-1i64; mf.height()];\nfor i in 0..mf.height() {\n    for (nm, is_home) in [(&s_home[i], true), (&s_away[i], false)] {\n        let key = format!(\"{}|{}|{}\", s_country[i], s_league[i], nm);\n        let next = tid_map.len() as i64;\n        let id = *tid_map.entry(key).or_insert(next);\n        if is_home { s_hid[i] = id; } else { s_aid[i] = id; }\n    }\n}\n\n// dedup fixtures: same league-season, canonical pairing, date and score\n// appears twice when two importers used different name variants\nlet mut seen: HashSet<(String, String, String, String, String, String, i64, i64)> = HashSet::new();\nlet mut valid: Vec<usize> = Vec::new();\nlet mut n_dupes = 0usize;\nfor i in 0..mf.height() {\n    if s_hg[i] < 0 || s_ag[i] < 0 { continue; }\n    let key = (s_country[i].clone(), s_league[i].clone(), s_season[i].clone(),\n               s_home[i].clone(), s_away[i].clone(), s_date[i][..10].to_string(), s_hg[i], s_ag[i]);\n    // unordered pairing: canonical order home<away not guaranteed; use both directions check\n    if seen.contains(&key) || seen.contains(&(key.0.clone(), key.1.clone(), key.2.clone(), key.4.clone(), key.3.clone(), key.5.clone(), key.6, key.7)) {\n        n_dupes += 1; continue;\n    }\n    seen.insert(key);\n    valid.push(i);\n}\nprintln!(\"completed matches after dedup: {} ({} dupes dropped)\", valid.len(), n_dupes);\n\nfn pearson(xs: &[f64], ys: &[f64]) -> f64 {\n    let n = xs.len() as f64;\n    if n < 3.0 { return f64::NAN; }\n    let mx = xs.iter().sum::<f64>() / n;\n    let my = ys.iter().sum::<f64>() / n;\n    let mut sxy = 0.0; let mut sxx = 0.0; let mut syy = 0.0;\n    for i in 0..xs.len() {\n        let dx = xs[i] - mx; let dy = ys[i] - my;\n        sxy += dx * dy; sxx += dx * dx; syy += dy * dy;\n    }\n    if sxx <= 0.0 || syy <= 0.0 { return f64::NAN; }\n    sxy / (sxx.sqrt() * syy.sqrt())\n}\n\n// standings order best->worst for (tid, pts, gd, gf)\nfn rank_teams(teams: &[(i64, i64, i64, i64)]) -> Vec<usize> {\n    let mut v: Vec<usize> = (0..teams.len()).collect();\n    v.sort_by(|&a, &b| {\n        teams[b].1.cmp(&teams[a].1)\n            .then(teams[b].2.cmp(&teams[a].2))\n            .then(teams[b].3.cmp(&teams[a].3))\n    });\n    v\n}\n\n// replay one league-season's matches (idxs sorted by date) -> final standings + max lead per team\nfn replay_lgsn(idxs: &[usize], hid: &[i64], aid: &[i64], hg: &[i64], ag: &[i64],\n               home: &[String], away: &[String]) -> (Vec<(i64,i64,i64,i64)>, HashMap<i64,String>, HashMap<i64,i64>) {\n    let mut st: HashMap<i64, (i64, i64, i64)> = HashMap::new();\n    let mut names: HashMap<i64, String> = HashMap::new();\n    let mut maxlead: HashMap<i64, i64> = HashMap::new();\n    for &i in idxs {\n        for (tid, gf, ga, nm) in [(hid[i], hg[i], ag[i], &home[i]), (aid[i], ag[i], hg[i], &away[i])] {\n            names.insert(tid, nm.clone());\n            let e = st.entry(tid).or_insert((0, 0, 0));\n            e.1 += gf; e.2 += ga;\n            e.0 += if gf > ga { 3 } else if gf == ga { 1 } else { 0 };\n        }\n        let mut teams: Vec<(i64, i64, i64, i64)> = st.iter().map(|(&t, &(p, gf, ga))| (t, p, gf - ga, gf)).collect();\n        let order = rank_teams(&teams);\n        if order.len() >= 2 {\n            let lead = teams[order[0]].1 - teams[order[1]].1;\n            let top = teams[order[0]].0;\n            let cur = maxlead.entry(top).or_insert(0);\n            if lead > *cur { *cur = lead; }\n        }\n        teams.clear();\n    }\n    let mut teams: Vec<(i64, i64, i64, i64)> = st.iter().map(|(&t, &(p, gf, ga))| (t, p, gf - ga, gf)).collect();\n    let order = rank_teams(&teams);\n    let mut sorted: Vec<(i64,i64,i64,i64)> = order.iter().map(|&o| teams[o]).collect();\n    (sorted, names, maxlead)\n}\n\n// team-season aggregates from ALL matches\nstruct TS { lg:String, sn:String, tid:i64, team:String, played:i64, gf:i64, ga:i64, cs:i64, pts:i64 }\nlet mut agg: HashMap<(String,String,i64), TS> = HashMap::new();\nfor &i in &valid {\n    for (tid, gf, ga, nm, opp_ga) in [\n        (s_hid[i], s_hg[i], s_ag[i], &s_home[i], s_ag[i]),\n        (s_aid[i], s_ag[i], s_hg[i], &s_away[i], s_hg[i]),\n    ] {\n        let lgk = format!(\"{}|{}\", s_country[i], s_league[i]);\n        let snk = s_season[i].clone();\n        let key = (lgk.clone(), snk.clone(), tid);\n        let e = agg.entry(key).or_insert(TS{lg:lgk,sn:snk,tid,team:nm.clone(),played:0,gf:0,ga:0,cs:0,pts:0});\n        e.played += 1; e.gf += gf; e.ga += ga;\n        if opp_ga == 0 { e.cs += 1; }\n        e.pts += if gf > ga {3} else if gf == ga {1} else {0};\n    }\n}\nprintln!(\"team-seasons: {}\", agg.len());\n\n// filter: played >= 25 (avoids partial/cup weirdness) -> Vec\nlet mut ts: Vec<&TS> = agg.values().filter(|t| t.played >= 25).collect();\nprintln!(\"team-seasons with >=25 matches: {}\", ts.len());",
       "metadata": {},
       "execution_count": 1,
       "outputs": [
@@ -32,16 +46,16 @@
       ]
     },
     {
-      "id": "70bbaf39-e297-43f4-bb27-2a6c4a35c97a",
+      "id": "0ce887db-fc05-456f-9796-a8f8b1179210",
       "cell_type": "markdown",
-      "source": "## The best defensive seasons on record\n\nClean-sheet % with a minimum of 25 matches played \u2014 so part-seasons and\ncup competitions don't distort the list.",
+      "source": "### The best defensive seasons on record\n\nClean-sheet % with a minimum of 25 matches played — so part-seasons and\ncup competitions don't distort the list.\n",
       "metadata": {},
       "outputs": []
     },
     {
       "id": "42a0c9bc-15ba-4dfb-9083-fdc31166d4fb",
       "cell_type": "code",
-      "source": "\n// rebuild agg (cells share state \u2014 agg/ts already exist from cell 1)\nlet mut rows: Vec<Vec<String>> = ts.iter().map(|t| {\n    let cs_pct = 100.0 * t.cs as f64 / t.played as f64;\n    vec![t.lg.split('|').nth(1).unwrap_or(\"\").to_string(), t.sn.clone(),\n         t.team.clone(), t.played.to_string(), t.cs.to_string(),\n         format!(\"{:.1}%\", cs_pct), t.ga.to_string(), t.pts.to_string()]\n}).collect();\nrows.sort_by(|a,b| {\n    let pa: f64 = a[5].trim_end_matches('%').parse().unwrap();\n    let pb: f64 = b[5].trim_end_matches('%').parse().unwrap();\n    pb.partial_cmp(&pa).unwrap()\n});\nmars_table(&[\"league\",\"season\",\"team\",\"played\",\"clean sheets\",\"CS%\",\"GA\",\"pts\"], &rows[..rows.len().min(30)].to_vec());\n\n// distribution sanity: how many team-seasons have CS% > 40%?\nlet hi = ts.iter().filter(|t| 100.0*t.cs as f64/t.played as f64 > 40.0).count();\nlet mid = ts.iter().filter(|t| { let p=100.0*t.cs as f64/t.played as f64; p>=25.0 && p<=40.0 }).count();\nprintln!(\"team-seasons with CS%>40: {} | 25-40%%: {}\", hi, mid);",
+      "source": "\n// rebuild agg (cells share state — agg/ts already exist from cell 1)\nlet mut rows: Vec<Vec<String>> = ts.iter().map(|t| {\n    let cs_pct = 100.0 * t.cs as f64 / t.played as f64;\n    vec![t.lg.split('|').nth(1).unwrap_or(\"\").to_string(), t.sn.clone(),\n         t.team.clone(), t.played.to_string(), t.cs.to_string(),\n         format!(\"{:.1}%\", cs_pct), t.ga.to_string(), t.pts.to_string()]\n}).collect();\nrows.sort_by(|a,b| {\n    let pa: f64 = a[5].trim_end_matches('%').parse().unwrap();\n    let pb: f64 = b[5].trim_end_matches('%').parse().unwrap();\n    pb.partial_cmp(&pa).unwrap()\n});\nmars_table(&[\"league\",\"season\",\"team\",\"played\",\"clean sheets\",\"CS%\",\"GA\",\"pts\"], &rows[..rows.len().min(30)].to_vec());\n\n// distribution sanity: how many team-seasons have CS% > 40%?\nlet hi = ts.iter().filter(|t| 100.0*t.cs as f64/t.played as f64 > 40.0).count();\nlet mid = ts.iter().filter(|t| { let p=100.0*t.cs as f64/t.played as f64; p>=25.0 && p<=40.0 }).count();\nprintln!(\"team-seasons with CS%>40: {} | 25-40%%: {}\", hi, mid);",
       "metadata": {},
       "execution_count": 2,
       "outputs": [
@@ -103,6 +117,16 @@
               "88"
             ],
             [
+              "Spanish La Liga",
+              "1993/94",
+              "La Coruna",
+              "38",
+              "26",
+              "68.4%",
+              "18",
+              "78"
+            ],
+            [
               "Scottish Premiership",
               "2020/21",
               "Rangers",
@@ -111,6 +135,16 @@
               "68.4%",
               "13",
               "102"
+            ],
+            [
+              "Scottish Championship",
+              "1993/94",
+              "La Coruna",
+              "38",
+              "26",
+              "68.4%",
+              "18",
+              "78"
             ],
             [
               "Portuguese Liga Portugal",
@@ -124,26 +158,6 @@
             ],
             [
               "Spanish La Liga 2",
-              "1993/94",
-              "La Coruna",
-              "38",
-              "26",
-              "68.4%",
-              "18",
-              "78"
-            ],
-            [
-              "Spanish La Liga",
-              "1993/94",
-              "La Coruna",
-              "38",
-              "26",
-              "68.4%",
-              "18",
-              "78"
-            ],
-            [
-              "Scottish Championship",
               "1993/94",
               "La Coruna",
               "38",
@@ -223,16 +237,6 @@
               "83"
             ],
             [
-              "Scottish Premiership",
-              "2011/12",
-              "Celtic",
-              "38",
-              "25",
-              "65.8%",
-              "21",
-              "93"
-            ],
-            [
               "English Premier League",
               "2004/05",
               "Chelsea",
@@ -241,6 +245,16 @@
               "65.8%",
               "15",
               "95"
+            ],
+            [
+              "Scottish Premiership",
+              "2011/12",
+              "Celtic",
+              "38",
+              "25",
+              "65.8%",
+              "21",
+              "93"
             ],
             [
               "English Championship",
@@ -254,16 +268,6 @@
             ],
             [
               "Greek Super League",
-              "2013/14",
-              "Olympiakos",
-              "34",
-              "22",
-              "64.7%",
-              "19",
-              "86"
-            ],
-            [
-              "Greek Super League",
               "1999/00",
               "Olympiakos",
               "34",
@@ -271,36 +275,6 @@
               "64.7%",
               "18",
               "92"
-            ],
-            [
-              "Dutch Eredivisie",
-              "2021/22",
-              "Ajax",
-              "34",
-              "22",
-              "64.7%",
-              "19",
-              "83"
-            ],
-            [
-              "Italian Serie A",
-              "1993/94",
-              "Milan",
-              "34",
-              "22",
-              "64.7%",
-              "15",
-              "69"
-            ],
-            [
-              "Dutch Eredivisie",
-              "2008/09",
-              "AZ Alkmaar",
-              "34",
-              "22",
-              "64.7%",
-              "22",
-              "80"
             ],
             [
               "German Bundesliga",
@@ -314,16 +288,6 @@
             ],
             [
               "Portuguese Liga Portugal",
-              "1995/96",
-              "Porto",
-              "34",
-              "22",
-              "64.7%",
-              "20",
-              "84"
-            ],
-            [
-              "Portuguese Liga Portugal",
               "2005/06",
               "Porto",
               "34",
@@ -331,6 +295,56 @@
               "64.7%",
               "16",
               "79"
+            ],
+            [
+              "Dutch Eredivisie",
+              "2021/22",
+              "Ajax",
+              "34",
+              "22",
+              "64.7%",
+              "19",
+              "83"
+            ],
+            [
+              "Dutch Eredivisie",
+              "2008/09",
+              "AZ Alkmaar",
+              "34",
+              "22",
+              "64.7%",
+              "22",
+              "80"
+            ],
+            [
+              "Italian Serie A",
+              "1993/94",
+              "Milan",
+              "34",
+              "22",
+              "64.7%",
+              "15",
+              "69"
+            ],
+            [
+              "Greek Super League",
+              "2013/14",
+              "Olympiakos",
+              "34",
+              "22",
+              "64.7%",
+              "19",
+              "86"
+            ],
+            [
+              "Portuguese Liga Portugal",
+              "1995/96",
+              "Porto",
+              "34",
+              "22",
+              "64.7%",
+              "20",
+              "84"
             ],
             [
               "Premier Division",
@@ -367,9 +381,9 @@
       ]
     },
     {
-      "id": "d6ba6dee-8dd6-4643-9ba8-07cde232010c",
+      "id": "a53c8201-c239-49f1-84e5-43b534d57408",
       "cell_type": "markdown",
-      "source": "## Does clean-sheet rate beat goals-conceded rank?\n\nCompute each team-season's rank within its league-season on both\nmetrics \u2014 clean sheets and goals conceded \u2014 then correlate each with\nfinal points. The better predictor is the better defensive metric.",
+      "source": "### Does clean-sheet rate beat goals-conceded rank?\n\nCompute each team-season's rank within its league-season on both\nmetrics — clean sheets and goals conceded — then correlate each with\nfinal points. The better predictor is the better defensive metric.\n",
       "metadata": {},
       "outputs": []
     },
@@ -408,16 +422,6 @@
               "84"
             ],
             [
-              "Liga F",
-              "2023/2024",
-              "Barcelona WFC",
-              "30",
-              "21",
-              "70.0%",
-              "10",
-              "88"
-            ],
-            [
               "Portuguese Liga Portugal",
               "2007/08",
               "Porto",
@@ -428,34 +432,14 @@
               "75"
             ],
             [
-              "Scottish Championship",
-              "1993/94",
-              "La Coruna",
-              "38",
-              "26",
-              "68.4%",
-              "18",
-              "78"
-            ],
-            [
-              "Scottish Premiership",
-              "2020/21",
-              "Rangers",
-              "38",
-              "26",
-              "68.4%",
-              "13",
-              "102"
-            ],
-            [
-              "Portuguese Liga Portugal",
-              "1993/94",
-              "La Coruna",
-              "38",
-              "26",
-              "68.4%",
-              "18",
-              "78"
+              "Liga F",
+              "2023/2024",
+              "Barcelona WFC",
+              "30",
+              "21",
+              "70.0%",
+              "10",
+              "88"
             ],
             [
               "Spanish La Liga",
@@ -478,6 +462,16 @@
               "78"
             ],
             [
+              "Scottish Championship",
+              "1993/94",
+              "La Coruna",
+              "38",
+              "26",
+              "68.4%",
+              "18",
+              "78"
+            ],
+            [
               "Spanish La Liga",
               "2022/23",
               "Barcelona",
@@ -486,6 +480,361 @@
               "68.4%",
               "20",
               "88"
+            ],
+            [
+              "Scottish Premiership",
+              "2020/21",
+              "Rangers",
+              "38",
+              "26",
+              "68.4%",
+              "13",
+              "102"
+            ],
+            [
+              "Portuguese Liga Portugal",
+              "1993/94",
+              "La Coruna",
+              "38",
+              "26",
+              "68.4%",
+              "18",
+              "78"
+            ],
+            [
+              "Dutch Eredivisie",
+              "2019/20",
+              "AZ Alkmaar",
+              "25",
+              "17",
+              "68.0%",
+              "17",
+              "56"
+            ],
+            [
+              "Portuguese Liga Portugal",
+              "2014/15",
+              "Porto",
+              "34",
+              "23",
+              "67.6%",
+              "13",
+              "82"
+            ],
+            [
+              "Portuguese Liga Portugal",
+              "1994/95",
+              "Porto",
+              "34",
+              "23",
+              "67.6%",
+              "15",
+              "91"
+            ],
+            [
+              "Dutch Eredivisie",
+              "2004/05",
+              "PSV Eindhoven",
+              "34",
+              "23",
+              "67.6%",
+              "18",
+              "87"
+            ],
+            [
+              "Premier League",
+              "2016/2017",
+              "CSKA Moscow",
+              "30",
+              "20",
+              "66.7%",
+              "15",
+              "62"
+            ],
+            [
+              "Greek Super League",
+              "2017/18",
+              "AEK",
+              "30",
+              "20",
+              "66.7%",
+              "12",
+              "70"
+            ],
+            [
+              "Greek Super League",
+              "2022/23",
+              "AEK",
+              "36",
+              "24",
+              "66.7%",
+              "17",
+              "83"
+            ],
+            [
+              "Scottish Premiership",
+              "2011/12",
+              "Celtic",
+              "38",
+              "25",
+              "65.8%",
+              "21",
+              "93"
+            ],
+            [
+              "English Premier League",
+              "2004/05",
+              "Chelsea",
+              "38",
+              "25",
+              "65.8%",
+              "15",
+              "95"
+            ],
+            [
+              "English Championship",
+              "2024/25",
+              "Burnley",
+              "46",
+              "30",
+              "65.2%",
+              "16",
+              "100"
+            ],
+            [
+              "Greek Super League",
+              "2013/14",
+              "Olympiakos",
+              "34",
+              "22",
+              "64.7%",
+              "19",
+              "86"
+            ],
+            [
+              "Dutch Eredivisie",
+              "2008/09",
+              "AZ Alkmaar",
+              "34",
+              "22",
+              "64.7%",
+              "22",
+              "80"
+            ],
+            [
+              "German Bundesliga",
+              "2014/15",
+              "Bayern Munich",
+              "34",
+              "22",
+              "64.7%",
+              "18",
+              "79"
+            ],
+            [
+              "Greek Super League",
+              "1999/00",
+              "Olympiakos",
+              "34",
+              "22",
+              "64.7%",
+              "18",
+              "92"
+            ],
+            [
+              "Portuguese Liga Portugal",
+              "2005/06",
+              "Porto",
+              "34",
+              "22",
+              "64.7%",
+              "16",
+              "79"
+            ],
+            [
+              "Dutch Eredivisie",
+              "2021/22",
+              "Ajax",
+              "34",
+              "22",
+              "64.7%",
+              "19",
+              "83"
+            ],
+            [
+              "Portuguese Liga Portugal",
+              "1995/96",
+              "Porto",
+              "34",
+              "22",
+              "64.7%",
+              "20",
+              "84"
+            ],
+            [
+              "Italian Serie A",
+              "1993/94",
+              "Milan",
+              "34",
+              "22",
+              "64.7%",
+              "15",
+              "69"
+            ],
+            [
+              "Premier Division",
+              "2019",
+              "Dundalk",
+              "36",
+              "23",
+              "63.9%",
+              "18",
+              "86"
+            ],
+            [
+              "Scottish League One",
+              "2013/14",
+              "Rangers",
+              "36",
+              "23",
+              "63.9%",
+              "18",
+              "102"
+            ],
+            [
+              "Premier Division",
+              "2016",
+              "Cork City",
+              "33",
+              "21",
+              "63.6%",
+              "23",
+              "70"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "94ef6d8d-b2b9-4688-a9b0-9025ab58067e",
+      "cell_type": "markdown",
+      "source": "### Do champions keep the most clean sheets?\n\nFor every champion in the dataset: their clean-sheet rank vs their\ngoals-conceded rank within the league. Are title winners defined by\nclean sheets or merely by conceding less than everyone else?\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "a77771c6-6b0c-4c50-a4ac-ed3608940ddb",
+      "cell_type": "code",
+      "source": "\n// champion per lgsn -> their CS rank and GA rank\nlet mut groups: HashMap<(String,String), Vec<usize>> = HashMap::new();\nfor &i in &valid { groups.entry((format!(\"{}|{}\", s_country[i], s_league[i]), s_season[i].clone())).or_default().push(i); }\n// reuse agg/ts from earlier cells: build map (lg,sn,tid)->&TS\nlet mut tmap: HashMap<(String,String,i64), &TS> = HashMap::new();\nfor t in &ts { tmap.insert((t.lg.clone(),t.sn.clone(),t.tid), *t); }\n\nlet mut by_lgsn: HashMap<(String,String), Vec<&TS>> = HashMap::new();\nfor t in &ts { by_lgsn.entry((t.lg.clone(), t.sn.clone())).or_default().push(*t); }\n\nlet mut champ_cs_rank = Vec::new(); let mut champ_ga_rank = Vec::new();\nlet mut champ_pts_rank = Vec::new();\nlet mut n_champ = 0usize;\nfor ((lg,sn), idxs) in &groups {\n    if idxs.len() < 40 { continue; }\n    if let Some(v) = by_lgsn.get(&(lg.clone(), sn.clone())) {\n        if v.len() < 8 { continue; }\n        let mut sorted_idx = idxs.clone();\n        sorted_idx.sort_by(|&a,&b| s_date[a].cmp(&s_date[b]).then(s_id[a].cmp(&s_id[b])));\n        let (table, _names, _) = replay_lgsn(&sorted_idx, &s_hid, &s_aid, &s_hg, &s_ag, &s_home, &s_away);\n        let champ_tid = table[0].0;\n        // ranks within v\n        let mut by_cs: Vec<&&TS> = v.iter().collect();\n        by_cs.sort_by(|a,b| b.cs.cmp(&a.cs).then(a.ga.cmp(&b.ga)));\n        let cs_r = by_cs.iter().position(|t| t.tid==champ_tid).map(|i| i+1);\n        let mut by_ga: Vec<&&TS> = v.iter().collect();\n        by_ga.sort_by(|a,b| a.ga.cmp(&b.ga).then(b.cs.cmp(&a.cs)));\n        let ga_r = by_ga.iter().position(|t| t.tid==champ_tid).map(|i| i+1);\n        let mut by_pts: Vec<&&TS> = v.iter().collect();\n        by_pts.sort_by(|a,b| b.pts.cmp(&a.pts).then(a.ga.cmp(&b.ga)));\n        let pts_r = by_pts.iter().position(|t| t.tid==champ_tid).map(|i| i+1);\n        if let (Some(c),Some(g),Some(p)) = (cs_r,ga_r,pts_r) {\n            champ_cs_rank.push(-(c as f64)); champ_ga_rank.push(-(g as f64)); champ_pts_rank.push(p as f64);\n            n_champ += 1;\n        }\n    }\n}\nprintln!(\"champions analysed: {}\", n_champ);\nprintln!(\"avg rank — clean sheets: {:.1} | goals conceded: {:.1} (1=best, n={})\",\n    -champ_cs_rank.iter().sum::<f64>()/n_champ.max(1) as f64,\n    -champ_ga_rank.iter().sum::<f64>()/n_champ.max(1) as f64, n_champ);\n// how often is champion top-3 in each metric?\nlet cs_top3 = champ_cs_rank.iter().filter(|&&r| r>=-3.0).count();\nlet ga_top3 = champ_ga_rank.iter().filter(|&&r| r>=-3.0).count();\nprintln!(\"champion top-3 clean sheets: {}/{} | top-3 GA: {}/{}\", cs_top3,n_champ,ga_top3,n_champ);",
+      "metadata": {},
+      "execution_count": 4,
+      "outputs": [
+        {
+          "type": "text",
+          "text": "completed matches after dedup: 311832 (1190 dupes dropped)\nteam-seasons: 21435\nteam-seasons with >=25 matches: 15743\nteam-seasons with CS%>40: 1950 | 25-40%%: 7525\nteam-seasons ranked: 15736\ncorr(clean-sheet rank, points) = 0.506\ncorr(goals-conceded rank, points) = 0.548\ncorr(CS%%, points) = 0.557 | corr(-GA/game, points) = 0.622\nchampions analysed: 891\navg rank — clean sheets: 2.8 | goals conceded: 2.3 (1=best, n=891)\nchampion top-3 clean sheets: 680/891 | top-3 GA: 750/891\n"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "league",
+            "season",
+            "team",
+            "played",
+            "clean sheets",
+            "CS%",
+            "GA",
+            "pts"
+          ],
+          "rows": [
+            [
+              "Greek Super League",
+              "1996/97",
+              "Olympiakos",
+              "34",
+              "25",
+              "73.5%",
+              "14",
+              "84"
+            ],
+            [
+              "Liga F",
+              "2023/2024",
+              "Barcelona WFC",
+              "30",
+              "21",
+              "70.0%",
+              "10",
+              "88"
+            ],
+            [
+              "Portuguese Liga Portugal",
+              "2007/08",
+              "Porto",
+              "30",
+              "21",
+              "70.0%",
+              "13",
+              "75"
+            ],
+            [
+              "Spanish La Liga 2",
+              "1993/94",
+              "La Coruna",
+              "38",
+              "26",
+              "68.4%",
+              "18",
+              "78"
+            ],
+            [
+              "Spanish La Liga",
+              "2022/23",
+              "Barcelona",
+              "38",
+              "26",
+              "68.4%",
+              "20",
+              "88"
+            ],
+            [
+              "Scottish Premiership",
+              "2020/21",
+              "Rangers",
+              "38",
+              "26",
+              "68.4%",
+              "13",
+              "102"
+            ],
+            [
+              "Scottish Championship",
+              "1993/94",
+              "La Coruna",
+              "38",
+              "26",
+              "68.4%",
+              "18",
+              "78"
+            ],
+            [
+              "Spanish La Liga",
+              "1993/94",
+              "La Coruna",
+              "38",
+              "26",
+              "68.4%",
+              "18",
+              "78"
+            ],
+            [
+              "Portuguese Liga Portugal",
+              "1993/94",
+              "La Coruna",
+              "38",
+              "26",
+              "68.4%",
+              "18",
+              "78"
             ],
             [
               "Dutch Eredivisie",
@@ -528,16 +877,6 @@
               "82"
             ],
             [
-              "Premier League",
-              "2016/2017",
-              "CSKA Moscow",
-              "30",
-              "20",
-              "66.7%",
-              "15",
-              "62"
-            ],
-            [
               "Greek Super League",
               "2022/23",
               "AEK",
@@ -556,6 +895,16 @@
               "66.7%",
               "12",
               "70"
+            ],
+            [
+              "Premier League",
+              "2016/2017",
+              "CSKA Moscow",
+              "30",
+              "20",
+              "66.7%",
+              "15",
+              "62"
             ],
             [
               "Scottish Premiership",
@@ -598,6 +947,16 @@
               "83"
             ],
             [
+              "Italian Serie A",
+              "1993/94",
+              "Milan",
+              "34",
+              "22",
+              "64.7%",
+              "15",
+              "69"
+            ],
+            [
               "Portuguese Liga Portugal",
               "1995/96",
               "Porto",
@@ -608,14 +967,24 @@
               "84"
             ],
             [
-              "Greek Super League",
-              "1999/00",
-              "Olympiakos",
+              "German Bundesliga",
+              "2014/15",
+              "Bayern Munich",
               "34",
               "22",
               "64.7%",
               "18",
-              "92"
+              "79"
+            ],
+            [
+              "Portuguese Liga Portugal",
+              "2005/06",
+              "Porto",
+              "34",
+              "22",
+              "64.7%",
+              "16",
+              "79"
             ],
             [
               "Greek Super League",
@@ -638,34 +1007,14 @@
               "80"
             ],
             [
-              "Portuguese Liga Portugal",
-              "2005/06",
-              "Porto",
-              "34",
-              "22",
-              "64.7%",
-              "16",
-              "79"
-            ],
-            [
-              "Italian Serie A",
-              "1993/94",
-              "Milan",
-              "34",
-              "22",
-              "64.7%",
-              "15",
-              "69"
-            ],
-            [
-              "German Bundesliga",
-              "2014/15",
-              "Bayern Munich",
+              "Greek Super League",
+              "1999/00",
+              "Olympiakos",
               "34",
               "22",
               "64.7%",
               "18",
-              "79"
+              "92"
             ],
             [
               "Premier Division",
@@ -702,22 +1051,15 @@
       ]
     },
     {
-      "id": "8df336e7-25bd-49c7-aa9e-21670a959774",
-      "cell_type": "markdown",
-      "source": "## Do champions keep the most clean sheets?\n\nFor every champion in the dataset: their clean-sheet rank vs their\ngoals-conceded rank within the league. Are title winners defined by\nclean sheets or merely by conceding less than everyone else?",
-      "metadata": {},
-      "outputs": []
-    },
-    {
-      "id": "a77771c6-6b0c-4c50-a4ac-ed3608940ddb",
+      "id": "9a7f4b41-00ae-4fea-8366-d9e60c4b4ad4",
       "cell_type": "code",
-      "source": "\n// champion per lgsn -> their CS rank and GA rank\nlet mut groups: HashMap<(String,String), Vec<usize>> = HashMap::new();\nfor &i in &valid { groups.entry((format!(\"{}|{}\", s_country[i], s_league[i]), s_season[i].clone())).or_default().push(i); }\n// reuse agg/ts from earlier cells: build map (lg,sn,tid)->&TS\nlet mut tmap: HashMap<(String,String,i64), &TS> = HashMap::new();\nfor t in &ts { tmap.insert((t.lg.clone(),t.sn.clone(),t.tid), *t); }\n\nlet mut by_lgsn: HashMap<(String,String), Vec<&TS>> = HashMap::new();\nfor t in &ts { by_lgsn.entry((t.lg.clone(), t.sn.clone())).or_default().push(*t); }\n\nlet mut champ_cs_rank = Vec::new(); let mut champ_ga_rank = Vec::new();\nlet mut champ_pts_rank = Vec::new();\nlet mut n_champ = 0usize;\nfor ((lg,sn), idxs) in &groups {\n    if idxs.len() < 40 { continue; }\n    if let Some(v) = by_lgsn.get(&(lg.clone(), sn.clone())) {\n        if v.len() < 8 { continue; }\n        let mut sorted_idx = idxs.clone();\n        sorted_idx.sort_by(|&a,&b| s_date[a].cmp(&s_date[b]).then(s_id[a].cmp(&s_id[b])));\n        let (table, _names, _) = replay_lgsn(&sorted_idx, &s_hid, &s_aid, &s_hg, &s_ag, &s_home, &s_away);\n        let champ_tid = table[0].0;\n        // ranks within v\n        let mut by_cs: Vec<&&TS> = v.iter().collect();\n        by_cs.sort_by(|a,b| b.cs.cmp(&a.cs).then(a.ga.cmp(&b.ga)));\n        let cs_r = by_cs.iter().position(|t| t.tid==champ_tid).map(|i| i+1);\n        let mut by_ga: Vec<&&TS> = v.iter().collect();\n        by_ga.sort_by(|a,b| a.ga.cmp(&b.ga).then(b.cs.cmp(&a.cs)));\n        let ga_r = by_ga.iter().position(|t| t.tid==champ_tid).map(|i| i+1);\n        let mut by_pts: Vec<&&TS> = v.iter().collect();\n        by_pts.sort_by(|a,b| b.pts.cmp(&a.pts).then(a.ga.cmp(&b.ga)));\n        let pts_r = by_pts.iter().position(|t| t.tid==champ_tid).map(|i| i+1);\n        if let (Some(c),Some(g),Some(p)) = (cs_r,ga_r,pts_r) {\n            champ_cs_rank.push(-(c as f64)); champ_ga_rank.push(-(g as f64)); champ_pts_rank.push(p as f64);\n            n_champ += 1;\n        }\n    }\n}\nprintln!(\"champions analysed: {}\", n_champ);\nprintln!(\"avg rank \u2014 clean sheets: {:.1} | goals conceded: {:.1} (1=best, n={})\",\n    -champ_cs_rank.iter().sum::<f64>()/n_champ.max(1) as f64,\n    -champ_ga_rank.iter().sum::<f64>()/n_champ.max(1) as f64, n_champ);\n// how often is champion top-3 in each metric?\nlet cs_top3 = champ_cs_rank.iter().filter(|&&r| r>=-3.0).count();\nlet ga_top3 = champ_ga_rank.iter().filter(|&&r| r>=-3.0).count();\nprintln!(\"champion top-3 clean sheets: {}/{} | top-3 GA: {}/{}\", cs_top3,n_champ,ga_top3,n_champ);",
+      "source": "use plotters::prelude::*;\n\nfn chart_num(s: &str) -> f64 {\n    let t = s.replace(',', \"\").replace('%', \"\").replace('−', \"-\");\n    let mult = if t.contains(\"bn\") { 1e9 }\n        else if t.contains('€') && t.contains('m') { 1e6 }\n        else { 1.0 };\n    let cleaned: String = t.chars()\n        .filter(|c| c.is_ascii_digit() || *c == '.' || *c == '-')\n        .collect();\n    cleaned.parse().unwrap_or(0.0) * mult\n}\n\n\nlet mut c_items: Vec<(String, f64)> = rows.iter()\n    .map(|r| (format!(\"{} {}\", r[2], r[0]), chart_num(&r[5].clone())))\n    .collect();\nc_items.retain(|(_, v)| v.is_finite());\nc_items.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());\nc_items.truncate(12);\nlet c_labels: Vec<String> = c_items.iter()\n    .map(|(l, _)| l.chars().take(18).collect()).collect();\nlet c_vals: Vec<f64> = c_items.iter().map(|(_, v)| *v).collect();\nlet c_ymax = c_vals.iter().cloned().fold(0.0_f64, f64::max) * 1.15 + 1e-9;\nlet (c_div, c_unit): (f64, &str) = if c_ymax >= 1e9 { (1e9, \"bn\") }\n    else if c_ymax >= 1e6 { (1e6, \"m\") }\n    else if c_ymax >= 1e3 { (1e3, \"k\") }\n    else { (1.0, \"\") };\nlet c_n = c_vals.len();\nlet figure = plotters::evcxr::evcxr_figure((780, 400), |root| {\n    root.fill(&WHITE)?;\n    let mut chart = ChartBuilder::on(&root)\n        .caption(\"Highest clean-sheet rate — top 12 team-seasons\", (\"sans-serif\", 18))\n        .margin(10)\n        .x_label_area_size(45)\n        .y_label_area_size(55)\n        .build_cartesian_2d(-0.5_f64..(c_n as f64 - 0.5), 0.0..c_ymax)?;\n    chart.configure_mesh()\n        .x_labels(c_n)\n        .x_label_formatter(&|x: &f64| c_labels.get(*x as usize).cloned().unwrap_or_default())\n        .y_label_formatter(&|y: &f64| format!(\"{:.1}{}\", y / c_div, c_unit))\n        .draw()?;\n    chart.draw_series(c_vals.iter().enumerate().map(|(i, &v)| {\n        Rectangle::new([(i as f64 - 0.35, 0.0), (i as f64 + 0.35, v)], BLUE.filled())\n    }))?;\n    Ok(())\n});\nfigure.evcxr_display();\n",
       "metadata": {},
-      "execution_count": 4,
+      "execution_count": 5,
       "outputs": [
         {
           "type": "text",
-          "text": "completed matches after dedup: 311832 (1190 dupes dropped)\nteam-seasons: 21435\nteam-seasons with >=25 matches: 15743\nteam-seasons with CS%>40: 1950 | 25-40%%: 7525\nteam-seasons ranked: 15736\ncorr(clean-sheet rank, points) = 0.506\ncorr(goals-conceded rank, points) = 0.548\ncorr(CS%%, points) = 0.557 | corr(-GA/game, points) = 0.622\nchampions analysed: 891\navg rank \u2014 clean sheets: 2.8 | goals conceded: 2.3 (1=best, n=891)\nchampion top-3 clean sheets: 679/891 | top-3 GA: 751/891\n"
+          "text": "completed matches after dedup: 311832 (1190 dupes dropped)\nteam-seasons: 21435\nteam-seasons with >=25 matches: 15743\nteam-seasons with CS%>40: 1950 | 25-40%%: 7525\nteam-seasons ranked: 15736\ncorr(clean-sheet rank, points) = 0.506\ncorr(goals-conceded rank, points) = 0.548\ncorr(CS%%, points) = 0.557 | corr(-GA/game, points) = 0.622\nchampions analysed: 891\navg rank — clean sheets: 2.8 | goals conceded: 2.3 (1=best, n=891)\nchampion top-3 clean sheets: 681/891 | top-3 GA: 751/891\n"
         },
         {
           "type": "table",
@@ -763,17 +1105,17 @@
               "88"
             ],
             [
-              "Spanish La Liga",
-              "2022/23",
-              "Barcelona",
+              "Spanish La Liga 2",
+              "1993/94",
+              "La Coruna",
               "38",
               "26",
               "68.4%",
-              "20",
-              "88"
+              "18",
+              "78"
             ],
             [
-              "Spanish La Liga 2",
+              "Spanish La Liga",
               "1993/94",
               "La Coruna",
               "38",
@@ -793,6 +1135,16 @@
               "102"
             ],
             [
+              "Portuguese Liga Portugal",
+              "1993/94",
+              "La Coruna",
+              "38",
+              "26",
+              "68.4%",
+              "18",
+              "78"
+            ],
+            [
               "Scottish Championship",
               "1993/94",
               "La Coruna",
@@ -804,23 +1156,13 @@
             ],
             [
               "Spanish La Liga",
-              "1993/94",
-              "La Coruna",
+              "2022/23",
+              "Barcelona",
               "38",
               "26",
               "68.4%",
-              "18",
-              "78"
-            ],
-            [
-              "Portuguese Liga Portugal",
-              "1993/94",
-              "La Coruna",
-              "38",
-              "26",
-              "68.4%",
-              "18",
-              "78"
+              "20",
+              "88"
             ],
             [
               "Dutch Eredivisie",
@@ -834,13 +1176,13 @@
             ],
             [
               "Portuguese Liga Portugal",
-              "2014/15",
+              "1994/95",
               "Porto",
               "34",
               "23",
               "67.6%",
-              "13",
-              "82"
+              "15",
+              "91"
             ],
             [
               "Dutch Eredivisie",
@@ -854,23 +1196,13 @@
             ],
             [
               "Portuguese Liga Portugal",
-              "1994/95",
+              "2014/15",
               "Porto",
               "34",
               "23",
               "67.6%",
-              "15",
-              "91"
-            ],
-            [
-              "Premier League",
-              "2016/2017",
-              "CSKA Moscow",
-              "30",
-              "20",
-              "66.7%",
-              "15",
-              "62"
+              "13",
+              "82"
             ],
             [
               "Greek Super League",
@@ -881,6 +1213,16 @@
               "66.7%",
               "17",
               "83"
+            ],
+            [
+              "Premier League",
+              "2016/2017",
+              "CSKA Moscow",
+              "30",
+              "20",
+              "66.7%",
+              "15",
+              "62"
             ],
             [
               "Greek Super League",
@@ -923,34 +1265,14 @@
               "100"
             ],
             [
-              "Dutch Eredivisie",
-              "2008/09",
-              "AZ Alkmaar",
+              "Portuguese Liga Portugal",
+              "2005/06",
+              "Porto",
               "34",
               "22",
               "64.7%",
-              "22",
-              "80"
-            ],
-            [
-              "German Bundesliga",
-              "2014/15",
-              "Bayern Munich",
-              "34",
-              "22",
-              "64.7%",
-              "18",
+              "16",
               "79"
-            ],
-            [
-              "Italian Serie A",
-              "1993/94",
-              "Milan",
-              "34",
-              "22",
-              "64.7%",
-              "15",
-              "69"
             ],
             [
               "Greek Super League",
@@ -963,14 +1285,24 @@
               "92"
             ],
             [
-              "Greek Super League",
-              "2013/14",
-              "Olympiakos",
+              "Italian Serie A",
+              "1993/94",
+              "Milan",
               "34",
               "22",
               "64.7%",
-              "19",
-              "86"
+              "15",
+              "69"
+            ],
+            [
+              "Dutch Eredivisie",
+              "2008/09",
+              "AZ Alkmaar",
+              "34",
+              "22",
+              "64.7%",
+              "22",
+              "80"
             ],
             [
               "Portuguese Liga Portugal",
@@ -983,6 +1315,26 @@
               "84"
             ],
             [
+              "Greek Super League",
+              "2013/14",
+              "Olympiakos",
+              "34",
+              "22",
+              "64.7%",
+              "19",
+              "86"
+            ],
+            [
+              "German Bundesliga",
+              "2014/15",
+              "Bayern Munich",
+              "34",
+              "22",
+              "64.7%",
+              "18",
+              "79"
+            ],
+            [
               "Dutch Eredivisie",
               "2021/22",
               "Ajax",
@@ -993,14 +1345,14 @@
               "83"
             ],
             [
-              "Portuguese Liga Portugal",
-              "2005/06",
-              "Porto",
-              "34",
-              "22",
-              "64.7%",
-              "16",
-              "79"
+              "Premier Division",
+              "2019",
+              "Dundalk",
+              "36",
+              "23",
+              "63.9%",
+              "18",
+              "86"
             ],
             [
               "Scottish League One",
@@ -1014,16 +1366,6 @@
             ],
             [
               "Premier Division",
-              "2019",
-              "Dundalk",
-              "36",
-              "23",
-              "63.9%",
-              "18",
-              "86"
-            ],
-            [
-              "Premier Division",
               "2016",
               "Cork City",
               "33",
@@ -1033,13 +1375,28 @@
               "70"
             ]
           ]
+        },
+        {
+          "type": "mime_bundle",
+          "data": {
+            "image/svg+xml": "<svg width=\"780\" height=\"400\" viewBox=\"0 0 780 400\" xmlns=\"http://www.w3.org/2000/svg\">\n<rect x=\"0\" y=\"0\" width=\"780\" height=\"400\" opacity=\"1\" fill=\"#FFFFFF\" stroke=\"none\"/>\n<text x=\"390\" y=\"15\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"14.516129032258064\" opacity=\"1\" fill=\"#000000\">\nHighest clean-sheet rate — top 12 team-seasons\n</text>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"70\" y1=\"344\" x2=\"70\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"82\" y1=\"344\" x2=\"82\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"94\" y1=\"344\" x2=\"94\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"106\" y1=\"344\" x2=\"106\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"117\" y1=\"344\" x2=\"117\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"129\" y1=\"344\" x2=\"129\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"141\" y1=\"344\" x2=\"141\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"153\" y1=\"344\" x2=\"153\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"164\" y1=\"344\" x2=\"164\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"176\" y1=\"344\" x2=\"176\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"188\" y1=\"344\" x2=\"188\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"199\" y1=\"344\" x2=\"199\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"211\" y1=\"344\" x2=\"211\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"223\" y1=\"344\" x2=\"223\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"235\" y1=\"344\" x2=\"235\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"246\" y1=\"344\" x2=\"246\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"258\" y1=\"344\" x2=\"258\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"270\" y1=\"344\" x2=\"270\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"282\" y1=\"344\" x2=\"282\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"293\" y1=\"344\" x2=\"293\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"305\" y1=\"344\" x2=\"305\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"317\" y1=\"344\" x2=\"317\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"329\" y1=\"344\" x2=\"329\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"340\" y1=\"344\" x2=\"340\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"352\" y1=\"344\" x2=\"352\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"364\" y1=\"344\" x2=\"364\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"375\" y1=\"344\" x2=\"375\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"387\" y1=\"344\" x2=\"387\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"399\" y1=\"344\" x2=\"399\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"411\" y1=\"344\" x2=\"411\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"422\" y1=\"344\" x2=\"422\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"434\" y1=\"344\" x2=\"434\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"446\" y1=\"344\" x2=\"446\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"458\" y1=\"344\" x2=\"458\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"469\" y1=\"344\" x2=\"469\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"481\" y1=\"344\" x2=\"481\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"493\" y1=\"344\" x2=\"493\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"505\" y1=\"344\" x2=\"505\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"516\" y1=\"344\" x2=\"516\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"528\" y1=\"344\" x2=\"528\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"540\" y1=\"344\" x2=\"540\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"551\" y1=\"344\" x2=\"551\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"563\" y1=\"344\" x2=\"563\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"575\" y1=\"344\" x2=\"575\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"587\" y1=\"344\" x2=\"587\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"598\" y1=\"344\" x2=\"598\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"610\" y1=\"344\" x2=\"610\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"622\" y1=\"344\" x2=\"622\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"634\" y1=\"344\" x2=\"634\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"645\" y1=\"344\" x2=\"645\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"657\" y1=\"344\" x2=\"657\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"669\" y1=\"344\" x2=\"669\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"681\" y1=\"344\" x2=\"681\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"692\" y1=\"344\" x2=\"692\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"704\" y1=\"344\" x2=\"704\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"716\" y1=\"344\" x2=\"716\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"727\" y1=\"344\" x2=\"727\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"739\" y1=\"344\" x2=\"739\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"751\" y1=\"344\" x2=\"751\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"763\" y1=\"344\" x2=\"763\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"344\" x2=\"769\" y2=\"344\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"341\" x2=\"769\" y2=\"341\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"337\" x2=\"769\" y2=\"337\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"333\" x2=\"769\" y2=\"333\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"330\" x2=\"769\" y2=\"330\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"326\" x2=\"769\" y2=\"326\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"322\" x2=\"769\" y2=\"322\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"319\" x2=\"769\" y2=\"319\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"315\" x2=\"769\" y2=\"315\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"311\" x2=\"769\" y2=\"311\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"308\" x2=\"769\" y2=\"308\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"304\" x2=\"769\" y2=\"304\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"300\" x2=\"769\" y2=\"300\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"297\" x2=\"769\" y2=\"297\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"293\" x2=\"769\" y2=\"293\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"289\" x2=\"769\" y2=\"289\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"286\" x2=\"769\" y2=\"286\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"282\" x2=\"769\" y2=\"282\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"278\" x2=\"769\" y2=\"278\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"275\" x2=\"769\" y2=\"275\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"271\" x2=\"769\" y2=\"271\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"267\" x2=\"769\" y2=\"267\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"264\" x2=\"769\" y2=\"264\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"260\" x2=\"769\" y2=\"260\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"256\" x2=\"769\" y2=\"256\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"253\" x2=\"769\" y2=\"253\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"249\" x2=\"769\" y2=\"249\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"245\" x2=\"769\" y2=\"245\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"242\" x2=\"769\" y2=\"242\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"238\" x2=\"769\" y2=\"238\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"234\" x2=\"769\" y2=\"234\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"231\" x2=\"769\" y2=\"231\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"227\" x2=\"769\" y2=\"227\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"223\" x2=\"769\" y2=\"223\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"220\" x2=\"769\" y2=\"220\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"216\" x2=\"769\" y2=\"216\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"212\" x2=\"769\" y2=\"212\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"209\" x2=\"769\" y2=\"209\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"205\" x2=\"769\" y2=\"205\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"201\" x2=\"769\" y2=\"201\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"198\" x2=\"769\" y2=\"198\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"194\" x2=\"769\" y2=\"194\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"190\" x2=\"769\" y2=\"190\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"187\" x2=\"769\" y2=\"187\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"183\" x2=\"769\" y2=\"183\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"179\" x2=\"769\" y2=\"179\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"176\" x2=\"769\" y2=\"176\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"172\" x2=\"769\" y2=\"172\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"168\" x2=\"769\" y2=\"168\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"165\" x2=\"769\" y2=\"165\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"161\" x2=\"769\" y2=\"161\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"157\" x2=\"769\" y2=\"157\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"154\" x2=\"769\" y2=\"154\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"150\" x2=\"769\" y2=\"150\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"146\" x2=\"769\" y2=\"146\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"143\" x2=\"769\" y2=\"143\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"139\" x2=\"769\" y2=\"139\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"135\" x2=\"769\" y2=\"135\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"132\" x2=\"769\" y2=\"132\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"128\" x2=\"769\" y2=\"128\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"124\" x2=\"769\" y2=\"124\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"121\" x2=\"769\" y2=\"121\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"117\" x2=\"769\" y2=\"117\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"113\" x2=\"769\" y2=\"113\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"110\" x2=\"769\" y2=\"110\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"106\" x2=\"769\" y2=\"106\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"102\" x2=\"769\" y2=\"102\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"99\" x2=\"769\" y2=\"99\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"95\" x2=\"769\" y2=\"95\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"91\" x2=\"769\" y2=\"91\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"88\" x2=\"769\" y2=\"88\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"84\" x2=\"769\" y2=\"84\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"80\" x2=\"769\" y2=\"80\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"77\" x2=\"769\" y2=\"77\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"73\" x2=\"769\" y2=\"73\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"69\" x2=\"769\" y2=\"69\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"66\" x2=\"769\" y2=\"66\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"62\" x2=\"769\" y2=\"62\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"58\" x2=\"769\" y2=\"58\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"55\" x2=\"769\" y2=\"55\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"51\" x2=\"769\" y2=\"51\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"47\" x2=\"769\" y2=\"47\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"44\" x2=\"769\" y2=\"44\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"40\" x2=\"769\" y2=\"40\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"36\" x2=\"769\" y2=\"36\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"94\" y1=\"344\" x2=\"94\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"153\" y1=\"344\" x2=\"153\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"211\" y1=\"344\" x2=\"211\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"270\" y1=\"344\" x2=\"270\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"329\" y1=\"344\" x2=\"329\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"387\" y1=\"344\" x2=\"387\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"446\" y1=\"344\" x2=\"446\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"505\" y1=\"344\" x2=\"505\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"563\" y1=\"344\" x2=\"563\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"622\" y1=\"344\" x2=\"622\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"681\" y1=\"344\" x2=\"681\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"739\" y1=\"344\" x2=\"739\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"344\" x2=\"769\" y2=\"344\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"308\" x2=\"769\" y2=\"308\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"271\" x2=\"769\" y2=\"271\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"234\" x2=\"769\" y2=\"234\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"198\" x2=\"769\" y2=\"198\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"161\" x2=\"769\" y2=\"161\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"124\" x2=\"769\" y2=\"124\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"88\" x2=\"769\" y2=\"88\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"51\" x2=\"769\" y2=\"51\"/>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"64,34 64,344 \"/>\n<text x=\"55\" y=\"344\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n0.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,344 64,344 \"/>\n<text x=\"55\" y=\"308\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n10.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,308 64,308 \"/>\n<text x=\"55\" y=\"271\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n20.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,271 64,271 \"/>\n<text x=\"55\" y=\"234\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n30.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,234 64,234 \"/>\n<text x=\"55\" y=\"198\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n40.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,198 64,198 \"/>\n<text x=\"55\" y=\"161\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n50.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,161 64,161 \"/>\n<text x=\"55\" y=\"124\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n60.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,124 64,124 \"/>\n<text x=\"55\" y=\"88\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n70.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,88 64,88 \"/>\n<text x=\"55\" y=\"51\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n80.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,51 64,51 \"/>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"65,345 769,345 \"/>\n<text x=\"94\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nOlympiakos Greek S\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"94,345 94,350 \"/>\n<text x=\"153\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nPorto Portuguese L\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"153,345 153,350 \"/>\n<text x=\"211\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nBarcelona WFC Liga\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"211,345 211,350 \"/>\n<text x=\"270\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nLa Coruna Spanish \n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"270,345 270,350 \"/>\n<text x=\"329\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nLa Coruna Spanish \n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"329,345 329,350 \"/>\n<text x=\"387\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nRangers Scottish P\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"387,345 387,350 \"/>\n<text x=\"446\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nLa Coruna Portugue\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"446,345 446,350 \"/>\n<text x=\"505\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nLa Coruna Scottish\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"505,345 505,350 \"/>\n<text x=\"563\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nBarcelona Spanish \n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"563,345 563,350 \"/>\n<text x=\"622\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nAZ Alkmaar Dutch E\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"622,345 622,350 \"/>\n<text x=\"681\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nPorto Portuguese L\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"681,345 681,350 \"/>\n<text x=\"739\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nPSV Eindhoven Dutc\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"739,345 739,350 \"/>\n<rect x=\"73\" y=\"75\" width=\"41\" height=\"269\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"132\" y=\"88\" width=\"41\" height=\"256\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"191\" y=\"88\" width=\"41\" height=\"256\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"249\" y=\"94\" width=\"41\" height=\"250\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"308\" y=\"94\" width=\"41\" height=\"250\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"367\" y=\"94\" width=\"41\" height=\"250\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"425\" y=\"94\" width=\"41\" height=\"250\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"484\" y=\"94\" width=\"41\" height=\"250\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"543\" y=\"94\" width=\"41\" height=\"250\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"601\" y=\"95\" width=\"41\" height=\"249\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"660\" y=\"97\" width=\"41\" height=\"247\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"719\" y=\"97\" width=\"41\" height=\"247\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n</svg>",
+            "text/plain": "Figure (SVG)"
+          },
+          "metadata": {}
         }
       ]
     },
     {
-      "id": "c32e45c5-c56d-4723-9944-efbfb56acdb0",
+      "id": "052a73cd-7040-4a0b-963c-2781c903c091",
       "cell_type": "markdown",
-      "source": "## Findings\n\n**Clean sheets are a top-team luxury \u2014 and the best single proxy for defensive excellence we can measure.**\n\nScope: 15,743 team-seasons with \u226525 matches, after deduplication.\n\n1. **The record books belong to the usual suspects.** Best clean-sheet\n   rates ever: Olympiakos 73.5% (1996/97), Barcelona WFC 70% (2023/24),\n   Porto 70% (2007/08). Barcelona men (68.4%, 2022/23), Rangers (68.4%,\n   2020/21, 102 pts) and PSV (67.6%, 2004/05) round out the 65%+ club \u2014\n   every one a title-or-near-title side.\n\n2. **Clean sheets beat goals-conceded rank as a points predictor \u2014 barely.**\n   Correlations with season points across 15,736 ranked team-seasons:\n   clean-sheet% \u03c1=**0.557**, rank of clean sheets \u03c1=0.506,\n   goals-conceded rank \u03c1=0.548, and raw \u2212GA/game \u03c1=**0.622** \u2014 the\n   strongest of the four. Volume of clean sheets matters less than how\n   stingy you are per game.\n\n3. **Champions are defensive first.** Of 891 analysed champions, the\n   average champion ranked **2.8th in clean sheets** and **2.3rd in\n   goals conceded** \u2014 and 76% finished top-3 in clean sheets vs 84%\n   top-3 in GA. Titles still tilt defence, not just attack.\n\n4. **Data caveat:** the matches_full league labels are messy \u2014 e.g.\n   Deportivo La Coruna's identical 1993/94 season appears under four\n   league names (Spanish La Liga, La Liga 2, Scottish Championship,\n   Portuguese Liga Portugal). Clean-sheet leaders should be read as\n   \"team-season under some league label\", deduplicated by record not\n   by label.",
+      "source": "## Discussion\n\n**Clean sheets are a top-team luxury — and the best single proxy for defensive excellence we can measure.**\n\nScope: 15,743 team-seasons with ≥25 matches, after deduplication.\n\n1. **The record books belong to the usual suspects.** Best clean-sheet\n   rates ever: Olympiakos 73.5% (1996/97), Barcelona WFC 70% (2023/24),\n   Porto 70% (2007/08). Barcelona men (68.4%, 2022/23), Rangers (68.4%,\n   2020/21, 102 pts) and PSV (67.6%, 2004/05) round out the 65%+ club —\n   every one a title-or-near-title side.\n\n2. **Clean sheets beat goals-conceded rank as a points predictor — barely.**\n   Correlations with season points across 15,736 ranked team-seasons:\n   clean-sheet% ρ=**0.557**, rank of clean sheets ρ=0.506,\n   goals-conceded rank ρ=0.548, and raw −GA/game ρ=**0.622** — the\n   strongest of the four. Volume of clean sheets matters less than how\n   stingy you are per game.\n\n3. **Champions are defensive first.** Of 891 analysed champions, the\n   average champion ranked **2.8th in clean sheets** and **2.3rd in\n   goals conceded** — and 76% finished top-3 in clean sheets vs 84%\n   top-3 in GA. Titles still tilt defence, not just attack.\n\n4. **Data caveat:** the matches_full league labels are messy — e.g.\n   Deportivo La Coruna's identical 1993/94 season appears under four\n   league names (Spanish La Liga, La Liga 2, Scottish Championship,\n   Portuguese Liga Portugal). Clean-sheet leaders should be read as\n   \"team-season under some league label\", deduplicated by record not\n   by label.\n\n**Limitations.** The analysis is limited to the competitions present in the database; player-level metrics exist only for StatsBomb-covered tournaments, and underlying event data may contain errors.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "3719f8b2-60a5-4487-a706-69e363e9215d",
+      "cell_type": "markdown",
+      "source": "## Conclusion\n\nClean sheets are a top-team luxury — and the best single proxy for defensive excellence we can measure. Together these results answer the research question posed in the Introduction and quantify the pattern across hundreds of thousands of matches. The notebook provides a fully reproducible pipeline from raw CSV extracts to published figures.\n",
       "metadata": {},
       "outputs": []
     }

@@ -12,9 +12,23 @@
   },
   "cells": [
     {
-      "id": "d70658ef-660c-4ae2-a212-2f1bc0f422a2",
+      "id": "506351f7-3851-464f-8bba-fcdfac17c89d",
       "cell_type": "markdown",
-      "source": "## Best of the FIFA World Cup\n\nA record book of the **FIFA World Cup** — international tournament champions,\nfinals and records computed from `data/matches_full.csv`.\n\nCoverage is uneven: full tournaments for 2018 and 2022; earlier editions appear only as scattered finals, so champions are recorded only where the data covers the whole tournament.\n\n**Records covered:** most titles, every edition's champion and final\nscore, the champion's full tournament record, biggest wins,\nhighest-scoring matches, champion records (most goals, fewest conceded,\nbest goal difference, most wins, fewest losses), unbeaten champions,\nthe closest finals, and top scorers where player-level data exists.",
+      "source": "## Abstract\n\nThis study examines the FIFA World Cup record book using the World Cup matches held in the Soccers football database. 8 World Cup editions, but only 2018 and 2022 have full match coverage — the earlier editions are finals/partial only, so they appear as \"partial coverage\" rows with no champion stats. All computation runs in Rust inside a `.mars` notebook (polars + plotters — charts as inline SVG), and every table and figure is generated from the extracted CSVs.\n\n## Keywords\n\n**Keywords:** football, analysis, records, world-cup, mars, sqlite\n\n## Table of contents\n\n- [Abstract](#abstract)\n- [Keywords](#keywords)\n- [Introduction](#introduction)\n- [Methods](#methods)\n- [Results](#results)\n  - [Tournament editions](#tournament-editions)\n  - [Every edition — champion, final score, champion's tournament record](#every-edition--champion-final-score-champions-tournament-record)\n  - [Records across all editions](#records-across-all-editions)\n  - [Champion records: most goals for, fewest against, best GD, most wins](#champion-records-most-goals-for-fewest-against-best-gd-most-wins)\n  - [Unbeaten champions](#unbeaten-champions)\n  - [Closest finals (smallest margin or draw)](#closest-finals-smallest-margin-or-draw)\n  - [Top scorers (latest edition with player data — SCORERS picks best-covered year)](#top-scorers-latest-edition-with-player-data--scorers-picks-best-covered-year)\n- [Discussion](#discussion)\n- [Conclusion](#conclusion)\n\n## Introduction\n\nA record book of the **FIFA World Cup** — international tournament champions,\nfinals and records computed from `data/matches_full.csv`.\n\nCoverage is uneven: full tournaments for 2018 and 2022; earlier editions appear only as scattered finals, so champions are recorded only where the data covers the whole tournament.\n\n**Records covered:** most titles, every edition's champion and final\nscore, the champion's full tournament record, biggest wins,\nhighest-scoring matches, champion records (most goals, fewest conceded,\nbest goal difference, most wins, fewest losses), unbeaten champions,\nthe closest finals, and top scorers where player-level data exists.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "d2c9c9ad-aa34-4874-9d1b-1bf46b0f950b",
+      "cell_type": "markdown",
+      "source": "## Methods\n\nData were extracted from the Soccers football database (`packages/data`) as CSV snapshots: `matches_full`, `player_goals`.\n\nThe analysis runs entirely in Rust inside the notebook: **polars** handles table scans, joins and aggregations; **plotters** renders figures as inline SVG; `mars_table` renders result tables.\n\nEach code cell is kept to a single output so results can be read top to bottom.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "b729f4eb-9bda-4c8a-b29b-a0e80ea45d2a",
+      "cell_type": "markdown",
+      "source": "## Results\n\nAll figures and tables below are computed directly from the extracted data. Each code cell produces one output — a table, a chart, or a short text summary.\n",
       "metadata": {},
       "outputs": []
     },
@@ -43,6 +57,13 @@
           "text": "FIFA World Cup matches: 147\nfinished matches: 147 (0 duplicate fixtures dropped) | team-season entries: 88\ncomplete seasons: 0 ( -> )\ntop scorers available for season year 2022 (StatsBomb coverage)\n()\n"
         }
       ]
+    },
+    {
+      "id": "64770b3e-568d-48df-8e3f-754fa70e2792",
+      "cell_type": "markdown",
+      "source": "### Tournament editions\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "cfac6f5c-b445-46a5-aa33-647399c39165",
@@ -76,6 +97,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "b269c01d-8afe-41cf-8cac-fd00c5703392",
+      "cell_type": "markdown",
+      "source": "### Every edition — champion, final score, champion's tournament record\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "45660584-355b-4da0-b1be-61006d641ece",
@@ -177,6 +205,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "8145c276-b00f-43dd-9b2d-1183a0620764",
+      "cell_type": "markdown",
+      "source": "### Records across all editions\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "4707a9ce-0c96-4d04-85e7-a63646e820fc",
@@ -531,6 +566,13 @@
       ]
     },
     {
+      "id": "cf535327-3c6d-4816-9640-c8672da1e5a1",
+      "cell_type": "markdown",
+      "source": "### Champion records: most goals for, fewest against, best GD, most wins\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
       "id": "a15a3658-bdf5-4b8f-bd23-0fdb27bd42cf",
       "cell_type": "code",
       "source": "// champion records: most goals for, fewest against, best GD, most wins\nlet mut champ_stats: Vec<(String, String, i64, i64, i64, i64, i64)> = Vec::new(); // season, champ, gf, ga, w, d, l\nfor e in &editions {\n    if e.champion.is_empty() || e.champion == \"decided on penalties\" { continue; }\n    let mut w = 0i64; let mut d = 0i64; let mut l = 0i64;\n    let mut gf = 0i64; let mut ga = 0i64;\n    for m in &e.matches {\n        let (hg, ag) = if m.h == e.champion { (m.hg, m.ag) }\n            else if m.a == e.champion { (m.ag, m.hg) }\n            else { continue };\n        gf += hg; ga += ag;\n        if hg > ag { w += 1; } else if hg == ag { d += 1; } else { l += 1; }\n    }\n    champ_stats.push((e.season.clone(), e.champion.clone(), gf, ga, w, d, l));\n}\nlet rec_rows: Vec<Vec<String>> = vec![\n    (\"most goals scored\", champ_stats.iter().max_by_key(|c| c.2).unwrap()),\n    (\"fewest goals conceded\", champ_stats.iter().min_by_key(|c| c.3).unwrap()),\n    (\"best goal difference\", champ_stats.iter().max_by_key(|c| c.2 - c.3).unwrap()),\n    (\"most wins\", champ_stats.iter().max_by_key(|c| c.4).unwrap()),\n    (\"fewest losses\", champ_stats.iter().min_by_key(|c| c.6).unwrap()),\n]\n.iter()\n.map(|(label, c)| vec![label.to_string(), format!(\"{} {}\", c.1, c.0), format!(\"{}W {}D {}L\", c.4, c.5, c.6), format!(\"{}/{}\", c.2, c.3), (c.2 - c.3).to_string()])\n.collect();\nmars_table(&[\"record\", \"champion edition\", \"record\", \"gf/ga\", \"gd\"], &rec_rows);\n",
@@ -777,6 +819,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "5405c4ee-c4b6-439f-9baa-f373e13cda12",
+      "cell_type": "markdown",
+      "source": "### Unbeaten champions\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "6870af43-41f4-4ee5-b520-8056639a0302",
@@ -1042,6 +1091,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "706ba8a5-264c-4279-8672-b8c48401c3af",
+      "cell_type": "markdown",
+      "source": "### Closest finals (smallest margin or draw)\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "b20ff961-d1dd-4bc5-97cf-062fa7afedfb",
@@ -1327,6 +1383,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "baa447b8-22af-4ced-b330-ab9ec65c29b1",
+      "cell_type": "markdown",
+      "source": "### Top scorers (latest edition with player data — SCORERS picks best-covered year)\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "96db03ba-fc8e-4e54-b2fd-0b539d98c900",
@@ -2295,9 +2358,16 @@
       ]
     },
     {
-      "id": "0e7fe3e8-c386-4a82-a891-18fc5ed7f415",
+      "id": "1d0140d1-3af8-46af-ad35-5f280f3da416",
       "cell_type": "markdown",
-      "source": "## What the record book says\n\n**Coverage caveat first**: the dataset holds 8 World Cup editions, but only 2018\nand 2022 have full match coverage — the earlier editions are finals/partial\nonly, so they appear as \"partial coverage\" rows with no champion stats. Treat\nthis as a record book for the modern era, not all 22 tournaments.\n\n- **Most dominant champion**: France 2018 went 6W-1D-0L (14 scored, 6 conceded)\n  — the only unbeaten champion in the data, and it swept nearly every champion\n  record (most goals, fewest conceded, best GD, most wins, fewest losses all in\n  one tournament).\n- **Most goals by a champion**: Argentina 2022 scored 15 (conceded 8) en route\n  to the title on penalties — the highest-scoring champion run.\n- **Biggest win**: Spain 7–0 Costa Rica (2022). **Highest-scoring match**:\n  England 6–2 Iran (2022, 8 goals).\n- **Top scorers of a single edition**: Kylian Mbappé and Lionel Messi both\n  finished 2022 with **9 goals** — the only time two players share the summit.\n- **Closest final**: Argentina vs France 2022, 3–3 then penalties — the only\n  World Cup final decided on penalties in the dataset.\n\n_Source: StatsBomb open data via `dev.db`; only editions with ≥10 matches get\nchampion records._",
+      "source": "## Discussion\n\n**Coverage caveat first**: the dataset holds 8 World Cup editions, but only 2018\nand 2022 have full match coverage — the earlier editions are finals/partial\nonly, so they appear as \"partial coverage\" rows with no champion stats. Treat\nthis as a record book for the modern era, not all 22 tournaments.\n\n- **Most dominant champion**: France 2018 went 6W-1D-0L (14 scored, 6 conceded)\n  — the only unbeaten champion in the data, and it swept nearly every champion\n  record (most goals, fewest conceded, best GD, most wins, fewest losses all in\n  one tournament).\n- **Most goals by a champion**: Argentina 2022 scored 15 (conceded 8) en route\n  to the title on penalties — the highest-scoring champion run.\n- **Biggest win**: Spain 7–0 Costa Rica (2022). **Highest-scoring match**:\n  England 6–2 Iran (2022, 8 goals).\n- **Top scorers of a single edition**: Kylian Mbappé and Lionel Messi both\n  finished 2022 with **9 goals** — the only time two players share the summit.\n- **Closest final**: Argentina vs France 2022, 3–3 then penalties — the only\n  World Cup final decided on penalties in the dataset.\n\n_Source: StatsBomb open data via `dev.db`; only editions with ≥10 matches get\nchampion records._\n\n**Limitations.** Records reflect only the matches present in the database; coverage varies by competition and era, so 'records' are archive records, not all-time official marks.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "65df842b-3b33-4578-9f62-b3c8006ac961",
+      "cell_type": "markdown",
+      "source": "## Conclusion\n\n8 World Cup editions, but only 2018 and 2022 have full match coverage — the earlier editions are finals/partial only, so they appear as \"partial coverage\" rows with no champion stats. Together these results answer the research question posed in the Introduction and quantify the pattern across 10 matches. The notebook provides a fully reproducible pipeline from raw CSV extracts to published figures.\n",
       "metadata": {},
       "outputs": []
     }

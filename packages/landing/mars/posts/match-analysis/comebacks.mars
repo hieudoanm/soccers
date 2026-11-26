@@ -12,9 +12,23 @@
   },
   "cells": [
     {
-      "id": "f3f3587b-bdd6-4818-a3b8-296285b3fecd",
+      "id": "f05f03c7-56f7-4edc-95f3-09c882607196",
       "cell_type": "markdown",
-      "source": "## Comebacks: turning losing positions into victories\n\nEvery fan lives for the comeback — trailing at half-time, even 2–0 down,\nthen winning. This notebook replays every goal-by-goal timeline in the\nStatsBomb subset (~4,200 matches with timing data) and asks: **which teams\nare historically best at erasing deficits?**\n\nA *comeback win* = a team trailed by at least one goal at some point and\nstill won. We rank teams by comeback-win rate (comebacks ÷ matches where\nthey trailed), with a minimum-sample guard, and break comebacks down by\nthe size of the deficit erased.\n\n**Coverage caveat:** goal timing exists only for StatsBomb matches\n(World Cups, Euros, Champions League, top domestic leagues) — a smaller\nbut high-quality subset.",
+      "source": "## Abstract\n\nHow often do teams overturn big deficits — and does it happen more than the legends suggest? This study answers it using the full match archive drawn from the Soccers football database. The choke is rarer than the legend suggests — and almost never happens from a truly big lead. All computation runs in Rust inside a `.mars` notebook (polars + plotters — charts as inline SVG), and every table and figure is generated from the extracted CSVs.\n\n## Keywords\n\n**Keywords:** football, analysis, comebacks, mars, sqlite\n\n## Table of contents\n\n- [Abstract](#abstract)\n- [Keywords](#keywords)\n- [Introduction](#introduction)\n- [Methods](#methods)\n- [Results](#results)\n  - [Replay timelines: who trailed, who recovered?](#replay-timelines-who-trailed-who-recovered)\n- [Discussion](#discussion)\n- [Conclusion](#conclusion)\n\n## Introduction\n\nEvery fan lives for the comeback — trailing at half-time, even 2–0 down,\nthen winning. This notebook replays every goal-by-goal timeline in the\nStatsBomb subset (~4,200 matches with timing data) and asks: **which teams\nare historically best at erasing deficits?**\n\nA *comeback win* = a team trailed by at least one goal at some point and\nstill won. We rank teams by comeback-win rate (comebacks ÷ matches where\nthey trailed), with a minimum-sample guard, and break comebacks down by\nthe size of the deficit erased.\n\n**Coverage caveat:** goal timing exists only for StatsBomb matches\n(World Cups, Euros, Champions League, top domestic leagues) — a smaller\nbut high-quality subset.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "c297a35b-a66d-4931-ace0-32a6dcf062a5",
+      "cell_type": "markdown",
+      "source": "## Methods\n\nData were extracted from the Soccers football database (`packages/data`) as CSV snapshots: `goal_events`.\n\nThe analysis runs entirely in Rust inside the notebook: **polars** handles table scans, joins and aggregations; **plotters** renders figures as inline SVG; `mars_table` renders result tables.\n\nEach code cell is kept to a single output so results can be read top to bottom.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "27cf07c6-bda4-4d22-982c-effce7fe7c68",
+      "cell_type": "markdown",
+      "source": "## Results\n\nAll figures and tables below are computed directly from the extracted data. Each code cell produces one output — a table, a chart, or a short text summary.\n",
       "metadata": {},
       "outputs": []
     },
@@ -45,9 +59,9 @@
       ]
     },
     {
-      "id": "8c73aa0d-b1b3-4966-ac55-2a47266eb999",
+      "id": "5e08f221-2842-4a37-8665-722fd9a4b83d",
       "cell_type": "markdown",
-      "source": "## Replay timelines: who trailed, who recovered?\n\nFor each team-match we track the worst deficit suffered (min of\nmy_goals − opp_goals after every goal) and the final result.",
+      "source": "### Replay timelines: who trailed, who recovered?\n\nFor each team-match we track the worst deficit suffered (min of\nmy_goals − opp_goals after every goal) and the final result.\n",
       "metadata": {},
       "outputs": []
     },
@@ -937,9 +951,16 @@
       ]
     },
     {
-      "id": "5ec9a3dd-7182-436c-be41-fe3318e22de0",
+      "id": "fd7dbab4-871a-47dd-a379-548731e0391c",
       "cell_type": "markdown",
-      "source": "## Findings\n\nIn the StatsBomb subset, **57% of team-matches saw a side trail at some\npoint** — and **10.5% of those ended in a comeback win** (443 wins).\n\nThe shape of comebacks is brutally one-dimensional:\n\n- **Deficit erased = 1 goal:** 414 comebacks\n- **Deficit erased = 2 goals:** 29 comebacks\n- **Deficit erased = 3+ goals:** **zero**\n\nComebacks happen — but almost never from three down. The biggest deficits\nerased in the dataset were two goals, and even those are rare (~7% of all\ncomebacks).\n\n**Most prolific:** Barcelona, 58 comeback wins in 148 trailed matches\n(39.2%). **Best rate (min. 15 trailed games):** Manchester City WFC at\n45.0%, then PSG 40.0%, Barcelona 39.2%, Arsenal WFC 37.5%. Notably, the\nrate leaders skew toward elite sides — teams good enough to be trailing\nare also good enough to chase.\n\n*Note: StatsBomb data includes women's and youth competitions — \"WFC\"/\"LFC\"\nsuffixes are the women's teams.*",
+      "source": "## Discussion\n\nIn the StatsBomb subset, **57% of team-matches saw a side trail at some\npoint** — and **10.5% of those ended in a comeback win** (443 wins).\n\nThe shape of comebacks is brutally one-dimensional:\n\n- **Deficit erased = 1 goal:** 414 comebacks\n- **Deficit erased = 2 goals:** 29 comebacks\n- **Deficit erased = 3+ goals:** **zero**\n\nComebacks happen — but almost never from three down. The biggest deficits\nerased in the dataset were two goals, and even those are rare (~7% of all\ncomebacks).\n\n**Most prolific:** Barcelona, 58 comeback wins in 148 trailed matches\n(39.2%). **Best rate (min. 15 trailed games):** Manchester City WFC at\n45.0%, then PSG 40.0%, Barcelona 39.2%, Arsenal WFC 37.5%. Notably, the\nrate leaders skew toward elite sides — teams good enough to be trailing\nare also good enough to chase.\n\n*Note: StatsBomb data includes women's and youth competitions — \"WFC\"/\"LFC\"\nsuffixes are the women's teams.*\n\n**Limitations.** The analysis is limited to the competitions present in the database; player-level metrics exist only for StatsBomb-covered tournaments, and underlying event data may contain errors.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "9e4e80b2-5552-47eb-b13d-ba31121f2d15",
+      "cell_type": "markdown",
+      "source": "## Conclusion\n\nIn the StatsBomb subset, 57% of team-matches saw a side trail at some point — and 10.5% of those ended in a comeback win (443 wins). Together these results answer the research question posed in the Introduction and quantify the pattern across 4,200 matches. The notebook provides a fully reproducible pipeline from raw CSV extracts to published figures.\n",
       "metadata": {},
       "outputs": []
     }

@@ -12,9 +12,23 @@
   },
   "cells": [
     {
-      "id": "a014e422-df25-41de-9336-e5c022dd2002",
+      "id": "0b4f1312-fa39-466c-8d78-ceca29a67c91",
       "cell_type": "markdown",
-      "source": "## Attack vs Defence: does defence win titles?\n\nThe cliché says *\"attack wins you games, but defence wins you titles.\"* This\nnotebook tests it properly on **33 completed Premier League seasons\n(1993/94 → 2025/26)** — every match result from `data/matches_full.csv`,\ndeduplicated across the two merged data sources.\n\n**Method.** For every team-season we compute goals for (GF), goals\nagainst (GA), the league position, and within-season ranks for attack\n(GF rank, 1 = most goals) and defence (GA rank, 1 = fewest conceded).\nBecause ranks are computed *within* each season, era differences in\nscoring environment cancel out. We then ask:\n\n1. Which rank — attack or defence — correlates more strongly with final\n   position, season by season and by era?\n2. How often does the league's best attack actually win the title,\n   versus the league's best defence?\n3. What does the *weakest link* of each champion look like — the worst\n   defensive or attacking rank ever to lift the trophy?\n4. Are champions unusually *balanced*, or one-dimensional?\n\nxG is not available for EPL history in this dataset, so the analysis\nuses actual goals only — stated as a limitation throughout.",
+      "source": "## Abstract\n\nDoes defence win titles? This study answers it using hundreds of thousands of matches drawn from the Soccers football database. For the title race specifically, attack proves the stronger predictor. All computation runs in Rust inside a `.mars` notebook (polars + plotters — charts as inline SVG), and every table and figure is generated from the extracted CSVs.\n\n## Keywords\n\n**Keywords:** football, analysis, premier-league, mars, sqlite\n\n## Table of contents\n\n- [Abstract](#abstract)\n- [Keywords](#keywords)\n- [Introduction](#introduction)\n- [Methods](#methods)\n- [Results](#results)\n  - [Within-season ranks and correlations](#within-season-ranks-and-correlations)\n  - [The picture](#the-picture)\n- [Discussion](#discussion)\n- [Conclusion](#conclusion)\n\n## Introduction\n\nThe cliché says *\"attack wins you games, but defence wins you titles.\"* This\nnotebook tests it properly on **33 completed Premier League seasons\n(1993/94 → 2025/26)** — every match result from `data/matches_full.csv`,\ndeduplicated across the two merged data sources.\n\n**Method.** For every team-season we compute goals for (GF), goals\nagainst (GA), the league position, and within-season ranks for attack\n(GF rank, 1 = most goals) and defence (GA rank, 1 = fewest conceded).\nBecause ranks are computed *within* each season, era differences in\nscoring environment cancel out. We then ask:\n\n1. Which rank — attack or defence — correlates more strongly with final\n   position, season by season and by era?\n2. How often does the league's best attack actually win the title,\n   versus the league's best defence?\n3. What does the *weakest link* of each champion look like — the worst\n   defensive or attacking rank ever to lift the trophy?\n4. Are champions unusually *balanced*, or one-dimensional?\n\nxG is not available for EPL history in this dataset, so the analysis\nuses actual goals only — stated as a limitation throughout.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "5d8fa9b6-5436-4991-bcd3-3eb8ab2f1f05",
+      "cell_type": "markdown",
+      "source": "## Methods\n\nData were extracted from the Soccers football database (`packages/data`) as CSV snapshots: `matches_full`.\n\nThe analysis runs entirely in Rust inside the notebook: **polars** handles table scans, joins and aggregations; **plotters** renders figures as inline SVG; `mars_table` renders result tables.\n\nStatistical summaries include Pearson correlations.\n\nEach code cell is kept to a single output so results can be read top to bottom.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "76ae6723-a31d-42fe-b473-8c874922f1d0",
+      "cell_type": "markdown",
+      "source": "## Results\n\nAll figures and tables below are computed directly from the extracted data. Each code cell produces one output — a table, a chart, or a short text summary.\n",
       "metadata": {},
       "outputs": []
     },
@@ -32,9 +46,9 @@
       ]
     },
     {
-      "id": "367b6aa8-34e0-4e9d-9b2c-5720f1afbd5b",
+      "id": "ddfd054d-bb0f-4fc6-8cf8-ed22c4c02791",
       "cell_type": "markdown",
-      "source": "## Within-season ranks and correlations\n\nFor each season every team gets three ranks: position (1 = champion),\nattack rank (most goals scored), defence rank (fewest goals conceded).\nWe compute the Spearman correlation (Pearson on rank vectors) between\neach metric's rank and final position, per season — then average by era.",
+      "source": "### Within-season ranks and correlations\n\nFor each season every team gets three ranks: position (1 = champion),\nattack rank (most goals scored), defence rank (fewest goals conceded).\nWe compute the Spearman correlation (Pearson on rank vectors) between\neach metric's rank and final position, per season — then average by era.\n",
       "metadata": {},
       "outputs": []
     },
@@ -1520,9 +1534,9 @@
       ]
     },
     {
-      "id": "7d0b752d-de23-4a0a-aa1f-e83daf907f02",
+      "id": "014c97fd-101e-49d9-a27b-43475d9e175b",
       "cell_type": "markdown",
-      "source": "## The picture\n\nTwo views of the same data: the per-season correlation between attack /\ndefence rank and final position across 33 seasons, and where each\nchampion sat on the attack–defence rank plane (rank 1 = best, bottom-\nleft would be the perfect balance).",
+      "source": "### The picture\n\nTwo views of the same data: the per-season correlation between attack /\ndefence rank and final position across 33 seasons, and where each\nchampion sat on the attack–defence rank plane (rank 1 = best, bottom-\nleft would be the perfect balance).\n",
       "metadata": {},
       "outputs": []
     },
@@ -2745,9 +2759,16 @@
       ]
     },
     {
-      "id": "055f64d1-5c47-4b83-b765-03cdc10fbaa2",
+      "id": "bdbf042e-61ac-419d-80c5-cde798544309",
       "cell_type": "markdown",
-      "source": "## What the data says\n\nThe cliché does not survive 33 seasons of Premier League football — if\nanything, it points the wrong way.\n\n**1. Attack predicts position slightly better than defence — and the gap\nis growing.** Mean within-season Spearman ρ between metric rank and\nfinal position: attack 0.82 (1990s) → 0.88 (2020s); defence 0.77 →\n0.87 → 0.81. In the 2020s the defensive signal is the *weakest* it has\never been.\n\n**2. The best attack always delivers; the best defence sometimes\ndoesn't.** The league's top scorer finished outside the top 4 in\n**0 of 33 seasons**. The league's best defence did it twice — most\nspectacularly Manchester United 2015/16, best defence in the league and\nfifth place.\n\n**3. For the title specifically, attack wins more often.** The best\nattack lifted the trophy in 22/33 seasons (67%); the best defence in\nonly 13/33 (39%). In the 1990s the best defence won *zero* titles —\nArsenal's great back lines kept finishing behind United's attacks.\n\n**4. But champions are defined by balance, not either/or.** The average\nchampion's combined attack+defence rank sum is **3.8** against a random\nexpectation of 21.1. 30 of 33 champions finished top-4 in *both*\ndimensions; 20 of 33 were top-2 in both. The balance metric correlates\nwith position at ρ ≈ 0.92–0.94 every era — stronger than either\ncomponent alone.\n\n**5. The title-winners' profiles.** 32 of 33 champions were top-3\nattacks; only 26 of 33 were top-3 defences. The weakest defence ever\nto win: Manchester United 1996/97 (GA rank 7, 44 conceded). The\nweakest attack: Manchester United 2008/09 (GF rank 4 — still 68 goals).\nModern champions keep elite clean sheets too — Arsenal 2025/26 kept 19,\nCity 2021/22 kept 21 — but they were also top-2 attacks.\n\n**Verdict.** \"Defence wins titles\" is not supported: titles go to\n*balanced* teams, and when forced to pick a single predictor, attacking\noutput is marginally stronger for both position and the trophy in the\nmodern era. Caveats: goal ranks proxy underlying quality (xG is not\navailable for EPL history here), correlations are not causation, and\nUnited's 13 titles flatten every average — the pattern holds within\nthe City/Liverpool/Arsenal era too.\n\n*Source: 12,814 deduplicated EPL results, 1993/94 → 2025/26.*",
+      "source": "## Discussion\n\nThe cliché does not survive 33 seasons of Premier League football — if\nanything, it points the wrong way.\n\n**1. Attack predicts position slightly better than defence — and the gap\nis growing.** Mean within-season Spearman ρ between metric rank and\nfinal position: attack 0.82 (1990s) → 0.88 (2020s); defence 0.77 →\n0.87 → 0.81. In the 2020s the defensive signal is the *weakest* it has\never been.\n\n**2. The best attack always delivers; the best defence sometimes\ndoesn't.** The league's top scorer finished outside the top 4 in\n**0 of 33 seasons**. The league's best defence did it twice — most\nspectacularly Manchester United 2015/16, best defence in the league and\nfifth place.\n\n**3. For the title specifically, attack wins more often.** The best\nattack lifted the trophy in 22/33 seasons (67%); the best defence in\nonly 13/33 (39%). In the 1990s the best defence won *zero* titles —\nArsenal's great back lines kept finishing behind United's attacks.\n\n**4. But champions are defined by balance, not either/or.** The average\nchampion's combined attack+defence rank sum is **3.8** against a random\nexpectation of 21.1. 30 of 33 champions finished top-4 in *both*\ndimensions; 20 of 33 were top-2 in both. The balance metric correlates\nwith position at ρ ≈ 0.92–0.94 every era — stronger than either\ncomponent alone.\n\n**5. The title-winners' profiles.** 32 of 33 champions were top-3\nattacks; only 26 of 33 were top-3 defences. The weakest defence ever\nto win: Manchester United 1996/97 (GA rank 7, 44 conceded). The\nweakest attack: Manchester United 2008/09 (GF rank 4 — still 68 goals).\nModern champions keep elite clean sheets too — Arsenal 2025/26 kept 19,\nCity 2021/22 kept 21 — but they were also top-2 attacks.\n\n**Verdict.** \"Defence wins titles\" is not supported: titles go to\n*balanced* teams, and when forced to pick a single predictor, attacking\noutput is marginally stronger for both position and the trophy in the\nmodern era. Caveats: goal ranks proxy underlying quality (xG is not\navailable for EPL history here), correlations are not causation, and\nUnited's 13 titles flatten every average — the pattern holds within\nthe City/Liverpool/Arsenal era too.\n\n*Source: 12,814 deduplicated EPL results, 1993/94 → 2025/26.*\n\n**Limitations.** The analysis is limited to the competitions present in the database; player-level metrics exist only for StatsBomb-covered tournaments, and underlying event data may contain errors.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "05768cf8-4120-4e92-9ee9-60eafb359485",
+      "cell_type": "markdown",
+      "source": "## Conclusion\n\nFor the title specifically, attack wins more often. Together these results answer the research question posed in the Introduction and quantify the pattern across hundreds of thousands of matches. The notebook provides a fully reproducible pipeline from raw CSV extracts to published figures.\n",
       "metadata": {},
       "outputs": []
     }

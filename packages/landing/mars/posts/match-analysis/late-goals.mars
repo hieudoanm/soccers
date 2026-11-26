@@ -12,9 +12,23 @@
   },
   "cells": [
     {
-      "id": "fbcb65b1-717b-4327-87e5-4148f5c38a1c",
+      "id": "6ef9bc5e-ff5c-4d47-9d8e-9b632cabdee4",
       "cell_type": "markdown",
-      "source": "## Death by a thousand cuts: the dying minutes\n\nSome teams are bores until minute 80, then refuse to lose — or refuse to\nlet go. This notebook isolates **goals scored in the dying minutes**\n(effective minute ≥ 76, i.e. regulation time 75+ plus stoppage time) from\nthe StatsBomb goal-level dataset and ranks teams by late goals per match.\n\nWe also split home vs away late goals and compare leagues on how much of\ntheir scoring arrives late.\n\n**Coverage caveat:** goal timing exists only for StatsBomb matches\n(~4,200 fixtures) — World Cups, Euros, Champions League and top domestic\nleagues.",
+      "source": "## Abstract\n\nWhen are goals scored — and do late goals decide matches? This study answers it using hundreds of thousands of matches drawn from the Soccers football database. 23.0% of all goals arrive in the dying minutes. All computation runs in Rust inside a `.mars` notebook (polars + plotters — charts as inline SVG), and every table and figure is generated from the extracted CSVs.\n\n## Keywords\n\n**Keywords:** football, analysis, late-goals, mars, sqlite\n\n## Table of contents\n\n- [Abstract](#abstract)\n- [Keywords](#keywords)\n- [Introduction](#introduction)\n- [Methods](#methods)\n- [Results](#results)\n  - [Late-goal accounting](#late-goal-accounting)\n- [Discussion](#discussion)\n- [Conclusion](#conclusion)\n\n## Introduction\n\nSome teams are bores until minute 80, then refuse to lose — or refuse to\nlet go. This notebook isolates **goals scored in the dying minutes**\n(effective minute ≥ 76, i.e. regulation time 75+ plus stoppage time) from\nthe StatsBomb goal-level dataset and ranks teams by late goals per match.\n\nWe also split home vs away late goals and compare leagues on how much of\ntheir scoring arrives late.\n\n**Coverage caveat:** goal timing exists only for StatsBomb matches\n(~4,200 fixtures) — World Cups, Euros, Champions League and top domestic\nleagues.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "7a230752-e3bf-4c8f-826a-5718dfd60cdd",
+      "cell_type": "markdown",
+      "source": "## Methods\n\nData were extracted from the Soccers football database (`packages/data`) as CSV snapshots: `goal_events`.\n\nThe analysis runs entirely in Rust inside the notebook: **polars** handles table scans, joins and aggregations; **plotters** renders figures as inline SVG; `mars_table` renders result tables.\n\nEach code cell is kept to a single output so results can be read top to bottom.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "d02e49d4-1bcc-4fa0-916f-7a7d4ee43428",
+      "cell_type": "markdown",
+      "source": "## Results\n\nAll figures and tables below are computed directly from the extracted data. Each code cell produces one output — a table, a chart, or a short text summary.\n",
       "metadata": {},
       "outputs": []
     },
@@ -45,9 +59,9 @@
       ]
     },
     {
-      "id": "1d20037f-8522-4560-9483-97f92b335d2f",
+      "id": "65fe6d5d-3efc-4cfc-8d22-e47b627a71c2",
       "cell_type": "markdown",
-      "source": "## Late-goal accounting\n\nEffective minute = `minute + added_minute` (stoppage time counts). A goal\nis \"late\" at ≥ 76 — the final 15 minutes of regulation plus added time.",
+      "source": "### Late-goal accounting\n\nEffective minute = `minute + added_minute` (stoppage time counts). A goal\nis \"late\" at ≥ 76 — the final 15 minutes of regulation plus added time.\n",
       "metadata": {},
       "outputs": []
     },
@@ -995,9 +1009,16 @@
       ]
     },
     {
-      "id": "7f614793-49c7-42bd-8d37-5b72b9cdc9c9",
+      "id": "10483619-2f89-414d-8383-01773d4acb6f",
       "cell_type": "markdown",
-      "source": "## Findings\n\n**23.0% of all goals arrive in the dying minutes** (effective minute\n≥ 76'). Home teams score 1,422 late goals to the away side's 1,183 — the\nhome edge persists late, as it does everywhere else.\n\n**Most dangerous in the final quarter-hour** (min. 20 matches):\n\n- **Argentina — 1.00 late goals/match** (22 in 22 games, 44% of all\n  their goals come late)\n- **France — 0.95/match**, **England — 0.80/match**\n- Best big-sample name: **Real Madrid — 0.63/match** over 68 matches\n\nAt the other end, Houston Dash and Gazélec Ajaccio barely register\n(0.09/match) — though small samples warn against over-reading.\n\n**The league pattern is the real story:** African Cup of Nations matches\nsee **47.2%** of goals arrive late (1.56/match), UEFA Euro 37.7%, World\nCup 32.1% — versus Bundesliga's 16.5% and La Liga's 21.1%. Tournament\nfootball is cagey, low-scoring, and decided late; league football spreads\nits goals across 90 minutes. The dying minutes aren't just dramatic —\nthey're where a third of all football actually happens.",
+      "source": "## Discussion\n\n**23.0% of all goals arrive in the dying minutes** (effective minute\n≥ 76'). Home teams score 1,422 late goals to the away side's 1,183 — the\nhome edge persists late, as it does everywhere else.\n\n**Most dangerous in the final quarter-hour** (min. 20 matches):\n\n- **Argentina — 1.00 late goals/match** (22 in 22 games, 44% of all\n  their goals come late)\n- **France — 0.95/match**, **England — 0.80/match**\n- Best big-sample name: **Real Madrid — 0.63/match** over 68 matches\n\nAt the other end, Houston Dash and Gazélec Ajaccio barely register\n(0.09/match) — though small samples warn against over-reading.\n\n**The league pattern is the real story:** African Cup of Nations matches\nsee **47.2%** of goals arrive late (1.56/match), UEFA Euro 37.7%, World\nCup 32.1% — versus Bundesliga's 16.5% and La Liga's 21.1%. Tournament\nfootball is cagey, low-scoring, and decided late; league football spreads\nits goals across 90 minutes. The dying minutes aren't just dramatic —\nthey're where a third of all football actually happens.\n\n**Limitations.** The analysis is limited to the competitions present in the database; player-level metrics exist only for StatsBomb-covered tournaments, and underlying event data may contain errors.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "d4e482ab-2cf6-47f0-ba15-c00b53e8336d",
+      "cell_type": "markdown",
+      "source": "## Conclusion\n\n0% of all goals arrive in the dying minutes. Together these results answer the research question posed in the Introduction and quantify the pattern across hundreds of thousands of matches. The notebook provides a fully reproducible pipeline from raw CSV extracts to published figures.\n",
       "metadata": {},
       "outputs": []
     }

@@ -4,6 +4,7 @@ import ReactMarkdown, {
   type Components,
 } from 'react-markdown';
 import rehypeHighlight from 'rehype-highlight';
+import rehypeSlug from 'rehype-slug';
 import remarkGfm from 'remark-gfm';
 
 const urlTransform = (url: string) =>
@@ -44,7 +45,7 @@ const Markdown: FC<{ content: string }> = ({ content }) => {
     <div data-testid="markdown" className="prose prose-neutral max-w-none">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeHighlight]}
+        rehypePlugins={[rehypeHighlight, rehypeSlug]}
         components={components}
         urlTransform={urlTransform}>
         {content}

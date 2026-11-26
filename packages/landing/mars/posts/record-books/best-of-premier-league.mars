@@ -12,9 +12,23 @@
   },
   "cells": [
     {
-      "id": "e8600ad7-f733-4d1a-a8f5-7bccf63f4aa9",
+      "id": "f6d7bc7e-5125-4b50-87d2-4c95da5ea4cc",
       "cell_type": "markdown",
-      "source": "## Best of the Premier League\n\nA complete record-book of the **Premier League** — every statistic worth knowing,\ncomputed from all matches in `data/matches_full.csv`.\n\n**Records covered:** most championships, the champion hall of fame\n(most points, most goals, fewest conceded, best goal difference, biggest\ntitle margin, most wins), the best team-seasons ever, unbeaten\ninvincibles, closest and biggest title races, biggest wins and\nhighest-scoring matches, and the season's top scorers where player-level\ndata exists.",
+      "source": "## Abstract\n\nThis study examines the Premier League record book using 13,126 matches drawn from the Soccers football database. Most championships: Manchester United 12, Manchester City 8, Chelsea 5, Arsenal 4, Liverpool 2 — and one title each for Blackburn (1994/95) and Leicester (2015/16). All computation runs in Rust inside a `.mars` notebook (polars + plotters — charts as inline SVG), and every table and figure is generated from the extracted CSVs.\n\n## Keywords\n\n**Keywords:** football, analysis, records, premier-league, mars, sqlite\n\n## Table of contents\n\n- [Abstract](#abstract)\n- [Keywords](#keywords)\n- [Introduction](#introduction)\n- [Methods](#methods)\n- [Results](#results)\n  - [Assemble per-season standings for all complete seasons](#assemble-per-season-standings-for-all-complete-seasons)\n  - [Champion hall of fame — six records](#champion-hall-of-fame--six-records)\n  - [Best team-seasons ever by points (any team)](#best-team-seasons-ever-by-points-any-team)\n  - [Unbeaten seasons](#unbeaten-seasons)\n  - [Title races — closest and biggest margins](#title-races--closest-and-biggest-margins)\n  - [Biggest wins & highest scoring matches](#biggest-wins--highest-scoring-matches)\n  - [Top scorers](#top-scorers)\n- [Discussion](#discussion)\n- [Conclusion](#conclusion)\n\n## Introduction\n\nA complete record-book of the **Premier League** — every statistic worth knowing,\ncomputed from all matches in `data/matches_full.csv`.\n\n**Records covered:** most championships, the champion hall of fame\n(most points, most goals, fewest conceded, best goal difference, biggest\ntitle margin, most wins), the best team-seasons ever, unbeaten\ninvincibles, closest and biggest title races, biggest wins and\nhighest-scoring matches, and the season's top scorers where player-level\ndata exists.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "c4cca6fe-19a7-4ffa-a7f2-246f3c795463",
+      "cell_type": "markdown",
+      "source": "## Methods\n\nData were extracted from the Soccers football database (`packages/data`) as CSV snapshots: `matches_full`, `player_goals`.\n\nThe analysis runs entirely in Rust inside the notebook: **polars** handles table scans, joins and aggregations; **plotters** renders figures as inline SVG; `mars_table` renders result tables.\n\nEach code cell is kept to a single output so results can be read top to bottom.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "7c34e6b4-9a6c-48a3-9219-7a320a1ed54f",
+      "cell_type": "markdown",
+      "source": "## Results\n\nAll figures and tables below are computed directly from the extracted data. Each code cell produces one output — a table, a chart, or a short text summary.\n",
       "metadata": {},
       "outputs": []
     },
@@ -43,6 +57,13 @@
           "text": "English Premier League matches: 13126\nfinished matches: 12814 (312 duplicate fixtures dropped) | team-season entries: 684\ncomplete seasons: 33 (1993/94 -> 2025/26)\ntop scorers available for season year 2015 (StatsBomb coverage)\n()\n"
         }
       ]
+    },
+    {
+      "id": "659fd1d3-6d26-43c6-abce-3f46c3a036f3",
+      "cell_type": "markdown",
+      "source": "### Assemble per-season standings for all complete seasons\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "06b726aa-4856-493d-9005-dd58d608889f",
@@ -101,6 +122,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "28366c10-e09c-4645-b12b-7085aa43cd9d",
+      "cell_type": "markdown",
+      "source": "### Champion hall of fame — six records\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "8fa681b0-a61a-4649-998b-aa4245accbb7",
@@ -213,6 +241,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "28c996a3-bdbf-4bf7-bd2a-0ec4c2742c6e",
+      "cell_type": "markdown",
+      "source": "### Best team-seasons ever by points (any team)\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "4e2acb4d-f19e-4180-9676-5550d36d803d",
@@ -418,6 +453,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "3dea09c3-0f62-4bec-8a53-d5da48ba1908",
+      "cell_type": "markdown",
+      "source": "### Unbeaten seasons\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "47110083-098b-41c3-a128-85c55f918e59",
@@ -640,6 +682,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "1702b9b4-37f2-4ab9-9ede-ead477f49374",
+      "cell_type": "markdown",
+      "source": "### Title races — closest and biggest margins\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "a7ede8ee-4b17-4471-a7b8-41e1b3c11efb",
@@ -1189,6 +1238,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "eb83ee75-2c77-4343-ade1-f4c8214f55a6",
+      "cell_type": "markdown",
+      "source": "### Biggest wins & highest scoring matches\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "5935f62f-343a-46de-b883-5065316e3c34",
@@ -1878,6 +1934,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "16baee29-430e-4d78-8c81-1f6671645c22",
+      "cell_type": "markdown",
+      "source": "### Top scorers\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "d01093e9-f171-4a73-8496-53fa67b706d4",
@@ -3077,9 +3140,16 @@
       ]
     },
     {
-      "id": "717f6bdc-d54c-458c-a49c-8dfa24e96e3b",
+      "id": "2a982b0a-13de-4a4c-bddb-a246d1927987",
       "cell_type": "markdown",
-      "source": "## Findings\n\nAcross **33 complete seasons** (1993/94 → 2025/26) and 13,126 matches — after\ndropping the duplicate fixtures that the merged data sources produce — the\nrecord book reads:\n\n- **Most championships**: Manchester United 12, Manchester City 8,\n  Chelsea 5, Arsenal 4, Liverpool 2 — and one title each for Blackburn\n  (1994/95) and Leicester (2015/16). Only **seven different clubs** have\n  ever won the Premier League.\n- **Champion hall of fame**: Manchester City's 2017/18 side owns almost\n  every record — 100 points, 106 goals, +79 goal difference and a 19-point\n  title margin, all in a single season. The exceptions: Chelsea's 2004/05\n  side conceded just **15 goals**, and Liverpool's 2019/20 team won a\n  club-record **28 matches**.\n- **Best season ever**: City 2017/18 again — 2.63 points per game, the\n  highest ppg ever recorded by a Premier League champion.\n- **Invincibles**: Arsenal's 2003/04 side is the **only** unbeaten\n  Premier League season in the dataset (26W 12D, 73–26).\n- **Closest finish**: 2011/12 — City and United both finished on **89\n  points** and the title was decided by goal difference, the only dead-heat\n  in Premier League history. Four other seasons were decided by a single\n  point.\n- **Biggest blowout**: again City 2017/18, 19 clear of United.\n- **Records on the pitch**: three separate 9–0 wins (United 9–0 Ipswich\n  1994/95, United 9–0 Southampton 2020/21, Liverpool 9–0 Bournemouth\n  2022/23); the highest-scoring match was Portsmouth 7–4 Reading (2007/08).\n- **Top scorers** (StatsBomb coverage, 2015/16): Kane 25, Vardy 24,\n  Agüero 24, Lukaku 18, Mahrez 17.\n\n*Method notes: standings are recomputed from raw results with standard\n3/1/0 points; the 2026/27 season is still in progress and excluded. Team\nnames are normalised across the two merged data sources and duplicate\nfixtures removed. Player scoring data covers only the StatsBomb match\nsubset.*",
+      "source": "## Discussion\n\nAcross **33 complete seasons** (1993/94 → 2025/26) and 13,126 matches — after\ndropping the duplicate fixtures that the merged data sources produce — the\nrecord book reads:\n\n- **Most championships**: Manchester United 12, Manchester City 8,\n  Chelsea 5, Arsenal 4, Liverpool 2 — and one title each for Blackburn\n  (1994/95) and Leicester (2015/16). Only **seven different clubs** have\n  ever won the Premier League.\n- **Champion hall of fame**: Manchester City's 2017/18 side owns almost\n  every record — 100 points, 106 goals, +79 goal difference and a 19-point\n  title margin, all in a single season. The exceptions: Chelsea's 2004/05\n  side conceded just **15 goals**, and Liverpool's 2019/20 team won a\n  club-record **28 matches**.\n- **Best season ever**: City 2017/18 again — 2.63 points per game, the\n  highest ppg ever recorded by a Premier League champion.\n- **Invincibles**: Arsenal's 2003/04 side is the **only** unbeaten\n  Premier League season in the dataset (26W 12D, 73–26).\n- **Closest finish**: 2011/12 — City and United both finished on **89\n  points** and the title was decided by goal difference, the only dead-heat\n  in Premier League history. Four other seasons were decided by a single\n  point.\n- **Biggest blowout**: again City 2017/18, 19 clear of United.\n- **Records on the pitch**: three separate 9–0 wins (United 9–0 Ipswich\n  1994/95, United 9–0 Southampton 2020/21, Liverpool 9–0 Bournemouth\n  2022/23); the highest-scoring match was Portsmouth 7–4 Reading (2007/08).\n- **Top scorers** (StatsBomb coverage, 2015/16): Kane 25, Vardy 24,\n  Agüero 24, Lukaku 18, Mahrez 17.\n\n*Method notes: standings are recomputed from raw results with standard\n3/1/0 points; the 2026/27 season is still in progress and excluded. Team\nnames are normalised across the two merged data sources and duplicate\nfixtures removed. Player scoring data covers only the StatsBomb match\nsubset.*\n\n**Limitations.** Records reflect only the matches present in the database; coverage varies by competition and era, so 'records' are archive records, not all-time official marks.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "50100ba3-35cc-4003-9a69-61372588363a",
+      "cell_type": "markdown",
+      "source": "## Conclusion\n\nMost championships: Manchester United 12, Manchester City 8, Chelsea 5, Arsenal 4, Liverpool 2 — and one title each for Blackburn (1994/95) and Leicester (2015/16). Together these results answer the research question posed in the Introduction and quantify the pattern across 13,126 matches. The notebook provides a fully reproducible pipeline from raw CSV extracts to published figures.\n",
       "metadata": {},
       "outputs": []
     }

@@ -12,9 +12,23 @@
   },
   "cells": [
     {
-      "id": "41f67de6-45f9-4149-83f8-c44fd7a835e4",
+      "id": "32dce6fc-f1f0-44a1-8ef2-05af2fe2d498",
       "cell_type": "markdown",
-      "source": "## The xG luck index: who is fortunate and who is fooling themselves\n\nEvery StatsBomb match carries **expected goals** — the probability-weighted\nquality of each shot, aggregated per team. This notebook compares what\nteams actually scored against what they *should* have scored, to find the\nluckiest winners and the unluckiest losers in the database.\n\nA positive \"luck\" value means goals exceeded xG — finishing skill, penalty\nluck, or fortune. A negative value means chances were created but not\nconverted. Both regress heavily over large samples, which is exactly what\nmakes the extremes interesting.\n",
+      "source": "## Abstract\n\nThis study examines the xG luck index using hundreds of thousands of matches drawn from the Soccers football database. Barcelona Femení is the luckiest side in the data. All computation runs in Rust inside a `.mars` notebook (polars + plotters — charts as inline SVG), and every table and figure is generated from the extracted CSVs.\n\n## Keywords\n\n**Keywords:** football, analysis, xg, statsbomb, mars, sqlite\n\n## Table of contents\n\n- [Abstract](#abstract)\n- [Keywords](#keywords)\n- [Introduction](#introduction)\n- [Methods](#methods)\n- [Results](#results)\n  - [(continued) build display rows from sorted teams vec](#continued-build-display-rows-from-sorted-teams-vec)\n  - [Biggest single-match over/under performers](#biggest-single-match-overunder-performers)\n  - [Distribution of per-team luck (G−xG per match)](#distribution-of-per-team-luck-gxg-per-match)\n- [Discussion](#discussion)\n- [Conclusion](#conclusion)\n\n## Introduction\n\nEvery StatsBomb match carries **expected goals** — the probability-weighted\nquality of each shot, aggregated per team. This notebook compares what\nteams actually scored against what they *should* have scored, to find the\nluckiest winners and the unluckiest losers in the database.\n\nA positive \"luck\" value means goals exceeded xG — finishing skill, penalty\nluck, or fortune. A negative value means chances were created but not\nconverted. Both regress heavily over large samples, which is exactly what\nmakes the extremes interesting.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "8356809a-f3b2-4b25-916c-38f0d7b31ca0",
+      "cell_type": "markdown",
+      "source": "## Methods\n\nData were extracted from the Soccers football database (`packages/data`) as CSV snapshots: `league`, `match`, `match_team_stat`, `season`, `team`.\n\nThe analysis runs entirely in Rust inside the notebook: **polars** handles table scans, joins and aggregations; **plotters** renders figures as inline SVG; `mars_table` renders result tables.\n\nEach code cell is kept to a single output so results can be read top to bottom.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "5867de18-4e56-41bb-be4a-6fbbba8ea8b4",
+      "cell_type": "markdown",
+      "source": "## Results\n\nAll figures and tables below are computed directly from the extracted data. Each code cell produces one output — a table, a chart, or a short text summary.\n",
       "metadata": {},
       "outputs": []
     },
@@ -30,6 +44,13 @@
           "text": "team-match xg rows: 7902\n"
         }
       ]
+    },
+    {
+      "id": "a893790a-a472-423b-9b79-d20fb36a22ad",
+      "cell_type": "markdown",
+      "source": "### (continued) build display rows from sorted teams vec\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "4f04857a-d490-4213-9232-51d177b32bd7",
@@ -455,6 +476,13 @@
           ]
         }
       ]
+    },
+    {
+      "id": "f82f262d-e09a-4536-9f25-5dc5177820d3",
+      "cell_type": "markdown",
+      "source": "### Biggest single-match over/under performers\n",
+      "metadata": {},
+      "outputs": []
     },
     {
       "id": "758712d2-f545-4f54-a87f-77b16e6b09e4",
@@ -1318,6 +1346,13 @@
       ]
     },
     {
+      "id": "42ae57ed-b0d2-409c-a036-3c27044a1a2e",
+      "cell_type": "markdown",
+      "source": "### Distribution of per-team luck (G−xG per match)\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
       "id": "658e82ae-8ed0-46a1-9f47-b2c6246eb9a1",
       "cell_type": "code",
       "source": "// distribution of per-team luck (G−xG per match)\nlet labels = [\"< −0.20\",\"−0.20..0\",\"0..+0.20\",\"> +0.20\"];\nlet mut buckets = [0usize;4];\nfor a in &teams {\n    let per = (a.goals - a.xg) / a.apps as f64;\n    let idx = if per < -0.20 {0} else if per < 0.0 {1} else if per <= 0.20 {2} else {3};\n    buckets[idx]+=1;\n}\nlet dist: Vec<Vec<String>> = buckets.iter().enumerate()\n    .map(|(i,c)| vec![labels[i].to_string(), c.to_string()]).collect();\nmars_table(&[\"G−xG per match\",\"teams (≥15 apps)\"], &dist);\n",
@@ -1824,9 +1859,530 @@
       ]
     },
     {
-      "id": "e9bfcd0b-2f67-478b-bb68-4afd5c675863",
+      "id": "970607f0-da43-4f86-9663-6bf32860905b",
+      "cell_type": "code",
+      "source": "use plotters::prelude::*;\n\nfn chart_num(s: &str) -> f64 {\n    let t = s.replace(',', \"\").replace('%', \"\").replace('−', \"-\");\n    let mult = if t.contains(\"bn\") { 1e9 }\n        else if t.contains('€') && t.contains('m') { 1e6 }\n        else { 1.0 };\n    let cleaned: String = t.chars()\n        .filter(|c| c.is_ascii_digit() || *c == '.' || *c == '-')\n        .collect();\n    cleaned.parse().unwrap_or(0.0) * mult\n}\n\n\nlet mut c_items: Vec<(String, f64)> = dist.iter()\n    .map(|r| (r[0].clone(), chart_num(&r[1].clone())))\n    .collect();\nc_items.retain(|(_, v)| v.is_finite());\nc_items.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());\nc_items.truncate(12);\nlet c_labels: Vec<String> = c_items.iter()\n    .map(|(l, _)| l.chars().take(18).collect()).collect();\nlet c_vals: Vec<f64> = c_items.iter().map(|(_, v)| *v).collect();\nlet c_ymax = c_vals.iter().cloned().fold(0.0_f64, f64::max) * 1.15 + 1e-9;\nlet (c_div, c_unit): (f64, &str) = if c_ymax >= 1e9 { (1e9, \"bn\") }\n    else if c_ymax >= 1e6 { (1e6, \"m\") }\n    else if c_ymax >= 1e3 { (1e3, \"k\") }\n    else { (1.0, \"\") };\nlet c_n = c_vals.len();\nlet figure = plotters::evcxr::evcxr_figure((780, 400), |root| {\n    root.fill(&WHITE)?;\n    let mut chart = ChartBuilder::on(&root)\n        .caption(\"Teams by G−xG per match band\", (\"sans-serif\", 18))\n        .margin(10)\n        .x_label_area_size(45)\n        .y_label_area_size(55)\n        .build_cartesian_2d(-0.5_f64..(c_n as f64 - 0.5), 0.0..c_ymax)?;\n    chart.configure_mesh()\n        .x_labels(c_n)\n        .x_label_formatter(&|x: &f64| c_labels.get(*x as usize).cloned().unwrap_or_default())\n        .y_label_formatter(&|y: &f64| format!(\"{:.1}{}\", y / c_div, c_unit))\n        .draw()?;\n    chart.draw_series(c_vals.iter().enumerate().map(|(i, &v)| {\n        Rectangle::new([(i as f64 - 0.35, 0.0), (i as f64 + 0.35, v)], BLUE.filled())\n    }))?;\n    Ok(())\n});\nfigure.evcxr_display();\n",
+      "metadata": {},
+      "execution_count": 7,
+      "outputs": [
+        {
+          "type": "text",
+          "text": "team-match xg rows: 7902\n== luckiest (scored above xG) ==\n== unluckiest (scored below xG) ==\n"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "team",
+            "apps",
+            "goals",
+            "xG",
+            "G−xG/match",
+            ""
+          ],
+          "rows": [
+            [
+              "Barcelona WFC",
+              "30",
+              "137.0",
+              "105.8",
+              "+1.04",
+              ""
+            ],
+            [
+              "SC Delhi",
+              "23",
+              "47.0",
+              "32.4",
+              "+0.64",
+              ""
+            ],
+            [
+              "Barcelona",
+              "525",
+              "1390.0",
+              "1057.0",
+              "+0.63",
+              ""
+            ],
+            [
+              "Juventus W",
+              "27",
+              "65.0",
+              "48.9",
+              "+0.60",
+              ""
+            ],
+            [
+              "Roma",
+              "38",
+              "83.0",
+              "61.9",
+              "+0.55",
+              ""
+            ],
+            [
+              "Netherlands Women's",
+              "19",
+              "36.0",
+              "26.3",
+              "+0.51",
+              ""
+            ],
+            [
+              "Arsenal WFC",
+              "79",
+              "226.0",
+              "187.0",
+              "+0.49",
+              ""
+            ],
+            [
+              "Paris Saint-Germain",
+              "95",
+              "241.0",
+              "196.5",
+              "+0.47",
+              ""
+            ],
+            [
+              "Real Madrid CF W",
+              "30",
+              "74.0",
+              "60.9",
+              "+0.44",
+              ""
+            ],
+            [
+              "AS Roma W",
+              "26",
+              "74.0",
+              "62.8",
+              "+0.43",
+              ""
+            ],
+            [
+              "Manchester City WFC",
+              "80",
+              "218.0",
+              "184.1",
+              "+0.42",
+              ""
+            ],
+            [
+              "Real Madrid",
+              "71",
+              "162.0",
+              "132.0",
+              "+0.42",
+              ""
+            ],
+            [
+              "Napoli",
+              "42",
+              "90.0",
+              "72.3",
+              "+0.42",
+              ""
+            ],
+            [
+              "Jamshedpur",
+              "22",
+              "43.0",
+              "34.0",
+              "+0.41",
+              ""
+            ],
+            [
+              "Odisha",
+              "20",
+              "31.0",
+              "22.9",
+              "+0.41",
+              ""
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "team",
+            "apps",
+            "goals",
+            "xG",
+            "G−xG/match",
+            ""
+          ],
+          "rows": [
+            [
+              "Croatia",
+              "21",
+              "32.0",
+              "43.4",
+              "-0.54",
+              ""
+            ],
+            [
+              "France Women's",
+              "19",
+              "44.0",
+              "53.7",
+              "-0.51",
+              ""
+            ],
+            [
+              "Argentina",
+              "22",
+              "38.0",
+              "48.5",
+              "-0.48",
+              ""
+            ],
+            [
+              "Brazil",
+              "25",
+              "52.0",
+              "63.4",
+              "-0.46",
+              ""
+            ],
+            [
+              "Uruguay",
+              "15",
+              "21.0",
+              "26.4",
+              "-0.36",
+              ""
+            ],
+            [
+              "Spain",
+              "21",
+              "44.0",
+              "51.5",
+              "-0.36",
+              ""
+            ],
+            [
+              "Washington Spirit",
+              "31",
+              "29.0",
+              "39.7",
+              "-0.35",
+              ""
+            ],
+            [
+              "Sweden Women's",
+              "23",
+              "45.0",
+              "52.8",
+              "-0.34",
+              ""
+            ],
+            [
+              "Switzerland",
+              "18",
+              "26.0",
+              "32.0",
+              "-0.33",
+              ""
+            ],
+            [
+              "Denmark",
+              "17",
+              "18.0",
+              "23.6",
+              "-0.33",
+              ""
+            ],
+            [
+              "Orlando Pride",
+              "30",
+              "37.0",
+              "46.6",
+              "-0.32",
+              ""
+            ],
+            [
+              "Germany",
+              "18",
+              "29.0",
+              "34.1",
+              "-0.28",
+              ""
+            ],
+            [
+              "Udinese",
+              "38",
+              "35.0",
+              "45.7",
+              "-0.28",
+              ""
+            ],
+            [
+              "Houston Dash",
+              "27",
+              "23.0",
+              "30.3",
+              "-0.27",
+              ""
+            ],
+            [
+              "Portugal",
+              "18",
+              "30.0",
+              "34.7",
+              "-0.26",
+              ""
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "team",
+            "league",
+            "score",
+            "G−xG"
+          ],
+          "rows": [
+            [
+              "United States Women's",
+              "Women's World Cup",
+              "13–0",
+              "+7.05"
+            ],
+            [
+              "Hoffenheim W",
+              "Frauen Bundesliga",
+              "9–0",
+              "+5.84"
+            ],
+            [
+              "Arsenal WFC",
+              "FA Women's Super Lea",
+              "11–1",
+              "+5.24"
+            ],
+            [
+              "Real Madrid",
+              "Spanish La Liga",
+              "7–1",
+              "+5.08"
+            ],
+            [
+              "Barcelona WFC",
+              "Liga F",
+              "8–0",
+              "+4.95"
+            ],
+            [
+              "Real Madrid",
+              "Spanish La Liga",
+              "10–2",
+              "+4.86"
+            ],
+            [
+              "Real Madrid CF W",
+              "Liga F",
+              "7–1",
+              "+4.54"
+            ],
+            [
+              "Odisha",
+              "Indian Super league",
+              "6–4",
+              "+4.47"
+            ],
+            [
+              "Levante UD Femenino",
+              "Liga F",
+              "7–0",
+              "+4.43"
+            ],
+            [
+              "Barcelona",
+              "Spanish La Liga",
+              "8–0",
+              "+4.38"
+            ],
+            [
+              "Arsenal WFC",
+              "FA Women's Super Lea",
+              "7–0",
+              "+4.32"
+            ],
+            [
+              "Barcelona WFC",
+              "Liga F",
+              "8–0",
+              "+4.27"
+            ],
+            [
+              "Manchester City WFC",
+              "FA Women's Super Lea",
+              "8–1",
+              "+4.25"
+            ],
+            [
+              "Costa Adeje Tenerife",
+              "Liga F",
+              "5–0",
+              "+4.25"
+            ],
+            [
+              "Spain",
+              "FIFA World Cup",
+              "7–0",
+              "+4.24"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "team",
+            "league",
+            "score",
+            "G−xG"
+          ],
+          "rows": [
+            [
+              "Australia Women's",
+              "Women's World Cup",
+              "0–0",
+              "-9.78"
+            ],
+            [
+              "France Women's",
+              "Women's World Cup",
+              "0–0",
+              "-9.50"
+            ],
+            [
+              "Congo DR",
+              "African Cup of Natio",
+              "1–1",
+              "-7.63"
+            ],
+            [
+              "Egypt",
+              "African Cup of Natio",
+              "1–1",
+              "-7.42"
+            ],
+            [
+              "Congo DR",
+              "African Cup of Natio",
+              "0–0",
+              "-7.17"
+            ],
+            [
+              "United States Women's",
+              "Women's World Cup",
+              "0–0",
+              "-6.82"
+            ],
+            [
+              "France Women's",
+              "UEFA Women's Euro",
+              "1–1",
+              "-6.41"
+            ],
+            [
+              "Bayern Munich",
+              "Champions League",
+              "1–1",
+              "-6.40"
+            ],
+            [
+              "Sweden Women's",
+              "Women's World Cup",
+              "0–0",
+              "-5.99"
+            ],
+            [
+              "Spain",
+              "UEFA Euro",
+              "1–1",
+              "-5.93"
+            ],
+            [
+              "South Africa",
+              "African Cup of Natio",
+              "0–0",
+              "-5.75"
+            ],
+            [
+              "Germany Women's",
+              "UEFA Women's Euro",
+              "1–1",
+              "-5.63"
+            ],
+            [
+              "Real Madrid",
+              "Champions League",
+              "1–1",
+              "-5.50"
+            ],
+            [
+              "Cape Verde Islands",
+              "African Cup of Natio",
+              "0–0",
+              "-5.43"
+            ],
+            [
+              "England Women's",
+              "UEFA Women's Euro",
+              "2–2",
+              "-5.40"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "G−xG per match",
+            "teams (≥15 apps)"
+          ],
+          "rows": [
+            [
+              "< −0.20",
+              "19"
+            ],
+            [
+              "−0.20..0",
+              "47"
+            ],
+            [
+              "0..+0.20",
+              "72"
+            ],
+            [
+              "> +0.20",
+              "37"
+            ]
+          ]
+        },
+        {
+          "type": "mime_bundle",
+          "data": {
+            "image/svg+xml": "<svg width=\"780\" height=\"400\" viewBox=\"0 0 780 400\" xmlns=\"http://www.w3.org/2000/svg\">\n<rect x=\"0\" y=\"0\" width=\"780\" height=\"400\" opacity=\"1\" fill=\"#FFFFFF\" stroke=\"none\"/>\n<text x=\"390\" y=\"15\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"14.516129032258064\" opacity=\"1\" fill=\"#000000\">\nTeams by G−xG per match band\n</text>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"82\" y1=\"344\" x2=\"82\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"117\" y1=\"344\" x2=\"117\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"153\" y1=\"344\" x2=\"153\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"188\" y1=\"344\" x2=\"188\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"223\" y1=\"344\" x2=\"223\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"258\" y1=\"344\" x2=\"258\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"293\" y1=\"344\" x2=\"293\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"329\" y1=\"344\" x2=\"329\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"364\" y1=\"344\" x2=\"364\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"399\" y1=\"344\" x2=\"399\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"434\" y1=\"344\" x2=\"434\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"469\" y1=\"344\" x2=\"469\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"505\" y1=\"344\" x2=\"505\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"540\" y1=\"344\" x2=\"540\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"575\" y1=\"344\" x2=\"575\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"610\" y1=\"344\" x2=\"610\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"645\" y1=\"344\" x2=\"645\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"681\" y1=\"344\" x2=\"681\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"716\" y1=\"344\" x2=\"716\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"344\" x2=\"769\" y2=\"344\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"341\" x2=\"769\" y2=\"341\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"337\" x2=\"769\" y2=\"337\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"333\" x2=\"769\" y2=\"333\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"330\" x2=\"769\" y2=\"330\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"326\" x2=\"769\" y2=\"326\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"322\" x2=\"769\" y2=\"322\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"318\" x2=\"769\" y2=\"318\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"315\" x2=\"769\" y2=\"315\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"311\" x2=\"769\" y2=\"311\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"307\" x2=\"769\" y2=\"307\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"303\" x2=\"769\" y2=\"303\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"300\" x2=\"769\" y2=\"300\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"296\" x2=\"769\" y2=\"296\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"292\" x2=\"769\" y2=\"292\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"288\" x2=\"769\" y2=\"288\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"285\" x2=\"769\" y2=\"285\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"281\" x2=\"769\" y2=\"281\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"277\" x2=\"769\" y2=\"277\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"273\" x2=\"769\" y2=\"273\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"270\" x2=\"769\" y2=\"270\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"266\" x2=\"769\" y2=\"266\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"262\" x2=\"769\" y2=\"262\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"258\" x2=\"769\" y2=\"258\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"255\" x2=\"769\" y2=\"255\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"251\" x2=\"769\" y2=\"251\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"247\" x2=\"769\" y2=\"247\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"243\" x2=\"769\" y2=\"243\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"240\" x2=\"769\" y2=\"240\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"236\" x2=\"769\" y2=\"236\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"232\" x2=\"769\" y2=\"232\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"228\" x2=\"769\" y2=\"228\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"225\" x2=\"769\" y2=\"225\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"221\" x2=\"769\" y2=\"221\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"217\" x2=\"769\" y2=\"217\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"213\" x2=\"769\" y2=\"213\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"210\" x2=\"769\" y2=\"210\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"206\" x2=\"769\" y2=\"206\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"202\" x2=\"769\" y2=\"202\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"198\" x2=\"769\" y2=\"198\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"195\" x2=\"769\" y2=\"195\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"191\" x2=\"769\" y2=\"191\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"187\" x2=\"769\" y2=\"187\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"184\" x2=\"769\" y2=\"184\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"180\" x2=\"769\" y2=\"180\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"176\" x2=\"769\" y2=\"176\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"172\" x2=\"769\" y2=\"172\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"169\" x2=\"769\" y2=\"169\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"165\" x2=\"769\" y2=\"165\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"161\" x2=\"769\" y2=\"161\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"157\" x2=\"769\" y2=\"157\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"154\" x2=\"769\" y2=\"154\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"150\" x2=\"769\" y2=\"150\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"146\" x2=\"769\" y2=\"146\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"142\" x2=\"769\" y2=\"142\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"139\" x2=\"769\" y2=\"139\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"135\" x2=\"769\" y2=\"135\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"131\" x2=\"769\" y2=\"131\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"127\" x2=\"769\" y2=\"127\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"124\" x2=\"769\" y2=\"124\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"120\" x2=\"769\" y2=\"120\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"116\" x2=\"769\" y2=\"116\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"112\" x2=\"769\" y2=\"112\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"109\" x2=\"769\" y2=\"109\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"105\" x2=\"769\" y2=\"105\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"101\" x2=\"769\" y2=\"101\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"97\" x2=\"769\" y2=\"97\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"94\" x2=\"769\" y2=\"94\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"90\" x2=\"769\" y2=\"90\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"86\" x2=\"769\" y2=\"86\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"82\" x2=\"769\" y2=\"82\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"79\" x2=\"769\" y2=\"79\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"75\" x2=\"769\" y2=\"75\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"71\" x2=\"769\" y2=\"71\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"67\" x2=\"769\" y2=\"67\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"64\" x2=\"769\" y2=\"64\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"60\" x2=\"769\" y2=\"60\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"56\" x2=\"769\" y2=\"56\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"52\" x2=\"769\" y2=\"52\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"49\" x2=\"769\" y2=\"49\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"45\" x2=\"769\" y2=\"45\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"41\" x2=\"769\" y2=\"41\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"37\" x2=\"769\" y2=\"37\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"153\" y1=\"344\" x2=\"153\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"329\" y1=\"344\" x2=\"329\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"505\" y1=\"344\" x2=\"505\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"681\" y1=\"344\" x2=\"681\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"344\" x2=\"769\" y2=\"344\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"307\" x2=\"769\" y2=\"307\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"270\" x2=\"769\" y2=\"270\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"232\" x2=\"769\" y2=\"232\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"195\" x2=\"769\" y2=\"195\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"157\" x2=\"769\" y2=\"157\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"120\" x2=\"769\" y2=\"120\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"82\" x2=\"769\" y2=\"82\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"65\" y1=\"45\" x2=\"769\" y2=\"45\"/>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"64,34 64,344 \"/>\n<text x=\"55\" y=\"344\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n0.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,344 64,344 \"/>\n<text x=\"55\" y=\"307\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n10.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,307 64,307 \"/>\n<text x=\"55\" y=\"270\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n20.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,270 64,270 \"/>\n<text x=\"55\" y=\"232\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n30.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,232 64,232 \"/>\n<text x=\"55\" y=\"195\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n40.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,195 64,195 \"/>\n<text x=\"55\" y=\"157\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n50.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,157 64,157 \"/>\n<text x=\"55\" y=\"120\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n60.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,120 64,120 \"/>\n<text x=\"55\" y=\"82\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n70.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,82 64,82 \"/>\n<text x=\"55\" y=\"45\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n80.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,45 64,45 \"/>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"65,345 769,345 \"/>\n<text x=\"153\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n0..+0.20\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"153,345 153,350 \"/>\n<text x=\"329\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n−0.20..0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"329,345 329,350 \"/>\n<text x=\"505\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n&gt; +0.20\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"505,345 505,350 \"/>\n<text x=\"681\" y=\"355\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n&lt; −0.20\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"681,345 681,350 \"/>\n<rect x=\"91\" y=\"75\" width=\"123\" height=\"269\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"267\" y=\"169\" width=\"123\" height=\"175\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"443\" y=\"206\" width=\"123\" height=\"138\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"619\" y=\"273\" width=\"123\" height=\"71\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n</svg>",
+            "text/plain": "Figure (SVG)"
+          },
+          "metadata": {}
+        }
+      ]
+    },
+    {
+      "id": "226e0491-f526-41f7-aaf9-8b2ac2a56615",
       "cell_type": "markdown",
-      "source": "## Findings\n\nAcross 7,902 team-match xG rows, luck distributes roughly normally —\nbut the extremes are wild:\n\n- **Barcelona Femení is the luckiest side in the data**: +1.04 goals\n  above xG *per match* over 30 apps. The men's Barcelona (+0.63/match\n  over 525 apps) is the most extreme among clubs with big samples.\n- **The unluckiest are national teams**: Croatia (−0.54/match),\n  Argentina (−0.48), Brazil (−0.46), Spain (−0.36) — the sport's\n  elite keep creating chances their finishing doesn't cash.\n- Single-match outliers: USA Women put **7.05 goals above xG** in a\n  13–0 rout; Real Madrid produced +5.08 and +4.86 xG overperformance\n  in two La Liga blowouts (7–1, 10–2).\n- Distribution: 37 teams beat xG by >+0.20/match, 19 fell short by\n  >−0.20, and 72 sat in the neutral band — most sides regress to the\n  mean, which is why the extremes are the story.\n\nCaveats: xG exists only for StatsBomb competitions (~24 tournaments),\nso \"luck\" partly reflects opposition quality and competition mix;\nwomen's football is over-represented at the top because several\nwomen's leagues are in the open data; penalties and late-game chaos\ninflate single-match outliers.\n",
+      "source": "## Discussion\n\nAcross 7,902 team-match xG rows, luck distributes roughly normally —\nbut the extremes are wild:\n\n- **Barcelona Femení is the luckiest side in the data**: +1.04 goals\n  above xG *per match* over 30 apps. The men's Barcelona (+0.63/match\n  over 525 apps) is the most extreme among clubs with big samples.\n- **The unluckiest are national teams**: Croatia (−0.54/match),\n  Argentina (−0.48), Brazil (−0.46), Spain (−0.36) — the sport's\n  elite keep creating chances their finishing doesn't cash.\n- Single-match outliers: USA Women put **7.05 goals above xG** in a\n  13–0 rout; Real Madrid produced +5.08 and +4.86 xG overperformance\n  in two La Liga blowouts (7–1, 10–2).\n- Distribution: 37 teams beat xG by >+0.20/match, 19 fell short by\n  >−0.20, and 72 sat in the neutral band — most sides regress to the\n  mean, which is why the extremes are the story.\n\nCaveats: xG exists only for StatsBomb competitions (~24 tournaments),\nso \"luck\" partly reflects opposition quality and competition mix;\nwomen's football is over-represented at the top because several\nwomen's leagues are in the open data; penalties and late-game chaos\ninflate single-match outliers.\n\n**Limitations.** The analysis is limited to the competitions present in the database; player-level metrics exist only for StatsBomb-covered tournaments, and underlying event data may contain errors.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "e0ac579a-c52c-4b82-84f4-f51d2704b6ec",
+      "cell_type": "markdown",
+      "source": "## Conclusion\n\nBarcelona Femení is the luckiest side in the data. Together these results answer the research question posed in the Introduction and quantify the pattern across hundreds of thousands of matches. The notebook provides a fully reproducible pipeline from raw CSV extracts to published figures.\n",
       "metadata": {},
       "outputs": []
     }

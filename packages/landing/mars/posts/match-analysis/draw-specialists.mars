@@ -12,9 +12,23 @@
   },
   "cells": [
     {
-      "id": "16693fc7-bdc8-478f-ab00-7c28abd45a98",
+      "id": "35882550-99b4-4245-bd22-48e3a1e56893",
       "cell_type": "markdown",
-      "source": "## The Draw Specialists\n\nSome teams seem allergic to winning *and* losing — they just draw. This\nnotebook measures **draw rates** across **301,353 finished matches**:\nwho draws most overall, who draws most when cast as the underdog, and\nwhether teams draw more at home or on the road.\n\nOpponent strength comes from the same chronological **Elo sweep** used in\nthe giant-killing analysis (K = 20, +65 home advantage, 1500 base).",
+      "source": "## Abstract\n\nThis study examines the draw specialists using 301,353 matches drawn from the Soccers football database. The baseline draw rate across 301,353 matches is 26.7%. All computation runs in Rust inside a `.mars` notebook (polars + plotters — charts as inline SVG), and every table and figure is generated from the extracted CSVs.\n\n## Keywords\n\n**Keywords:** football, analysis, draws, mars, sqlite\n\n## Table of contents\n\n- [Abstract](#abstract)\n- [Keywords](#keywords)\n- [Introduction](#introduction)\n- [Methods](#methods)\n- [Results](#results)\n  - [Elo sweep + draw accounting](#elo-sweep--draw-accounting)\n- [Discussion](#discussion)\n- [Conclusion](#conclusion)\n\n## Introduction\n\nSome teams seem allergic to winning *and* losing — they just draw. This\nnotebook measures **draw rates** across **301,353 finished matches**:\nwho draws most overall, who draws most when cast as the underdog, and\nwhether teams draw more at home or on the road.\n\nOpponent strength comes from the same chronological **Elo sweep** used in\nthe giant-killing analysis (K = 20, +65 home advantage, 1500 base).\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "e31d8ef4-d889-4004-b0d2-aaa373505ec4",
+      "cell_type": "markdown",
+      "source": "## Methods\n\nData were extracted from the Soccers football database (`packages/data`) as CSV snapshots: `matches_full`.\n\nThe analysis runs entirely in Rust inside the notebook: **polars** handles table scans, joins and aggregations; **plotters** renders figures as inline SVG; `mars_table` renders result tables.\n\nEach code cell is kept to a single output so results can be read top to bottom.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "8f925b34-56ae-4952-a54a-ae8dc3a6f0ad",
+      "cell_type": "markdown",
+      "source": "## Results\n\nAll figures and tables below are computed directly from the extracted data. Each code cell produces one output — a table, a chart, or a short text summary.\n",
       "metadata": {},
       "outputs": []
     },
@@ -45,9 +59,9 @@
       ]
     },
     {
-      "id": "0b466e98-c9ef-44a7-8e3d-09773b60168d",
+      "id": "eeab1548-6fd9-49dd-91e7-c5072959e09d",
       "cell_type": "markdown",
-      "source": "## Elo sweep + draw accounting\n\nOne pass over every match: update ratings, and for each side record\ngames played, draws, home/away draws, and draws while being the\nunder-rated side.",
+      "source": "### Elo sweep + draw accounting\n\nOne pass over every match: update ratings, and for each side record\ngames played, draws, home/away draws, and draws while being the\nunder-rated side.\n",
       "metadata": {},
       "outputs": []
     },
@@ -700,9 +714,16 @@
       ]
     },
     {
-      "id": "7c8e47fd-9d7e-4b10-94f7-f27b682a92a9",
+      "id": "4bdf014f-14c5-463e-9090-1eb360b98ef1",
       "cell_type": "markdown",
-      "source": "## Findings\n\nThe baseline draw rate across **301,353 matches** is **26.7%** — roughly\n1 in 4 games ends level. The specialists beat that comfortably:\n\n- **Highest draw rates** (min. 40 games): Olympique de Marseille and\n  Charleville both at **45.2%**, Perpignan 42.9%, Virtus Lanciano and\n  Latina 40.5%, Belgrano 36.8% over a big 378-game sample.\n- **Draw specialists vs stronger opponents** (min. 15 underdog games):\n  Mulhouse 56.2%, **Tottenham Hotspur 50.0%** (9 draws in 18 underdog\n  games), F. Andria 50.0%, Salford 47.8%, CFR Cluj 45.2%.\n- **Home vs away:** teams draw at broadly similar rates in both venues —\n  the specialists aren't venue-dependent; it's a team-style trait, not a\n  home-kitchen effect.\n\nMarseille top of the pile is fitting — Les Olympiens have been football's\nmost famous draw merchants for decades. The pattern suggests draw-heavy\nteams share a profile: deep blocks, low tempo, and a pragmatic acceptance\nthat a point beats a loss.",
+      "source": "## Discussion\n\nThe baseline draw rate across **301,353 matches** is **26.7%** — roughly\n1 in 4 games ends level. The specialists beat that comfortably:\n\n- **Highest draw rates** (min. 40 games): Olympique de Marseille and\n  Charleville both at **45.2%**, Perpignan 42.9%, Virtus Lanciano and\n  Latina 40.5%, Belgrano 36.8% over a big 378-game sample.\n- **Draw specialists vs stronger opponents** (min. 15 underdog games):\n  Mulhouse 56.2%, **Tottenham Hotspur 50.0%** (9 draws in 18 underdog\n  games), F. Andria 50.0%, Salford 47.8%, CFR Cluj 45.2%.\n- **Home vs away:** teams draw at broadly similar rates in both venues —\n  the specialists aren't venue-dependent; it's a team-style trait, not a\n  home-kitchen effect.\n\nMarseille top of the pile is fitting — Les Olympiens have been football's\nmost famous draw merchants for decades. The pattern suggests draw-heavy\nteams share a profile: deep blocks, low tempo, and a pragmatic acceptance\nthat a point beats a loss.\n\n**Limitations.** The analysis is limited to the competitions present in the database; player-level metrics exist only for StatsBomb-covered tournaments, and underlying event data may contain errors.\n",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "5ec19b76-fa41-412a-93da-63fb8caa222f",
+      "cell_type": "markdown",
+      "source": "## Conclusion\n\nThe baseline draw rate across 301,353 matches is 26.7%. Together these results answer the research question posed in the Introduction and quantify the pattern across 301,353 matches. The notebook provides a fully reproducible pipeline from raw CSV extracts to published figures.\n",
       "metadata": {},
       "outputs": []
     }
