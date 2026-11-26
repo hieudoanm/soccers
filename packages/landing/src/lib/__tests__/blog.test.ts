@@ -5,7 +5,7 @@ describe('getPosts', () => {
   it('returns the markdown posts sorted by date, latest first', () => {
     const posts = getPosts();
     expect(posts.length).toBeGreaterThan(0);
-    expect(posts[0].slug).toBe('unbeaten-seasons');
+    expect(posts[0].slug).toBe('possession');
     expect(posts[posts.length - 1].slug).toBe('welcome-to-soccers');
   });
 
