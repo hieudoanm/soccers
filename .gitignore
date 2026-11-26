@@ -11,3 +11,6 @@ packages/extensions/browser/pkg/
 .tracers-cache/
 .tracers/cache/
 packages/landing/mars/posts/**/data/
+
+# mars notebook export artifacts — real posts live in packages/landing/md/posts
+packages/landing/mars/posts/**/*.md
