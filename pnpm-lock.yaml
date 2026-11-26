@@ -300,8 +300,8 @@ importers:
         specifier: 11.12.0
         version: 11.12.0
       html2canvas-pro:
-        specifier: 2.6.4
-        version: 2.6.4
+        specifier: 2.6.5
+        version: 2.6.5
       next:
         specifier: 16.4.6
         version: 16.4.6(@babel/core@7.29.13(supports-color@7.2.0))(@playwright/test@1.65.1)(@types/node@26.6.10)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -3133,8 +3133,8 @@ packages:
   html-url-attributes@3.0.1:
     resolution: {integrity: sha512-ol6UPyBWqsrO6EJySPz2O7ZSr856WDrEzM5zMqp+FJJLGMW35cLYmmZnl0vztAZxRUoNZJFTCohfjuIJ8I4QBQ==}
 
-  html2canvas-pro@2.6.4:
-    resolution: {integrity: sha512-1SMOfXwMACgQPt1wcKOtuRnBxkcREiJQdOyVpgp6a4/z9Rb/v7QPcvyu5GlxdDDiMznLwKxX5KwvtSlNlZJ7Wg==}
+  html2canvas-pro@2.6.5:
+    resolution: {integrity: sha512-saF36pqiXtWobAaB+61/IjSXGW1WVdL4jemzLJXk1Ttssd4+ua/UFcAtvDhQhKMTzndhE9j5P6pJVe6fUez6wA==}
     engines: {node: '>=24.0.0'}
 
   https-proxy-agent@7.0.6:
@@ -7534,7 +7534,7 @@ snapshots:
 
   html-url-attributes@3.0.1: {}
 
-  html2canvas-pro@2.6.4: {}
+  html2canvas-pro@2.6.5: {}
 
   https-proxy-agent@7.0.6(supports-color@7.2.0):
     dependencies:
