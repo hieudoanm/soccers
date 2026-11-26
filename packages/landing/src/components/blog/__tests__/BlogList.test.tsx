@@ -30,6 +30,22 @@ describe('BlogList', () => {
     expect(screen.getByText(/2 min read/)).toBeInTheDocument();
   });
 
+  it('pins the welcome post outside the paginated grid', () => {
+    render(
+      <BlogList
+        posts={[
+          makePost('post-a', 2),
+          { ...makePost('welcome-to-soccers', 1), title: 'Welcome!' },
+        ]}
+      />
+    );
+    expect(screen.getByText('Start here')).toBeInTheDocument();
+    const pinned = screen.getByRole('link', { name: /Welcome!/ });
+    expect(pinned).toHaveAttribute('href', '/blog/welcome-to-soccers');
+    // pinned post is not duplicated in the grid
+    expect(screen.getAllByRole('link', { name: /Welcome!/ })).toHaveLength(1);
+  });
+
   it('filters posts by tag', async () => {
     const user = userEvent.setup();
     render(

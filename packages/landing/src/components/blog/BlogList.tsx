@@ -7,19 +7,50 @@ import type { Post } from '@/lib/blog';
 import { seriesTitle } from '@/lib/series-meta';
 
 const POSTS_PER_PAGE = 10;
+const PINNED_SLUG = 'welcome-to-soccers';
 
 type BlogListProps = Readonly<{ posts: Post[] }>;
+
+const PinnedCard = ({ post }: Readonly<{ post: Post }>) => (
+  <Link
+    href={`/blog/${post.slug}`}
+    className="card border-primary/40 bg-primary/5 hover:border-primary group mb-6 flex flex-col gap-2 border p-6 transition sm:flex-row sm:items-center sm:gap-6">
+    <div className="shrink-0">
+      <span className="badge badge-primary badge-sm">Start here</span>
+    </div>
+    <div className="min-w-0">
+      <h2 className="text-base-content group-hover:text-primary text-xl font-semibold">
+        {post.title}
+      </h2>
+      {post.description ? (
+        <p className="text-base-content/60 mt-1 line-clamp-2 text-sm">
+          {post.description}
+        </p>
+      ) : null}
+      <span className="text-base-content/50 mt-2 block text-xs">
+        {post.date ? `${formatPostDate(post.date)} · ` : ''}
+        {post.readingTime} min read
+      </span>
+    </div>
+    <span className="text-primary shrink-0 text-sm font-medium sm:ml-auto">
+      Read post →
+    </span>
+  </Link>
+);
 
 export default function BlogList({ posts }: BlogListProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [activeTag, setActiveTag] = useState<string | null>(null);
 
-  const allTags = [...new Set(posts.flatMap((post) => post.tags))].sort(
+  const pinned = posts.find((post) => post.slug === PINNED_SLUG);
+  const unpinned = posts.filter((post) => post.slug !== PINNED_SLUG);
+
+  const allTags = [...new Set(unpinned.flatMap((post) => post.tags))].sort(
     (a, b) => a.localeCompare(b)
   );
   const filteredPosts = activeTag
-    ? posts.filter((post) => post.tags.includes(activeTag))
-    : posts;
+    ? unpinned.filter((post) => post.tags.includes(activeTag))
+    : unpinned;
 
   const totalPages = Math.max(
     1,
@@ -43,6 +74,8 @@ export default function BlogList({ posts }: BlogListProps) {
 
   return (
     <>
+      {pinned ? <PinnedCard post={pinned} /> : null}
+
       {allTags.length > 1 && (
         <div className="mb-6 flex flex-wrap items-center gap-1.5">
           <button
