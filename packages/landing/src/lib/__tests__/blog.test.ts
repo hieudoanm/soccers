@@ -45,8 +45,8 @@ describe('getSeries', () => {
 
 describe('getPost', () => {
   it('finds a post by slug', () => {
-    const post = getPost('inside-the-database');
-    expect(post?.title).toBe('Inside the database: a tour of the schema');
+    const post = getPost('xg-luck');
+    expect(post?.title).toContain('xG luck index');
   });
 
   it('rejects invalid slugs', () => {

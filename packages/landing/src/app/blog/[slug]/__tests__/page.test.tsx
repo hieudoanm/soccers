@@ -8,7 +8,7 @@ describe('BlogPostPage', () => {
   it('generates static params for all posts', () => {
     const slugs = generateStaticParams().map((p) => p.slug);
     expect(slugs).toContain('welcome-to-soccers');
-    expect(slugs).toContain('inside-the-database');
+    expect(slugs).toContain('home-advantage');
   });
 
   it('renders the post title, tags and content', async () => {
@@ -21,7 +21,7 @@ describe('BlogPostPage', () => {
   });
 
   it('renders previous/next navigation', async () => {
-    await renderPost('inside-the-database');
+    await renderPost('home-advantage');
     expect(
       screen.getByRole('link', { name: /Welcome to soccers/ })
     ).toHaveAttribute('href', '/blog/welcome-to-soccers');
