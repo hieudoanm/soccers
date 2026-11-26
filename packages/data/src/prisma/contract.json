@@ -461,6 +461,13 @@
                   "kind": "scalar"
                 }
               },
+              "goals": {
+                "nullable": true,
+                "type": {
+                  "codecId": "sqlite/integer@1",
+                  "kind": "scalar"
+                }
+              },
               "id": {
                 "nullable": false,
                 "type": {
@@ -585,6 +592,9 @@
                 },
                 "externalId": {
                   "column": "external_id"
+                },
+                "goals": {
+                  "column": "goals"
                 },
                 "id": {
                   "column": "id"
@@ -4066,6 +4076,11 @@
                   "dataType": "sqlite/text",
                   "nullable": true
                 },
+                "goals": {
+                  "codecId": "sqlite/integer@1",
+                  "dataType": "sqlite/integer",
+                  "nullable": true
+                },
                 "id": {
                   "codecId": "sqlite/integer@1",
                   "dataType": "sqlite/integer",
@@ -6781,7 +6796,7 @@
         "id": "__unbound__"
       }
     },
-    "storageHash": "8f2b6f8034a6c42b40689b7c9e9c0e3d1e855cb16877061e1fe3118fa30cdac4"
+    "storageHash": "8f55ee97e699f76ed1509ad028fba6a05e3b6342a8a06feaa4b3027ba45e444d"
   },
   "execution": {
     "executionHash": "0a210cc50870aa9742fe9bda18b3e2bdb5de1059049f40be896be756e814baa0",

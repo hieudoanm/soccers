@@ -15,6 +15,7 @@ data. Imports are idempotent scripts in `scripts/`; see
 | [Kaggle — European Soccer Database](https://www.kaggle.com/datasets/hugomathien/soccer) | Kaggle download / HF mirror        | `import-player-bios-kaggle.ts`           | same bio fields (fallback, ~3.3k players)                                                    |
 | internal (`match_lineup`)                                                               | —                                  | `backfill-player-teams.ts`               | `player.current_team_id`                                                                     |
 | [Transfermarkt](https://www.transfermarkt.com) (HF mirror + live scrape)                | CSV mirror / HTML scraping         | `import-transfermarkt.ts`                | `transfer`, `injury`, `player.photo_url` + bio backfill                                      |
+| [Wikipedia](https://en.wikipedia.org) (award listicles)                                 | action=raw wikitext, cached        | `import-awards.ts`                       | `award`, `award_winner` — Ballon d'Or, FIFA/The Best, PFA, Golden Shoe                       |
 
 ## Additional free sources
 

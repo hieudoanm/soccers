@@ -16,7 +16,7 @@ import type {
 } from '@prisma/orm-sqlite/contract-types';
 
 export type StorageHash =
-  StorageHashBase<'8f2b6f8034a6c42b40689b7c9e9c0e3d1e855cb16877061e1fe3118fa30cdac4'>;
+  StorageHashBase<'8f55ee97e699f76ed1509ad028fba6a05e3b6342a8a06feaa4b3027ba45e444d'>;
 export type ExecutionHash =
   ExecutionHashBase<'0a210cc50870aa9742fe9bda18b3e2bdb5de1059049f40be896be756e814baa0'>;
 export type ProfileHash =
@@ -544,6 +544,7 @@ export namespace Models {
     awardId: FieldOutputTypes['__unbound__']['AwardWinner']['awardId'];
     createdAt: FieldOutputTypes['__unbound__']['AwardWinner']['createdAt'];
     externalId: FieldOutputTypes['__unbound__']['AwardWinner']['externalId'];
+    goals: FieldOutputTypes['__unbound__']['AwardWinner']['goals'];
     id: FieldOutputTypes['__unbound__']['AwardWinner']['id'];
     managerId: FieldOutputTypes['__unbound__']['AwardWinner']['managerId'];
     place: FieldOutputTypes['__unbound__']['AwardWinner']['place'];
@@ -1062,6 +1063,12 @@ type ContractBase = Omit<
                 readonly external_id: {
                   readonly dataType: 'sqlite/text';
                   readonly codecId: 'sqlite/text@1';
+                  readonly nullable: true;
+                  readonly many: false;
+                };
+                readonly goals: {
+                  readonly dataType: 'sqlite/integer';
+                  readonly codecId: 'sqlite/integer@1';
                   readonly nullable: true;
                   readonly many: false;
                 };
@@ -3822,6 +3829,10 @@ type ContractBase = Omit<
                 readonly nullable: true;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'sqlite/text@1' };
               };
+              readonly goals: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'sqlite/integer@1' };
+              };
               readonly id: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'sqlite/integer@1' };
@@ -3916,6 +3927,7 @@ type ContractBase = Omit<
                 readonly awardId: { readonly column: 'award_id' };
                 readonly createdAt: { readonly column: 'created_at' };
                 readonly externalId: { readonly column: 'external_id' };
+                readonly goals: { readonly column: 'goals' };
                 readonly id: { readonly column: 'id' };
                 readonly managerId: { readonly column: 'manager_id' };
                 readonly place: { readonly column: 'place' };

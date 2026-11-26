@@ -91,6 +91,7 @@ Table award_winner {
   award_id int [not null]
   created_at datetime [not null, default: `now()`]
   external_id text [unique]
+  goals int
   id int [pk, not null, default: `autoincrement()`]
   manager_id int
   place int [not null, default: '1']

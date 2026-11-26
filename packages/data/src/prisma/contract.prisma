@@ -507,6 +507,7 @@ model AwardWinner {
   season     String?            @map("season")
   place      Int                @default(1) @map("place")
   points     Float?             @map("points")
+  goals      Int?               @map("goals")
   player     Player?            @relation(fields: [playerId], references: [id])
   playerId   Int?               @map("player_id")
   team       Team?              @relation(fields: [teamId], references: [id])

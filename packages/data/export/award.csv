@@ -1,1 +1,12 @@
 category,created_at,description,external_id,id,name,updated_at
+PLAYER,2026-11-26T14:29:53.000Z,,ballon-dor,34,Ballon d'Or,2026-11-26T14:29:53.000Z
+PLAYER,2026-11-26T14:29:56.000Z,,ballon-dor-feminin,35,Ballon d'Or Féminin,2026-11-26T14:29:56.000Z
+PLAYER,2026-11-26T14:29:56.000Z,,fifa-world-player,36,FIFA World Player of the Year,2026-11-26T14:29:56.000Z
+PLAYER,2026-11-26T14:29:56.000Z,,best-fifa-mens-player,37,The Best FIFA Men's Player,2026-11-26T14:29:56.000Z
+PLAYER,2026-11-26T14:29:56.000Z,,best-fifa-womens-player,38,The Best FIFA Women's Player,2026-11-26T14:29:56.000Z
+PLAYER,2026-11-26T14:29:56.000Z,,best-fifa-mens-goalkeeper,39,The Best FIFA Men's Goalkeeper,2026-11-26T14:29:56.000Z
+PLAYER,2026-11-26T14:29:57.000Z,,best-fifa-womens-goalkeeper,40,The Best FIFA Women's Goalkeeper,2026-11-26T14:29:57.000Z
+MANAGER,2026-11-26T14:29:57.000Z,,best-fifa-mens-coach,41,The Best FIFA Men's Coach,2026-11-26T14:29:57.000Z
+MANAGER,2026-11-26T14:29:57.000Z,,best-fifa-womens-coach,42,The Best FIFA Women's Coach,2026-11-26T14:29:57.000Z
+PLAYER,2026-11-26T14:29:57.000Z,,pfa-player-of-year,43,PFA Players' Player of the Year,2026-11-26T14:29:57.000Z
+PLAYER,2026-11-26T14:29:57.000Z,,european-golden-shoe,44,European Golden Shoe,2026-11-26T14:29:57.000Z

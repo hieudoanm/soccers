@@ -27,6 +27,7 @@
     "import:transfermarkt": "node scripts/import-transfermarkt.ts",
     "import:espn": "node scripts/import-espn.ts",
     "import:statsbomb": "node --max-old-space-size=8192 scripts/import-statsbomb.ts",
+    "import:awards": "node scripts/import-awards.ts",
     "sizes": "node scripts/file-sizes.ts"
   },
   "keywords": [],
