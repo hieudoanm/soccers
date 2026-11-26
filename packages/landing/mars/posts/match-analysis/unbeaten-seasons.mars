@@ -393,9 +393,268 @@
     {
       "id": "93de63a9-f749-402d-9442-a1af60221d39",
       "cell_type": "code",
-      "source": "\nstruct Champ {\n    league: String, season: String, team: String,\n    played: i64, w: i64, d: i64, l: i64, pts: i64,\n    gf: i64, ga: i64, pos: i64, margin: i64,\n}\n\nlet mut champs: Vec<Champ> = Vec::new();\nfor (lg, sn) in &complete_ls {\n    let st = standings(lg, sn);\n    if st.len() < 2 { continue; }\n    let c = &st[0];\n    let games = team_games.get(&(lg.clone(), sn.clone(), c.team.clone())).cloned().unwrap_or_default();\n    if games.len() < 25 { continue; }\n    let mut w = 0i64; let mut d = 0i64; let mut l = 0i64;\n    let mut gf = 0i64; let mut ga = 0i64;\n    for g in &games {\n        gf += g.gf; ga += g.ga;\n        if g.gf > g.ga { w += 1; } else if g.gf == g.ga { d += 1; } else { l += 1; }\n    }\n    champs.push(Champ {\n        league: lg.clone(), season: sn.clone(), team: c.team.clone(),\n        played: games.len() as i64, w, d, l,\n        pts: c.pts, gf, ga, pos: 1, margin: c.pts - st[1].pts,\n    });\n}\nprintln!(\"champions analysed: {}\", champs.len());\n\nlet is_ub = |c: &Champ| c.l == 0;\nlet is_margin = |c: &Champ| c.margin >= 10 && c.l > 0;\n\nlet mean = |v: &[f64]| if v.is_empty() { f64::NAN } else { v.iter().sum::<f64>() / v.len() as f64 };\nlet stat = |f: &dyn Fn(&Champ) -> f64, pred: &dyn Fn(&Champ) -> bool| -> f64 {\n    mean(&champs.iter().filter(|c| pred(c)).map(|c| f(c)).collect::<Vec<_>>())\n};\n\nlet is_other = |c: &Champ| !is_ub(c) && !is_margin(c);\nlet groups: Vec<(&str, &dyn Fn(&Champ) -> bool)> = vec![\n    (\"unbeaten\", &is_ub),\n    (\"margin >=10pts\", &is_margin),\n    (\"all other champs\", &is_other),\n];\n\nlet metrics: Vec<(&str, &dyn Fn(&Champ) -> f64)> = vec![\n    (\"ppg\", &|c| c.pts as f64 / c.played as f64),\n    (\"win%\", &|c| 100.0 * c.w as f64 / c.played as f64),\n    (\"draw%\", &|c| 100.0 * c.d as f64 / c.played as f64),\n    (\"gf/g\", &|c| c.gf as f64 / c.played as f64),\n    (\"ga/g\", &|c| c.ga as f64 / c.played as f64),\n    (\"gd/g\", &|c| (c.gf - c.ga) as f64 / c.played as f64),\n    (\"margin\", &|c| c.margin as f64),\n];\n\nlet mut rows: Vec<Vec<String>> = Vec::new();\nfor &(gname, pred) in &groups {\n    let n = champs.iter().filter(|c| pred(c)).count();\n    let mut row = vec![gname.to_string(), n.to_string()];\n    for &(_mname, f) in &metrics {\n        let v = stat(f, pred);\n        row.push(if v.is_nan() { \"-\".to_string() } else { format!(\"{:.2}\", v) });\n    }\n    rows.push(row);\n}\nlet mut header = vec![\"group\".to_string(), \"n\".to_string()];\nfor &(mname, _) in &metrics { header.push(mname.to_string()); }\nmars_table(&header, &rows);\n\n// the unbeaten champions, individually\nlet ub_rows: Vec<Vec<String>> = champs.iter().filter(|c| is_ub(c)).map(|c| vec![\n    c.league.clone(), c.season.clone(), c.team.clone(),\n    c.played.to_string(), format!(\"{}W {}D {}L\", c.w, c.d, c.l),\n    format!(\"{}/{}\", c.gf, c.ga),\n    format!(\"+{}\", c.margin),\n]).collect();\nmars_table(&[\"league\", \"season\", \"champion\", \"played\", \"w-d-l\", \"gf/ga\", \"margin\"], &ub_rows);\n",
+      "source": "struct Champ {\n    league: String, season: String, team: String,\n    played: i64, w: i64, d: i64, l: i64, pts: i64,\n    gf: i64, ga: i64, pos: i64, margin: i64,\n}\n\nlet mut champs: Vec<Champ> = Vec::new();\nfor (lg, sn) in &complete_ls {\n    let st = standings(lg, sn);\n    if st.len() < 2 { continue; }\n    let c = &st[0];\n    let games = team_games.get(&(lg.clone(), sn.clone(), c.team.clone())).cloned().unwrap_or_default();\n    if games.len() < 25 { continue; }\n    let mut w = 0i64; let mut d = 0i64; let mut l = 0i64;\n    let mut gf = 0i64; let mut ga = 0i64;\n    for g in &games {\n        gf += g.gf; ga += g.ga;\n        if g.gf > g.ga { w += 1; } else if g.gf == g.ga { d += 1; } else { l += 1; }\n    }\n    champs.push(Champ {\n        league: lg.clone(), season: sn.clone(), team: c.team.clone(),\n        played: games.len() as i64, w, d, l,\n        pts: c.pts, gf, ga, pos: 1, margin: c.pts - st[1].pts,\n    });\n}\nprintln!(\"champions analysed: {}\", champs.len());\n\nlet is_ub = |c: &Champ| c.l == 0;\nlet is_margin = |c: &Champ| c.margin >= 10 && c.l > 0;\n\nlet mean = |v: &[f64]| if v.is_empty() { f64::NAN } else { v.iter().sum::<f64>() / v.len() as f64 };\nlet stat = |f: &dyn Fn(&Champ) -> f64, pred: &dyn Fn(&Champ) -> bool| -> f64 {\n    mean(&champs.iter().filter(|c| pred(c)).map(|c| f(c)).collect::<Vec<_>>())\n};\n\nlet is_other = |c: &Champ| !is_ub(c) && !is_margin(c);\nlet groups: Vec<(&str, &dyn Fn(&Champ) -> bool)> = vec![\n    (\"unbeaten\", &is_ub),\n    (\"margin >=10pts\", &is_margin),\n    (\"all other champs\", &is_other),\n];\n\nlet metrics: Vec<(&str, &dyn Fn(&Champ) -> f64)> = vec![\n    (\"ppg\", &|c| c.pts as f64 / c.played as f64),\n    (\"win%\", &|c| 100.0 * c.w as f64 / c.played as f64),\n    (\"draw%\", &|c| 100.0 * c.d as f64 / c.played as f64),\n    (\"gf/g\", &|c| c.gf as f64 / c.played as f64),\n    (\"ga/g\", &|c| c.ga as f64 / c.played as f64),\n    (\"gd/g\", &|c| (c.gf - c.ga) as f64 / c.played as f64),\n    (\"margin\", &|c| c.margin as f64),\n];\n\nlet mut rows: Vec<Vec<String>> = Vec::new();\nfor &(gname, pred) in &groups {\n    let n = champs.iter().filter(|c| pred(c)).count();\n    let mut row = vec![gname.to_string(), n.to_string()];\n    for &(_mname, f) in &metrics {\n        let v = stat(f, pred);\n        row.push(if v.is_nan() { \"-\".to_string() } else { format!(\"{:.2}\", v) });\n    }\n    rows.push(row);\n}\nlet mut header = vec![\"group\".to_string(), \"n\".to_string()];\nfor &(mname, _) in &metrics { header.push(mname.to_string()); }\nmars_table(&header, &rows);\n",
       "metadata": {},
       "execution_count": 4,
+      "outputs": [
+        {
+          "type": "text",
+          "text": "top-flight finished matches: 176903 (1188 dupes dropped)\nleague-seasons: 610 | team-season entries: 10492\ncomplete league-seasons: 592\nunbeaten team-seasons: 10 | of which champions: 9 | non-champions: 1\nteam-seasons analysed: 9917\nchampions analysed: 576\n"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "league",
+            "season",
+            "team",
+            "played",
+            "draws",
+            "gf/ga",
+            "finish",
+            "status"
+          ],
+          "rows": [
+            [
+              "England | English Premier League",
+              "2003/04",
+              "Arsenal",
+              "38",
+              "12",
+              "73/26",
+              "#1",
+              "champion"
+            ],
+            [
+              "Germany | German Bundesliga",
+              "2023/24",
+              "Leverkusen",
+              "34",
+              "6",
+              "89/24",
+              "#1",
+              "champion"
+            ],
+            [
+              "Greece | Greek Super League",
+              "2018/19",
+              "PAOK",
+              "30",
+              "4",
+              "66/14",
+              "#1",
+              "champion"
+            ],
+            [
+              "Italy | Italian Serie A",
+              "2011/12",
+              "Juventus",
+              "38",
+              "15",
+              "68/20",
+              "#1",
+              "champion"
+            ],
+            [
+              "Netherlands | Dutch Eredivisie",
+              "1994/95",
+              "Ajax",
+              "34",
+              "7",
+              "106/28",
+              "#1",
+              "champion"
+            ],
+            [
+              "Portugal | Portuguese Liga Portugal",
+              "2010/11",
+              "Porto",
+              "30",
+              "3",
+              "73/16",
+              "#1",
+              "champion"
+            ],
+            [
+              "Portugal | Portuguese Liga Portugal",
+              "2012/13",
+              "Porto",
+              "30",
+              "6",
+              "70/14",
+              "#1",
+              "champion"
+            ],
+            [
+              "Portugal | Portuguese Liga Portugal",
+              "2025/26",
+              "Benfica",
+              "34",
+              "11",
+              "74/25",
+              "#3",
+              "pos 3"
+            ],
+            [
+              "Scotland | Scottish Premiership",
+              "2016/17",
+              "Celtic",
+              "38",
+              "4",
+              "106/25",
+              "#1",
+              "champion"
+            ],
+            [
+              "Scotland | Scottish Premiership",
+              "2020/21",
+              "Rangers",
+              "38",
+              "6",
+              "92/13",
+              "#1",
+              "champion"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "defeats",
+            "n",
+            "n top-4",
+            "ppg all",
+            "ppg top-4",
+            "gd/g all",
+            "gd/g top-4",
+            "win% all",
+            "draw% all"
+          ],
+          "rows": [
+            [
+              "0",
+              "10",
+              "10",
+              "2.58",
+              "2.58",
+              "+1.79",
+              "+1.79",
+              "79%",
+              "21%"
+            ],
+            [
+              "1",
+              "38",
+              "38",
+              "2.51",
+              "2.51",
+              "+1.69",
+              "+1.69",
+              "77%",
+              "20%"
+            ],
+            [
+              "2",
+              "86",
+              "86",
+              "2.40",
+              "2.40",
+              "+1.58",
+              "+1.58",
+              "73%",
+              "21%"
+            ],
+            [
+              "3",
+              "158",
+              "157",
+              "2.28",
+              "2.29",
+              "+1.36",
+              "+1.37",
+              "69%",
+              "22%"
+            ],
+            [
+              "4-6",
+              "791",
+              "748",
+              "2.05",
+              "2.07",
+              "+1.01",
+              "+1.04",
+              "60%",
+              "24%"
+            ],
+            [
+              "7+",
+              "8834",
+              "1270",
+              "1.28",
+              "1.78",
+              "-0.14",
+              "+0.57",
+              "34%",
+              "26%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "group",
+            "n",
+            "ppg",
+            "win%",
+            "draw%",
+            "gf/g",
+            "ga/g",
+            "gd/g",
+            "margin"
+          ],
+          "rows": [
+            [
+              "unbeaten",
+              "9",
+              "2.60",
+              "80.12",
+              "19.88",
+              "2.40",
+              "0.58",
+              "1.82",
+              "14.56"
+            ],
+            [
+              "margin >=10pts",
+              "163",
+              "2.35",
+              "72.48",
+              "17.57",
+              "2.28",
+              "0.79",
+              "1.49",
+              "14.61"
+            ],
+            [
+              "all other champs",
+              "404",
+              "2.17",
+              "65.57",
+              "20.34",
+              "2.05",
+              "0.87",
+              "1.18",
+              "4.11"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cde1dc8d-98ba-4c1b-b761-aa0bcba14304",
+      "cell_type": "code",
+      "source": "// the unbeaten champions, individually\nlet ub_rows: Vec<Vec<String>> = champs.iter().filter(|c| is_ub(c)).map(|c| vec![\n    c.league.clone(), c.season.clone(), c.team.clone(),\n    c.played.to_string(), format!(\"{}W {}D {}L\", c.w, c.d, c.l),\n    format!(\"{}/{}\", c.gf, c.ga),\n    format!(\"+{}\", c.margin),\n]).collect();\nmars_table(&[\"league\", \"season\", \"champion\", \"played\", \"w-d-l\", \"gf/ga\", \"margin\"], &ub_rows);\n",
+      "metadata": {},
+      "execution_count": 5,
       "outputs": [
         {
           "type": "text",
@@ -756,7 +1015,7 @@
       "cell_type": "code",
       "source": "\n// draw rate and points-dropped-by-draws by defeat bucket\nlet draw_rows: Vec<Vec<String>> = (0..6).map(|b| {\n    let ts: Vec<&TS> = all_ts.iter().filter(|t| bucket(t.l) == b).collect();\n    if ts.is_empty() { return vec![bnames[b].to_string(), \"0\".to_string()]; }\n    let games: i64 = ts.iter().map(|t| t.played).sum();\n    let draws: i64 = ts.iter().map(|t| t.d).sum();\n    let pts_dropped = 2 * draws; // each draw costs 2 pts vs a win\n    vec![\n        bnames[b].to_string(), ts.len().to_string(),\n        format!(\"{:.1}%\", 100.0 * draws as f64 / games as f64),\n        pts_dropped.to_string(),\n        format!(\"{:.1}\", pts_dropped as f64 / ts.len() as f64),\n    ]\n}).collect();\nmars_table(&[\"defeats\", \"team-seasons\", \"draw rate\", \"pts lost to draws\", \"avg per team\"], &draw_rows);\n\n// head-to-head: unbeaten vs one-defeat team-seasons on W/D/L mix\nlet mix = |pred: &dyn Fn(&TS) -> bool| -> (f64, f64, f64, f64) {\n    let ts: Vec<&TS> = all_ts.iter().filter(|t| pred(t)).collect();\n    let g: i64 = ts.iter().map(|t| t.played).sum();\n    let w: i64 = ts.iter().map(|t| t.w).sum();\n    let d: i64 = ts.iter().map(|t| t.d).sum();\n    let l: i64 = ts.iter().map(|t| t.l).sum();\n    (100.0*w as f64/g as f64, 100.0*d as f64/g as f64, 100.0*l as f64/g as f64, ts.len() as f64)\n};\nlet (w0,d0,l0,n0) = mix(&|t| t.l == 0);\nlet (w1,d1,l1,n1) = mix(&|t| t.l == 1);\nlet (w2,d2,l2,n2) = mix(&|t| t.l == 2);\nprintln!(\"0 defeats (n={}): {:.1}%W {:.1}%D {:.1}%L\", n0 as i64, w0, d0, l0);\nprintln!(\"1 defeat  (n={}): {:.1}%W {:.1}%D {:.1}%L\", n1 as i64, w1, d1, l1);\nprintln!(\"2 defeats (n={}): {:.1}%W {:.1}%D {:.1}%L\", n2 as i64, w2, d2, l2);\n",
       "metadata": {},
-      "execution_count": 5,
+      "execution_count": 6,
       "outputs": [
         {
           "type": "text",
@@ -1169,9 +1428,646 @@
     {
       "id": "0447d13b-31fb-42e3-9184-4ac136f52226",
       "cell_type": "code",
-      "source": "\n// per-league summary\nstruct LG { name: String, seasons: usize, unbeaten: usize, champs: usize, top_champ_share: f64, avg_margin: f64 }\nlet mut lg_map: std::collections::BTreeMap<String, (usize, usize, std::collections::BTreeMap<String, usize>, f64, usize)> = std::collections::BTreeMap::new();\nfor (lg, sn) in &complete_ls {\n    let st = standings(lg, sn);\n    if st.len() < 2 { continue; }\n    let e = lg_map.entry(lg.clone()).or_insert((0, 0, std::collections::BTreeMap::new(), 0.0, 0));\n    e.0 += 1;\n    *e.2.entry(st[0].team.clone()).or_insert(0) += 1;\n    e.3 += (st[0].pts - st[1].pts) as f64;\n    e.4 += 1;\n}\n// unbeaten count per league from earlier `unbeaten` list\nfor u in &unbeaten {\n    if let Some(e) = lg_map.get_mut(&u.league) { e.1 += 1; }\n}\nlet mut lg_rows: Vec<Vec<String>> = Vec::new();\nfor (lg, (seasons, ub, champ_map, margin_sum, mcount)) in &lg_map {\n    if *seasons < 3 { continue; }\n    let top_share = *champ_map.values().max().unwrap_or(&0) as f64 / *seasons as f64;\n    let top_team = champ_map.iter().max_by_key(|(_, c)| *c).map(|(t, _)| t.clone()).unwrap_or_default();\n    lg_rows.push(vec![\n        lg.clone(), seasons.to_string(), ub.to_string(),\n        format!(\"{:.0}%\", 100.0 * top_share), top_team,\n        format!(\"{:.1}\", margin_sum / *mcount as f64),\n    ]);\n}\nlg_rows.sort_by(|a, b| b[1].parse::<usize>().unwrap_or(0).cmp(&a[1].parse::<usize>().unwrap_or(0)));\nmars_table(&[\"league\", \"seasons\", \"unbeaten\", \"top club title share\", \"most titles\", \"avg 1st-2nd gap\"], &lg_rows);\n\n// unbeaten events by decade\nlet mut decades: std::collections::BTreeMap<String, usize> = std::collections::BTreeMap::new();\nfor u in &unbeaten {\n    let y: i32 = u.season[..4].parse().unwrap_or(0);\n    let d = format!(\"{}s\", y / 10 * 10);\n    *decades.entry(d).or_insert(0) += 1;\n}\nlet dec_rows: Vec<Vec<String>> = decades.iter().map(|(d, c)| vec![d.clone(), c.to_string()]).collect();\nmars_table(&[\"decade\", \"unbeaten team-seasons\"], &dec_rows);\n",
+      "source": "// per-league summary\nstruct LG { name: String, seasons: usize, unbeaten: usize, champs: usize, top_champ_share: f64, avg_margin: f64 }\nlet mut lg_map: std::collections::BTreeMap<String, (usize, usize, std::collections::BTreeMap<String, usize>, f64, usize)> = std::collections::BTreeMap::new();\nfor (lg, sn) in &complete_ls {\n    let st = standings(lg, sn);\n    if st.len() < 2 { continue; }\n    let e = lg_map.entry(lg.clone()).or_insert((0, 0, std::collections::BTreeMap::new(), 0.0, 0));\n    e.0 += 1;\n    *e.2.entry(st[0].team.clone()).or_insert(0) += 1;\n    e.3 += (st[0].pts - st[1].pts) as f64;\n    e.4 += 1;\n}\n// unbeaten count per league from earlier `unbeaten` list\nfor u in &unbeaten {\n    if let Some(e) = lg_map.get_mut(&u.league) { e.1 += 1; }\n}\nlet mut lg_rows: Vec<Vec<String>> = Vec::new();\nfor (lg, (seasons, ub, champ_map, margin_sum, mcount)) in &lg_map {\n    if *seasons < 3 { continue; }\n    let top_share = *champ_map.values().max().unwrap_or(&0) as f64 / *seasons as f64;\n    let top_team = champ_map.iter().max_by_key(|(_, c)| *c).map(|(t, _)| t.clone()).unwrap_or_default();\n    lg_rows.push(vec![\n        lg.clone(), seasons.to_string(), ub.to_string(),\n        format!(\"{:.0}%\", 100.0 * top_share), top_team,\n        format!(\"{:.1}\", margin_sum / *mcount as f64),\n    ]);\n}\nlg_rows.sort_by(|a, b| b[1].parse::<usize>().unwrap_or(0).cmp(&a[1].parse::<usize>().unwrap_or(0)));\nmars_table(&[\"league\", \"seasons\", \"unbeaten\", \"top club title share\", \"most titles\", \"avg 1st-2nd gap\"], &lg_rows);\n",
       "metadata": {},
-      "execution_count": 6,
+      "execution_count": 7,
+      "outputs": [
+        {
+          "type": "text",
+          "text": "top-flight finished matches: 176903 (1188 dupes dropped)\nleague-seasons: 610 | team-season entries: 10492\ncomplete league-seasons: 592\nunbeaten team-seasons: 10 | of which champions: 9 | non-champions: 1\nteam-seasons analysed: 9917\nchampions analysed: 576\n0 defeats (n=10): 78.5%W 21.5%D 0.0%L\n1 defeat  (n=38): 76.7%W 20.3%D 2.9%L\n2 defeats (n=86): 73.1%W 21.0%D 5.9%L\n"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "league",
+            "season",
+            "team",
+            "played",
+            "draws",
+            "gf/ga",
+            "finish",
+            "status"
+          ],
+          "rows": [
+            [
+              "England | English Premier League",
+              "2003/04",
+              "Arsenal",
+              "38",
+              "12",
+              "73/26",
+              "#1",
+              "champion"
+            ],
+            [
+              "Germany | German Bundesliga",
+              "2023/24",
+              "Leverkusen",
+              "34",
+              "6",
+              "89/24",
+              "#1",
+              "champion"
+            ],
+            [
+              "Greece | Greek Super League",
+              "2018/19",
+              "PAOK",
+              "30",
+              "4",
+              "66/14",
+              "#1",
+              "champion"
+            ],
+            [
+              "Italy | Italian Serie A",
+              "2011/12",
+              "Juventus",
+              "38",
+              "15",
+              "68/20",
+              "#1",
+              "champion"
+            ],
+            [
+              "Netherlands | Dutch Eredivisie",
+              "1994/95",
+              "Ajax",
+              "34",
+              "7",
+              "106/28",
+              "#1",
+              "champion"
+            ],
+            [
+              "Portugal | Portuguese Liga Portugal",
+              "2010/11",
+              "Porto",
+              "30",
+              "3",
+              "73/16",
+              "#1",
+              "champion"
+            ],
+            [
+              "Portugal | Portuguese Liga Portugal",
+              "2012/13",
+              "Porto",
+              "30",
+              "6",
+              "70/14",
+              "#1",
+              "champion"
+            ],
+            [
+              "Portugal | Portuguese Liga Portugal",
+              "2025/26",
+              "Benfica",
+              "34",
+              "11",
+              "74/25",
+              "#3",
+              "pos 3"
+            ],
+            [
+              "Scotland | Scottish Premiership",
+              "2016/17",
+              "Celtic",
+              "38",
+              "4",
+              "106/25",
+              "#1",
+              "champion"
+            ],
+            [
+              "Scotland | Scottish Premiership",
+              "2020/21",
+              "Rangers",
+              "38",
+              "6",
+              "92/13",
+              "#1",
+              "champion"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "defeats",
+            "n",
+            "n top-4",
+            "ppg all",
+            "ppg top-4",
+            "gd/g all",
+            "gd/g top-4",
+            "win% all",
+            "draw% all"
+          ],
+          "rows": [
+            [
+              "0",
+              "10",
+              "10",
+              "2.58",
+              "2.58",
+              "+1.79",
+              "+1.79",
+              "79%",
+              "21%"
+            ],
+            [
+              "1",
+              "38",
+              "38",
+              "2.51",
+              "2.51",
+              "+1.69",
+              "+1.69",
+              "77%",
+              "20%"
+            ],
+            [
+              "2",
+              "86",
+              "86",
+              "2.40",
+              "2.40",
+              "+1.58",
+              "+1.58",
+              "73%",
+              "21%"
+            ],
+            [
+              "3",
+              "158",
+              "157",
+              "2.28",
+              "2.29",
+              "+1.36",
+              "+1.37",
+              "69%",
+              "22%"
+            ],
+            [
+              "4-6",
+              "791",
+              "748",
+              "2.05",
+              "2.07",
+              "+1.01",
+              "+1.04",
+              "60%",
+              "24%"
+            ],
+            [
+              "7+",
+              "8834",
+              "1270",
+              "1.28",
+              "1.78",
+              "-0.14",
+              "+0.57",
+              "34%",
+              "26%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "group",
+            "n",
+            "ppg",
+            "win%",
+            "draw%",
+            "gf/g",
+            "ga/g",
+            "gd/g",
+            "margin"
+          ],
+          "rows": [
+            [
+              "unbeaten",
+              "9",
+              "2.60",
+              "80.12",
+              "19.88",
+              "2.40",
+              "0.58",
+              "1.82",
+              "14.56"
+            ],
+            [
+              "margin >=10pts",
+              "163",
+              "2.35",
+              "72.48",
+              "17.57",
+              "2.28",
+              "0.79",
+              "1.49",
+              "14.61"
+            ],
+            [
+              "all other champs",
+              "404",
+              "2.17",
+              "65.57",
+              "20.34",
+              "2.05",
+              "0.87",
+              "1.18",
+              "4.11"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "league",
+            "season",
+            "champion",
+            "played",
+            "w-d-l",
+            "gf/ga",
+            "margin"
+          ],
+          "rows": [
+            [
+              "England | English Premier League",
+              "2003/04",
+              "Arsenal",
+              "38",
+              "26W 12D 0L",
+              "73/26",
+              "+11"
+            ],
+            [
+              "Germany | German Bundesliga",
+              "2023/24",
+              "Leverkusen",
+              "34",
+              "28W 6D 0L",
+              "89/24",
+              "+17"
+            ],
+            [
+              "Greece | Greek Super League",
+              "2018/19",
+              "PAOK",
+              "30",
+              "26W 4D 0L",
+              "66/14",
+              "+10"
+            ],
+            [
+              "Italy | Italian Serie A",
+              "2011/12",
+              "Juventus",
+              "38",
+              "23W 15D 0L",
+              "68/20",
+              "+4"
+            ],
+            [
+              "Netherlands | Dutch Eredivisie",
+              "1994/95",
+              "Ajax",
+              "34",
+              "27W 7D 0L",
+              "106/28",
+              "+12"
+            ],
+            [
+              "Portugal | Portuguese Liga Portugal",
+              "2010/11",
+              "Porto",
+              "30",
+              "27W 3D 0L",
+              "73/16",
+              "+21"
+            ],
+            [
+              "Portugal | Portuguese Liga Portugal",
+              "2012/13",
+              "Porto",
+              "30",
+              "24W 6D 0L",
+              "70/14",
+              "+1"
+            ],
+            [
+              "Scotland | Scottish Premiership",
+              "2016/17",
+              "Celtic",
+              "38",
+              "34W 4D 0L",
+              "106/25",
+              "+30"
+            ],
+            [
+              "Scotland | Scottish Premiership",
+              "2020/21",
+              "Rangers",
+              "38",
+              "32W 6D 0L",
+              "92/13",
+              "+25"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "defeats",
+            "team-seasons",
+            "draw rate",
+            "pts lost to draws",
+            "avg per team"
+          ],
+          "rows": [
+            [
+              "0",
+              "10",
+              "21.5%",
+              "148",
+              "14.8"
+            ],
+            [
+              "1",
+              "38",
+              "20.3%",
+              "528",
+              "13.9"
+            ],
+            [
+              "2",
+              "86",
+              "21.0%",
+              "1222",
+              "14.2"
+            ],
+            [
+              "3",
+              "158",
+              "22.3%",
+              "2382",
+              "15.1"
+            ],
+            [
+              "4-6",
+              "791",
+              "24.3%",
+              "12992",
+              "16.4"
+            ],
+            [
+              "7+",
+              "8834",
+              "26.0%",
+              "161614",
+              "18.3"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "league",
+            "seasons",
+            "unbeaten",
+            "top club title share",
+            "most titles",
+            "avg 1st-2nd gap"
+          ],
+          "rows": [
+            [
+              "Italy | Italian Serie A",
+              "34",
+              "1",
+              "47%",
+              "Juventus",
+              "7.2"
+            ],
+            [
+              "Spain | Spanish La Liga",
+              "34",
+              "0",
+              "53%",
+              "Barcelona",
+              "6.3"
+            ],
+            [
+              "England | English Premier League",
+              "33",
+              "1",
+              "36%",
+              "Man United",
+              "6.9"
+            ],
+            [
+              "France | French Ligue 1",
+              "33",
+              "0",
+              "39%",
+              "Paris SG",
+              "8.7"
+            ],
+            [
+              "Germany | German Bundesliga",
+              "33",
+              "1",
+              "70%",
+              "Bayern Munich",
+              "8.6"
+            ],
+            [
+              "Netherlands | Dutch Eredivisie",
+              "33",
+              "1",
+              "42%",
+              "PSV Eindhoven",
+              "7.3"
+            ],
+            [
+              "Portugal | Portuguese Liga Portugal",
+              "33",
+              "3",
+              "55%",
+              "Porto",
+              "6.7"
+            ],
+            [
+              "Scotland | Scottish Premiership",
+              "32",
+              "2",
+              "66%",
+              "Celtic",
+              "11.2"
+            ],
+            [
+              "Turkey | Turkish Süper Lig",
+              "32",
+              "0",
+              "50%",
+              "Galatasaray",
+              "4.7"
+            ],
+            [
+              "Belgium | Belgian Pro League",
+              "31",
+              "0",
+              "35%",
+              "Anderlecht",
+              "6.0"
+            ],
+            [
+              "Greece | Greek Super League",
+              "27",
+              "1",
+              "67%",
+              "Olympiakos",
+              "9.9"
+            ],
+            [
+              "Brazil | Serie A",
+              "15",
+              "0",
+              "27%",
+              "Palmeiras",
+              "7.9"
+            ],
+            [
+              "Finland | Veikkausliiga",
+              "15",
+              "0",
+              "53%",
+              "HJK",
+              "6.1"
+            ],
+            [
+              "Japan | J1 League",
+              "15",
+              "0",
+              "27%",
+              "Kawasaki Frontale",
+              "5.8"
+            ],
+            [
+              "Mexico | Liga MX",
+              "15",
+              "0",
+              "47%",
+              "Club America",
+              "6.0"
+            ],
+            [
+              "Norway | Eliteserien",
+              "15",
+              "0",
+              "33%",
+              "Bodo/Glimt",
+              "8.3"
+            ],
+            [
+              "Poland | Ekstraklasa",
+              "15",
+              "0",
+              "47%",
+              "Legia",
+              "4.3"
+            ],
+            [
+              "Romania | Superliga",
+              "15",
+              "0",
+              "33%",
+              "FCSB",
+              "6.9"
+            ],
+            [
+              "Sweden | Allsvenskan",
+              "15",
+              "0",
+              "53%",
+              "Malmo FF",
+              "4.8"
+            ],
+            [
+              "United States | MLS",
+              "15",
+              "0",
+              "13%",
+              "Toronto FC",
+              "5.0"
+            ],
+            [
+              "Argentina | Liga Profesional",
+              "14",
+              "0",
+              "43%",
+              "Boca Juniors",
+              "3.4"
+            ],
+            [
+              "Austria | Bundesliga",
+              "14",
+              "0",
+              "79%",
+              "Salzburg",
+              "11.0"
+            ],
+            [
+              "Denmark | Superliga",
+              "14",
+              "0",
+              "50%",
+              "FC Copenhagen",
+              "6.6"
+            ],
+            [
+              "Ireland | Premier Division",
+              "14",
+              "0",
+              "36%",
+              "Shamrock Rovers",
+              "7.1"
+            ],
+            [
+              "Russia | Premier League",
+              "14",
+              "0",
+              "57%",
+              "Zenit",
+              "5.5"
+            ],
+            [
+              "Switzerland | Super League",
+              "14",
+              "0",
+              "43%",
+              "Young Boys",
+              "13.1"
+            ],
+            [
+              "China | Super League",
+              "13",
+              "0",
+              "46%",
+              "Guangzhou Evergrande",
+              "3.8"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "88216212-4f72-481a-bab3-43c667d2bb42",
+      "cell_type": "code",
+      "source": "// unbeaten events by decade\nlet mut decades: std::collections::BTreeMap<String, usize> = std::collections::BTreeMap::new();\nfor u in &unbeaten {\n    let y: i32 = u.season[..4].parse().unwrap_or(0);\n    let d = format!(\"{}s\", y / 10 * 10);\n    *decades.entry(d).or_insert(0) += 1;\n}\nlet dec_rows: Vec<Vec<String>> = decades.iter().map(|(d, c)| vec![d.clone(), c.to_string()]).collect();\nmars_table(&[\"decade\", \"unbeaten team-seasons\"], &dec_rows);\n",
+      "metadata": {},
+      "execution_count": 8,
       "outputs": [
         {
           "type": "text",
@@ -1838,9 +2734,1357 @@
     {
       "id": "fe9706ab-37c4-4517-a751-f9fd7afa6da0",
       "cell_type": "code",
-      "source": "\nuse plotters::prelude::*;\n\n// chart 1: mean ppg by defeat bucket — all teams vs top-4 finishers\nlet labels = [\"0\", \"1\", \"2\", \"3\", \"4-6\", \"7+\"];\nlet ymax = ppg_all.iter().chain(ppg_t4.iter()).cloned().fold(0.0f64, f64::max) * 1.15;\nlet nb = 6usize;\nlet fig1 = plotters::evcxr::evcxr_figure((760, 420), |root| {\n    root.fill(&WHITE)?;\n    let mut chart = ChartBuilder::on(&root)\n        .caption(\"Points per game by number of defeats\", (\"sans-serif\", 18))\n        .margin(15)\n        .x_label_area_size(40)\n        .y_label_area_size(45)\n        .build_cartesian_2d(-0.5..(nb as f64 - 0.5), 0.0..ymax)?;\n    chart.configure_mesh().x_labels(nb)\n        .x_label_formatter(&|x: &f64| {\n            let i = (*x).round() as usize;\n            if i < 6 { labels[i].to_string() } else { String::new() }\n        })\n        .draw()?;\n    for b in 0..nb {\n        let x = b as f64;\n        // all teams: light blue; top-4 finishers: dark blue\n        chart.draw_series(std::iter::once(Rectangle::new(\n            [(x - 0.4, 0.0), (x - 0.05, ppg_all[b])], &CYAN,\n        )))?;\n        chart.draw_series(std::iter::once(Rectangle::new(\n            [(x + 0.05, 0.0), (x + 0.4, ppg_t4[b])], &BLUE,\n        )))?;\n    }\n    Ok(())\n});\nfig1.evcxr_display();\nprintln!(\"light = all team-seasons | dark = top-4 finishers only\");\n\n// chart 2: unbeaten champions vs other champions — 4 metrics, grouped bars\nlet ub_f = champs.iter().filter(|c| c.l == 0).collect::<Vec<_>>();\nlet ot_f = champs.iter().filter(|c| c.l > 0).collect::<Vec<_>>();\nlet avg = |v: &[&Champ], f: &dyn Fn(&Champ) -> f64| -> f64 {\n    if v.is_empty() { 0.0 } else { v.iter().map(|c| f(c)).sum::<f64>() / v.len() as f64 }\n};\nlet mlabels = [\"ppg\", \"win%\", \"draw%\", \"gd/g\"];\nlet ub_vals = [\n    avg(&ub_f, &|c| c.pts as f64 / c.played as f64),\n    avg(&ub_f, &|c| 100.0 * c.w as f64 / c.played as f64),\n    avg(&ub_f, &|c| 100.0 * c.d as f64 / c.played as f64),\n    avg(&ub_f, &|c| (c.gf - c.ga) as f64 / c.played as f64),\n];\nlet ot_vals = [\n    avg(&ot_f, &|c| c.pts as f64 / c.played as f64),\n    avg(&ot_f, &|c| 100.0 * c.w as f64 / c.played as f64),\n    avg(&ot_f, &|c| 100.0 * c.d as f64 / c.played as f64),\n    avg(&ot_f, &|c| (c.gf - c.ga) as f64 / c.played as f64),\n];\nlet ymax2 = ub_vals.iter().chain(ot_vals.iter()).cloned().fold(0.0f64, f64::max) * 1.2;\nlet fig2 = plotters::evcxr::evcxr_figure((760, 420), |root| {\n    root.fill(&WHITE)?;\n    let mut chart = ChartBuilder::on(&root)\n        .caption(\"Unbeaten champions vs all other champions\", (\"sans-serif\", 18))\n        .margin(15)\n        .x_label_area_size(40)\n        .y_label_area_size(45)\n        .build_cartesian_2d(-0.5..3.5, 0.0..ymax2)?;\n    chart.configure_mesh().x_labels(4)\n        .x_label_formatter(&|x: &f64| {\n            let i = (*x).round() as usize;\n            if i < 4 { mlabels[i].to_string() } else { String::new() }\n        })\n        .draw()?;\n    for i in 0..4 {\n        let x = i as f64;\n        chart.draw_series(std::iter::once(Rectangle::new(\n            [(x - 0.4, 0.0), (x - 0.05, ub_vals[i])], &RED,\n        )))?;\n        chart.draw_series(std::iter::once(Rectangle::new(\n            [(x + 0.05, 0.0), (x + 0.4, ot_vals[i])], &BLUE,\n        )))?;\n    }\n    Ok(())\n});\nfig2.evcxr_display();\nprintln!(\"red = unbeaten champions (n={}) | blue = other champions (n={})\", ub_f.len(), ot_f.len());\n",
+      "source": "use plotters::prelude::*;\n\n// chart 1: mean ppg by defeat bucket — all teams vs top-4 finishers\nlet labels = [\"0\", \"1\", \"2\", \"3\", \"4-6\", \"7+\"];\nlet ymax = ppg_all.iter().chain(ppg_t4.iter()).cloned().fold(0.0f64, f64::max) * 1.15;\nlet nb = 6usize;\nlet fig1 = plotters::evcxr::evcxr_figure((760, 420), |root| {\n    root.fill(&WHITE)?;\n    let mut chart = ChartBuilder::on(&root)\n        .caption(\"Points per game by number of defeats\", (\"sans-serif\", 18))\n        .margin(15)\n        .x_label_area_size(40)\n        .y_label_area_size(45)\n        .build_cartesian_2d(-0.5..(nb as f64 - 0.5), 0.0..ymax)?;\n    chart.configure_mesh().x_labels(nb)\n        .x_label_formatter(&|x: &f64| {\n            let i = (*x).round() as usize;\n            if i < 6 { labels[i].to_string() } else { String::new() }\n        })\n        .draw()?;\n    for b in 0..nb {\n        let x = b as f64;\n        // all teams: light blue; top-4 finishers: dark blue\n        chart.draw_series(std::iter::once(Rectangle::new(\n            [(x - 0.4, 0.0), (x - 0.05, ppg_all[b])], &CYAN,\n        )))?;\n        chart.draw_series(std::iter::once(Rectangle::new(\n            [(x + 0.05, 0.0), (x + 0.4, ppg_t4[b])], &BLUE,\n        )))?;\n    }\n    Ok(())\n});\nfig1.evcxr_display();\n",
       "metadata": {},
-      "execution_count": 7,
+      "execution_count": 9,
+      "outputs": [
+        {
+          "type": "text",
+          "text": "top-flight finished matches: 176903 (1188 dupes dropped)\nleague-seasons: 610 | team-season entries: 10492\ncomplete league-seasons: 592\nunbeaten team-seasons: 10 | of which champions: 9 | non-champions: 1\nteam-seasons analysed: 9917\nchampions analysed: 576\n0 defeats (n=10): 78.5%W 21.5%D 0.0%L\n1 defeat  (n=38): 76.7%W 20.3%D 2.9%L\n2 defeats (n=86): 73.1%W 21.0%D 5.9%L\n"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "league",
+            "season",
+            "team",
+            "played",
+            "draws",
+            "gf/ga",
+            "finish",
+            "status"
+          ],
+          "rows": [
+            [
+              "England | English Premier League",
+              "2003/04",
+              "Arsenal",
+              "38",
+              "12",
+              "73/26",
+              "#1",
+              "champion"
+            ],
+            [
+              "Germany | German Bundesliga",
+              "2023/24",
+              "Leverkusen",
+              "34",
+              "6",
+              "89/24",
+              "#1",
+              "champion"
+            ],
+            [
+              "Greece | Greek Super League",
+              "2018/19",
+              "PAOK",
+              "30",
+              "4",
+              "66/14",
+              "#1",
+              "champion"
+            ],
+            [
+              "Italy | Italian Serie A",
+              "2011/12",
+              "Juventus",
+              "38",
+              "15",
+              "68/20",
+              "#1",
+              "champion"
+            ],
+            [
+              "Netherlands | Dutch Eredivisie",
+              "1994/95",
+              "Ajax",
+              "34",
+              "7",
+              "106/28",
+              "#1",
+              "champion"
+            ],
+            [
+              "Portugal | Portuguese Liga Portugal",
+              "2010/11",
+              "Porto",
+              "30",
+              "3",
+              "73/16",
+              "#1",
+              "champion"
+            ],
+            [
+              "Portugal | Portuguese Liga Portugal",
+              "2012/13",
+              "Porto",
+              "30",
+              "6",
+              "70/14",
+              "#1",
+              "champion"
+            ],
+            [
+              "Portugal | Portuguese Liga Portugal",
+              "2025/26",
+              "Benfica",
+              "34",
+              "11",
+              "74/25",
+              "#3",
+              "pos 3"
+            ],
+            [
+              "Scotland | Scottish Premiership",
+              "2016/17",
+              "Celtic",
+              "38",
+              "4",
+              "106/25",
+              "#1",
+              "champion"
+            ],
+            [
+              "Scotland | Scottish Premiership",
+              "2020/21",
+              "Rangers",
+              "38",
+              "6",
+              "92/13",
+              "#1",
+              "champion"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "defeats",
+            "n",
+            "n top-4",
+            "ppg all",
+            "ppg top-4",
+            "gd/g all",
+            "gd/g top-4",
+            "win% all",
+            "draw% all"
+          ],
+          "rows": [
+            [
+              "0",
+              "10",
+              "10",
+              "2.58",
+              "2.58",
+              "+1.79",
+              "+1.79",
+              "79%",
+              "21%"
+            ],
+            [
+              "1",
+              "38",
+              "38",
+              "2.51",
+              "2.51",
+              "+1.69",
+              "+1.69",
+              "77%",
+              "20%"
+            ],
+            [
+              "2",
+              "86",
+              "86",
+              "2.40",
+              "2.40",
+              "+1.58",
+              "+1.58",
+              "73%",
+              "21%"
+            ],
+            [
+              "3",
+              "158",
+              "157",
+              "2.28",
+              "2.29",
+              "+1.36",
+              "+1.37",
+              "69%",
+              "22%"
+            ],
+            [
+              "4-6",
+              "791",
+              "748",
+              "2.05",
+              "2.07",
+              "+1.01",
+              "+1.04",
+              "60%",
+              "24%"
+            ],
+            [
+              "7+",
+              "8834",
+              "1270",
+              "1.28",
+              "1.78",
+              "-0.14",
+              "+0.57",
+              "34%",
+              "26%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "group",
+            "n",
+            "ppg",
+            "win%",
+            "draw%",
+            "gf/g",
+            "ga/g",
+            "gd/g",
+            "margin"
+          ],
+          "rows": [
+            [
+              "unbeaten",
+              "9",
+              "2.60",
+              "80.12",
+              "19.88",
+              "2.40",
+              "0.58",
+              "1.82",
+              "14.56"
+            ],
+            [
+              "margin >=10pts",
+              "163",
+              "2.35",
+              "72.48",
+              "17.57",
+              "2.28",
+              "0.79",
+              "1.49",
+              "14.61"
+            ],
+            [
+              "all other champs",
+              "404",
+              "2.17",
+              "65.57",
+              "20.34",
+              "2.05",
+              "0.87",
+              "1.18",
+              "4.11"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "league",
+            "season",
+            "champion",
+            "played",
+            "w-d-l",
+            "gf/ga",
+            "margin"
+          ],
+          "rows": [
+            [
+              "England | English Premier League",
+              "2003/04",
+              "Arsenal",
+              "38",
+              "26W 12D 0L",
+              "73/26",
+              "+11"
+            ],
+            [
+              "Germany | German Bundesliga",
+              "2023/24",
+              "Leverkusen",
+              "34",
+              "28W 6D 0L",
+              "89/24",
+              "+17"
+            ],
+            [
+              "Greece | Greek Super League",
+              "2018/19",
+              "PAOK",
+              "30",
+              "26W 4D 0L",
+              "66/14",
+              "+10"
+            ],
+            [
+              "Italy | Italian Serie A",
+              "2011/12",
+              "Juventus",
+              "38",
+              "23W 15D 0L",
+              "68/20",
+              "+4"
+            ],
+            [
+              "Netherlands | Dutch Eredivisie",
+              "1994/95",
+              "Ajax",
+              "34",
+              "27W 7D 0L",
+              "106/28",
+              "+12"
+            ],
+            [
+              "Portugal | Portuguese Liga Portugal",
+              "2010/11",
+              "Porto",
+              "30",
+              "27W 3D 0L",
+              "73/16",
+              "+21"
+            ],
+            [
+              "Portugal | Portuguese Liga Portugal",
+              "2012/13",
+              "Porto",
+              "30",
+              "24W 6D 0L",
+              "70/14",
+              "+1"
+            ],
+            [
+              "Scotland | Scottish Premiership",
+              "2016/17",
+              "Celtic",
+              "38",
+              "34W 4D 0L",
+              "106/25",
+              "+30"
+            ],
+            [
+              "Scotland | Scottish Premiership",
+              "2020/21",
+              "Rangers",
+              "38",
+              "32W 6D 0L",
+              "92/13",
+              "+25"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "defeats",
+            "team-seasons",
+            "draw rate",
+            "pts lost to draws",
+            "avg per team"
+          ],
+          "rows": [
+            [
+              "0",
+              "10",
+              "21.5%",
+              "148",
+              "14.8"
+            ],
+            [
+              "1",
+              "38",
+              "20.3%",
+              "528",
+              "13.9"
+            ],
+            [
+              "2",
+              "86",
+              "21.0%",
+              "1222",
+              "14.2"
+            ],
+            [
+              "3",
+              "158",
+              "22.3%",
+              "2382",
+              "15.1"
+            ],
+            [
+              "4-6",
+              "791",
+              "24.3%",
+              "12992",
+              "16.4"
+            ],
+            [
+              "7+",
+              "8834",
+              "26.0%",
+              "161614",
+              "18.3"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "league",
+            "seasons",
+            "unbeaten",
+            "top club title share",
+            "most titles",
+            "avg 1st-2nd gap"
+          ],
+          "rows": [
+            [
+              "Italy | Italian Serie A",
+              "34",
+              "1",
+              "47%",
+              "Juventus",
+              "7.2"
+            ],
+            [
+              "Spain | Spanish La Liga",
+              "34",
+              "0",
+              "53%",
+              "Barcelona",
+              "6.3"
+            ],
+            [
+              "England | English Premier League",
+              "33",
+              "1",
+              "36%",
+              "Man United",
+              "6.9"
+            ],
+            [
+              "France | French Ligue 1",
+              "33",
+              "0",
+              "39%",
+              "Paris SG",
+              "8.7"
+            ],
+            [
+              "Germany | German Bundesliga",
+              "33",
+              "1",
+              "70%",
+              "Bayern Munich",
+              "8.6"
+            ],
+            [
+              "Netherlands | Dutch Eredivisie",
+              "33",
+              "1",
+              "42%",
+              "PSV Eindhoven",
+              "7.3"
+            ],
+            [
+              "Portugal | Portuguese Liga Portugal",
+              "33",
+              "3",
+              "55%",
+              "Porto",
+              "6.7"
+            ],
+            [
+              "Scotland | Scottish Premiership",
+              "32",
+              "2",
+              "66%",
+              "Celtic",
+              "11.2"
+            ],
+            [
+              "Turkey | Turkish Süper Lig",
+              "32",
+              "0",
+              "50%",
+              "Galatasaray",
+              "4.7"
+            ],
+            [
+              "Belgium | Belgian Pro League",
+              "31",
+              "0",
+              "35%",
+              "Anderlecht",
+              "6.0"
+            ],
+            [
+              "Greece | Greek Super League",
+              "27",
+              "1",
+              "67%",
+              "Olympiakos",
+              "9.9"
+            ],
+            [
+              "Brazil | Serie A",
+              "15",
+              "0",
+              "27%",
+              "Palmeiras",
+              "7.9"
+            ],
+            [
+              "Finland | Veikkausliiga",
+              "15",
+              "0",
+              "53%",
+              "HJK",
+              "6.1"
+            ],
+            [
+              "Japan | J1 League",
+              "15",
+              "0",
+              "27%",
+              "Kawasaki Frontale",
+              "5.8"
+            ],
+            [
+              "Mexico | Liga MX",
+              "15",
+              "0",
+              "47%",
+              "Club America",
+              "6.0"
+            ],
+            [
+              "Norway | Eliteserien",
+              "15",
+              "0",
+              "33%",
+              "Bodo/Glimt",
+              "8.3"
+            ],
+            [
+              "Poland | Ekstraklasa",
+              "15",
+              "0",
+              "47%",
+              "Legia",
+              "4.3"
+            ],
+            [
+              "Romania | Superliga",
+              "15",
+              "0",
+              "33%",
+              "FCSB",
+              "6.9"
+            ],
+            [
+              "Sweden | Allsvenskan",
+              "15",
+              "0",
+              "53%",
+              "Malmo FF",
+              "4.8"
+            ],
+            [
+              "United States | MLS",
+              "15",
+              "0",
+              "13%",
+              "Toronto FC",
+              "5.0"
+            ],
+            [
+              "Argentina | Liga Profesional",
+              "14",
+              "0",
+              "43%",
+              "Boca Juniors",
+              "3.4"
+            ],
+            [
+              "Austria | Bundesliga",
+              "14",
+              "0",
+              "79%",
+              "Salzburg",
+              "11.0"
+            ],
+            [
+              "Denmark | Superliga",
+              "14",
+              "0",
+              "50%",
+              "FC Copenhagen",
+              "6.6"
+            ],
+            [
+              "Ireland | Premier Division",
+              "14",
+              "0",
+              "36%",
+              "Shamrock Rovers",
+              "7.1"
+            ],
+            [
+              "Russia | Premier League",
+              "14",
+              "0",
+              "57%",
+              "Zenit",
+              "5.5"
+            ],
+            [
+              "Switzerland | Super League",
+              "14",
+              "0",
+              "43%",
+              "Young Boys",
+              "13.1"
+            ],
+            [
+              "China | Super League",
+              "13",
+              "0",
+              "46%",
+              "Guangzhou Evergrande",
+              "3.8"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "decade",
+            "unbeaten team-seasons"
+          ],
+          "rows": [
+            [
+              "1990s",
+              "1"
+            ],
+            [
+              "2000s",
+              "1"
+            ],
+            [
+              "2010s",
+              "5"
+            ],
+            [
+              "2020s",
+              "3"
+            ]
+          ]
+        },
+        {
+          "type": "mime_bundle",
+          "data": {
+            "image/svg+xml": "<svg width=\"760\" height=\"420\" viewBox=\"0 0 760 420\" xmlns=\"http://www.w3.org/2000/svg\">\n<rect x=\"0\" y=\"0\" width=\"760\" height=\"420\" opacity=\"1\" fill=\"#FFFFFF\" stroke=\"none\"/>\n<text x=\"380\" y=\"20\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"14.516129032258064\" opacity=\"1\" fill=\"#000000\">\nPoints per game by number of defeats\n</text>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"71\" y1=\"364\" x2=\"71\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"94\" y1=\"364\" x2=\"94\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"117\" y1=\"364\" x2=\"117\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"139\" y1=\"364\" x2=\"139\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"162\" y1=\"364\" x2=\"162\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"185\" y1=\"364\" x2=\"185\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"208\" y1=\"364\" x2=\"208\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"231\" y1=\"364\" x2=\"231\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"253\" y1=\"364\" x2=\"253\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"276\" y1=\"364\" x2=\"276\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"299\" y1=\"364\" x2=\"299\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"322\" y1=\"364\" x2=\"322\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"345\" y1=\"364\" x2=\"345\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"367\" y1=\"364\" x2=\"367\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"390\" y1=\"364\" x2=\"390\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"413\" y1=\"364\" x2=\"413\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"436\" y1=\"364\" x2=\"436\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"459\" y1=\"364\" x2=\"459\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"481\" y1=\"364\" x2=\"481\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"504\" y1=\"364\" x2=\"504\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"527\" y1=\"364\" x2=\"527\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"550\" y1=\"364\" x2=\"550\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"573\" y1=\"364\" x2=\"573\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"595\" y1=\"364\" x2=\"595\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"618\" y1=\"364\" x2=\"618\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"641\" y1=\"364\" x2=\"641\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"664\" y1=\"364\" x2=\"664\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"687\" y1=\"364\" x2=\"687\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"709\" y1=\"364\" x2=\"709\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"364\" x2=\"744\" y2=\"364\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"359\" x2=\"744\" y2=\"359\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"354\" x2=\"744\" y2=\"354\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"348\" x2=\"744\" y2=\"348\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"343\" x2=\"744\" y2=\"343\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"337\" x2=\"744\" y2=\"337\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"332\" x2=\"744\" y2=\"332\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"326\" x2=\"744\" y2=\"326\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"321\" x2=\"744\" y2=\"321\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"315\" x2=\"744\" y2=\"315\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"310\" x2=\"744\" y2=\"310\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"304\" x2=\"744\" y2=\"304\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"299\" x2=\"744\" y2=\"299\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"293\" x2=\"744\" y2=\"293\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"288\" x2=\"744\" y2=\"288\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"282\" x2=\"744\" y2=\"282\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"277\" x2=\"744\" y2=\"277\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"271\" x2=\"744\" y2=\"271\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"266\" x2=\"744\" y2=\"266\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"260\" x2=\"744\" y2=\"260\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"255\" x2=\"744\" y2=\"255\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"249\" x2=\"744\" y2=\"249\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"244\" x2=\"744\" y2=\"244\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"238\" x2=\"744\" y2=\"238\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"233\" x2=\"744\" y2=\"233\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"227\" x2=\"744\" y2=\"227\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"222\" x2=\"744\" y2=\"222\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"216\" x2=\"744\" y2=\"216\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"211\" x2=\"744\" y2=\"211\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"206\" x2=\"744\" y2=\"206\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"200\" x2=\"744\" y2=\"200\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"195\" x2=\"744\" y2=\"195\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"189\" x2=\"744\" y2=\"189\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"184\" x2=\"744\" y2=\"184\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"178\" x2=\"744\" y2=\"178\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"173\" x2=\"744\" y2=\"173\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"167\" x2=\"744\" y2=\"167\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"162\" x2=\"744\" y2=\"162\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"156\" x2=\"744\" y2=\"156\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"151\" x2=\"744\" y2=\"151\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"145\" x2=\"744\" y2=\"145\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"140\" x2=\"744\" y2=\"140\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"134\" x2=\"744\" y2=\"134\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"129\" x2=\"744\" y2=\"129\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"123\" x2=\"744\" y2=\"123\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"118\" x2=\"744\" y2=\"118\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"112\" x2=\"744\" y2=\"112\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"107\" x2=\"744\" y2=\"107\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"101\" x2=\"744\" y2=\"101\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"96\" x2=\"744\" y2=\"96\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"90\" x2=\"744\" y2=\"90\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"85\" x2=\"744\" y2=\"85\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"79\" x2=\"744\" y2=\"79\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"74\" x2=\"744\" y2=\"74\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"68\" x2=\"744\" y2=\"68\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"63\" x2=\"744\" y2=\"63\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"57\" x2=\"744\" y2=\"57\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"52\" x2=\"744\" y2=\"52\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"47\" x2=\"744\" y2=\"47\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"41\" x2=\"744\" y2=\"41\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"117\" y1=\"364\" x2=\"117\" y2=\"39\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"231\" y1=\"364\" x2=\"231\" y2=\"39\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"345\" y1=\"364\" x2=\"345\" y2=\"39\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"459\" y1=\"364\" x2=\"459\" y2=\"39\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"573\" y1=\"364\" x2=\"573\" y2=\"39\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"687\" y1=\"364\" x2=\"687\" y2=\"39\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"364\" x2=\"744\" y2=\"364\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"310\" x2=\"744\" y2=\"310\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"255\" x2=\"744\" y2=\"255\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"200\" x2=\"744\" y2=\"200\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"145\" x2=\"744\" y2=\"145\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"90\" x2=\"744\" y2=\"90\"/>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,39 59,364 \"/>\n<text x=\"50\" y=\"364\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n0.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"54,364 59,364 \"/>\n<text x=\"50\" y=\"310\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n0.5\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"54,310 59,310 \"/>\n<text x=\"50\" y=\"255\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n1.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"54,255 59,255 \"/>\n<text x=\"50\" y=\"200\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n1.5\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"54,200 59,200 \"/>\n<text x=\"50\" y=\"145\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n2.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"54,145 59,145 \"/>\n<text x=\"50\" y=\"90\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n2.5\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"54,90 59,90 \"/>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"60,365 744,365 \"/>\n<text x=\"117\" y=\"375\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"117,365 117,370 \"/>\n<text x=\"231\" y=\"375\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n1\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"231,365 231,370 \"/>\n<text x=\"345\" y=\"375\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n2\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"345,365 345,370 \"/>\n<text x=\"459\" y=\"375\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n3\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"459,365 459,370 \"/>\n<text x=\"573\" y=\"375\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n4-6\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"573,365 573,370 \"/>\n<text x=\"687\" y=\"375\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n7+\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"687,365 687,370 \"/>\n<rect x=\"71\" y=\"82\" width=\"40\" height=\"282\" opacity=\"1\" fill=\"none\" stroke=\"#00FFFF\"/>\n<rect x=\"122\" y=\"82\" width=\"40\" height=\"282\" opacity=\"1\" fill=\"none\" stroke=\"#0000FF\"/>\n<rect x=\"185\" y=\"90\" width=\"40\" height=\"274\" opacity=\"1\" fill=\"none\" stroke=\"#00FFFF\"/>\n<rect x=\"236\" y=\"90\" width=\"40\" height=\"274\" opacity=\"1\" fill=\"none\" stroke=\"#0000FF\"/>\n<rect x=\"299\" y=\"101\" width=\"40\" height=\"263\" opacity=\"1\" fill=\"none\" stroke=\"#00FFFF\"/>\n<rect x=\"350\" y=\"101\" width=\"40\" height=\"263\" opacity=\"1\" fill=\"none\" stroke=\"#0000FF\"/>\n<rect x=\"413\" y=\"114\" width=\"40\" height=\"250\" opacity=\"1\" fill=\"none\" stroke=\"#00FFFF\"/>\n<rect x=\"464\" y=\"114\" width=\"40\" height=\"250\" opacity=\"1\" fill=\"none\" stroke=\"#0000FF\"/>\n<rect x=\"527\" y=\"140\" width=\"40\" height=\"224\" opacity=\"1\" fill=\"none\" stroke=\"#00FFFF\"/>\n<rect x=\"578\" y=\"137\" width=\"40\" height=\"227\" opacity=\"1\" fill=\"none\" stroke=\"#0000FF\"/>\n<rect x=\"641\" y=\"224\" width=\"40\" height=\"140\" opacity=\"1\" fill=\"none\" stroke=\"#00FFFF\"/>\n<rect x=\"692\" y=\"169\" width=\"40\" height=\"195\" opacity=\"1\" fill=\"none\" stroke=\"#0000FF\"/>\n</svg>",
+            "text/plain": "Figure (SVG)"
+          },
+          "metadata": {}
+        }
+      ]
+    },
+    {
+      "id": "7586dfdc-52b0-428d-8645-9ead6f22e238",
+      "cell_type": "code",
+      "source": "println!(\"light = all team-seasons | dark = top-4 finishers only\");\n\n// chart 2: unbeaten champions vs other champions — 4 metrics, grouped bars\nlet ub_f = champs.iter().filter(|c| c.l == 0).collect::<Vec<_>>();\nlet ot_f = champs.iter().filter(|c| c.l > 0).collect::<Vec<_>>();\nlet avg = |v: &[&Champ], f: &dyn Fn(&Champ) -> f64| -> f64 {\n    if v.is_empty() { 0.0 } else { v.iter().map(|c| f(c)).sum::<f64>() / v.len() as f64 }\n};\nlet mlabels = [\"ppg\", \"win%\", \"draw%\", \"gd/g\"];\nlet ub_vals = [\n    avg(&ub_f, &|c| c.pts as f64 / c.played as f64),\n    avg(&ub_f, &|c| 100.0 * c.w as f64 / c.played as f64),\n    avg(&ub_f, &|c| 100.0 * c.d as f64 / c.played as f64),\n    avg(&ub_f, &|c| (c.gf - c.ga) as f64 / c.played as f64),\n];\nlet ot_vals = [\n    avg(&ot_f, &|c| c.pts as f64 / c.played as f64),\n    avg(&ot_f, &|c| 100.0 * c.w as f64 / c.played as f64),\n    avg(&ot_f, &|c| 100.0 * c.d as f64 / c.played as f64),\n    avg(&ot_f, &|c| (c.gf - c.ga) as f64 / c.played as f64),\n];\nlet ymax2 = ub_vals.iter().chain(ot_vals.iter()).cloned().fold(0.0f64, f64::max) * 1.2;\nlet fig2 = plotters::evcxr::evcxr_figure((760, 420), |root| {\n    root.fill(&WHITE)?;\n    let mut chart = ChartBuilder::on(&root)\n        .caption(\"Unbeaten champions vs all other champions\", (\"sans-serif\", 18))\n        .margin(15)\n        .x_label_area_size(40)\n        .y_label_area_size(45)\n        .build_cartesian_2d(-0.5..3.5, 0.0..ymax2)?;\n    chart.configure_mesh().x_labels(4)\n        .x_label_formatter(&|x: &f64| {\n            let i = (*x).round() as usize;\n            if i < 4 { mlabels[i].to_string() } else { String::new() }\n        })\n        .draw()?;\n    for i in 0..4 {\n        let x = i as f64;\n        chart.draw_series(std::iter::once(Rectangle::new(\n            [(x - 0.4, 0.0), (x - 0.05, ub_vals[i])], &RED,\n        )))?;\n        chart.draw_series(std::iter::once(Rectangle::new(\n            [(x + 0.05, 0.0), (x + 0.4, ot_vals[i])], &BLUE,\n        )))?;\n    }\n    Ok(())\n});\nfig2.evcxr_display();\n",
+      "metadata": {},
+      "execution_count": 10,
+      "outputs": [
+        {
+          "type": "text",
+          "text": "top-flight finished matches: 176903 (1188 dupes dropped)\nleague-seasons: 610 | team-season entries: 10492\ncomplete league-seasons: 592\nunbeaten team-seasons: 10 | of which champions: 9 | non-champions: 1\nteam-seasons analysed: 9917\nchampions analysed: 576\n0 defeats (n=10): 78.5%W 21.5%D 0.0%L\n1 defeat  (n=38): 76.7%W 20.3%D 2.9%L\n2 defeats (n=86): 73.1%W 21.0%D 5.9%L\nlight = all team-seasons | dark = top-4 finishers only\n"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "league",
+            "season",
+            "team",
+            "played",
+            "draws",
+            "gf/ga",
+            "finish",
+            "status"
+          ],
+          "rows": [
+            [
+              "England | English Premier League",
+              "2003/04",
+              "Arsenal",
+              "38",
+              "12",
+              "73/26",
+              "#1",
+              "champion"
+            ],
+            [
+              "Germany | German Bundesliga",
+              "2023/24",
+              "Leverkusen",
+              "34",
+              "6",
+              "89/24",
+              "#1",
+              "champion"
+            ],
+            [
+              "Greece | Greek Super League",
+              "2018/19",
+              "PAOK",
+              "30",
+              "4",
+              "66/14",
+              "#1",
+              "champion"
+            ],
+            [
+              "Italy | Italian Serie A",
+              "2011/12",
+              "Juventus",
+              "38",
+              "15",
+              "68/20",
+              "#1",
+              "champion"
+            ],
+            [
+              "Netherlands | Dutch Eredivisie",
+              "1994/95",
+              "Ajax",
+              "34",
+              "7",
+              "106/28",
+              "#1",
+              "champion"
+            ],
+            [
+              "Portugal | Portuguese Liga Portugal",
+              "2010/11",
+              "Porto",
+              "30",
+              "3",
+              "73/16",
+              "#1",
+              "champion"
+            ],
+            [
+              "Portugal | Portuguese Liga Portugal",
+              "2012/13",
+              "Porto",
+              "30",
+              "6",
+              "70/14",
+              "#1",
+              "champion"
+            ],
+            [
+              "Portugal | Portuguese Liga Portugal",
+              "2025/26",
+              "Benfica",
+              "34",
+              "11",
+              "74/25",
+              "#3",
+              "pos 3"
+            ],
+            [
+              "Scotland | Scottish Premiership",
+              "2016/17",
+              "Celtic",
+              "38",
+              "4",
+              "106/25",
+              "#1",
+              "champion"
+            ],
+            [
+              "Scotland | Scottish Premiership",
+              "2020/21",
+              "Rangers",
+              "38",
+              "6",
+              "92/13",
+              "#1",
+              "champion"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "defeats",
+            "n",
+            "n top-4",
+            "ppg all",
+            "ppg top-4",
+            "gd/g all",
+            "gd/g top-4",
+            "win% all",
+            "draw% all"
+          ],
+          "rows": [
+            [
+              "0",
+              "10",
+              "10",
+              "2.58",
+              "2.58",
+              "+1.79",
+              "+1.79",
+              "79%",
+              "21%"
+            ],
+            [
+              "1",
+              "38",
+              "38",
+              "2.51",
+              "2.51",
+              "+1.69",
+              "+1.69",
+              "77%",
+              "20%"
+            ],
+            [
+              "2",
+              "86",
+              "86",
+              "2.40",
+              "2.40",
+              "+1.58",
+              "+1.58",
+              "73%",
+              "21%"
+            ],
+            [
+              "3",
+              "158",
+              "157",
+              "2.28",
+              "2.29",
+              "+1.36",
+              "+1.37",
+              "69%",
+              "22%"
+            ],
+            [
+              "4-6",
+              "791",
+              "748",
+              "2.05",
+              "2.07",
+              "+1.01",
+              "+1.04",
+              "60%",
+              "24%"
+            ],
+            [
+              "7+",
+              "8834",
+              "1270",
+              "1.28",
+              "1.78",
+              "-0.14",
+              "+0.57",
+              "34%",
+              "26%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "group",
+            "n",
+            "ppg",
+            "win%",
+            "draw%",
+            "gf/g",
+            "ga/g",
+            "gd/g",
+            "margin"
+          ],
+          "rows": [
+            [
+              "unbeaten",
+              "9",
+              "2.60",
+              "80.12",
+              "19.88",
+              "2.40",
+              "0.58",
+              "1.82",
+              "14.56"
+            ],
+            [
+              "margin >=10pts",
+              "163",
+              "2.35",
+              "72.48",
+              "17.57",
+              "2.28",
+              "0.79",
+              "1.49",
+              "14.61"
+            ],
+            [
+              "all other champs",
+              "404",
+              "2.17",
+              "65.57",
+              "20.34",
+              "2.05",
+              "0.87",
+              "1.18",
+              "4.11"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "league",
+            "season",
+            "champion",
+            "played",
+            "w-d-l",
+            "gf/ga",
+            "margin"
+          ],
+          "rows": [
+            [
+              "England | English Premier League",
+              "2003/04",
+              "Arsenal",
+              "38",
+              "26W 12D 0L",
+              "73/26",
+              "+11"
+            ],
+            [
+              "Germany | German Bundesliga",
+              "2023/24",
+              "Leverkusen",
+              "34",
+              "28W 6D 0L",
+              "89/24",
+              "+17"
+            ],
+            [
+              "Greece | Greek Super League",
+              "2018/19",
+              "PAOK",
+              "30",
+              "26W 4D 0L",
+              "66/14",
+              "+10"
+            ],
+            [
+              "Italy | Italian Serie A",
+              "2011/12",
+              "Juventus",
+              "38",
+              "23W 15D 0L",
+              "68/20",
+              "+4"
+            ],
+            [
+              "Netherlands | Dutch Eredivisie",
+              "1994/95",
+              "Ajax",
+              "34",
+              "27W 7D 0L",
+              "106/28",
+              "+12"
+            ],
+            [
+              "Portugal | Portuguese Liga Portugal",
+              "2010/11",
+              "Porto",
+              "30",
+              "27W 3D 0L",
+              "73/16",
+              "+21"
+            ],
+            [
+              "Portugal | Portuguese Liga Portugal",
+              "2012/13",
+              "Porto",
+              "30",
+              "24W 6D 0L",
+              "70/14",
+              "+1"
+            ],
+            [
+              "Scotland | Scottish Premiership",
+              "2016/17",
+              "Celtic",
+              "38",
+              "34W 4D 0L",
+              "106/25",
+              "+30"
+            ],
+            [
+              "Scotland | Scottish Premiership",
+              "2020/21",
+              "Rangers",
+              "38",
+              "32W 6D 0L",
+              "92/13",
+              "+25"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "defeats",
+            "team-seasons",
+            "draw rate",
+            "pts lost to draws",
+            "avg per team"
+          ],
+          "rows": [
+            [
+              "0",
+              "10",
+              "21.5%",
+              "148",
+              "14.8"
+            ],
+            [
+              "1",
+              "38",
+              "20.3%",
+              "528",
+              "13.9"
+            ],
+            [
+              "2",
+              "86",
+              "21.0%",
+              "1222",
+              "14.2"
+            ],
+            [
+              "3",
+              "158",
+              "22.3%",
+              "2382",
+              "15.1"
+            ],
+            [
+              "4-6",
+              "791",
+              "24.3%",
+              "12992",
+              "16.4"
+            ],
+            [
+              "7+",
+              "8834",
+              "26.0%",
+              "161614",
+              "18.3"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "league",
+            "seasons",
+            "unbeaten",
+            "top club title share",
+            "most titles",
+            "avg 1st-2nd gap"
+          ],
+          "rows": [
+            [
+              "Italy | Italian Serie A",
+              "34",
+              "1",
+              "47%",
+              "Juventus",
+              "7.2"
+            ],
+            [
+              "Spain | Spanish La Liga",
+              "34",
+              "0",
+              "53%",
+              "Barcelona",
+              "6.3"
+            ],
+            [
+              "England | English Premier League",
+              "33",
+              "1",
+              "36%",
+              "Man United",
+              "6.9"
+            ],
+            [
+              "France | French Ligue 1",
+              "33",
+              "0",
+              "39%",
+              "Paris SG",
+              "8.7"
+            ],
+            [
+              "Germany | German Bundesliga",
+              "33",
+              "1",
+              "70%",
+              "Bayern Munich",
+              "8.6"
+            ],
+            [
+              "Netherlands | Dutch Eredivisie",
+              "33",
+              "1",
+              "42%",
+              "PSV Eindhoven",
+              "7.3"
+            ],
+            [
+              "Portugal | Portuguese Liga Portugal",
+              "33",
+              "3",
+              "55%",
+              "Porto",
+              "6.7"
+            ],
+            [
+              "Scotland | Scottish Premiership",
+              "32",
+              "2",
+              "66%",
+              "Celtic",
+              "11.2"
+            ],
+            [
+              "Turkey | Turkish Süper Lig",
+              "32",
+              "0",
+              "50%",
+              "Galatasaray",
+              "4.7"
+            ],
+            [
+              "Belgium | Belgian Pro League",
+              "31",
+              "0",
+              "35%",
+              "Anderlecht",
+              "6.0"
+            ],
+            [
+              "Greece | Greek Super League",
+              "27",
+              "1",
+              "67%",
+              "Olympiakos",
+              "9.9"
+            ],
+            [
+              "Brazil | Serie A",
+              "15",
+              "0",
+              "27%",
+              "Palmeiras",
+              "7.9"
+            ],
+            [
+              "Finland | Veikkausliiga",
+              "15",
+              "0",
+              "53%",
+              "HJK",
+              "6.1"
+            ],
+            [
+              "Japan | J1 League",
+              "15",
+              "0",
+              "27%",
+              "Kawasaki Frontale",
+              "5.8"
+            ],
+            [
+              "Mexico | Liga MX",
+              "15",
+              "0",
+              "47%",
+              "Club America",
+              "6.0"
+            ],
+            [
+              "Norway | Eliteserien",
+              "15",
+              "0",
+              "33%",
+              "Bodo/Glimt",
+              "8.3"
+            ],
+            [
+              "Poland | Ekstraklasa",
+              "15",
+              "0",
+              "47%",
+              "Legia",
+              "4.3"
+            ],
+            [
+              "Romania | Superliga",
+              "15",
+              "0",
+              "33%",
+              "FCSB",
+              "6.9"
+            ],
+            [
+              "Sweden | Allsvenskan",
+              "15",
+              "0",
+              "53%",
+              "Malmo FF",
+              "4.8"
+            ],
+            [
+              "United States | MLS",
+              "15",
+              "0",
+              "13%",
+              "Toronto FC",
+              "5.0"
+            ],
+            [
+              "Argentina | Liga Profesional",
+              "14",
+              "0",
+              "43%",
+              "Boca Juniors",
+              "3.4"
+            ],
+            [
+              "Austria | Bundesliga",
+              "14",
+              "0",
+              "79%",
+              "Salzburg",
+              "11.0"
+            ],
+            [
+              "Denmark | Superliga",
+              "14",
+              "0",
+              "50%",
+              "FC Copenhagen",
+              "6.6"
+            ],
+            [
+              "Ireland | Premier Division",
+              "14",
+              "0",
+              "36%",
+              "Shamrock Rovers",
+              "7.1"
+            ],
+            [
+              "Russia | Premier League",
+              "14",
+              "0",
+              "57%",
+              "Zenit",
+              "5.5"
+            ],
+            [
+              "Switzerland | Super League",
+              "14",
+              "0",
+              "43%",
+              "Young Boys",
+              "13.1"
+            ],
+            [
+              "China | Super League",
+              "13",
+              "0",
+              "46%",
+              "Guangzhou Evergrande",
+              "3.8"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "decade",
+            "unbeaten team-seasons"
+          ],
+          "rows": [
+            [
+              "1990s",
+              "1"
+            ],
+            [
+              "2000s",
+              "1"
+            ],
+            [
+              "2010s",
+              "5"
+            ],
+            [
+              "2020s",
+              "3"
+            ]
+          ]
+        },
+        {
+          "type": "mime_bundle",
+          "data": {
+            "image/svg+xml": "<svg width=\"760\" height=\"420\" viewBox=\"0 0 760 420\" xmlns=\"http://www.w3.org/2000/svg\">\n<rect x=\"0\" y=\"0\" width=\"760\" height=\"420\" opacity=\"1\" fill=\"#FFFFFF\" stroke=\"none\"/>\n<text x=\"380\" y=\"20\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"14.516129032258064\" opacity=\"1\" fill=\"#000000\">\nPoints per game by number of defeats\n</text>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"71\" y1=\"364\" x2=\"71\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"94\" y1=\"364\" x2=\"94\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"117\" y1=\"364\" x2=\"117\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"139\" y1=\"364\" x2=\"139\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"162\" y1=\"364\" x2=\"162\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"185\" y1=\"364\" x2=\"185\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"208\" y1=\"364\" x2=\"208\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"231\" y1=\"364\" x2=\"231\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"253\" y1=\"364\" x2=\"253\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"276\" y1=\"364\" x2=\"276\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"299\" y1=\"364\" x2=\"299\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"322\" y1=\"364\" x2=\"322\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"345\" y1=\"364\" x2=\"345\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"367\" y1=\"364\" x2=\"367\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"390\" y1=\"364\" x2=\"390\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"413\" y1=\"364\" x2=\"413\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"436\" y1=\"364\" x2=\"436\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"459\" y1=\"364\" x2=\"459\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"481\" y1=\"364\" x2=\"481\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"504\" y1=\"364\" x2=\"504\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"527\" y1=\"364\" x2=\"527\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"550\" y1=\"364\" x2=\"550\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"573\" y1=\"364\" x2=\"573\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"595\" y1=\"364\" x2=\"595\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"618\" y1=\"364\" x2=\"618\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"641\" y1=\"364\" x2=\"641\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"664\" y1=\"364\" x2=\"664\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"687\" y1=\"364\" x2=\"687\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"709\" y1=\"364\" x2=\"709\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"364\" x2=\"744\" y2=\"364\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"359\" x2=\"744\" y2=\"359\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"354\" x2=\"744\" y2=\"354\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"348\" x2=\"744\" y2=\"348\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"343\" x2=\"744\" y2=\"343\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"337\" x2=\"744\" y2=\"337\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"332\" x2=\"744\" y2=\"332\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"326\" x2=\"744\" y2=\"326\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"321\" x2=\"744\" y2=\"321\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"315\" x2=\"744\" y2=\"315\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"310\" x2=\"744\" y2=\"310\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"304\" x2=\"744\" y2=\"304\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"299\" x2=\"744\" y2=\"299\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"293\" x2=\"744\" y2=\"293\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"288\" x2=\"744\" y2=\"288\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"282\" x2=\"744\" y2=\"282\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"277\" x2=\"744\" y2=\"277\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"271\" x2=\"744\" y2=\"271\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"266\" x2=\"744\" y2=\"266\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"260\" x2=\"744\" y2=\"260\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"255\" x2=\"744\" y2=\"255\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"249\" x2=\"744\" y2=\"249\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"244\" x2=\"744\" y2=\"244\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"238\" x2=\"744\" y2=\"238\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"233\" x2=\"744\" y2=\"233\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"227\" x2=\"744\" y2=\"227\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"222\" x2=\"744\" y2=\"222\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"216\" x2=\"744\" y2=\"216\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"211\" x2=\"744\" y2=\"211\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"206\" x2=\"744\" y2=\"206\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"200\" x2=\"744\" y2=\"200\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"195\" x2=\"744\" y2=\"195\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"189\" x2=\"744\" y2=\"189\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"184\" x2=\"744\" y2=\"184\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"178\" x2=\"744\" y2=\"178\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"173\" x2=\"744\" y2=\"173\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"167\" x2=\"744\" y2=\"167\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"162\" x2=\"744\" y2=\"162\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"156\" x2=\"744\" y2=\"156\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"151\" x2=\"744\" y2=\"151\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"145\" x2=\"744\" y2=\"145\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"140\" x2=\"744\" y2=\"140\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"134\" x2=\"744\" y2=\"134\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"129\" x2=\"744\" y2=\"129\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"123\" x2=\"744\" y2=\"123\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"118\" x2=\"744\" y2=\"118\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"112\" x2=\"744\" y2=\"112\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"107\" x2=\"744\" y2=\"107\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"101\" x2=\"744\" y2=\"101\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"96\" x2=\"744\" y2=\"96\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"90\" x2=\"744\" y2=\"90\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"85\" x2=\"744\" y2=\"85\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"79\" x2=\"744\" y2=\"79\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"74\" x2=\"744\" y2=\"74\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"68\" x2=\"744\" y2=\"68\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"63\" x2=\"744\" y2=\"63\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"57\" x2=\"744\" y2=\"57\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"52\" x2=\"744\" y2=\"52\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"47\" x2=\"744\" y2=\"47\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"41\" x2=\"744\" y2=\"41\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"117\" y1=\"364\" x2=\"117\" y2=\"39\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"231\" y1=\"364\" x2=\"231\" y2=\"39\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"345\" y1=\"364\" x2=\"345\" y2=\"39\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"459\" y1=\"364\" x2=\"459\" y2=\"39\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"573\" y1=\"364\" x2=\"573\" y2=\"39\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"687\" y1=\"364\" x2=\"687\" y2=\"39\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"364\" x2=\"744\" y2=\"364\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"310\" x2=\"744\" y2=\"310\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"255\" x2=\"744\" y2=\"255\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"200\" x2=\"744\" y2=\"200\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"145\" x2=\"744\" y2=\"145\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"90\" x2=\"744\" y2=\"90\"/>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,39 59,364 \"/>\n<text x=\"50\" y=\"364\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n0.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"54,364 59,364 \"/>\n<text x=\"50\" y=\"310\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n0.5\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"54,310 59,310 \"/>\n<text x=\"50\" y=\"255\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n1.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"54,255 59,255 \"/>\n<text x=\"50\" y=\"200\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n1.5\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"54,200 59,200 \"/>\n<text x=\"50\" y=\"145\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n2.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"54,145 59,145 \"/>\n<text x=\"50\" y=\"90\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n2.5\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"54,90 59,90 \"/>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"60,365 744,365 \"/>\n<text x=\"117\" y=\"375\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"117,365 117,370 \"/>\n<text x=\"231\" y=\"375\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n1\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"231,365 231,370 \"/>\n<text x=\"345\" y=\"375\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n2\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"345,365 345,370 \"/>\n<text x=\"459\" y=\"375\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n3\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"459,365 459,370 \"/>\n<text x=\"573\" y=\"375\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n4-6\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"573,365 573,370 \"/>\n<text x=\"687\" y=\"375\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n7+\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"687,365 687,370 \"/>\n<rect x=\"71\" y=\"82\" width=\"40\" height=\"282\" opacity=\"1\" fill=\"none\" stroke=\"#00FFFF\"/>\n<rect x=\"122\" y=\"82\" width=\"40\" height=\"282\" opacity=\"1\" fill=\"none\" stroke=\"#0000FF\"/>\n<rect x=\"185\" y=\"90\" width=\"40\" height=\"274\" opacity=\"1\" fill=\"none\" stroke=\"#00FFFF\"/>\n<rect x=\"236\" y=\"90\" width=\"40\" height=\"274\" opacity=\"1\" fill=\"none\" stroke=\"#0000FF\"/>\n<rect x=\"299\" y=\"101\" width=\"40\" height=\"263\" opacity=\"1\" fill=\"none\" stroke=\"#00FFFF\"/>\n<rect x=\"350\" y=\"101\" width=\"40\" height=\"263\" opacity=\"1\" fill=\"none\" stroke=\"#0000FF\"/>\n<rect x=\"413\" y=\"114\" width=\"40\" height=\"250\" opacity=\"1\" fill=\"none\" stroke=\"#00FFFF\"/>\n<rect x=\"464\" y=\"114\" width=\"40\" height=\"250\" opacity=\"1\" fill=\"none\" stroke=\"#0000FF\"/>\n<rect x=\"527\" y=\"140\" width=\"40\" height=\"224\" opacity=\"1\" fill=\"none\" stroke=\"#00FFFF\"/>\n<rect x=\"578\" y=\"137\" width=\"40\" height=\"227\" opacity=\"1\" fill=\"none\" stroke=\"#0000FF\"/>\n<rect x=\"641\" y=\"224\" width=\"40\" height=\"140\" opacity=\"1\" fill=\"none\" stroke=\"#00FFFF\"/>\n<rect x=\"692\" y=\"169\" width=\"40\" height=\"195\" opacity=\"1\" fill=\"none\" stroke=\"#0000FF\"/>\n</svg>",
+            "text/plain": "Figure (SVG)"
+          },
+          "metadata": {}
+        },
+        {
+          "type": "mime_bundle",
+          "data": {
+            "image/svg+xml": "<svg width=\"760\" height=\"420\" viewBox=\"0 0 760 420\" xmlns=\"http://www.w3.org/2000/svg\">\n<rect x=\"0\" y=\"0\" width=\"760\" height=\"420\" opacity=\"1\" fill=\"#FFFFFF\" stroke=\"none\"/>\n<text x=\"380\" y=\"20\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"14.516129032258064\" opacity=\"1\" fill=\"#000000\">\nUnbeaten champions vs all other champions\n</text>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"77\" y1=\"364\" x2=\"77\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"111\" y1=\"364\" x2=\"111\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"145\" y1=\"364\" x2=\"145\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"179\" y1=\"364\" x2=\"179\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"213\" y1=\"364\" x2=\"213\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"248\" y1=\"364\" x2=\"248\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"282\" y1=\"364\" x2=\"282\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"316\" y1=\"364\" x2=\"316\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"350\" y1=\"364\" x2=\"350\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"384\" y1=\"364\" x2=\"384\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"419\" y1=\"364\" x2=\"419\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"453\" y1=\"364\" x2=\"453\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"487\" y1=\"364\" x2=\"487\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"521\" y1=\"364\" x2=\"521\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"555\" y1=\"364\" x2=\"555\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"590\" y1=\"364\" x2=\"590\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"624\" y1=\"364\" x2=\"624\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"658\" y1=\"364\" x2=\"658\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"692\" y1=\"364\" x2=\"692\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"364\" x2=\"744\" y2=\"364\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"361\" x2=\"744\" y2=\"361\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"358\" x2=\"744\" y2=\"358\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"354\" x2=\"744\" y2=\"354\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"351\" x2=\"744\" y2=\"351\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"348\" x2=\"744\" y2=\"348\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"344\" x2=\"744\" y2=\"344\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"341\" x2=\"744\" y2=\"341\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"337\" x2=\"744\" y2=\"337\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"334\" x2=\"744\" y2=\"334\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"331\" x2=\"744\" y2=\"331\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"327\" x2=\"744\" y2=\"327\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"324\" x2=\"744\" y2=\"324\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"321\" x2=\"744\" y2=\"321\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"317\" x2=\"744\" y2=\"317\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"314\" x2=\"744\" y2=\"314\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"310\" x2=\"744\" y2=\"310\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"307\" x2=\"744\" y2=\"307\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"304\" x2=\"744\" y2=\"304\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"300\" x2=\"744\" y2=\"300\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"297\" x2=\"744\" y2=\"297\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"294\" x2=\"744\" y2=\"294\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"290\" x2=\"744\" y2=\"290\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"287\" x2=\"744\" y2=\"287\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"283\" x2=\"744\" y2=\"283\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"280\" x2=\"744\" y2=\"280\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"277\" x2=\"744\" y2=\"277\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"273\" x2=\"744\" y2=\"273\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"270\" x2=\"744\" y2=\"270\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"266\" x2=\"744\" y2=\"266\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"263\" x2=\"744\" y2=\"263\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"260\" x2=\"744\" y2=\"260\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"256\" x2=\"744\" y2=\"256\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"253\" x2=\"744\" y2=\"253\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"250\" x2=\"744\" y2=\"250\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"246\" x2=\"744\" y2=\"246\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"243\" x2=\"744\" y2=\"243\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"239\" x2=\"744\" y2=\"239\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"236\" x2=\"744\" y2=\"236\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"233\" x2=\"744\" y2=\"233\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"229\" x2=\"744\" y2=\"229\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"226\" x2=\"744\" y2=\"226\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"223\" x2=\"744\" y2=\"223\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"219\" x2=\"744\" y2=\"219\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"216\" x2=\"744\" y2=\"216\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"212\" x2=\"744\" y2=\"212\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"209\" x2=\"744\" y2=\"209\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"206\" x2=\"744\" y2=\"206\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"202\" x2=\"744\" y2=\"202\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"199\" x2=\"744\" y2=\"199\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"195\" x2=\"744\" y2=\"195\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"192\" x2=\"744\" y2=\"192\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"189\" x2=\"744\" y2=\"189\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"185\" x2=\"744\" y2=\"185\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"182\" x2=\"744\" y2=\"182\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"179\" x2=\"744\" y2=\"179\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"175\" x2=\"744\" y2=\"175\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"172\" x2=\"744\" y2=\"172\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"168\" x2=\"744\" y2=\"168\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"165\" x2=\"744\" y2=\"165\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"162\" x2=\"744\" y2=\"162\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"158\" x2=\"744\" y2=\"158\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"155\" x2=\"744\" y2=\"155\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"152\" x2=\"744\" y2=\"152\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"148\" x2=\"744\" y2=\"148\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"145\" x2=\"744\" y2=\"145\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"141\" x2=\"744\" y2=\"141\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"138\" x2=\"744\" y2=\"138\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"135\" x2=\"744\" y2=\"135\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"131\" x2=\"744\" y2=\"131\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"128\" x2=\"744\" y2=\"128\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"124\" x2=\"744\" y2=\"124\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"121\" x2=\"744\" y2=\"121\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"118\" x2=\"744\" y2=\"118\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"114\" x2=\"744\" y2=\"114\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"111\" x2=\"744\" y2=\"111\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"108\" x2=\"744\" y2=\"108\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"104\" x2=\"744\" y2=\"104\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"101\" x2=\"744\" y2=\"101\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"97\" x2=\"744\" y2=\"97\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"94\" x2=\"744\" y2=\"94\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"91\" x2=\"744\" y2=\"91\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"87\" x2=\"744\" y2=\"87\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"84\" x2=\"744\" y2=\"84\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"81\" x2=\"744\" y2=\"81\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"77\" x2=\"744\" y2=\"77\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"74\" x2=\"744\" y2=\"74\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"70\" x2=\"744\" y2=\"70\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"67\" x2=\"744\" y2=\"67\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"64\" x2=\"744\" y2=\"64\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"60\" x2=\"744\" y2=\"60\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"57\" x2=\"744\" y2=\"57\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"53\" x2=\"744\" y2=\"53\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"50\" x2=\"744\" y2=\"50\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"47\" x2=\"744\" y2=\"47\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"43\" x2=\"744\" y2=\"43\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"40\" x2=\"744\" y2=\"40\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"145\" y1=\"364\" x2=\"145\" y2=\"39\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"316\" y1=\"364\" x2=\"316\" y2=\"39\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"487\" y1=\"364\" x2=\"487\" y2=\"39\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"658\" y1=\"364\" x2=\"658\" y2=\"39\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"364\" x2=\"744\" y2=\"364\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"331\" x2=\"744\" y2=\"331\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"297\" x2=\"744\" y2=\"297\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"263\" x2=\"744\" y2=\"263\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"229\" x2=\"744\" y2=\"229\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"195\" x2=\"744\" y2=\"195\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"162\" x2=\"744\" y2=\"162\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"128\" x2=\"744\" y2=\"128\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"94\" x2=\"744\" y2=\"94\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"60\" x2=\"744\" y2=\"60\"/>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,39 59,364 \"/>\n<text x=\"50\" y=\"364\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n0.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"54,364 59,364 \"/>\n<text x=\"50\" y=\"331\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n10.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"54,331 59,331 \"/>\n<text x=\"50\" y=\"297\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n20.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"54,297 59,297 \"/>\n<text x=\"50\" y=\"263\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n30.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"54,263 59,263 \"/>\n<text x=\"50\" y=\"229\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n40.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"54,229 59,229 \"/>\n<text x=\"50\" y=\"195\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n50.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"54,195 59,195 \"/>\n<text x=\"50\" y=\"162\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n60.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"54,162 59,162 \"/>\n<text x=\"50\" y=\"128\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n70.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"54,128 59,128 \"/>\n<text x=\"50\" y=\"94\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n80.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"54,94 59,94 \"/>\n<text x=\"50\" y=\"60\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n90.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"54,60 59,60 \"/>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"60,365 744,365 \"/>\n<text x=\"145\" y=\"375\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nppg\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"145,365 145,370 \"/>\n<text x=\"316\" y=\"375\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nwin%\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"316,365 316,370 \"/>\n<text x=\"487\" y=\"375\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\ndraw%\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"487,365 487,370 \"/>\n<text x=\"658\" y=\"375\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\ngd/g\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"658,365 658,370 \"/>\n<rect x=\"77\" y=\"356\" width=\"59\" height=\"8\" opacity=\"1\" fill=\"none\" stroke=\"#FF0000\"/>\n<rect x=\"154\" y=\"357\" width=\"59\" height=\"7\" opacity=\"1\" fill=\"none\" stroke=\"#0000FF\"/>\n<rect x=\"248\" y=\"94\" width=\"59\" height=\"270\" opacity=\"1\" fill=\"none\" stroke=\"#FF0000\"/>\n<rect x=\"325\" y=\"136\" width=\"59\" height=\"228\" opacity=\"1\" fill=\"none\" stroke=\"#0000FF\"/>\n<rect x=\"419\" y=\"297\" width=\"59\" height=\"67\" opacity=\"1\" fill=\"none\" stroke=\"#FF0000\"/>\n<rect x=\"496\" y=\"298\" width=\"59\" height=\"66\" opacity=\"1\" fill=\"none\" stroke=\"#0000FF\"/>\n<rect x=\"590\" y=\"358\" width=\"59\" height=\"6\" opacity=\"1\" fill=\"none\" stroke=\"#FF0000\"/>\n<rect x=\"667\" y=\"360\" width=\"59\" height=\"4\" opacity=\"1\" fill=\"none\" stroke=\"#0000FF\"/>\n</svg>",
+            "text/plain": "Figure (SVG)"
+          },
+          "metadata": {}
+        }
+      ]
+    },
+    {
+      "id": "a6205042-8b3f-4951-9ff0-369cb8deb1fc",
+      "cell_type": "code",
+      "source": "println!(\"red = unbeaten champions (n={}) | blue = other champions (n={})\", ub_f.len(), ot_f.len());\n",
+      "metadata": {},
+      "execution_count": 11,
       "outputs": [
         {
           "type": "text",
@@ -2516,7 +4760,9 @@
     {
       "id": "d3395315-fbbf-4c79-b3eb-aafa1dc301f2",
       "cell_type": "markdown",
-      "source": "## What the data says\n\n**The unbeaten season is real but rare — and it's the *tail* of a\nconsistency gradient, not a separate category.**\n\n**1. Zero defeats is not special — it's just the end of a smooth\ncurve.** Mean points per game by defeats: 2.58 (0), 2.51 (1), 2.40\n(2), 2.28 (3), 2.05 (4–6), 1.28 (7+). The gap between unbeaten and\none-defeat (0.07 ppg) is *smaller* than between one and two defeats\n(0.11). There is no discontinuity at zero — consistency is continuous.\n\n**2. Unbeaten teams don't \"play not to lose\" — they win *more*.**\nDraw rates by defeats: 21.5% (0), 20.3% (1), 21.0% (2), 22.3% (3),\n24.3% (4–6), 26.0% (7+). The romantic hypothesis predicted unbeaten\nteams would settle for draws; they actually draw *less* than average\nand post the highest win rate of any bucket (78.5%).\n\n**3. Unbeaten champions ARE the most dominant champions — barely.**\nNine unbeaten champions across 576 title winners: 2.60 ppg, 80% wins,\n0.58 goals conceded per game — better than both margin champions\n(≥10pts, n=163: 2.35 ppg, 0.79 ga/g) and ordinary champions (2.17 ppg,\n0.87 ga/g). But their average margin (14.6 pts) is *identical* to the\nmargin champions'. Porto 2012/13 went unbeaten by **one point**; Juventus\n2011/12 by four. Invincibility and dominance are correlated, not\nsynonymous.\n\n**4. The counterexamples prove the distinction.** Benfica 2025/26 went\nunbeaten and finished **third**. PAOK 2018/19 went unbeaten and won by\n10 — in a league where Olympiacos had won 6 of the previous 7 titles.\n\n**5. Rarity**: 10 unbeaten team-seasons in 592 league-seasons (~1.7%\nof team-seasons, ~0.1% of all team-seasons). By decade: 1 (1990s), 1\n(2000s), 5 (2010s), 3 (2020s so far) — possibly *more* common recently,\nthough n is tiny. Portugal (3) and Scotland (2) dominate the list;\n20 of 28 leagues have never produced one.\n\n**Verdict.** An unbeaten season is a genuine achievement — the nine\nunbeaten champions are statistically the most dominant title winners —\nbut it is not a *different kind* of achievement. It is what the best\nteams look like when variance breaks their way: the same teams that\npost 100+ point seasons also post the occasional unbeaten one. The\ncliché survives only in its weakest form: unbeaten champions concede\nfewer goals (0.58/g) than any other champion group — defence still\nmatters — but they don't win more, draw more, or win by more than the\nbiggest-margin champions.\n\n*Caveats: n=9 unbeaten champions means the champion comparison is\ndescriptive, not inferential; league formats differ (30–38 games);\nrepeated clubs (Porto ×2, Celtic/Rangers) cluster the sample; xG\nunavailable; association is not causation.*\n\n*Source: 176,903 deduplicated top-flight matches across 28 leagues,\n592 complete league-seasons, 1990s → 2026.*"
+      "source": "## What the data says\n\n**The unbeaten season is real but rare — and it's the *tail* of a\nconsistency gradient, not a separate category.**\n\n**1. Zero defeats is not special — it's just the end of a smooth\ncurve.** Mean points per game by defeats: 2.58 (0), 2.51 (1), 2.40\n(2), 2.28 (3), 2.05 (4–6), 1.28 (7+). The gap between unbeaten and\none-defeat (0.07 ppg) is *smaller* than between one and two defeats\n(0.11). There is no discontinuity at zero — consistency is continuous.\n\n**2. Unbeaten teams don't \"play not to lose\" — they win *more*.**\nDraw rates by defeats: 21.5% (0), 20.3% (1), 21.0% (2), 22.3% (3),\n24.3% (4–6), 26.0% (7+). The romantic hypothesis predicted unbeaten\nteams would settle for draws; they actually draw *less* than average\nand post the highest win rate of any bucket (78.5%).\n\n**3. Unbeaten champions ARE the most dominant champions — barely.**\nNine unbeaten champions across 576 title winners: 2.60 ppg, 80% wins,\n0.58 goals conceded per game — better than both margin champions\n(≥10pts, n=163: 2.35 ppg, 0.79 ga/g) and ordinary champions (2.17 ppg,\n0.87 ga/g). But their average margin (14.6 pts) is *identical* to the\nmargin champions'. Porto 2012/13 went unbeaten by **one point**; Juventus\n2011/12 by four. Invincibility and dominance are correlated, not\nsynonymous.\n\n**4. The counterexamples prove the distinction.** Benfica 2025/26 went\nunbeaten and finished **third**. PAOK 2018/19 went unbeaten and won by\n10 — in a league where Olympiacos had won 6 of the previous 7 titles.\n\n**5. Rarity**: 10 unbeaten team-seasons in 592 league-seasons (~1.7%\nof team-seasons, ~0.1% of all team-seasons). By decade: 1 (1990s), 1\n(2000s), 5 (2010s), 3 (2020s so far) — possibly *more* common recently,\nthough n is tiny. Portugal (3) and Scotland (2) dominate the list;\n20 of 28 leagues have never produced one.\n\n**Verdict.** An unbeaten season is a genuine achievement — the nine\nunbeaten champions are statistically the most dominant title winners —\nbut it is not a *different kind* of achievement. It is what the best\nteams look like when variance breaks their way: the same teams that\npost 100+ point seasons also post the occasional unbeaten one. The\ncliché survives only in its weakest form: unbeaten champions concede\nfewer goals (0.58/g) than any other champion group — defence still\nmatters — but they don't win more, draw more, or win by more than the\nbiggest-margin champions.\n\n*Caveats: n=9 unbeaten champions means the champion comparison is\ndescriptive, not inferential; league formats differ (30–38 games);\nrepeated clubs (Porto ×2, Celtic/Rangers) cluster the sample; xG\nunavailable; association is not causation.*\n\n*Source: 176,903 deduplicated top-flight matches across 28 leagues,\n592 complete league-seasons, 1990s → 2026.*",
+      "metadata": {},
+      "outputs": []
     }
   ]
 }

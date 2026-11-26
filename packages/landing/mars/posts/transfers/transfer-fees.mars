@@ -236,9 +236,650 @@
     {
       "id": "5d1c2e92-11f1-45ec-a9bc-65144abcba32",
       "cell_type": "code",
-      "source": "\n// top-15 fees all time + medians by position and destination league\nlet mut top: Vec<(f64,i64)> = deals.iter().map(|d|(d.fee,d.pid)).collect();\ntop.sort_by(|a,b| b.0.partial_cmp(&a.0).unwrap());\nlet trows: Vec<Vec<String>> = top.iter().take(15).map(|&(f,pid)| {\n    let d = deals.iter().find(|d| d.pid==pid && (d.fee-f).abs()<0.01).unwrap();\n    vec![eur(f), pname.get(&pid).cloned().unwrap_or_default().chars().take(30).collect(),\n        format!(\"{} → {}\", tname.get(&d.from).cloned().unwrap_or_default(), tname.get(&d.to).cloned().unwrap_or_default()),\n        d.year.to_string()]\n}).collect();\nmars_table(&[\"fee\",\"player\",\"move\",\"year\"], &trows);\n\n// by position group\nlet mut by_pos: HashMap<&str, Vec<f64>> = HashMap::new();\nfor d in &deals { by_pos.entry(pos_group(ppos.get(&d.pid).map(|s|s.as_str()).unwrap_or(\"\"))).or_default().push(d.fee); }\nlet prows: Vec<Vec<String>> = [\"GK\",\"DEF\",\"MID\",\"FWD\",\"UNK\"].iter().filter_map(|g| {\n    by_pos.get(g).map(|v| vec![g.to_string(), v.len().to_string(), eur(median(&mut v.clone()))])\n}).collect();\nmars_table(&[\"position\",\"deals\",\"median fee\"], &prows);\n\n// by destination league (primary league of buying club), leagues with >=15 deals\nlet mut by_lg: HashMap<i64, Vec<f64>> = HashMap::new();\nfor d in &deals {\n    if let Some(&(lgid,_)) = team_lg.get(&d.to) {\n        if lgid > 0 { by_lg.entry(lgid).or_default().push(d.fee); }\n    }\n}\nlet mut lgs: Vec<(i64,usize,f64)> = by_lg.iter().filter_map(|(&l,v)| {\n    if v.len() >= 15 { Some((l, v.len(), median(&mut v.clone()))) } else { None }\n}).collect();\nlgs.sort_by(|a,b| b.1.cmp(&a.1));\nlet lrows: Vec<Vec<String>> = lgs.iter().take(15).map(|&(l,n,m)| {\n    vec![lname.get(&l).cloned().unwrap_or_default(), n.to_string(), eur(m)]\n}).collect();\nmars_table(&[\"destination league\",\"deals\",\"median fee\"], &lrows);\n",
+      "source": "// top-15 fees all time + medians by position and destination league\nlet mut top: Vec<(f64,i64)> = deals.iter().map(|d|(d.fee,d.pid)).collect();\ntop.sort_by(|a,b| b.0.partial_cmp(&a.0).unwrap());\nlet trows: Vec<Vec<String>> = top.iter().take(15).map(|&(f,pid)| {\n    let d = deals.iter().find(|d| d.pid==pid && (d.fee-f).abs()<0.01).unwrap();\n    vec![eur(f), pname.get(&pid).cloned().unwrap_or_default().chars().take(30).collect(),\n        format!(\"{} → {}\", tname.get(&d.from).cloned().unwrap_or_default(), tname.get(&d.to).cloned().unwrap_or_default()),\n        d.year.to_string()]\n}).collect();\nmars_table(&[\"fee\",\"player\",\"move\",\"year\"], &trows);\n",
       "metadata": {},
       "execution_count": 3,
+      "outputs": [
+        {
+          "type": "text",
+          "text": "deals with fee since 2005: 5351\n"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "year",
+            "deals",
+            "median fee",
+            "record",
+            "record move",
+            "player"
+          ],
+          "rows": [
+            [
+              "2005",
+              "6",
+              "€0.4m",
+              "€27.0m",
+              "Sevilla → Real Madrid",
+              "Sergio Ramos García"
+            ],
+            [
+              "2006",
+              "9",
+              "€0.9m",
+              "€3.0m",
+              " → Udinese",
+              "Alexis Alejandro Sánchez Sán"
+            ],
+            [
+              "2007",
+              "28",
+              "€3.0m",
+              "€13.2m",
+              "Watford → Aston Villa",
+              "Ashley Young"
+            ],
+            [
+              "2008",
+              "27",
+              "€2.7m",
+              "€22.5m",
+              "Dinamo Zagreb → Tottenham Hotspur",
+              "Luka Modrić"
+            ],
+            [
+              "2009",
+              "38",
+              "€2.1m",
+              "€94.0m",
+              "Manchester United → Real Madrid",
+              "Cristiano Ronaldo dos Santos"
+            ],
+            [
+              "2010",
+              "56",
+              "€2.6m",
+              "€33.0m",
+              "Benfica → Real Madrid",
+              "Ángel Fabián Di María Hernán"
+            ],
+            [
+              "2011",
+              "105",
+              "€2.5m",
+              "€40.0m",
+              "FC Porto → Atlético Madrid",
+              "Radamel Falcao García Zárate"
+            ],
+            [
+              "2012",
+              "115",
+              "€2.7m",
+              "€42.0m",
+              "AC Milan → Paris Saint-Germain",
+              "Thiago Emiliano da Silva"
+            ],
+            [
+              "2013",
+              "179",
+              "€2.9m",
+              "€64.5m",
+              "Napoli → Paris Saint-Germain",
+              "Edinson Roberto Cavani Gómez"
+            ],
+            [
+              "2014",
+              "210",
+              "€3.0m",
+              "€81.7m",
+              "Liverpool → Barcelona",
+              "Luis Javier Suárez Charris"
+            ],
+            [
+              "2015",
+              "286",
+              "€3.8m",
+              "€76.0m",
+              "VfL Wolfsburg → Manchester City",
+              "Kevin De Bruyne"
+            ],
+            [
+              "2016",
+              "336",
+              "€3.6m",
+              "€105.0m",
+              "Juventus → Manchester United",
+              "Paul Pogba"
+            ],
+            [
+              "2017",
+              "401",
+              "€3.9m",
+              "€148.0m",
+              "Borussia Dortmund → Barcelona",
+              "Ousmane Dembélé"
+            ],
+            [
+              "2018",
+              "422",
+              "€4.0m",
+              "€180.0m",
+              "AS Monaco → Paris Saint-Germain",
+              "Kylian Mbappé Lottin"
+            ],
+            [
+              "2019",
+              "464",
+              "€5.0m",
+              "€127.2m",
+              "Benfica → Atlético Madrid",
+              "João Félix Sequeira"
+            ],
+            [
+              "2020",
+              "380",
+              "€4.3m",
+              "€100.0m",
+              "Bayer Leverkusen → Chelsea",
+              "Kai Havertz"
+            ],
+            [
+              "2021",
+              "337",
+              "€3.5m",
+              "€117.5m",
+              "Aston Villa → Manchester City",
+              "Jack Grealish"
+            ],
+            [
+              "2022",
+              "486",
+              "€4.0m",
+              "€85.4m",
+              "Fiorentina → Juventus",
+              "Dušan Vlahović"
+            ],
+            [
+              "2023",
+              "535",
+              "€5.0m",
+              "€127.0m",
+              "Borussia Dortmund → Real Madrid",
+              "Jude Bellingham"
+            ],
+            [
+              "2024",
+              "405",
+              "€4.0m",
+              "€75.0m",
+              "Manchester City → Atlético Madrid",
+              "Julián Álvarez"
+            ],
+            [
+              "2025",
+              "420",
+              "€5.0m",
+              "€145.0m",
+              "Newcastle United → Liverpool",
+              "Alexander Isak"
+            ],
+            [
+              "2026",
+              "106",
+              "€4.5m",
+              "€80.0m",
+              "Newcastle United → Barcelona",
+              "Anthony Gordon"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "fee",
+            "player",
+            "move",
+            "year"
+          ],
+          "rows": [
+            [
+              "€180.0m",
+              "Kylian Mbappé Lottin",
+              "AS Monaco → Paris Saint-Germain",
+              "2018"
+            ],
+            [
+              "€148.0m",
+              "Ousmane Dembélé",
+              "Borussia Dortmund → Barcelona",
+              "2017"
+            ],
+            [
+              "€145.0m",
+              "Alexander Isak",
+              "Newcastle United → Liverpool",
+              "2025"
+            ],
+            [
+              "€135.0m",
+              "Philippe Coutinho Correia",
+              "Liverpool → Barcelona",
+              "2018"
+            ],
+            [
+              "€127.2m",
+              "João Félix Sequeira",
+              "Benfica → Atlético Madrid",
+              "2019"
+            ],
+            [
+              "€127.0m",
+              "Jude Bellingham",
+              "Borussia Dortmund → Real Madrid",
+              "2023"
+            ],
+            [
+              "€125.0m",
+              "Florian Wirtz",
+              "Bayer Leverkusen → Liverpool",
+              "2025"
+            ],
+            [
+              "€121.0m",
+              "Enzo Fernandez",
+              "Benfica → Chelsea",
+              "2023"
+            ],
+            [
+              "€120.0m",
+              "Antoine Griezmann",
+              "Atlético Madrid → Barcelona",
+              "2019"
+            ],
+            [
+              "€117.5m",
+              "Jack Grealish",
+              "Aston Villa → Manchester City",
+              "2021"
+            ],
+            [
+              "€117.0m",
+              "Cristiano Ronaldo dos Santos A",
+              "Real Madrid → Juventus",
+              "2018"
+            ],
+            [
+              "€116.6m",
+              "Declan Rice",
+              "West Ham United → Arsenal",
+              "2023"
+            ],
+            [
+              "€116.0m",
+              "Moisés Isaac Caicedo Corozo",
+              "Brighton & Hove Albion → Chelsea",
+              "2023"
+            ],
+            [
+              "€113.0m",
+              "Romelu Lukaku Menama",
+              "Inter Milan → Chelsea",
+              "2021"
+            ],
+            [
+              "€105.0m",
+              "Paul Pogba",
+              "Juventus → Manchester United",
+              "2016"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "edac08ee-c831-4e6f-8da1-ae9948c1e529",
+      "cell_type": "code",
+      "source": "// by position group\nlet mut by_pos: HashMap<&str, Vec<f64>> = HashMap::new();\nfor d in &deals { by_pos.entry(pos_group(ppos.get(&d.pid).map(|s|s.as_str()).unwrap_or(\"\"))).or_default().push(d.fee); }\nlet prows: Vec<Vec<String>> = [\"GK\",\"DEF\",\"MID\",\"FWD\",\"UNK\"].iter().filter_map(|g| {\n    by_pos.get(g).map(|v| vec![g.to_string(), v.len().to_string(), eur(median(&mut v.clone()))])\n}).collect();\nmars_table(&[\"position\",\"deals\",\"median fee\"], &prows);\n",
+      "metadata": {},
+      "execution_count": 4,
+      "outputs": [
+        {
+          "type": "text",
+          "text": "deals with fee since 2005: 5351\n"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "year",
+            "deals",
+            "median fee",
+            "record",
+            "record move",
+            "player"
+          ],
+          "rows": [
+            [
+              "2005",
+              "6",
+              "€0.4m",
+              "€27.0m",
+              "Sevilla → Real Madrid",
+              "Sergio Ramos García"
+            ],
+            [
+              "2006",
+              "9",
+              "€0.9m",
+              "€3.0m",
+              " → Udinese",
+              "Alexis Alejandro Sánchez Sán"
+            ],
+            [
+              "2007",
+              "28",
+              "€3.0m",
+              "€13.2m",
+              "Watford → Aston Villa",
+              "Ashley Young"
+            ],
+            [
+              "2008",
+              "27",
+              "€2.7m",
+              "€22.5m",
+              "Dinamo Zagreb → Tottenham Hotspur",
+              "Luka Modrić"
+            ],
+            [
+              "2009",
+              "38",
+              "€2.1m",
+              "€94.0m",
+              "Manchester United → Real Madrid",
+              "Cristiano Ronaldo dos Santos"
+            ],
+            [
+              "2010",
+              "56",
+              "€2.6m",
+              "€33.0m",
+              "Benfica → Real Madrid",
+              "Ángel Fabián Di María Hernán"
+            ],
+            [
+              "2011",
+              "105",
+              "€2.5m",
+              "€40.0m",
+              "FC Porto → Atlético Madrid",
+              "Radamel Falcao García Zárate"
+            ],
+            [
+              "2012",
+              "115",
+              "€2.7m",
+              "€42.0m",
+              "AC Milan → Paris Saint-Germain",
+              "Thiago Emiliano da Silva"
+            ],
+            [
+              "2013",
+              "179",
+              "€2.9m",
+              "€64.5m",
+              "Napoli → Paris Saint-Germain",
+              "Edinson Roberto Cavani Gómez"
+            ],
+            [
+              "2014",
+              "210",
+              "€3.0m",
+              "€81.7m",
+              "Liverpool → Barcelona",
+              "Luis Javier Suárez Charris"
+            ],
+            [
+              "2015",
+              "286",
+              "€3.8m",
+              "€76.0m",
+              "VfL Wolfsburg → Manchester City",
+              "Kevin De Bruyne"
+            ],
+            [
+              "2016",
+              "336",
+              "€3.6m",
+              "€105.0m",
+              "Juventus → Manchester United",
+              "Paul Pogba"
+            ],
+            [
+              "2017",
+              "401",
+              "€3.9m",
+              "€148.0m",
+              "Borussia Dortmund → Barcelona",
+              "Ousmane Dembélé"
+            ],
+            [
+              "2018",
+              "422",
+              "€4.0m",
+              "€180.0m",
+              "AS Monaco → Paris Saint-Germain",
+              "Kylian Mbappé Lottin"
+            ],
+            [
+              "2019",
+              "464",
+              "€5.0m",
+              "€127.2m",
+              "Benfica → Atlético Madrid",
+              "João Félix Sequeira"
+            ],
+            [
+              "2020",
+              "380",
+              "€4.3m",
+              "€100.0m",
+              "Bayer Leverkusen → Chelsea",
+              "Kai Havertz"
+            ],
+            [
+              "2021",
+              "337",
+              "€3.5m",
+              "€117.5m",
+              "Aston Villa → Manchester City",
+              "Jack Grealish"
+            ],
+            [
+              "2022",
+              "486",
+              "€4.0m",
+              "€85.4m",
+              "Fiorentina → Juventus",
+              "Dušan Vlahović"
+            ],
+            [
+              "2023",
+              "535",
+              "€5.0m",
+              "€127.0m",
+              "Borussia Dortmund → Real Madrid",
+              "Jude Bellingham"
+            ],
+            [
+              "2024",
+              "405",
+              "€4.0m",
+              "€75.0m",
+              "Manchester City → Atlético Madrid",
+              "Julián Álvarez"
+            ],
+            [
+              "2025",
+              "420",
+              "€5.0m",
+              "€145.0m",
+              "Newcastle United → Liverpool",
+              "Alexander Isak"
+            ],
+            [
+              "2026",
+              "106",
+              "€4.5m",
+              "€80.0m",
+              "Newcastle United → Barcelona",
+              "Anthony Gordon"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "fee",
+            "player",
+            "move",
+            "year"
+          ],
+          "rows": [
+            [
+              "€180.0m",
+              "Kylian Mbappé Lottin",
+              "AS Monaco → Paris Saint-Germain",
+              "2018"
+            ],
+            [
+              "€148.0m",
+              "Ousmane Dembélé",
+              "Borussia Dortmund → Barcelona",
+              "2017"
+            ],
+            [
+              "€145.0m",
+              "Alexander Isak",
+              "Newcastle United → Liverpool",
+              "2025"
+            ],
+            [
+              "€135.0m",
+              "Philippe Coutinho Correia",
+              "Liverpool → Barcelona",
+              "2018"
+            ],
+            [
+              "€127.2m",
+              "João Félix Sequeira",
+              "Benfica → Atlético Madrid",
+              "2019"
+            ],
+            [
+              "€127.0m",
+              "Jude Bellingham",
+              "Borussia Dortmund → Real Madrid",
+              "2023"
+            ],
+            [
+              "€125.0m",
+              "Florian Wirtz",
+              "Bayer Leverkusen → Liverpool",
+              "2025"
+            ],
+            [
+              "€121.0m",
+              "Enzo Fernandez",
+              "Benfica → Chelsea",
+              "2023"
+            ],
+            [
+              "€120.0m",
+              "Antoine Griezmann",
+              "Atlético Madrid → Barcelona",
+              "2019"
+            ],
+            [
+              "€117.5m",
+              "Jack Grealish",
+              "Aston Villa → Manchester City",
+              "2021"
+            ],
+            [
+              "€117.0m",
+              "Cristiano Ronaldo dos Santos A",
+              "Real Madrid → Juventus",
+              "2018"
+            ],
+            [
+              "€116.6m",
+              "Declan Rice",
+              "West Ham United → Arsenal",
+              "2023"
+            ],
+            [
+              "€116.0m",
+              "Moisés Isaac Caicedo Corozo",
+              "Brighton & Hove Albion → Chelsea",
+              "2023"
+            ],
+            [
+              "€113.0m",
+              "Romelu Lukaku Menama",
+              "Inter Milan → Chelsea",
+              "2021"
+            ],
+            [
+              "€105.0m",
+              "Paul Pogba",
+              "Juventus → Manchester United",
+              "2016"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "position",
+            "deals",
+            "median fee"
+          ],
+          "rows": [
+            [
+              "GK",
+              "289",
+              "€2.7m"
+            ],
+            [
+              "DEF",
+              "1242",
+              "€3.7m"
+            ],
+            [
+              "MID",
+              "1617",
+              "€4.0m"
+            ],
+            [
+              "FWD",
+              "1787",
+              "€4.7m"
+            ],
+            [
+              "UNK",
+              "416",
+              "€2.3m"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "3a93c005-432e-42cb-b128-57c2827f6a79",
+      "cell_type": "code",
+      "source": "// by destination league (primary league of buying club), leagues with >=15 deals\nlet mut by_lg: HashMap<i64, Vec<f64>> = HashMap::new();\nfor d in &deals {\n    if let Some(&(lgid,_)) = team_lg.get(&d.to) {\n        if lgid > 0 { by_lg.entry(lgid).or_default().push(d.fee); }\n    }\n}\nlet mut lgs: Vec<(i64,usize,f64)> = by_lg.iter().filter_map(|(&l,v)| {\n    if v.len() >= 15 { Some((l, v.len(), median(&mut v.clone()))) } else { None }\n}).collect();\nlgs.sort_by(|a,b| b.1.cmp(&a.1));\nlet lrows: Vec<Vec<String>> = lgs.iter().take(15).map(|&(l,n,m)| {\n    vec![lname.get(&l).cloned().unwrap_or_default(), n.to_string(), eur(m)]\n}).collect();\nmars_table(&[\"destination league\",\"deals\",\"median fee\"], &lrows);\n",
+      "metadata": {},
+      "execution_count": 5,
       "outputs": [
         {
           "type": "text",

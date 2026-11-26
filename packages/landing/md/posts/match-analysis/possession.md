@@ -8,6 +8,8 @@ order: 37
 tags: ['football', 'analysis', 'possession', 'mars', 'sqlite']
 ---
 
+# Does possession actually help you win?
+
 ## Does possession actually help you win?
 
 The cliché: _control the ball, control the game, win the match._ This notebook
@@ -187,30 +189,6 @@ let rows_s: Vec<Vec<String>> = by_season.iter().map(|(s, n)| vec![s.clone(), n.t
 mars_table(&["EPL season", "matches with possession"], &rows_s);
 ```
 
-```text
-stat rows indexed: 374660
-matches with valid possession (both teams): 111836
-EPL matches with possession: 8486 | all leagues: 111836
-```
-
-| league                   | matches | season span           |
-| ------------------------ | ------- | --------------------- |
-| English Championship     | 12005   | 2003/04 → 2026/27     |
-| English League One       | 10707   | 2006/07 → 2026/27     |
-| English League Two       | 9879    | 2006/07 → 2026/27     |
-| English Premier League   | 8486    | 2001/02 → 2026/27     |
-| Spanish La Liga          | 7247    | 2004/05 → 2026/27     |
-| Italian Serie A          | 7241    | 2006/07 → 2026/27     |
-| French Ligue 1           | 6465    | 2006/07 → 2026/27     |
-| MLS                      | 6260    | 2012 → 2026           |
-| German Bundesliga        | 4639    | 2005/06 → 2026/27     |
-| Liga MX                  | 4542    | 2012/2013 → 2026/2027 |
-| Scottish Premiership     | 4316    | 2006/07 → 2026/27     |
-| Serie A                  | 3946    | 2014 → 2026           |
-| German 2. Bundesliga     | 3246    | 2008/09 → 2026/27     |
-| Dutch Eredivisie         | 2993    | 2008/09 → 2026/27     |
-| Portuguese Liga Portugal | 2794    | 2008/09 → 2026/27     |
-
 | EPL season | matches with possession |
 | ---------- | ----------------------- |
 | 2001/02    | 1                       |
@@ -247,7 +225,6 @@ possession and its result (win/draw/loss). Bands are the team's own possession
 share.
 
 ```rust
-
 // possession bands -> W/D/L, pooled team-perspective
 let bands = [0.0, 35.0, 40.0, 45.0, 50.0, 55.0, 60.0, 65.0, 70.0, 100.0];
 let blabels = ["<35", "35-40", "40-45", "45-50", "50-55", "55-60", "60-65", "65-70", ">70"];
@@ -271,64 +248,7 @@ let band_table = |matches: &[&MRow]| -> Vec<Vec<String>> {
 
 let epl_bands = band_table(&epl);
 mars_table(&["possession", "n", "win%", "draw%", "loss%"], &epl_bands);
-
-let all_refs: Vec<&MRow> = rows.iter().collect();
-let all_bands = band_table(&all_refs);
-mars_table(&["possession (all leagues)", "n", "win%", "draw%", "loss%"], &all_bands);
 ```
-
-```text
-stat rows indexed: 374660
-matches with valid possession (both teams): 111836
-EPL matches with possession: 8486 | all leagues: 111836
-```
-
-| league                   | matches | season span           |
-| ------------------------ | ------- | --------------------- |
-| English Championship     | 12005   | 2003/04 → 2026/27     |
-| English League One       | 10707   | 2006/07 → 2026/27     |
-| English League Two       | 9879    | 2006/07 → 2026/27     |
-| English Premier League   | 8486    | 2001/02 → 2026/27     |
-| Spanish La Liga          | 7247    | 2004/05 → 2026/27     |
-| Italian Serie A          | 7241    | 2006/07 → 2026/27     |
-| French Ligue 1           | 6465    | 2006/07 → 2026/27     |
-| MLS                      | 6260    | 2012 → 2026           |
-| German Bundesliga        | 4639    | 2005/06 → 2026/27     |
-| Liga MX                  | 4542    | 2012/2013 → 2026/2027 |
-| Scottish Premiership     | 4316    | 2006/07 → 2026/27     |
-| Serie A                  | 3946    | 2014 → 2026           |
-| German 2. Bundesliga     | 3246    | 2008/09 → 2026/27     |
-| Dutch Eredivisie         | 2993    | 2008/09 → 2026/27     |
-| Portuguese Liga Portugal | 2794    | 2008/09 → 2026/27     |
-
-| EPL season | matches with possession |
-| ---------- | ----------------------- |
-| 2001/02    | 1                       |
-| 2002/03    | 378                     |
-| 2003/04    | 381                     |
-| 2004/05    | 380                     |
-| 2005/06    | 380                     |
-| 2006/07    | 380                     |
-| 2007/08    | 380                     |
-| 2008/09    | 380                     |
-| 2009/10    | 379                     |
-| 2010/11    | 379                     |
-| 2011/12    | 207                     |
-| 2012/13    | 338                     |
-| 2013/14    | 344                     |
-| 2014/15    | 380                     |
-| 2015/16    | 417                     |
-| 2016/17    | 4                       |
-| 2017/18    | 380                     |
-| 2018/19    | 378                     |
-| 2019/20    | 376                     |
-| 2020/21    | 372                     |
-| 2021/22    | 351                     |
-| 2022/23    | 293                     |
-| 2023/24    | 370                     |
-| 2024/25    | 368                     |
-| 2025/26    | 380                     |
-| 2026/27    | 110                     |
 
 | possession | n    | win%  | draw% | loss% |
 | ---------- | ---- | ----- | ----- | ----- |
@@ -341,6 +261,12 @@ EPL matches with possession: 8486 | all leagues: 111836
 | 60-65      | 1505 | 47.0% | 24.1% | 28.9% |
 | 65-70      | 881  | 45.5% | 25.2% | 29.3% |
 | >70        | 590  | 54.1% | 23.2% | 22.7% |
+
+```rust
+let all_refs: Vec<&MRow> = rows.iter().collect();
+let all_bands = band_table(&all_refs);
+mars_table(&["possession (all leagues)", "n", "win%", "draw%", "loss%"], &all_bands);
+```
 
 | possession (all leagues) | n     | win%  | draw% | loss% |
 | ------------------------ | ----- | ----- | ----- | ----- |
@@ -362,7 +288,6 @@ climbing; a flattening top end would mean the last few percentage points of
 possession are worth little.
 
 ```rust
-
 // home win% by possession differential (5-point bins)
 let mut bins: Vec<(i64, usize, usize)> = Vec::new(); // (bin centre low, home wins, total)
 for k in -7i64..=7 {
@@ -384,7 +309,27 @@ let d_rows: Vec<Vec<String>> = bins.iter().map(|(k, hw, n)| vec![
     format!("{:.1}%", if *n > 0 { 100.0 * *hw as f64 / *n as f64 } else { 0.0 }),
 ]).collect();
 mars_table(&["possession diff (home − away)", "matches", "home win%"], &d_rows);
+```
 
+| possession diff (home − away) | matches | home win% |
+| ----------------------------- | ------- | --------- |
+| -35 to -30                    | 196     | 33.2%     |
+| -30 to -25                    | 280     | 37.9%     |
+| -25 to -20                    | 335     | 35.5%     |
+| -20 to -15                    | 479     | 37.2%     |
+| -15 to -10                    | 535     | 45.8%     |
+| -10 to -5                     | 733     | 39.4%     |
+| -5 to +0                      | 762     | 43.8%     |
+| +0 to +5                      | 899     | 44.4%     |
+| +5 to +10                     | 778     | 45.8%     |
+| +10 to +15                    | 796     | 49.9%     |
+| +15 to +20                    | 565     | 48.8%     |
+| +20 to +25                    | 475     | 55.4%     |
+| +25 to +30                    | 389     | 52.2%     |
+| +30 to +35                    | 311     | 47.9%     |
+| +35 to +40                    | 223     | 52.9%     |
+
+```rust
 // same for all leagues
 let mut bins2: Vec<(i64, usize, usize)> = Vec::new();
 for k in -7i64..=7 {
@@ -407,101 +352,6 @@ let d_rows2: Vec<Vec<String>> = bins2.iter().map(|(k, hw, n)| vec![
 ]).collect();
 mars_table(&["possession diff — all leagues", "matches", "home win%"], &d_rows2);
 ```
-
-```text
-stat rows indexed: 374660
-matches with valid possession (both teams): 111836
-EPL matches with possession: 8486 | all leagues: 111836
-```
-
-| league                   | matches | season span           |
-| ------------------------ | ------- | --------------------- |
-| English Championship     | 12005   | 2003/04 → 2026/27     |
-| English League One       | 10707   | 2006/07 → 2026/27     |
-| English League Two       | 9879    | 2006/07 → 2026/27     |
-| English Premier League   | 8486    | 2001/02 → 2026/27     |
-| Spanish La Liga          | 7247    | 2004/05 → 2026/27     |
-| Italian Serie A          | 7241    | 2006/07 → 2026/27     |
-| French Ligue 1           | 6465    | 2006/07 → 2026/27     |
-| MLS                      | 6260    | 2012 → 2026           |
-| German Bundesliga        | 4639    | 2005/06 → 2026/27     |
-| Liga MX                  | 4542    | 2012/2013 → 2026/2027 |
-| Scottish Premiership     | 4316    | 2006/07 → 2026/27     |
-| Serie A                  | 3946    | 2014 → 2026           |
-| German 2. Bundesliga     | 3246    | 2008/09 → 2026/27     |
-| Dutch Eredivisie         | 2993    | 2008/09 → 2026/27     |
-| Portuguese Liga Portugal | 2794    | 2008/09 → 2026/27     |
-
-| EPL season | matches with possession |
-| ---------- | ----------------------- |
-| 2001/02    | 1                       |
-| 2002/03    | 378                     |
-| 2003/04    | 381                     |
-| 2004/05    | 380                     |
-| 2005/06    | 380                     |
-| 2006/07    | 380                     |
-| 2007/08    | 380                     |
-| 2008/09    | 380                     |
-| 2009/10    | 379                     |
-| 2010/11    | 379                     |
-| 2011/12    | 207                     |
-| 2012/13    | 338                     |
-| 2013/14    | 344                     |
-| 2014/15    | 380                     |
-| 2015/16    | 417                     |
-| 2016/17    | 4                       |
-| 2017/18    | 380                     |
-| 2018/19    | 378                     |
-| 2019/20    | 376                     |
-| 2020/21    | 372                     |
-| 2021/22    | 351                     |
-| 2022/23    | 293                     |
-| 2023/24    | 370                     |
-| 2024/25    | 368                     |
-| 2025/26    | 380                     |
-| 2026/27    | 110                     |
-
-| possession | n    | win%  | draw% | loss% |
-| ---------- | ---- | ----- | ----- | ----- |
-| <35        | 1429 | 26.6% | 24.5% | 48.9% |
-| 35-40      | 1436 | 29.4% | 24.1% | 46.5% |
-| 40-45      | 2296 | 31.7% | 26.1% | 42.2% |
-| 45-50      | 3149 | 34.8% | 25.6% | 39.5% |
-| 50-55      | 3245 | 38.5% | 26.0% | 35.5% |
-| 55-60      | 2441 | 42.2% | 26.1% | 31.7% |
-| 60-65      | 1505 | 47.0% | 24.1% | 28.9% |
-| 65-70      | 881  | 45.5% | 25.2% | 29.3% |
-| >70        | 590  | 54.1% | 23.2% | 22.7% |
-
-| possession (all leagues) | n     | win%  | draw% | loss% |
-| ------------------------ | ----- | ----- | ----- | ----- |
-| <35                      | 14158 | 31.7% | 25.8% | 42.5% |
-| 35-40                    | 18028 | 35.9% | 26.1% | 38.0% |
-| 40-45                    | 30971 | 35.8% | 25.8% | 38.4% |
-| 45-50                    | 45664 | 35.6% | 26.0% | 38.3% |
-| 50-55                    | 48544 | 37.6% | 26.6% | 35.8% |
-| 55-60                    | 32774 | 38.5% | 25.9% | 35.6% |
-| 60-65                    | 18873 | 38.4% | 26.0% | 35.6% |
-| 65-70                    | 9659  | 39.8% | 26.2% | 34.0% |
-| >70                      | 5001  | 48.0% | 24.8% | 27.2% |
-
-| possession diff (home − away) | matches | home win% |
-| ----------------------------- | ------- | --------- |
-| -35 to -30                    | 196     | 33.2%     |
-| -30 to -25                    | 280     | 37.9%     |
-| -25 to -20                    | 335     | 35.5%     |
-| -20 to -15                    | 479     | 37.2%     |
-| -15 to -10                    | 535     | 45.8%     |
-| -10 to -5                     | 733     | 39.4%     |
-| -5 to +0                      | 762     | 43.8%     |
-| +0 to +5                      | 899     | 44.4%     |
-| +5 to +10                     | 778     | 45.8%     |
-| +10 to +15                    | 796     | 49.9%     |
-| +15 to +20                    | 565     | 48.8%     |
-| +20 to +25                    | 475     | 55.4%     |
-| +25 to +30                    | 389     | 52.2%     |
-| +30 to +35                    | 311     | 47.9%     |
-| +35 to +40                    | 223     | 52.9%     |
 
 | possession diff — all leagues | matches | home win% |
 | ----------------------------- | ------- | --------- |
@@ -528,7 +378,6 @@ Two failure modes worth counting: teams that **win despite low possession**
 were destiny, both would be rare.
 
 ```rust
-
 // team-perspective: wins with <40% possession, losses with >60%
 struct Tally { low_w: usize, tot_w: usize, high_l: usize, tot_l: usize }
 let mut tally: HashMap<(String, String, String), Tally> = HashMap::new(); // (league, season, team) -> tally
@@ -579,137 +428,12 @@ let top_rows: Vec<Vec<String>> = cand.iter().take(12).map(|(tm, t)| vec![
     format!("{:.0}%", 100.0 * t.0 as f64 / t.1.max(1) as f64),
 ]).collect();
 mars_table(&["team (EPL, all seasons)", "wins <40% poss", "total wins", "low-poss win share"], &top_rows);
-
-// and the opposite: teams that lose most despite >60% possession
-let mut cand_l: Vec<(&String, &(usize, usize, usize, usize))> = team_tot.iter()
-    .filter(|(_, t)| t.2 >= 8)
-    .collect();
-cand_l.sort_by(|a, b| {
-    let ra = (a.1).2 as f64 / (a.1).3.max(1) as f64;
-    let rb = (b.1).2 as f64 / (b.1).3.max(1) as f64;
-    rb.partial_cmp(&ra).unwrap()
-});
-let top_l: Vec<Vec<String>> = cand_l.iter().take(12).map(|(tm, t)| vec![
-    (*tm).clone(), t.2.to_string(), t.3.to_string(),
-    format!("{:.0}%", 100.0 * t.2 as f64 / t.3.max(1) as f64),
-]).collect();
-mars_table(&["team (EPL, all seasons)", "losses >60% poss", "total losses", "high-poss loss share"], &top_l);
 ```
 
 ```text
-stat rows indexed: 374660
-matches with valid possession (both teams): 111836
-EPL matches with possession: 8486 | all leagues: 111836
 EPL team-matches: wins 6334 | wins with <40%% poss: 802 (12.7%% of wins)
 EPL losses 6334 | losses with >60%% poss: 802 (12.7%% of losses)
 ```
-
-| league                   | matches | season span           |
-| ------------------------ | ------- | --------------------- |
-| English Championship     | 12005   | 2003/04 → 2026/27     |
-| English League One       | 10707   | 2006/07 → 2026/27     |
-| English League Two       | 9879    | 2006/07 → 2026/27     |
-| English Premier League   | 8486    | 2001/02 → 2026/27     |
-| Spanish La Liga          | 7247    | 2004/05 → 2026/27     |
-| Italian Serie A          | 7241    | 2006/07 → 2026/27     |
-| French Ligue 1           | 6465    | 2006/07 → 2026/27     |
-| MLS                      | 6260    | 2012 → 2026           |
-| German Bundesliga        | 4639    | 2005/06 → 2026/27     |
-| Liga MX                  | 4542    | 2012/2013 → 2026/2027 |
-| Scottish Premiership     | 4316    | 2006/07 → 2026/27     |
-| Serie A                  | 3946    | 2014 → 2026           |
-| German 2. Bundesliga     | 3246    | 2008/09 → 2026/27     |
-| Dutch Eredivisie         | 2993    | 2008/09 → 2026/27     |
-| Portuguese Liga Portugal | 2794    | 2008/09 → 2026/27     |
-
-| EPL season | matches with possession |
-| ---------- | ----------------------- |
-| 2001/02    | 1                       |
-| 2002/03    | 378                     |
-| 2003/04    | 381                     |
-| 2004/05    | 380                     |
-| 2005/06    | 380                     |
-| 2006/07    | 380                     |
-| 2007/08    | 380                     |
-| 2008/09    | 380                     |
-| 2009/10    | 379                     |
-| 2010/11    | 379                     |
-| 2011/12    | 207                     |
-| 2012/13    | 338                     |
-| 2013/14    | 344                     |
-| 2014/15    | 380                     |
-| 2015/16    | 417                     |
-| 2016/17    | 4                       |
-| 2017/18    | 380                     |
-| 2018/19    | 378                     |
-| 2019/20    | 376                     |
-| 2020/21    | 372                     |
-| 2021/22    | 351                     |
-| 2022/23    | 293                     |
-| 2023/24    | 370                     |
-| 2024/25    | 368                     |
-| 2025/26    | 380                     |
-| 2026/27    | 110                     |
-
-| possession | n    | win%  | draw% | loss% |
-| ---------- | ---- | ----- | ----- | ----- |
-| <35        | 1429 | 26.6% | 24.5% | 48.9% |
-| 35-40      | 1436 | 29.4% | 24.1% | 46.5% |
-| 40-45      | 2296 | 31.7% | 26.1% | 42.2% |
-| 45-50      | 3149 | 34.8% | 25.6% | 39.5% |
-| 50-55      | 3245 | 38.5% | 26.0% | 35.5% |
-| 55-60      | 2441 | 42.2% | 26.1% | 31.7% |
-| 60-65      | 1505 | 47.0% | 24.1% | 28.9% |
-| 65-70      | 881  | 45.5% | 25.2% | 29.3% |
-| >70        | 590  | 54.1% | 23.2% | 22.7% |
-
-| possession (all leagues) | n     | win%  | draw% | loss% |
-| ------------------------ | ----- | ----- | ----- | ----- |
-| <35                      | 14158 | 31.7% | 25.8% | 42.5% |
-| 35-40                    | 18028 | 35.9% | 26.1% | 38.0% |
-| 40-45                    | 30971 | 35.8% | 25.8% | 38.4% |
-| 45-50                    | 45664 | 35.6% | 26.0% | 38.3% |
-| 50-55                    | 48544 | 37.6% | 26.6% | 35.8% |
-| 55-60                    | 32774 | 38.5% | 25.9% | 35.6% |
-| 60-65                    | 18873 | 38.4% | 26.0% | 35.6% |
-| 65-70                    | 9659  | 39.8% | 26.2% | 34.0% |
-| >70                      | 5001  | 48.0% | 24.8% | 27.2% |
-
-| possession diff (home − away) | matches | home win% |
-| ----------------------------- | ------- | --------- |
-| -35 to -30                    | 196     | 33.2%     |
-| -30 to -25                    | 280     | 37.9%     |
-| -25 to -20                    | 335     | 35.5%     |
-| -20 to -15                    | 479     | 37.2%     |
-| -15 to -10                    | 535     | 45.8%     |
-| -10 to -5                     | 733     | 39.4%     |
-| -5 to +0                      | 762     | 43.8%     |
-| +0 to +5                      | 899     | 44.4%     |
-| +5 to +10                     | 778     | 45.8%     |
-| +10 to +15                    | 796     | 49.9%     |
-| +15 to +20                    | 565     | 48.8%     |
-| +20 to +25                    | 475     | 55.4%     |
-| +25 to +30                    | 389     | 52.2%     |
-| +30 to +35                    | 311     | 47.9%     |
-| +35 to +40                    | 223     | 52.9%     |
-
-| possession diff — all leagues | matches | home win% |
-| ----------------------------- | ------- | --------- |
-| -35 to -30                    | 2274    | 41.1%     |
-| -30 to -25                    | 3155    | 44.8%     |
-| -25 to -20                    | 4158    | 45.5%     |
-| -20 to -15                    | 6062    | 45.4%     |
-| -15 to -10                    | 7137    | 45.9%     |
-| -10 to -5                     | 10221   | 42.7%     |
-| -5 to +0                      | 11045   | 43.9%     |
-| +0 to +5                      | 14423   | 43.6%     |
-| +5 to +10                     | 11157   | 45.0%     |
-| +10 to +15                    | 10891   | 45.1%     |
-| +15 to +20                    | 7864    | 44.0%     |
-| +20 to +25                    | 6607    | 45.0%     |
-| +25 to +30                    | 4633    | 43.0%     |
-| +30 to +35                    | 3629    | 45.1%     |
-| +35 to +40                    | 2213    | 43.8%     |
 
 | team (EPL, all seasons) | wins <40% poss | total wins | low-poss win share |
 | ----------------------- | -------------- | ---------- | ------------------ |
@@ -725,6 +449,23 @@ EPL losses 6334 | losses with >60%% poss: 802 (12.7%% of losses)
 | Bournemouth             | 26             | 100        | 26%                |
 | Wolves                  | 29             | 118        | 25%                |
 | Watford                 | 14             | 57         | 25%                |
+
+```rust
+// and the opposite: teams that lose most despite >60% possession
+let mut cand_l: Vec<(&String, &(usize, usize, usize, usize))> = team_tot.iter()
+    .filter(|(_, t)| t.2 >= 8)
+    .collect();
+cand_l.sort_by(|a, b| {
+    let ra = (a.1).2 as f64 / (a.1).3.max(1) as f64;
+    let rb = (b.1).2 as f64 / (b.1).3.max(1) as f64;
+    rb.partial_cmp(&ra).unwrap()
+});
+let top_l: Vec<Vec<String>> = cand_l.iter().take(12).map(|(tm, t)| vec![
+    (*tm).clone(), t.2.to_string(), t.3.to_string(),
+    format!("{:.0}%", 100.0 * t.2 as f64 / t.3.max(1) as f64),
+]).collect();
+mars_table(&["team (EPL, all seasons)", "losses >60% poss", "total losses", "high-poss loss share"], &top_l);
+```
 
 | team (EPL, all seasons) | losses >60% poss | total losses | high-poss loss share |
 | ----------------------- | ---------------- | ------------ | -------------------- |
@@ -826,153 +567,11 @@ println!("EPL xG subset ({} matches): corr(poss)={:.3} corr(shots)={:.3} corr(xG
 ```
 
 ```text
-stat rows indexed: 374660
-matches with valid possession (both teams): 111836
-EPL matches with possession: 8486 | all leagues: 111836
-EPL team-matches: wins 6334 | wins with <40%% poss: 802 (12.7%% of wins)
-EPL losses 6334 | losses with >60%% poss: 802 (12.7%% of losses)
 team-observations with shots: 223620
 EPL: corr(home possession, home win) = 0.119
 EPL: corr(home shot share,   home win) = 0.258
 EPL xG subset (148 matches): corr(poss)=0.148 corr(shots)=0.185 corr(xG)=0.438
 ```
-
-| league                   | matches | season span           |
-| ------------------------ | ------- | --------------------- |
-| English Championship     | 12005   | 2003/04 → 2026/27     |
-| English League One       | 10707   | 2006/07 → 2026/27     |
-| English League Two       | 9879    | 2006/07 → 2026/27     |
-| English Premier League   | 8486    | 2001/02 → 2026/27     |
-| Spanish La Liga          | 7247    | 2004/05 → 2026/27     |
-| Italian Serie A          | 7241    | 2006/07 → 2026/27     |
-| French Ligue 1           | 6465    | 2006/07 → 2026/27     |
-| MLS                      | 6260    | 2012 → 2026           |
-| German Bundesliga        | 4639    | 2005/06 → 2026/27     |
-| Liga MX                  | 4542    | 2012/2013 → 2026/2027 |
-| Scottish Premiership     | 4316    | 2006/07 → 2026/27     |
-| Serie A                  | 3946    | 2014 → 2026           |
-| German 2. Bundesliga     | 3246    | 2008/09 → 2026/27     |
-| Dutch Eredivisie         | 2993    | 2008/09 → 2026/27     |
-| Portuguese Liga Portugal | 2794    | 2008/09 → 2026/27     |
-
-| EPL season | matches with possession |
-| ---------- | ----------------------- |
-| 2001/02    | 1                       |
-| 2002/03    | 378                     |
-| 2003/04    | 381                     |
-| 2004/05    | 380                     |
-| 2005/06    | 380                     |
-| 2006/07    | 380                     |
-| 2007/08    | 380                     |
-| 2008/09    | 380                     |
-| 2009/10    | 379                     |
-| 2010/11    | 379                     |
-| 2011/12    | 207                     |
-| 2012/13    | 338                     |
-| 2013/14    | 344                     |
-| 2014/15    | 380                     |
-| 2015/16    | 417                     |
-| 2016/17    | 4                       |
-| 2017/18    | 380                     |
-| 2018/19    | 378                     |
-| 2019/20    | 376                     |
-| 2020/21    | 372                     |
-| 2021/22    | 351                     |
-| 2022/23    | 293                     |
-| 2023/24    | 370                     |
-| 2024/25    | 368                     |
-| 2025/26    | 380                     |
-| 2026/27    | 110                     |
-
-| possession | n    | win%  | draw% | loss% |
-| ---------- | ---- | ----- | ----- | ----- |
-| <35        | 1429 | 26.6% | 24.5% | 48.9% |
-| 35-40      | 1436 | 29.4% | 24.1% | 46.5% |
-| 40-45      | 2296 | 31.7% | 26.1% | 42.2% |
-| 45-50      | 3149 | 34.8% | 25.6% | 39.5% |
-| 50-55      | 3245 | 38.5% | 26.0% | 35.5% |
-| 55-60      | 2441 | 42.2% | 26.1% | 31.7% |
-| 60-65      | 1505 | 47.0% | 24.1% | 28.9% |
-| 65-70      | 881  | 45.5% | 25.2% | 29.3% |
-| >70        | 590  | 54.1% | 23.2% | 22.7% |
-
-| possession (all leagues) | n     | win%  | draw% | loss% |
-| ------------------------ | ----- | ----- | ----- | ----- |
-| <35                      | 14158 | 31.7% | 25.8% | 42.5% |
-| 35-40                    | 18028 | 35.9% | 26.1% | 38.0% |
-| 40-45                    | 30971 | 35.8% | 25.8% | 38.4% |
-| 45-50                    | 45664 | 35.6% | 26.0% | 38.3% |
-| 50-55                    | 48544 | 37.6% | 26.6% | 35.8% |
-| 55-60                    | 32774 | 38.5% | 25.9% | 35.6% |
-| 60-65                    | 18873 | 38.4% | 26.0% | 35.6% |
-| 65-70                    | 9659  | 39.8% | 26.2% | 34.0% |
-| >70                      | 5001  | 48.0% | 24.8% | 27.2% |
-
-| possession diff (home − away) | matches | home win% |
-| ----------------------------- | ------- | --------- |
-| -35 to -30                    | 196     | 33.2%     |
-| -30 to -25                    | 280     | 37.9%     |
-| -25 to -20                    | 335     | 35.5%     |
-| -20 to -15                    | 479     | 37.2%     |
-| -15 to -10                    | 535     | 45.8%     |
-| -10 to -5                     | 733     | 39.4%     |
-| -5 to +0                      | 762     | 43.8%     |
-| +0 to +5                      | 899     | 44.4%     |
-| +5 to +10                     | 778     | 45.8%     |
-| +10 to +15                    | 796     | 49.9%     |
-| +15 to +20                    | 565     | 48.8%     |
-| +20 to +25                    | 475     | 55.4%     |
-| +25 to +30                    | 389     | 52.2%     |
-| +30 to +35                    | 311     | 47.9%     |
-| +35 to +40                    | 223     | 52.9%     |
-
-| possession diff — all leagues | matches | home win% |
-| ----------------------------- | ------- | --------- |
-| -35 to -30                    | 2274    | 41.1%     |
-| -30 to -25                    | 3155    | 44.8%     |
-| -25 to -20                    | 4158    | 45.5%     |
-| -20 to -15                    | 6062    | 45.4%     |
-| -15 to -10                    | 7137    | 45.9%     |
-| -10 to -5                     | 10221   | 42.7%     |
-| -5 to +0                      | 11045   | 43.9%     |
-| +0 to +5                      | 14423   | 43.6%     |
-| +5 to +10                     | 11157   | 45.0%     |
-| +10 to +15                    | 10891   | 45.1%     |
-| +15 to +20                    | 7864    | 44.0%     |
-| +20 to +25                    | 6607    | 45.0%     |
-| +25 to +30                    | 4633    | 43.0%     |
-| +30 to +35                    | 3629    | 45.1%     |
-| +35 to +40                    | 2213    | 43.8%     |
-
-| team (EPL, all seasons) | wins <40% poss | total wins | low-poss win share |
-| ----------------------- | -------------- | ---------- | ------------------ |
-| Nott'm Forest           | 29             | 46         | 63%                |
-| Cardiff                 | 9              | 17         | 53%                |
-| Burnley                 | 34             | 81         | 42%                |
-| Hull                    | 14             | 36         | 39%                |
-| Crystal Palace          | 53             | 150        | 35%                |
-| Sheffield United        | 12             | 34         | 35%                |
-| Stoke                   | 31             | 98         | 32%                |
-| West Brom               | 30             | 96         | 31%                |
-| Brentford               | 17             | 63         | 27%                |
-| Bournemouth             | 26             | 100        | 26%                |
-| Wolves                  | 29             | 118        | 25%                |
-| Watford                 | 14             | 57         | 25%                |
-
-| team (EPL, all seasons) | losses >60% poss | total losses | high-poss loss share |
-| ----------------------- | ---------------- | ------------ | -------------------- |
-| Chelsea                 | 74               | 174          | 43%                  |
-| Liverpool               | 61               | 167          | 37%                  |
-| Arsenal                 | 53               | 150          | 35%                  |
-| Brighton                | 37               | 126          | 29%                  |
-| Man City                | 60               | 208          | 29%                  |
-| Man United              | 45               | 175          | 26%                  |
-| Tottenham               | 65               | 269          | 24%                  |
-| Swansea                 | 20               | 94           | 21%                  |
-| Leicester               | 28               | 148          | 19%                  |
-| Southampton             | 34               | 228          | 15%                  |
-| Leeds                   | 14               | 104          | 13%                  |
-| Everton                 | 35               | 291          | 12%                  |
 
 | shot share % | n     | win%  | draw% | loss% |
 | ------------ | ----- | ----- | ----- | ----- |
@@ -1042,174 +641,20 @@ println!("opponent strength = top-half finishers in same league-season (points)"
 ```
 
 ```text
-stat rows indexed: 374660
-matches with valid possession (both teams): 111836
-EPL matches with possession: 8486 | all leagues: 111836
-EPL team-matches: wins 6334 | wins with <40%% poss: 802 (12.7%% of wins)
-EPL losses 6334 | losses with >60%% poss: 802 (12.7%% of losses)
-team-observations with shots: 223620
-EPL: corr(home possession, home win) = 0.119
-EPL: corr(home shot share,   home win) = 0.258
-EPL xG subset (148 matches): corr(poss)=0.148 corr(shots)=0.185 corr(xG)=0.438
 opponent strength = top-half finishers in same league-season (points)
 ```
 
-| league                   | matches | season span           |
-| ------------------------ | ------- | --------------------- |
-| English Championship     | 12005   | 2003/04 → 2026/27     |
-| English League One       | 10707   | 2006/07 → 2026/27     |
-| English League Two       | 9879    | 2006/07 → 2026/27     |
-| English Premier League   | 8486    | 2001/02 → 2026/27     |
-| Spanish La Liga          | 7247    | 2004/05 → 2026/27     |
-| Italian Serie A          | 7241    | 2006/07 → 2026/27     |
-| French Ligue 1           | 6465    | 2006/07 → 2026/27     |
-| MLS                      | 6260    | 2012 → 2026           |
-| German Bundesliga        | 4639    | 2005/06 → 2026/27     |
-| Liga MX                  | 4542    | 2012/2013 → 2026/2027 |
-| Scottish Premiership     | 4316    | 2006/07 → 2026/27     |
-| Serie A                  | 3946    | 2014 → 2026           |
-| German 2. Bundesliga     | 3246    | 2008/09 → 2026/27     |
-| Dutch Eredivisie         | 2993    | 2008/09 → 2026/27     |
-| Portuguese Liga Portugal | 2794    | 2008/09 → 2026/27     |
-
-| EPL season | matches with possession |
-| ---------- | ----------------------- |
-| 2001/02    | 1                       |
-| 2002/03    | 378                     |
-| 2003/04    | 381                     |
-| 2004/05    | 380                     |
-| 2005/06    | 380                     |
-| 2006/07    | 380                     |
-| 2007/08    | 380                     |
-| 2008/09    | 380                     |
-| 2009/10    | 379                     |
-| 2010/11    | 379                     |
-| 2011/12    | 207                     |
-| 2012/13    | 338                     |
-| 2013/14    | 344                     |
-| 2014/15    | 380                     |
-| 2015/16    | 417                     |
-| 2016/17    | 4                       |
-| 2017/18    | 380                     |
-| 2018/19    | 378                     |
-| 2019/20    | 376                     |
-| 2020/21    | 372                     |
-| 2021/22    | 351                     |
-| 2022/23    | 293                     |
-| 2023/24    | 370                     |
-| 2024/25    | 368                     |
-| 2025/26    | 380                     |
-| 2026/27    | 110                     |
-
-| possession | n    | win%  | draw% | loss% |
-| ---------- | ---- | ----- | ----- | ----- |
-| <35        | 1429 | 26.6% | 24.5% | 48.9% |
-| 35-40      | 1436 | 29.4% | 24.1% | 46.5% |
-| 40-45      | 2296 | 31.7% | 26.1% | 42.2% |
-| 45-50      | 3149 | 34.8% | 25.6% | 39.5% |
-| 50-55      | 3245 | 38.5% | 26.0% | 35.5% |
-| 55-60      | 2441 | 42.2% | 26.1% | 31.7% |
-| 60-65      | 1505 | 47.0% | 24.1% | 28.9% |
-| 65-70      | 881  | 45.5% | 25.2% | 29.3% |
-| >70        | 590  | 54.1% | 23.2% | 22.7% |
-
-| possession (all leagues) | n     | win%  | draw% | loss% |
-| ------------------------ | ----- | ----- | ----- | ----- |
-| <35                      | 14158 | 31.7% | 25.8% | 42.5% |
-| 35-40                    | 18028 | 35.9% | 26.1% | 38.0% |
-| 40-45                    | 30971 | 35.8% | 25.8% | 38.4% |
-| 45-50                    | 45664 | 35.6% | 26.0% | 38.3% |
-| 50-55                    | 48544 | 37.6% | 26.6% | 35.8% |
-| 55-60                    | 32774 | 38.5% | 25.9% | 35.6% |
-| 60-65                    | 18873 | 38.4% | 26.0% | 35.6% |
-| 65-70                    | 9659  | 39.8% | 26.2% | 34.0% |
-| >70                      | 5001  | 48.0% | 24.8% | 27.2% |
-
-| possession diff (home − away) | matches | home win% |
-| ----------------------------- | ------- | --------- |
-| -35 to -30                    | 196     | 33.2%     |
-| -30 to -25                    | 280     | 37.9%     |
-| -25 to -20                    | 335     | 35.5%     |
-| -20 to -15                    | 479     | 37.2%     |
-| -15 to -10                    | 535     | 45.8%     |
-| -10 to -5                     | 733     | 39.4%     |
-| -5 to +0                      | 762     | 43.8%     |
-| +0 to +5                      | 899     | 44.4%     |
-| +5 to +10                     | 778     | 45.8%     |
-| +10 to +15                    | 796     | 49.9%     |
-| +15 to +20                    | 565     | 48.8%     |
-| +20 to +25                    | 475     | 55.4%     |
-| +25 to +30                    | 389     | 52.2%     |
-| +30 to +35                    | 311     | 47.9%     |
-| +35 to +40                    | 223     | 52.9%     |
-
-| possession diff — all leagues | matches | home win% |
-| ----------------------------- | ------- | --------- |
-| -35 to -30                    | 2274    | 41.1%     |
-| -30 to -25                    | 3155    | 44.8%     |
-| -25 to -20                    | 4158    | 45.5%     |
-| -20 to -15                    | 6062    | 45.4%     |
-| -15 to -10                    | 7137    | 45.9%     |
-| -10 to -5                     | 10221   | 42.7%     |
-| -5 to +0                      | 11045   | 43.9%     |
-| +0 to +5                      | 14423   | 43.6%     |
-| +5 to +10                     | 11157   | 45.0%     |
-| +10 to +15                    | 10891   | 45.1%     |
-| +15 to +20                    | 7864    | 44.0%     |
-| +20 to +25                    | 6607    | 45.0%     |
-| +25 to +30                    | 4633    | 43.0%     |
-| +30 to +35                    | 3629    | 45.1%     |
-| +35 to +40                    | 2213    | 43.8%     |
-
-| team (EPL, all seasons) | wins <40% poss | total wins | low-poss win share |
-| ----------------------- | -------------- | ---------- | ------------------ |
-| Nott'm Forest           | 29             | 46         | 63%                |
-| Cardiff                 | 9              | 17         | 53%                |
-| Burnley                 | 34             | 81         | 42%                |
-| Hull                    | 14             | 36         | 39%                |
-| Crystal Palace          | 53             | 150        | 35%                |
-| Sheffield United        | 12             | 34         | 35%                |
-| Stoke                   | 31             | 98         | 32%                |
-| West Brom               | 30             | 96         | 31%                |
-| Brentford               | 17             | 63         | 27%                |
-| Bournemouth             | 26             | 100        | 26%                |
-| Wolves                  | 29             | 118        | 25%                |
-| Watford                 | 14             | 57         | 25%                |
-
-| team (EPL, all seasons) | losses >60% poss | total losses | high-poss loss share |
-| ----------------------- | ---------------- | ------------ | -------------------- |
-| Chelsea                 | 74               | 174          | 43%                  |
-| Liverpool               | 61               | 167          | 37%                  |
-| Arsenal                 | 53               | 150          | 35%                  |
-| Brighton                | 37               | 126          | 29%                  |
-| Man City                | 60               | 208          | 29%                  |
-| Man United              | 45               | 175          | 26%                  |
-| Tottenham               | 65               | 269          | 24%                  |
-| Swansea                 | 20               | 94           | 21%                  |
-| Leicester               | 28               | 148          | 19%                  |
-| Southampton             | 34               | 228          | 15%                  |
-| Leeds                   | 14               | 104          | 13%                  |
-| Everton                 | 35               | 291          | 12%                  |
-
-| shot share % | n     | win%  | draw% | loss% |
-| ------------ | ----- | ----- | ----- | ----- |
-| <35          | 39909 | 20.6% | 25.0% | 54.4% |
-| 35-45        | 44623 | 30.4% | 26.2% | 43.4% |
-| 45-55        | 53054 | 36.2% | 27.4% | 36.4% |
-| 55-65        | 45113 | 43.2% | 26.2% | 30.6% |
-| >65          | 40921 | 54.2% | 25.1% | 20.8% |
-
 | possession | n vs weak / strong | win% vs weak / strong |
 | ---------- | ------------------ | --------------------- |
-| <35        | 261 / 1168         | 46% / 22%             |
-| 35-40      | 403 / 1033         | 48% / 22%             |
-| 40-45      | 855 / 1441         | 48% / 22%             |
-| 45-50      | 1401 / 1748        | 45% / 27%             |
-| 50-55      | 1776 / 1469        | 45% / 30%             |
-| 55-60      | 1537 / 904         | 48% / 33%             |
-| 60-65      | 995 / 510          | 53% / 34%             |
-| 65-70      | 627 / 254          | 50% / 34%             |
-| >70        | 457 / 133          | 58% / 40%             |
+| <35        | 265 / 1164         | 46% / 22%             |
+| 35-40      | 406 / 1030         | 48% / 22%             |
+| 40-45      | 849 / 1447         | 48% / 22%             |
+| 45-50      | 1401 / 1748        | 46% / 26%             |
+| 50-55      | 1760 / 1485        | 45% / 30%             |
+| 55-60      | 1546 / 895         | 47% / 33%             |
+| 60-65      | 1007 / 498         | 53% / 35%             |
+| 65-70      | 631 / 250          | 50% / 34%             |
+| >70        | 460 / 130          | 58% / 39%             |
 
 ## Home vs away: is possession worth more in one venue?
 
@@ -1246,176 +691,6 @@ let ha_rows: Vec<Vec<String>> = (0..9).map(|b| vec![
 ]).collect();
 mars_table(&["possession", "home win% / loss%", "away win% / loss%"], &ha_rows);
 ```
-
-```text
-stat rows indexed: 374660
-matches with valid possession (both teams): 111836
-EPL matches with possession: 8486 | all leagues: 111836
-EPL team-matches: wins 6334 | wins with <40%% poss: 802 (12.7%% of wins)
-EPL losses 6334 | losses with >60%% poss: 802 (12.7%% of losses)
-team-observations with shots: 223620
-EPL: corr(home possession, home win) = 0.119
-EPL: corr(home shot share,   home win) = 0.258
-EPL xG subset (148 matches): corr(poss)=0.148 corr(shots)=0.185 corr(xG)=0.438
-opponent strength = top-half finishers in same league-season (points)
-```
-
-| league                   | matches | season span           |
-| ------------------------ | ------- | --------------------- |
-| English Championship     | 12005   | 2003/04 → 2026/27     |
-| English League One       | 10707   | 2006/07 → 2026/27     |
-| English League Two       | 9879    | 2006/07 → 2026/27     |
-| English Premier League   | 8486    | 2001/02 → 2026/27     |
-| Spanish La Liga          | 7247    | 2004/05 → 2026/27     |
-| Italian Serie A          | 7241    | 2006/07 → 2026/27     |
-| French Ligue 1           | 6465    | 2006/07 → 2026/27     |
-| MLS                      | 6260    | 2012 → 2026           |
-| German Bundesliga        | 4639    | 2005/06 → 2026/27     |
-| Liga MX                  | 4542    | 2012/2013 → 2026/2027 |
-| Scottish Premiership     | 4316    | 2006/07 → 2026/27     |
-| Serie A                  | 3946    | 2014 → 2026           |
-| German 2. Bundesliga     | 3246    | 2008/09 → 2026/27     |
-| Dutch Eredivisie         | 2993    | 2008/09 → 2026/27     |
-| Portuguese Liga Portugal | 2794    | 2008/09 → 2026/27     |
-
-| EPL season | matches with possession |
-| ---------- | ----------------------- |
-| 2001/02    | 1                       |
-| 2002/03    | 378                     |
-| 2003/04    | 381                     |
-| 2004/05    | 380                     |
-| 2005/06    | 380                     |
-| 2006/07    | 380                     |
-| 2007/08    | 380                     |
-| 2008/09    | 380                     |
-| 2009/10    | 379                     |
-| 2010/11    | 379                     |
-| 2011/12    | 207                     |
-| 2012/13    | 338                     |
-| 2013/14    | 344                     |
-| 2014/15    | 380                     |
-| 2015/16    | 417                     |
-| 2016/17    | 4                       |
-| 2017/18    | 380                     |
-| 2018/19    | 378                     |
-| 2019/20    | 376                     |
-| 2020/21    | 372                     |
-| 2021/22    | 351                     |
-| 2022/23    | 293                     |
-| 2023/24    | 370                     |
-| 2024/25    | 368                     |
-| 2025/26    | 380                     |
-| 2026/27    | 110                     |
-
-| possession | n    | win%  | draw% | loss% |
-| ---------- | ---- | ----- | ----- | ----- |
-| <35        | 1429 | 26.6% | 24.5% | 48.9% |
-| 35-40      | 1436 | 29.4% | 24.1% | 46.5% |
-| 40-45      | 2296 | 31.7% | 26.1% | 42.2% |
-| 45-50      | 3149 | 34.8% | 25.6% | 39.5% |
-| 50-55      | 3245 | 38.5% | 26.0% | 35.5% |
-| 55-60      | 2441 | 42.2% | 26.1% | 31.7% |
-| 60-65      | 1505 | 47.0% | 24.1% | 28.9% |
-| 65-70      | 881  | 45.5% | 25.2% | 29.3% |
-| >70        | 590  | 54.1% | 23.2% | 22.7% |
-
-| possession (all leagues) | n     | win%  | draw% | loss% |
-| ------------------------ | ----- | ----- | ----- | ----- |
-| <35                      | 14158 | 31.7% | 25.8% | 42.5% |
-| 35-40                    | 18028 | 35.9% | 26.1% | 38.0% |
-| 40-45                    | 30971 | 35.8% | 25.8% | 38.4% |
-| 45-50                    | 45664 | 35.6% | 26.0% | 38.3% |
-| 50-55                    | 48544 | 37.6% | 26.6% | 35.8% |
-| 55-60                    | 32774 | 38.5% | 25.9% | 35.6% |
-| 60-65                    | 18873 | 38.4% | 26.0% | 35.6% |
-| 65-70                    | 9659  | 39.8% | 26.2% | 34.0% |
-| >70                      | 5001  | 48.0% | 24.8% | 27.2% |
-
-| possession diff (home − away) | matches | home win% |
-| ----------------------------- | ------- | --------- |
-| -35 to -30                    | 196     | 33.2%     |
-| -30 to -25                    | 280     | 37.9%     |
-| -25 to -20                    | 335     | 35.5%     |
-| -20 to -15                    | 479     | 37.2%     |
-| -15 to -10                    | 535     | 45.8%     |
-| -10 to -5                     | 733     | 39.4%     |
-| -5 to +0                      | 762     | 43.8%     |
-| +0 to +5                      | 899     | 44.4%     |
-| +5 to +10                     | 778     | 45.8%     |
-| +10 to +15                    | 796     | 49.9%     |
-| +15 to +20                    | 565     | 48.8%     |
-| +20 to +25                    | 475     | 55.4%     |
-| +25 to +30                    | 389     | 52.2%     |
-| +30 to +35                    | 311     | 47.9%     |
-| +35 to +40                    | 223     | 52.9%     |
-
-| possession diff — all leagues | matches | home win% |
-| ----------------------------- | ------- | --------- |
-| -35 to -30                    | 2274    | 41.1%     |
-| -30 to -25                    | 3155    | 44.8%     |
-| -25 to -20                    | 4158    | 45.5%     |
-| -20 to -15                    | 6062    | 45.4%     |
-| -15 to -10                    | 7137    | 45.9%     |
-| -10 to -5                     | 10221   | 42.7%     |
-| -5 to +0                      | 11045   | 43.9%     |
-| +0 to +5                      | 14423   | 43.6%     |
-| +5 to +10                     | 11157   | 45.0%     |
-| +10 to +15                    | 10891   | 45.1%     |
-| +15 to +20                    | 7864    | 44.0%     |
-| +20 to +25                    | 6607    | 45.0%     |
-| +25 to +30                    | 4633    | 43.0%     |
-| +30 to +35                    | 3629    | 45.1%     |
-| +35 to +40                    | 2213    | 43.8%     |
-
-| team (EPL, all seasons) | wins <40% poss | total wins | low-poss win share |
-| ----------------------- | -------------- | ---------- | ------------------ |
-| Nott'm Forest           | 29             | 46         | 63%                |
-| Cardiff                 | 9              | 17         | 53%                |
-| Burnley                 | 34             | 81         | 42%                |
-| Hull                    | 14             | 36         | 39%                |
-| Crystal Palace          | 53             | 150        | 35%                |
-| Sheffield United        | 12             | 34         | 35%                |
-| Stoke                   | 31             | 98         | 32%                |
-| West Brom               | 30             | 96         | 31%                |
-| Brentford               | 17             | 63         | 27%                |
-| Bournemouth             | 26             | 100        | 26%                |
-| Wolves                  | 29             | 118        | 25%                |
-| Watford                 | 14             | 57         | 25%                |
-
-| team (EPL, all seasons) | losses >60% poss | total losses | high-poss loss share |
-| ----------------------- | ---------------- | ------------ | -------------------- |
-| Chelsea                 | 74               | 174          | 43%                  |
-| Liverpool               | 61               | 167          | 37%                  |
-| Arsenal                 | 53               | 150          | 35%                  |
-| Brighton                | 37               | 126          | 29%                  |
-| Man City                | 60               | 208          | 29%                  |
-| Man United              | 45               | 175          | 26%                  |
-| Tottenham               | 65               | 269          | 24%                  |
-| Swansea                 | 20               | 94           | 21%                  |
-| Leicester               | 28               | 148          | 19%                  |
-| Southampton             | 34               | 228          | 15%                  |
-| Leeds                   | 14               | 104          | 13%                  |
-| Everton                 | 35               | 291          | 12%                  |
-
-| shot share % | n     | win%  | draw% | loss% |
-| ------------ | ----- | ----- | ----- | ----- |
-| <35          | 39909 | 20.6% | 25.0% | 54.4% |
-| 35-45        | 44623 | 30.4% | 26.2% | 43.4% |
-| 45-55        | 53054 | 36.2% | 27.4% | 36.4% |
-| 55-65        | 45113 | 43.2% | 26.2% | 30.6% |
-| >65          | 40921 | 54.2% | 25.1% | 20.8% |
-
-| possession | n vs weak / strong | win% vs weak / strong |
-| ---------- | ------------------ | --------------------- |
-| <35        | 264 / 1165         | 46% / 22%             |
-| 35-40      | 404 / 1032         | 48% / 22%             |
-| 40-45      | 846 / 1450         | 48% / 22%             |
-| 45-50      | 1400 / 1749        | 46% / 26%             |
-| 50-55      | 1760 / 1485        | 45% / 31%             |
-| 55-60      | 1544 / 897         | 48% / 33%             |
-| 60-65      | 1006 / 499         | 53% / 35%             |
-| 65-70      | 628 / 253          | 50% / 34%             |
-| >70        | 460 / 130          | 58% / 39%             |
 
 | possession | home win% / loss% | away win% / loss% |
 | ---------- | ----------------- | ----------------- |
@@ -1479,187 +754,8 @@ mars_table(&["EPL season", "corr(poss diff, home win)", "matches"], &trend_rows)
 ```
 
 ```text
-stat rows indexed: 374660
-matches with valid possession (both teams): 111836
-EPL matches with possession: 8486 | all leagues: 111836
-EPL team-matches: wins 6334 | wins with <40%% poss: 802 (12.7%% of wins)
-EPL losses 6334 | losses with >60%% poss: 802 (12.7%% of losses)
-team-observations with shots: 223620
-EPL: corr(home possession, home win) = 0.119
-EPL: corr(home shot share,   home win) = 0.258
-EPL xG subset (148 matches): corr(poss)=0.148 corr(shots)=0.185 corr(xG)=0.438
-opponent strength = top-half finishers in same league-season (points)
 EPL team-seasons: 431 | corr(avg possession, season points) = 0.704
 ```
-
-| league                   | matches | season span           |
-| ------------------------ | ------- | --------------------- |
-| English Championship     | 12005   | 2003/04 → 2026/27     |
-| English League One       | 10707   | 2006/07 → 2026/27     |
-| English League Two       | 9879    | 2006/07 → 2026/27     |
-| English Premier League   | 8486    | 2001/02 → 2026/27     |
-| Spanish La Liga          | 7247    | 2004/05 → 2026/27     |
-| Italian Serie A          | 7241    | 2006/07 → 2026/27     |
-| French Ligue 1           | 6465    | 2006/07 → 2026/27     |
-| MLS                      | 6260    | 2012 → 2026           |
-| German Bundesliga        | 4639    | 2005/06 → 2026/27     |
-| Liga MX                  | 4542    | 2012/2013 → 2026/2027 |
-| Scottish Premiership     | 4316    | 2006/07 → 2026/27     |
-| Serie A                  | 3946    | 2014 → 2026           |
-| German 2. Bundesliga     | 3246    | 2008/09 → 2026/27     |
-| Dutch Eredivisie         | 2993    | 2008/09 → 2026/27     |
-| Portuguese Liga Portugal | 2794    | 2008/09 → 2026/27     |
-
-| EPL season | matches with possession |
-| ---------- | ----------------------- |
-| 2001/02    | 1                       |
-| 2002/03    | 378                     |
-| 2003/04    | 381                     |
-| 2004/05    | 380                     |
-| 2005/06    | 380                     |
-| 2006/07    | 380                     |
-| 2007/08    | 380                     |
-| 2008/09    | 380                     |
-| 2009/10    | 379                     |
-| 2010/11    | 379                     |
-| 2011/12    | 207                     |
-| 2012/13    | 338                     |
-| 2013/14    | 344                     |
-| 2014/15    | 380                     |
-| 2015/16    | 417                     |
-| 2016/17    | 4                       |
-| 2017/18    | 380                     |
-| 2018/19    | 378                     |
-| 2019/20    | 376                     |
-| 2020/21    | 372                     |
-| 2021/22    | 351                     |
-| 2022/23    | 293                     |
-| 2023/24    | 370                     |
-| 2024/25    | 368                     |
-| 2025/26    | 380                     |
-| 2026/27    | 110                     |
-
-| possession | n    | win%  | draw% | loss% |
-| ---------- | ---- | ----- | ----- | ----- |
-| <35        | 1429 | 26.6% | 24.5% | 48.9% |
-| 35-40      | 1436 | 29.4% | 24.1% | 46.5% |
-| 40-45      | 2296 | 31.7% | 26.1% | 42.2% |
-| 45-50      | 3149 | 34.8% | 25.6% | 39.5% |
-| 50-55      | 3245 | 38.5% | 26.0% | 35.5% |
-| 55-60      | 2441 | 42.2% | 26.1% | 31.7% |
-| 60-65      | 1505 | 47.0% | 24.1% | 28.9% |
-| 65-70      | 881  | 45.5% | 25.2% | 29.3% |
-| >70        | 590  | 54.1% | 23.2% | 22.7% |
-
-| possession (all leagues) | n     | win%  | draw% | loss% |
-| ------------------------ | ----- | ----- | ----- | ----- |
-| <35                      | 14158 | 31.7% | 25.8% | 42.5% |
-| 35-40                    | 18028 | 35.9% | 26.1% | 38.0% |
-| 40-45                    | 30971 | 35.8% | 25.8% | 38.4% |
-| 45-50                    | 45664 | 35.6% | 26.0% | 38.3% |
-| 50-55                    | 48544 | 37.6% | 26.6% | 35.8% |
-| 55-60                    | 32774 | 38.5% | 25.9% | 35.6% |
-| 60-65                    | 18873 | 38.4% | 26.0% | 35.6% |
-| 65-70                    | 9659  | 39.8% | 26.2% | 34.0% |
-| >70                      | 5001  | 48.0% | 24.8% | 27.2% |
-
-| possession diff (home − away) | matches | home win% |
-| ----------------------------- | ------- | --------- |
-| -35 to -30                    | 196     | 33.2%     |
-| -30 to -25                    | 280     | 37.9%     |
-| -25 to -20                    | 335     | 35.5%     |
-| -20 to -15                    | 479     | 37.2%     |
-| -15 to -10                    | 535     | 45.8%     |
-| -10 to -5                     | 733     | 39.4%     |
-| -5 to +0                      | 762     | 43.8%     |
-| +0 to +5                      | 899     | 44.4%     |
-| +5 to +10                     | 778     | 45.8%     |
-| +10 to +15                    | 796     | 49.9%     |
-| +15 to +20                    | 565     | 48.8%     |
-| +20 to +25                    | 475     | 55.4%     |
-| +25 to +30                    | 389     | 52.2%     |
-| +30 to +35                    | 311     | 47.9%     |
-| +35 to +40                    | 223     | 52.9%     |
-
-| possession diff — all leagues | matches | home win% |
-| ----------------------------- | ------- | --------- |
-| -35 to -30                    | 2274    | 41.1%     |
-| -30 to -25                    | 3155    | 44.8%     |
-| -25 to -20                    | 4158    | 45.5%     |
-| -20 to -15                    | 6062    | 45.4%     |
-| -15 to -10                    | 7137    | 45.9%     |
-| -10 to -5                     | 10221   | 42.7%     |
-| -5 to +0                      | 11045   | 43.9%     |
-| +0 to +5                      | 14423   | 43.6%     |
-| +5 to +10                     | 11157   | 45.0%     |
-| +10 to +15                    | 10891   | 45.1%     |
-| +15 to +20                    | 7864    | 44.0%     |
-| +20 to +25                    | 6607    | 45.0%     |
-| +25 to +30                    | 4633    | 43.0%     |
-| +30 to +35                    | 3629    | 45.1%     |
-| +35 to +40                    | 2213    | 43.8%     |
-
-| team (EPL, all seasons) | wins <40% poss | total wins | low-poss win share |
-| ----------------------- | -------------- | ---------- | ------------------ |
-| Nott'm Forest           | 29             | 46         | 63%                |
-| Cardiff                 | 9              | 17         | 53%                |
-| Burnley                 | 34             | 81         | 42%                |
-| Hull                    | 14             | 36         | 39%                |
-| Crystal Palace          | 53             | 150        | 35%                |
-| Sheffield United        | 12             | 34         | 35%                |
-| Stoke                   | 31             | 98         | 32%                |
-| West Brom               | 30             | 96         | 31%                |
-| Brentford               | 17             | 63         | 27%                |
-| Bournemouth             | 26             | 100        | 26%                |
-| Wolves                  | 29             | 118        | 25%                |
-| Watford                 | 14             | 57         | 25%                |
-
-| team (EPL, all seasons) | losses >60% poss | total losses | high-poss loss share |
-| ----------------------- | ---------------- | ------------ | -------------------- |
-| Chelsea                 | 74               | 174          | 43%                  |
-| Liverpool               | 61               | 167          | 37%                  |
-| Arsenal                 | 53               | 150          | 35%                  |
-| Brighton                | 37               | 126          | 29%                  |
-| Man City                | 60               | 208          | 29%                  |
-| Man United              | 45               | 175          | 26%                  |
-| Tottenham               | 65               | 269          | 24%                  |
-| Swansea                 | 20               | 94           | 21%                  |
-| Leicester               | 28               | 148          | 19%                  |
-| Southampton             | 34               | 228          | 15%                  |
-| Leeds                   | 14               | 104          | 13%                  |
-| Everton                 | 35               | 291          | 12%                  |
-
-| shot share % | n     | win%  | draw% | loss% |
-| ------------ | ----- | ----- | ----- | ----- |
-| <35          | 39909 | 20.6% | 25.0% | 54.4% |
-| 35-45        | 44623 | 30.4% | 26.2% | 43.4% |
-| 45-55        | 53054 | 36.2% | 27.4% | 36.4% |
-| 55-65        | 45113 | 43.2% | 26.2% | 30.6% |
-| >65          | 40921 | 54.2% | 25.1% | 20.8% |
-
-| possession | n vs weak / strong | win% vs weak / strong |
-| ---------- | ------------------ | --------------------- |
-| <35        | 259 / 1170         | 46% / 22%             |
-| 35-40      | 402 / 1034         | 49% / 22%             |
-| 40-45      | 840 / 1456         | 48% / 22%             |
-| 45-50      | 1403 / 1746        | 46% / 26%             |
-| 50-55      | 1761 / 1484        | 45% / 30%             |
-| 55-60      | 1551 / 890         | 47% / 33%             |
-| 60-65      | 1008 / 497         | 53% / 35%             |
-| 65-70      | 629 / 252          | 50% / 35%             |
-| >70        | 459 / 131          | 58% / 39%             |
-
-| possession | home win% / loss% | away win% / loss% |
-| ---------- | ----------------- | ----------------- |
-| <35        | 34.5%             | 42.1%             |
-| 35-40      | 36.6%             | 37.2%             |
-| 40-45      | 41.7%             | 32.7%             |
-| 45-50      | 41.7%             | 32.5%             |
-| 50-55      | 45.0%             | 29.3%             |
-| 55-60      | 49.4%             | 23.9%             |
-| 60-65      | 53.9%             | 23.5%             |
-| 65-70      | 50.0%             | 23.8%             |
-| >70        | 58.7%             | 17.8%             |
 
 | EPL season | corr(poss diff, home win) | matches |
 | ---------- | ------------------------- | ------- |

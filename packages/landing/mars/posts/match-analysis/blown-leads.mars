@@ -14,14 +14,14 @@
     {
       "id": "e589f04e-4bb0-40b6-8108-e9fa929a2d96",
       "cell_type": "markdown",
-      "source": "## Biggest blown leads: when does a commanding lead become a choke?\n\nEvery football season produces a team that looks unbeatable in November \u2014\nand a few that actually throw it away in May. This notebook replays all\n**~313k completed matches** in the dataset, rebuilds the league table\nafter every fixture, and asks: **how often does a team lead by 8+\npoints and still lose the title?**\n\nA \"blown lead\" = a non-champion that held a \u22658-point advantage over\nsecond place at some point in the season. Only league-seasons with at\nleast 40 matches are analysed. Champions are decided on points, then\ngoal difference, then goals scored \u2014 the standard tiebreak chain.\n\n*Methodology note:* leads are measured after every match, so a team that\nled by 8 at any snapshot counts \u2014 even if the lead was later erased the\nsame week. That is the point: the choke is measured at its peak.",
+      "source": "## Biggest blown leads: when does a commanding lead become a choke?\n\nEvery football season produces a team that looks unbeatable in November —\nand a few that actually throw it away in May. This notebook replays all\n**~313k completed matches** in the dataset, rebuilds the league table\nafter every fixture, and asks: **how often does a team lead by 8+\npoints and still lose the title?**\n\nA \"blown lead\" = a non-champion that held a ≥8-point advantage over\nsecond place at some point in the season. Only league-seasons with at\nleast 40 matches are analysed. Champions are decided on points, then\ngoal difference, then goals scored — the standard tiebreak chain.\n\n*Methodology note:* leads are measured after every match, so a team that\nled by 8 at any snapshot counts — even if the lead was later erased the\nsame week. That is the point: the choke is measured at its peak.",
       "metadata": {},
       "outputs": []
     },
     {
       "id": "8ae5dbbc-7b8f-45f2-9573-b8dec36bf5a1",
       "cell_type": "code",
-      "source": "\nuse polars::prelude::*;\nuse std::collections::HashMap;\nuse std::collections::HashSet;\n\nlet mf = LazyCsvReader::new(\"data/matches_full.csv\")\n    .finish().expect(\"matches_full.csv\")\n    .collect().expect(\"collect matches\");\n\nfn col_str(df: &DataFrame, name: &str) -> Vec<String> {\n    df.column(name).unwrap().str().unwrap().iter()\n        .map(|o| o.unwrap_or(\"\").to_string()).collect()\n}\nfn col_i64(df: &DataFrame, name: &str) -> Vec<i64> {\n    let c = df.column(name).unwrap().clone();\n    let c = if c.dtype() == &DataType::Null { c.cast(&DataType::Int64).unwrap() } else { c };\n    c.i64().unwrap().iter().map(|o| o.unwrap_or(-1)).collect()\n}\n\nlet s_id = col_i64(&mf, \"id\");\nlet s_hg = col_i64(&mf, \"hg\");\nlet s_ag = col_i64(&mf, \"ag\");\nlet s_country = col_str(&mf, \"country\");\nlet s_league = col_str(&mf, \"league\");\nlet s_season = col_str(&mf, \"season\");\nlet s_date = col_str(&mf, \"date\");\nlet s_home_raw = col_str(&mf, \"home\");\nlet s_away_raw = col_str(&mf, \"away\");\n\nfn canon(name: &str) -> &str {\n    match name {\n        // England\n        \"Manchester United\" | \"Man Utd\" => \"Man United\",\n        \"Manchester City\" => \"Man City\",\n        \"Newcastle United\" => \"Newcastle\",\n        \"Tottenham Hotspur\" => \"Tottenham\",\n        \"West Ham United\" => \"West Ham\",\n        \"Leicester City\" => \"Leicester\",\n        \"Norwich City\" => \"Norwich\",\n        \"Stoke City\" => \"Stoke\",\n        \"West Bromwich Albion\" => \"West Brom\",\n        \"Swansea City\" => \"Swansea\",\n        \"Leeds United\" => \"Leeds\",\n        \"Wolverhampton Wanderers\" => \"Wolves\",\n        \"Nott'm Forest\" => \"Nottingham Forest\",\n        \"Birmingham City\" => \"Birmingham\",\n        \"Blackburn Rovers\" => \"Blackburn\",\n        \"Bolton Wanderers\" => \"Bolton\",\n        \"Charlton Athletic\" => \"Charlton\",\n        // Spain\n        \"Athletic Club\" => \"Ath Bilbao\",\n        \"Atl\\u{e9}tico Madrid\" => \"Ath Madrid\",\n        \"Real Betis\" => \"Betis\",\n        \"Celta Vigo\" => \"Celta\",\n        \"Real Sociedad\" => \"Sociedad\",\n        \"Real Valladolid\" => \"Valladolid\",\n        \"Real Zaragoza\" => \"Zaragoza\",\n        \"Rayo Vallecano\" => \"Vallecano\",\n        \"CD Numancia de Soria\" => \"Numancia\",\n        \"Real Murcia CF\" => \"Murcia\",\n        \"Recreativo Huelva\" => \"Recreativo\",\n        \"Sporting Gij\\u{f3}n\" => \"Sp Gijon\",\n        \"Espanol\" => \"Espanyol\",\n        \"Gimn\\u{e0}stic Tarragona\" => \"Gimnastic\",\n        \"Villarreal\" | \"Villareel\" => \"Villarreal\",\n        \"Santander\" => \"Racing Santander\",\n        // Italy\n        \"Inter Milan\" => \"Inter\",\n        \"Verona\" => \"Hellas Verona\",\n        // Germany\n        \"Bayer Leverkusen\" => \"Leverkusen\",\n        \"Borussia Dortmund\" => \"Dortmund\",\n        \"Eintracht Frankfurt\" => \"Ein Frankfurt\",\n        \"FSV Mainz 05\" => \"Mainz\",\n        \"Hamburger SV\" => \"Hamburg\",\n        \"Hertha Berlin\" => \"Hertha\",\n        \"Leipzig\" => \"RB Leipzig\",\n        \"Borussia M\\u{f6}nchengladbach\" | \"M'gladbach\" => \"M'Gladbach\",\n        \"Darmstadt 98\" => \"Darmstadt\",\n        \"Fortuna Dusseldorf\" => \"Dusseldorf\",\n        \"Hannover 96\" => \"Hannover\",\n        // France\n        \"Olympique de Marseille\" => \"Marseille\",\n        \"AS Monaco\" => \"Monaco\",\n        \"OGC Nice\" => \"Nice\",\n        \"Stade de Reims\" => \"Reims\",\n        \"Paris Saint-Germain\" => \"Paris SG\",\n        \"Stade Brestois\" => \"Brest\",\n        \"Stade Malherbe Caen\" => \"Caen\",\n        \"Clermont Foot\" => \"Clermont\",\n        \"CA Bastia\" => \"Bastia\",\n        \"Saint-\\u{c9}tienne\" => \"St Etienne\",\n        // Netherlands\n        \"Roda JC\" => \"Roda\",\n        \"Sparta Rotterdam\" => \"Sparta\",\n        // Portugal\n        \"Desp. Chaves\" => \"Chaves\",\n        \"Campomaior\" => \"Campomaiorense\",\n        \"Madeira\" => \"Uniao Madeira\",\n        \"AVS\" => \"Academico Viseu\",\n        // Belgium\n        \"Lommel SK\" => \"Lommel\",\n        \"RWD Molenbeek\" => \"Molenbeek\",\n        \"Mouscron\" | \"Mouscron-Peruwelz\" => \"RAAL La Louviere\",\n        // Turkiye\n        \"Antalya\" => \"Antalyaspor\",\n        \"Gaziantep\" => \"Gaziantepspor\",\n        \"Kayseri\" => \"Kayserispor\",\n        \"Malatyaspor\" => \"Yeni Malatyaspor\",\n        other => other,\n    }\n}\n\n\n\n\n\n\n// canonical team names (football-data style) \u2014 collapses name-variant dupes\nlet s_home: Vec<String> = s_home_raw.iter().map(|n| canon(n).to_string()).collect();\nlet s_away: Vec<String> = s_away_raw.iter().map(|n| canon(n).to_string()).collect();\n\n// synthetic team ids keyed by (country|league|canonical name) so variants\n// of the same club share one id within a competition\nlet mut tid_map: HashMap<String, i64> = HashMap::new();\nlet mut s_hid = vec![-1i64; mf.height()];\nlet mut s_aid = vec![-1i64; mf.height()];\nfor i in 0..mf.height() {\n    for (nm, is_home) in [(&s_home[i], true), (&s_away[i], false)] {\n        let key = format!(\"{}|{}|{}\", s_country[i], s_league[i], nm);\n        let next = tid_map.len() as i64;\n        let id = *tid_map.entry(key).or_insert(next);\n        if is_home { s_hid[i] = id; } else { s_aid[i] = id; }\n    }\n}\n\n// dedup fixtures: same league-season, canonical pairing, date and score\n// appears twice when two importers used different name variants\nlet mut seen: HashSet<(String, String, String, String, String, String, i64, i64)> = HashSet::new();\nlet mut valid: Vec<usize> = Vec::new();\nlet mut n_dupes = 0usize;\nfor i in 0..mf.height() {\n    if s_hg[i] < 0 || s_ag[i] < 0 { continue; }\n    let key = (s_country[i].clone(), s_league[i].clone(), s_season[i].clone(),\n               s_home[i].clone(), s_away[i].clone(), s_date[i][..10].to_string(), s_hg[i], s_ag[i]);\n    // unordered pairing: canonical order home<away not guaranteed; use both directions check\n    if seen.contains(&key) || seen.contains(&(key.0.clone(), key.1.clone(), key.2.clone(), key.4.clone(), key.3.clone(), key.5.clone(), key.6, key.7)) {\n        n_dupes += 1; continue;\n    }\n    seen.insert(key);\n    valid.push(i);\n}\nprintln!(\"completed matches after dedup: {} ({} dupes dropped)\", valid.len(), n_dupes);\n\nfn pearson(xs: &[f64], ys: &[f64]) -> f64 {\n    let n = xs.len() as f64;\n    if n < 3.0 { return f64::NAN; }\n    let mx = xs.iter().sum::<f64>() / n;\n    let my = ys.iter().sum::<f64>() / n;\n    let mut sxy = 0.0; let mut sxx = 0.0; let mut syy = 0.0;\n    for i in 0..xs.len() {\n        let dx = xs[i] - mx; let dy = ys[i] - my;\n        sxy += dx * dy; sxx += dx * dx; syy += dy * dy;\n    }\n    if sxx <= 0.0 || syy <= 0.0 { return f64::NAN; }\n    sxy / (sxx.sqrt() * syy.sqrt())\n}\n\n// standings order best->worst for (tid, pts, gd, gf)\nfn rank_teams(teams: &[(i64, i64, i64, i64)]) -> Vec<usize> {\n    let mut v: Vec<usize> = (0..teams.len()).collect();\n    v.sort_by(|&a, &b| {\n        teams[b].1.cmp(&teams[a].1)\n            .then(teams[b].2.cmp(&teams[a].2))\n            .then(teams[b].3.cmp(&teams[a].3))\n    });\n    v\n}\n\n// replay one league-season's matches (idxs sorted by date) -> final standings + max lead per team\nfn replay_lgsn(idxs: &[usize], hid: &[i64], aid: &[i64], hg: &[i64], ag: &[i64],\n               home: &[String], away: &[String]) -> (Vec<(i64,i64,i64,i64)>, HashMap<i64,String>, HashMap<i64,i64>) {\n    let mut st: HashMap<i64, (i64, i64, i64)> = HashMap::new();\n    let mut names: HashMap<i64, String> = HashMap::new();\n    let mut maxlead: HashMap<i64, i64> = HashMap::new();\n    for &i in idxs {\n        for (tid, gf, ga, nm) in [(hid[i], hg[i], ag[i], &home[i]), (aid[i], ag[i], hg[i], &away[i])] {\n            names.insert(tid, nm.clone());\n            let e = st.entry(tid).or_insert((0, 0, 0));\n            e.1 += gf; e.2 += ga;\n            e.0 += if gf > ga { 3 } else if gf == ga { 1 } else { 0 };\n        }\n        let mut teams: Vec<(i64, i64, i64, i64)> = st.iter().map(|(&t, &(p, gf, ga))| (t, p, gf - ga, gf)).collect();\n        let order = rank_teams(&teams);\n        if order.len() >= 2 {\n            let lead = teams[order[0]].1 - teams[order[1]].1;\n            let top = teams[order[0]].0;\n            let cur = maxlead.entry(top).or_insert(0);\n            if lead > *cur { *cur = lead; }\n        }\n        teams.clear();\n    }\n    let mut teams: Vec<(i64, i64, i64, i64)> = st.iter().map(|(&t, &(p, gf, ga))| (t, p, gf - ga, gf)).collect();\n    let order = rank_teams(&teams);\n    let mut sorted: Vec<(i64,i64,i64,i64)> = order.iter().map(|&o| teams[o]).collect();\n    (sorted, names, maxlead)\n}\n\n// group matches by league-season\nlet mut groups: HashMap<(String, String), Vec<usize>> = HashMap::new();\nfor &i in &valid {\n    groups.entry((format!(\"{}|{}\", s_country[i], s_league[i]), s_season[i].clone())).or_default().push(i);\n}\nlet mut gkeys: Vec<(String,String)> = groups.keys().cloned().collect();\nprintln!(\"league-seasons total: {}\", gkeys.len());\n\nstruct Rec { lg: String, season: String, team: String, lead: i64, final_pts: i64, rank: usize, champ: String, margin: i64 }\nlet mut blown: Vec<Rec> = Vec::new();\nlet mut held_count = 0usize;\nlet mut seasons_analyzed = 0usize;\nlet mut seasons_with8 = 0usize;\n\nfor key in &gkeys {\n    let idxs = groups.get(key).unwrap();\n    if idxs.len() < 40 { continue; }\n    seasons_analyzed += 1;\n    let mut sorted_idx = idxs.clone();\n    sorted_idx.sort_by(|&a, &b| s_date[a].cmp(&s_date[b]).then(s_id[a].cmp(&s_id[b])));\n    let (table, names, maxlead) = replay_lgsn(&sorted_idx, &s_hid, &s_aid, &s_hg, &s_ag, &s_home, &s_away);\n    if table.len() < 2 { continue; }\n    let champ_tid = table[0].0;\n    let champ_name = names.get(&champ_tid).cloned().unwrap_or_default();\n    let margin = table[0].1 - table[1].1;\n    let had8 = maxlead.values().any(|&l| l >= 8);\n    if had8 { seasons_with8 += 1; }\n    for (pos, t) in table.iter().enumerate() {\n        let tid = t.0;\n        if let Some(&ml) = maxlead.get(&tid) {\n            if ml >= 8 {\n                if tid == champ_tid { held_count += 1; }\n                else {\n                    blown.push(Rec {\n                        lg: key.0.clone(), season: key.1.clone(),\n                        team: names.get(&tid).cloned().unwrap_or_default(),\n                        lead: ml, final_pts: t.1, rank: pos + 1,\n                        champ: champ_name.clone(), margin,\n                    });\n                }\n            }\n        }\n    }\n}\n\nprintln!(\"league-seasons analysed (>=40 matches): {}\", seasons_analyzed);\nprintln!(\"seasons where someone led by >=8 at some point: {}\", seasons_with8);\nprintln!(\"blown-lead instances (non-champion held >=8): {}\", blown.len());\nprintln!(\"champions who held >=8 and won anyway: {}\", held_count);\n\nblown.sort_by(|a, b| b.lead.cmp(&a.lead).then(b.final_pts.cmp(&a.final_pts)));\nlet rows: Vec<Vec<String>> = blown.iter().take(35).map(|r| vec![\n    r.lg.split('|').nth(1).unwrap_or(\"\").to_string(), r.season.clone(),\n    r.team.clone(), format!(\"+{}\", r.lead), format!(\"P{}\", r.rank),\n    format!(\"{} (+{})\", r.champ, r.margin),\n]).collect();\nmars_table(&[\"league\",\"season\",\"team\",\"max lead\",\"final pos\",\"champion (margin)\"], &rows);",
+      "source": "\nuse polars::prelude::*;\nuse std::collections::HashMap;\nuse std::collections::HashSet;\n\nlet mf = LazyCsvReader::new(\"data/matches_full.csv\")\n    .finish().expect(\"matches_full.csv\")\n    .collect().expect(\"collect matches\");\n\nfn col_str(df: &DataFrame, name: &str) -> Vec<String> {\n    df.column(name).unwrap().str().unwrap().iter()\n        .map(|o| o.unwrap_or(\"\").to_string()).collect()\n}\nfn col_i64(df: &DataFrame, name: &str) -> Vec<i64> {\n    let c = df.column(name).unwrap().clone();\n    let c = if c.dtype() == &DataType::Null { c.cast(&DataType::Int64).unwrap() } else { c };\n    c.i64().unwrap().iter().map(|o| o.unwrap_or(-1)).collect()\n}\n\nlet s_id = col_i64(&mf, \"id\");\nlet s_hg = col_i64(&mf, \"hg\");\nlet s_ag = col_i64(&mf, \"ag\");\nlet s_country = col_str(&mf, \"country\");\nlet s_league = col_str(&mf, \"league\");\nlet s_season = col_str(&mf, \"season\");\nlet s_date = col_str(&mf, \"date\");\nlet s_home_raw = col_str(&mf, \"home\");\nlet s_away_raw = col_str(&mf, \"away\");\n\nfn canon(name: &str) -> &str {\n    match name {\n        // England\n        \"Manchester United\" | \"Man Utd\" => \"Man United\",\n        \"Manchester City\" => \"Man City\",\n        \"Newcastle United\" => \"Newcastle\",\n        \"Tottenham Hotspur\" => \"Tottenham\",\n        \"West Ham United\" => \"West Ham\",\n        \"Leicester City\" => \"Leicester\",\n        \"Norwich City\" => \"Norwich\",\n        \"Stoke City\" => \"Stoke\",\n        \"West Bromwich Albion\" => \"West Brom\",\n        \"Swansea City\" => \"Swansea\",\n        \"Leeds United\" => \"Leeds\",\n        \"Wolverhampton Wanderers\" => \"Wolves\",\n        \"Nott'm Forest\" => \"Nottingham Forest\",\n        \"Birmingham City\" => \"Birmingham\",\n        \"Blackburn Rovers\" => \"Blackburn\",\n        \"Bolton Wanderers\" => \"Bolton\",\n        \"Charlton Athletic\" => \"Charlton\",\n        // Spain\n        \"Athletic Club\" => \"Ath Bilbao\",\n        \"Atl\\u{e9}tico Madrid\" => \"Ath Madrid\",\n        \"Real Betis\" => \"Betis\",\n        \"Celta Vigo\" => \"Celta\",\n        \"Real Sociedad\" => \"Sociedad\",\n        \"Real Valladolid\" => \"Valladolid\",\n        \"Real Zaragoza\" => \"Zaragoza\",\n        \"Rayo Vallecano\" => \"Vallecano\",\n        \"CD Numancia de Soria\" => \"Numancia\",\n        \"Real Murcia CF\" => \"Murcia\",\n        \"Recreativo Huelva\" => \"Recreativo\",\n        \"Sporting Gij\\u{f3}n\" => \"Sp Gijon\",\n        \"Espanol\" => \"Espanyol\",\n        \"Gimn\\u{e0}stic Tarragona\" => \"Gimnastic\",\n        \"Villarreal\" | \"Villareel\" => \"Villarreal\",\n        \"Santander\" => \"Racing Santander\",\n        // Italy\n        \"Inter Milan\" => \"Inter\",\n        \"Verona\" => \"Hellas Verona\",\n        // Germany\n        \"Bayer Leverkusen\" => \"Leverkusen\",\n        \"Borussia Dortmund\" => \"Dortmund\",\n        \"Eintracht Frankfurt\" => \"Ein Frankfurt\",\n        \"FSV Mainz 05\" => \"Mainz\",\n        \"Hamburger SV\" => \"Hamburg\",\n        \"Hertha Berlin\" => \"Hertha\",\n        \"Leipzig\" => \"RB Leipzig\",\n        \"Borussia M\\u{f6}nchengladbach\" | \"M'gladbach\" => \"M'Gladbach\",\n        \"Darmstadt 98\" => \"Darmstadt\",\n        \"Fortuna Dusseldorf\" => \"Dusseldorf\",\n        \"Hannover 96\" => \"Hannover\",\n        // France\n        \"Olympique de Marseille\" => \"Marseille\",\n        \"AS Monaco\" => \"Monaco\",\n        \"OGC Nice\" => \"Nice\",\n        \"Stade de Reims\" => \"Reims\",\n        \"Paris Saint-Germain\" => \"Paris SG\",\n        \"Stade Brestois\" => \"Brest\",\n        \"Stade Malherbe Caen\" => \"Caen\",\n        \"Clermont Foot\" => \"Clermont\",\n        \"CA Bastia\" => \"Bastia\",\n        \"Saint-\\u{c9}tienne\" => \"St Etienne\",\n        // Netherlands\n        \"Roda JC\" => \"Roda\",\n        \"Sparta Rotterdam\" => \"Sparta\",\n        // Portugal\n        \"Desp. Chaves\" => \"Chaves\",\n        \"Campomaior\" => \"Campomaiorense\",\n        \"Madeira\" => \"Uniao Madeira\",\n        \"AVS\" => \"Academico Viseu\",\n        // Belgium\n        \"Lommel SK\" => \"Lommel\",\n        \"RWD Molenbeek\" => \"Molenbeek\",\n        \"Mouscron\" | \"Mouscron-Peruwelz\" => \"RAAL La Louviere\",\n        // Turkiye\n        \"Antalya\" => \"Antalyaspor\",\n        \"Gaziantep\" => \"Gaziantepspor\",\n        \"Kayseri\" => \"Kayserispor\",\n        \"Malatyaspor\" => \"Yeni Malatyaspor\",\n        other => other,\n    }\n}\n\n\n\n\n\n\n// canonical team names (football-data style) — collapses name-variant dupes\nlet s_home: Vec<String> = s_home_raw.iter().map(|n| canon(n).to_string()).collect();\nlet s_away: Vec<String> = s_away_raw.iter().map(|n| canon(n).to_string()).collect();\n\n// synthetic team ids keyed by (country|league|canonical name) so variants\n// of the same club share one id within a competition\nlet mut tid_map: HashMap<String, i64> = HashMap::new();\nlet mut s_hid = vec![-1i64; mf.height()];\nlet mut s_aid = vec![-1i64; mf.height()];\nfor i in 0..mf.height() {\n    for (nm, is_home) in [(&s_home[i], true), (&s_away[i], false)] {\n        let key = format!(\"{}|{}|{}\", s_country[i], s_league[i], nm);\n        let next = tid_map.len() as i64;\n        let id = *tid_map.entry(key).or_insert(next);\n        if is_home { s_hid[i] = id; } else { s_aid[i] = id; }\n    }\n}\n\n// dedup fixtures: same league-season, canonical pairing, date and score\n// appears twice when two importers used different name variants\nlet mut seen: HashSet<(String, String, String, String, String, String, i64, i64)> = HashSet::new();\nlet mut valid: Vec<usize> = Vec::new();\nlet mut n_dupes = 0usize;\nfor i in 0..mf.height() {\n    if s_hg[i] < 0 || s_ag[i] < 0 { continue; }\n    let key = (s_country[i].clone(), s_league[i].clone(), s_season[i].clone(),\n               s_home[i].clone(), s_away[i].clone(), s_date[i][..10].to_string(), s_hg[i], s_ag[i]);\n    // unordered pairing: canonical order home<away not guaranteed; use both directions check\n    if seen.contains(&key) || seen.contains(&(key.0.clone(), key.1.clone(), key.2.clone(), key.4.clone(), key.3.clone(), key.5.clone(), key.6, key.7)) {\n        n_dupes += 1; continue;\n    }\n    seen.insert(key);\n    valid.push(i);\n}\nprintln!(\"completed matches after dedup: {} ({} dupes dropped)\", valid.len(), n_dupes);\n\nfn pearson(xs: &[f64], ys: &[f64]) -> f64 {\n    let n = xs.len() as f64;\n    if n < 3.0 { return f64::NAN; }\n    let mx = xs.iter().sum::<f64>() / n;\n    let my = ys.iter().sum::<f64>() / n;\n    let mut sxy = 0.0; let mut sxx = 0.0; let mut syy = 0.0;\n    for i in 0..xs.len() {\n        let dx = xs[i] - mx; let dy = ys[i] - my;\n        sxy += dx * dy; sxx += dx * dx; syy += dy * dy;\n    }\n    if sxx <= 0.0 || syy <= 0.0 { return f64::NAN; }\n    sxy / (sxx.sqrt() * syy.sqrt())\n}\n\n// standings order best->worst for (tid, pts, gd, gf)\nfn rank_teams(teams: &[(i64, i64, i64, i64)]) -> Vec<usize> {\n    let mut v: Vec<usize> = (0..teams.len()).collect();\n    v.sort_by(|&a, &b| {\n        teams[b].1.cmp(&teams[a].1)\n            .then(teams[b].2.cmp(&teams[a].2))\n            .then(teams[b].3.cmp(&teams[a].3))\n    });\n    v\n}\n\n// replay one league-season's matches (idxs sorted by date) -> final standings + max lead per team\nfn replay_lgsn(idxs: &[usize], hid: &[i64], aid: &[i64], hg: &[i64], ag: &[i64],\n               home: &[String], away: &[String]) -> (Vec<(i64,i64,i64,i64)>, HashMap<i64,String>, HashMap<i64,i64>) {\n    let mut st: HashMap<i64, (i64, i64, i64)> = HashMap::new();\n    let mut names: HashMap<i64, String> = HashMap::new();\n    let mut maxlead: HashMap<i64, i64> = HashMap::new();\n    for &i in idxs {\n        for (tid, gf, ga, nm) in [(hid[i], hg[i], ag[i], &home[i]), (aid[i], ag[i], hg[i], &away[i])] {\n            names.insert(tid, nm.clone());\n            let e = st.entry(tid).or_insert((0, 0, 0));\n            e.1 += gf; e.2 += ga;\n            e.0 += if gf > ga { 3 } else if gf == ga { 1 } else { 0 };\n        }\n        let mut teams: Vec<(i64, i64, i64, i64)> = st.iter().map(|(&t, &(p, gf, ga))| (t, p, gf - ga, gf)).collect();\n        let order = rank_teams(&teams);\n        if order.len() >= 2 {\n            let lead = teams[order[0]].1 - teams[order[1]].1;\n            let top = teams[order[0]].0;\n            let cur = maxlead.entry(top).or_insert(0);\n            if lead > *cur { *cur = lead; }\n        }\n        teams.clear();\n    }\n    let mut teams: Vec<(i64, i64, i64, i64)> = st.iter().map(|(&t, &(p, gf, ga))| (t, p, gf - ga, gf)).collect();\n    let order = rank_teams(&teams);\n    let mut sorted: Vec<(i64,i64,i64,i64)> = order.iter().map(|&o| teams[o]).collect();\n    (sorted, names, maxlead)\n}\n\n// group matches by league-season\nlet mut groups: HashMap<(String, String), Vec<usize>> = HashMap::new();\nfor &i in &valid {\n    groups.entry((format!(\"{}|{}\", s_country[i], s_league[i]), s_season[i].clone())).or_default().push(i);\n}\nlet mut gkeys: Vec<(String,String)> = groups.keys().cloned().collect();\nprintln!(\"league-seasons total: {}\", gkeys.len());\n\nstruct Rec { lg: String, season: String, team: String, lead: i64, final_pts: i64, rank: usize, champ: String, margin: i64 }\nlet mut blown: Vec<Rec> = Vec::new();\nlet mut held_count = 0usize;\nlet mut seasons_analyzed = 0usize;\nlet mut seasons_with8 = 0usize;\n\nfor key in &gkeys {\n    let idxs = groups.get(key).unwrap();\n    if idxs.len() < 40 { continue; }\n    seasons_analyzed += 1;\n    let mut sorted_idx = idxs.clone();\n    sorted_idx.sort_by(|&a, &b| s_date[a].cmp(&s_date[b]).then(s_id[a].cmp(&s_id[b])));\n    let (table, names, maxlead) = replay_lgsn(&sorted_idx, &s_hid, &s_aid, &s_hg, &s_ag, &s_home, &s_away);\n    if table.len() < 2 { continue; }\n    let champ_tid = table[0].0;\n    let champ_name = names.get(&champ_tid).cloned().unwrap_or_default();\n    let margin = table[0].1 - table[1].1;\n    let had8 = maxlead.values().any(|&l| l >= 8);\n    if had8 { seasons_with8 += 1; }\n    for (pos, t) in table.iter().enumerate() {\n        let tid = t.0;\n        if let Some(&ml) = maxlead.get(&tid) {\n            if ml >= 8 {\n                if tid == champ_tid { held_count += 1; }\n                else {\n                    blown.push(Rec {\n                        lg: key.0.clone(), season: key.1.clone(),\n                        team: names.get(&tid).cloned().unwrap_or_default(),\n                        lead: ml, final_pts: t.1, rank: pos + 1,\n                        champ: champ_name.clone(), margin,\n                    });\n                }\n            }\n        }\n    }\n}\n\nprintln!(\"league-seasons analysed (>=40 matches): {}\", seasons_analyzed);\nprintln!(\"seasons where someone led by >=8 at some point: {}\", seasons_with8);\nprintln!(\"blown-lead instances (non-champion held >=8): {}\", blown.len());\nprintln!(\"champions who held >=8 and won anyway: {}\", held_count);\n\nblown.sort_by(|a, b| b.lead.cmp(&a.lead).then(b.final_pts.cmp(&a.final_pts)));\nlet rows: Vec<Vec<String>> = blown.iter().take(35).map(|r| vec![\n    r.lg.split('|').nth(1).unwrap_or(\"\").to_string(), r.season.clone(),\n    r.team.clone(), format!(\"+{}\", r.lead), format!(\"P{}\", r.rank),\n    format!(\"{} (+{})\", r.champ, r.margin),\n]).collect();\nmars_table(&[\"league\",\"season\",\"team\",\"max lead\",\"final pos\",\"champion (margin)\"], &rows);",
       "metadata": {},
       "execution_count": 1,
       "outputs": [
@@ -137,7 +137,7 @@
               "Arbroath (+2)"
             ],
             [
-              "Turkish S\u00fcper Lig",
+              "Turkish Süper Lig",
               "2003/04",
               "Besiktas",
               "+12",
@@ -193,14 +193,6 @@
               "Cruz Azul (+9)"
             ],
             [
-              "MLS",
-              "2024",
-              "Inter Miami",
-              "+11",
-              "P2",
-              "Los Angeles Galaxy (+2)"
-            ],
-            [
               "English Premier League",
               "1997/98",
               "Man United",
@@ -217,20 +209,20 @@
               "Stranraer (+2)"
             ],
             [
+              "MLS",
+              "2024",
+              "Inter Miami",
+              "+11",
+              "P2",
+              "Los Angeles Galaxy (+2)"
+            ],
+            [
               "Spanish La Liga 2",
               "2024/25",
               "Racing Santander",
               "+11",
               "P5",
               "Levante (+2)"
-            ],
-            [
-              "Ekstraklasa",
-              "2015/2016",
-              "Piast Gliwice",
-              "+11",
-              "P2",
-              "Legia (+4)"
             ],
             [
               "Spanish La Liga 2",
@@ -241,6 +233,14 @@
               "Huesca (+1)"
             ],
             [
+              "Ekstraklasa",
+              "2015/2016",
+              "Piast Gliwice",
+              "+11",
+              "P2",
+              "Legia (+4)"
+            ],
+            [
               "Liga MX",
               "2012/2013",
               "Club Tijuana",
@@ -249,20 +249,20 @@
               "Club America (+12)"
             ],
             [
+              "Turkish Süper Lig",
+              "2018/19",
+              "Buyuksehyr",
+              "+11",
+              "P2",
+              "Galatasaray (+2)"
+            ],
+            [
               "Liga MX",
               "2021/2022",
               "Club America",
               "+11",
               "P4",
               "Atlas (+1)"
-            ],
-            [
-              "Turkish S\u00fcper Lig",
-              "2018/19",
-              "Buyuksehyr",
-              "+11",
-              "P2",
-              "Galatasaray (+2)"
             ],
             [
               "French Ligue 1",
@@ -305,7 +305,7 @@
               "Sunderland (+4)"
             ],
             [
-              "Spanish La Liga 2",
+              "Portuguese Liga Portugal",
               "1993/94",
               "La Coruna",
               "+10",
@@ -313,7 +313,7 @@
               "Barcelona (+3)"
             ],
             [
-              "Portuguese Liga Portugal",
+              "Spanish La Liga 2",
               "1993/94",
               "La Coruna",
               "+10",
@@ -327,14 +327,14 @@
     {
       "id": "8a470b12-90c1-42f5-aa16-d392761014fd",
       "cell_type": "markdown",
-      "source": "## How rare is the choke?\n\nBefore the hall of shame \u2014 the denominators. Split by how big the lead\nwas at its peak: do 8-point leads survive more often than 20-point\nones? And per league, who blunders most?",
+      "source": "## How rare is the choke?\n\nBefore the hall of shame — the denominators. Split by how big the lead\nwas at its peak: do 8-point leads survive more often than 20-point\nones? And per league, who blunders most?",
       "metadata": {},
       "outputs": []
     },
     {
       "id": "e4b64624-9d30-4826-8c32-9eb14f280268",
       "cell_type": "code",
-      "source": "\nlet mut groups: HashMap<(String, String), Vec<usize>> = HashMap::new();\nfor &i in &valid {\n    groups.entry((format!(\"{}|{}\", s_country[i], s_league[i]), s_season[i].clone())).or_default().push(i);\n}\n// lead bucket -> (held, blown, total instances)\nlet mut buckets = vec![(0usize,0usize,0usize); 6];\nlet mut by_league: HashMap<String, (usize,usize,usize,usize)> = HashMap::new(); // lg -> (seasons, had8, blown, bigblown)\nlet mut total_seasons = 0usize;\n\nfor ((lg, _season), idxs) in &groups {\n    if idxs.len() < 40 { continue; }\n    total_seasons += 1;\n    let mut sorted_idx = idxs.clone();\n    sorted_idx.sort_by(|&a, &b| s_date[a].cmp(&s_date[b]).then(s_id[a].cmp(&s_id[b])));\n    let (table, _names, maxlead) = replay_lgsn(&sorted_idx, &s_hid, &s_aid, &s_hg, &s_ag, &s_home, &s_away);\n    if table.len() < 2 { continue; }\n    let champ_tid = table[0].0;\n    let e = by_league.entry(lg.clone()).or_insert((0,0,0,0));\n    e.0 += 1;\n    let mut had8 = false;\n    for t in &table {\n        if let Some(&ml) = maxlead.get(&t.0) {\n            if ml >= 8 {\n                had8 = true;\n                let b = if ml < 10 {0} else if ml < 14 {1} else if ml < 20 {2} else if ml < 30 {3} else if ml < 50 {4} else {5};\n                buckets[b].2 += 1;\n                if t.0 == champ_tid { buckets[b].0 += 1; } else { buckets[b].1 += 1; }\n                if t.0 != champ_tid {\n                    e.2 += 1;\n                    if ml >= 12 { e.3 += 1; }\n                }\n            }\n        }\n    }\n    if had8 { e.1 += 1; }\n}\n\nprintln!(\"total league-seasons analysed: {}\", total_seasons);\nlet blabels = [\"8-9\",\"10-13\",\"14-19\",\"20-29\",\"30-49\",\"50+\"];\nlet brows: Vec<Vec<String>> = (0..6).map(|b| vec![\n    blabels[b].to_string(), buckets[b].0.to_string(), buckets[b].1.to_string(), buckets[b].2.to_string(),\n    format!(\"{:.0}%\", 100.0*buckets[b].1 as f64/buckets[b].2.max(1) as f64),\n]).collect();\nmars_table(&[\"peak lead (pts)\",\"held on\",\"blown\",\"instances\",\"blown %\"], &brows);\n\nlet mut lg_rows: Vec<Vec<String>> = by_league.iter().filter(|(_,a)| a.0 >= 5).map(|(l,a)| vec![\n    l.split('|').nth(1).unwrap_or(\"\").to_string(), a.0.to_string(), a.1.to_string(),\n    a.2.to_string(), a.3.to_string(),\n]).collect();\nlg_rows.sort_by(|a,b| b[3].parse::<i64>().unwrap().cmp(&a[3].parse::<i64>().unwrap()));\nmars_table(&[\"league\",\"seasons\",\"had 8+ leader\",\"blown leads\",\"blown by 12+\"], &lg_rows);",
+      "source": "let mut groups: HashMap<(String, String), Vec<usize>> = HashMap::new();\nfor &i in &valid {\n    groups.entry((format!(\"{}|{}\", s_country[i], s_league[i]), s_season[i].clone())).or_default().push(i);\n}\n// lead bucket -> (held, blown, total instances)\nlet mut buckets = vec![(0usize,0usize,0usize); 6];\nlet mut by_league: HashMap<String, (usize,usize,usize,usize)> = HashMap::new(); // lg -> (seasons, had8, blown, bigblown)\nlet mut total_seasons = 0usize;\n\nfor ((lg, _season), idxs) in &groups {\n    if idxs.len() < 40 { continue; }\n    total_seasons += 1;\n    let mut sorted_idx = idxs.clone();\n    sorted_idx.sort_by(|&a, &b| s_date[a].cmp(&s_date[b]).then(s_id[a].cmp(&s_id[b])));\n    let (table, _names, maxlead) = replay_lgsn(&sorted_idx, &s_hid, &s_aid, &s_hg, &s_ag, &s_home, &s_away);\n    if table.len() < 2 { continue; }\n    let champ_tid = table[0].0;\n    let e = by_league.entry(lg.clone()).or_insert((0,0,0,0));\n    e.0 += 1;\n    let mut had8 = false;\n    for t in &table {\n        if let Some(&ml) = maxlead.get(&t.0) {\n            if ml >= 8 {\n                had8 = true;\n                let b = if ml < 10 {0} else if ml < 14 {1} else if ml < 20 {2} else if ml < 30 {3} else if ml < 50 {4} else {5};\n                buckets[b].2 += 1;\n                if t.0 == champ_tid { buckets[b].0 += 1; } else { buckets[b].1 += 1; }\n                if t.0 != champ_tid {\n                    e.2 += 1;\n                    if ml >= 12 { e.3 += 1; }\n                }\n            }\n        }\n    }\n    if had8 { e.1 += 1; }\n}\n\nprintln!(\"total league-seasons analysed: {}\", total_seasons);\nlet blabels = [\"8-9\",\"10-13\",\"14-19\",\"20-29\",\"30-49\",\"50+\"];\nlet brows: Vec<Vec<String>> = (0..6).map(|b| vec![\n    blabels[b].to_string(), buckets[b].0.to_string(), buckets[b].1.to_string(), buckets[b].2.to_string(),\n    format!(\"{:.0}%\", 100.0*buckets[b].1 as f64/buckets[b].2.max(1) as f64),\n]).collect();\nmars_table(&[\"peak lead (pts)\",\"held on\",\"blown\",\"instances\",\"blown %\"], &brows);\n",
       "metadata": {},
       "execution_count": 2,
       "outputs": [
@@ -450,7 +450,7 @@
               "Arbroath (+2)"
             ],
             [
-              "Turkish S\u00fcper Lig",
+              "Turkish Süper Lig",
               "2003/04",
               "Besiktas",
               "+12",
@@ -506,6 +506,14 @@
               "Cruz Azul (+9)"
             ],
             [
+              "Scottish League Two",
+              "2003/04",
+              "Stirling",
+              "+11",
+              "P2",
+              "Stranraer (+2)"
+            ],
+            [
               "MLS",
               "2024",
               "Inter Miami",
@@ -522,28 +530,12 @@
               "Arsenal (+1)"
             ],
             [
-              "Scottish League Two",
-              "2003/04",
-              "Stirling",
-              "+11",
-              "P2",
-              "Stranraer (+2)"
-            ],
-            [
               "Spanish La Liga 2",
               "2024/25",
               "Racing Santander",
               "+11",
               "P5",
               "Levante (+2)"
-            ],
-            [
-              "Spanish La Liga 2",
-              "2019/20",
-              "Cadiz",
-              "+11",
-              "P2",
-              "Huesca (+1)"
             ],
             [
               "Ekstraklasa",
@@ -554,6 +546,14 @@
               "Legia (+4)"
             ],
             [
+              "Spanish La Liga 2",
+              "2019/20",
+              "Cadiz",
+              "+11",
+              "P2",
+              "Huesca (+1)"
+            ],
+            [
               "Liga MX",
               "2012/2013",
               "Club Tijuana",
@@ -562,20 +562,20 @@
               "Club America (+12)"
             ],
             [
-              "Turkish S\u00fcper Lig",
-              "2018/19",
-              "Buyuksehyr",
-              "+11",
-              "P2",
-              "Galatasaray (+2)"
-            ],
-            [
               "Liga MX",
               "2021/2022",
               "Club America",
               "+11",
               "P4",
               "Atlas (+1)"
+            ],
+            [
+              "Turkish Süper Lig",
+              "2018/19",
+              "Buyuksehyr",
+              "+11",
+              "P2",
+              "Galatasaray (+2)"
             ],
             [
               "French Ligue 1",
@@ -626,7 +626,367 @@
               "Barcelona (+3)"
             ],
             [
-              "Portuguese Liga Portugal",
+              "Spanish La Liga",
+              "1993/94",
+              "La Coruna",
+              "+10",
+              "P2",
+              "Barcelona (+3)"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "peak lead (pts)",
+            "held on",
+            "blown",
+            "instances",
+            "blown %"
+          ],
+          "rows": [
+            [
+              "8-9",
+              "162",
+              "93",
+              "255",
+              "36%"
+            ],
+            [
+              "10-13",
+              "217",
+              "44",
+              "261",
+              "17%"
+            ],
+            [
+              "14-19",
+              "174",
+              "6",
+              "180",
+              "3%"
+            ],
+            [
+              "20-29",
+              "63",
+              "0",
+              "63",
+              "0%"
+            ],
+            [
+              "30-49",
+              "6",
+              "0",
+              "6",
+              "0%"
+            ],
+            [
+              "50+",
+              "0",
+              "0",
+              "0",
+              "0%"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "78dfcf9d-150c-445f-a4c3-3cc1910be792",
+      "cell_type": "code",
+      "source": "let mut lg_rows: Vec<Vec<String>> = by_league.iter().filter(|(_,a)| a.0 >= 5).map(|(l,a)| vec![\n    l.split('|').nth(1).unwrap_or(\"\").to_string(), a.0.to_string(), a.1.to_string(),\n    a.2.to_string(), a.3.to_string(),\n]).collect();\nlg_rows.sort_by(|a,b| b[3].parse::<i64>().unwrap().cmp(&a[3].parse::<i64>().unwrap()));\nmars_table(&[\"league\",\"seasons\",\"had 8+ leader\",\"blown leads\",\"blown by 12+\"], &lg_rows);\n",
+      "metadata": {},
+      "execution_count": 3,
+      "outputs": [
+        {
+          "type": "text",
+          "text": "completed matches after dedup: 311832 (1190 dupes dropped)\nleague-seasons total: 1031\nleague-seasons analysed (>=40 matches): 1004\nseasons where someone led by >=8 at some point: 711\nblown-lead instances (non-champion held >=8): 143\nchampions who held >=8 and won anyway: 622\ntotal league-seasons analysed: 1004\n"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "league",
+            "season",
+            "team",
+            "max lead",
+            "final pos",
+            "champion (margin)"
+          ],
+          "rows": [
+            [
+              "English League Two",
+              "2000/01",
+              "Chesterfield",
+              "+16",
+              "P2",
+              "Brighton (+3)"
+            ],
+            [
+              "Serie A",
+              "2023",
+              "Botafogo RJ",
+              "+16",
+              "P5",
+              "Palmeiras (+2)"
+            ],
+            [
+              "English League One",
+              "2007/08",
+              "Leeds",
+              "+15",
+              "P2",
+              "Swansea (+1)"
+            ],
+            [
+              "English League Two",
+              "2002/03",
+              "Hartlepool",
+              "+15",
+              "P2",
+              "Rushden & D (+2)"
+            ],
+            [
+              "Allsvenskan",
+              "2026",
+              "Sirius",
+              "+14",
+              "P2",
+              "Hammarby (+0)"
+            ],
+            [
+              "Super League",
+              "2026",
+              "Chengdu Rongcheng",
+              "+14",
+              "P3",
+              "Beijing Guoan (+2)"
+            ],
+            [
+              "English League Two",
+              "2024/25",
+              "Walsall",
+              "+13",
+              "P4",
+              "Doncaster (+4)"
+            ],
+            [
+              "Scottish Premiership",
+              "2011/12",
+              "Rangers",
+              "+12",
+              "P2",
+              "Celtic (+10)"
+            ],
+            [
+              "Belgian Pro League",
+              "2024/25",
+              "Genk",
+              "+12",
+              "P3",
+              "St. Gilloise (+1)"
+            ],
+            [
+              "English Premier League",
+              "1995/96",
+              "Newcastle",
+              "+12",
+              "P2",
+              "Man United (+4)"
+            ],
+            [
+              "Liga Profesional",
+              "2025",
+              "Rosario Central",
+              "+12",
+              "P2",
+              "Boca Juniors (+0)"
+            ],
+            [
+              "Scottish League Two",
+              "2016/17",
+              "Forfar",
+              "+12",
+              "P2",
+              "Arbroath (+2)"
+            ],
+            [
+              "Turkish Süper Lig",
+              "2003/04",
+              "Besiktas",
+              "+12",
+              "P3",
+              "Fenerbahce (+7)"
+            ],
+            [
+              "Scottish League One",
+              "2003/04",
+              "Morton",
+              "+12",
+              "P4",
+              "Airdrie Utd (+8)"
+            ],
+            [
+              "J1 League",
+              "2018",
+              "Sanfrecce Hiroshima",
+              "+12",
+              "P2",
+              "Kawasaki Frontale (+12)"
+            ],
+            [
+              "Champions League",
+              "2005/2006",
+              "Liverpool",
+              "+12",
+              "P3",
+              "Barcelona (+3)"
+            ],
+            [
+              "English League Two",
+              "2017/18",
+              "Luton",
+              "+11",
+              "P2",
+              "Accrington (+5)"
+            ],
+            [
+              "English League Two",
+              "2009/10",
+              "Rochdale",
+              "+11",
+              "P3",
+              "Notts County (+10)"
+            ],
+            [
+              "Liga MX",
+              "2020/2021",
+              "Club Leon",
+              "+11",
+              "P2",
+              "Cruz Azul (+9)"
+            ],
+            [
+              "Scottish League Two",
+              "2003/04",
+              "Stirling",
+              "+11",
+              "P2",
+              "Stranraer (+2)"
+            ],
+            [
+              "English Premier League",
+              "1997/98",
+              "Man United",
+              "+11",
+              "P2",
+              "Arsenal (+1)"
+            ],
+            [
+              "MLS",
+              "2024",
+              "Inter Miami",
+              "+11",
+              "P2",
+              "Los Angeles Galaxy (+2)"
+            ],
+            [
+              "Spanish La Liga 2",
+              "2024/25",
+              "Racing Santander",
+              "+11",
+              "P5",
+              "Levante (+2)"
+            ],
+            [
+              "Spanish La Liga 2",
+              "2019/20",
+              "Cadiz",
+              "+11",
+              "P2",
+              "Huesca (+1)"
+            ],
+            [
+              "Ekstraklasa",
+              "2015/2016",
+              "Piast Gliwice",
+              "+11",
+              "P2",
+              "Legia (+4)"
+            ],
+            [
+              "Liga MX",
+              "2012/2013",
+              "Club Tijuana",
+              "+11",
+              "P3",
+              "Club America (+12)"
+            ],
+            [
+              "Liga MX",
+              "2021/2022",
+              "Club America",
+              "+11",
+              "P4",
+              "Atlas (+1)"
+            ],
+            [
+              "Turkish Süper Lig",
+              "2018/19",
+              "Buyuksehyr",
+              "+11",
+              "P2",
+              "Galatasaray (+2)"
+            ],
+            [
+              "French Ligue 1",
+              "2001/02",
+              "Lens",
+              "+11",
+              "P2",
+              "Lyon (+2)"
+            ],
+            [
+              "Scottish Championship",
+              "2009/10",
+              "Dundee",
+              "+11",
+              "P2",
+              "Inverness C (+12)"
+            ],
+            [
+              "English League One",
+              "2021/22",
+              "Rotherham",
+              "+10",
+              "P2",
+              "Wigan (+2)"
+            ],
+            [
+              "Scottish Premiership",
+              "2025/26",
+              "Hearts",
+              "+10",
+              "P2",
+              "Celtic (+2)"
+            ],
+            [
+              "English Championship",
+              "1995/96",
+              "Derby",
+              "+10",
+              "P2",
+              "Sunderland (+4)"
+            ],
+            [
+              "Scottish Championship",
+              "1993/94",
+              "La Coruna",
+              "+10",
+              "P2",
+              "Barcelona (+3)"
+            ],
+            [
+              "Spanish La Liga 2",
               "1993/94",
               "La Coruna",
               "+10",
@@ -714,18 +1074,18 @@
               "3"
             ],
             [
-              "English League One",
-              "34",
-              "28",
-              "8",
-              "1"
-            ],
-            [
               "English Championship",
               "34",
               "27",
               "8",
               "0"
+            ],
+            [
+              "English League One",
+              "34",
+              "28",
+              "8",
+              "1"
             ],
             [
               "Spanish La Liga 2",
@@ -735,32 +1095,18 @@
               "0"
             ],
             [
-              "English Premier League",
-              "34",
-              "29",
-              "7",
-              "1"
-            ],
-            [
-              "Turkish S\u00fcper Lig",
+              "Turkish Süper Lig",
               "33",
               "24",
               "7",
               "1"
             ],
             [
-              "Scottish Championship",
+              "English Premier League",
               "34",
               "29",
-              "6",
-              "0"
-            ],
-            [
-              "Liga MX",
-              "15",
-              "11",
-              "6",
-              "0"
+              "7",
+              "1"
             ],
             [
               "Scottish Premiership",
@@ -770,11 +1116,18 @@
               "1"
             ],
             [
-              "J1 League",
+              "Liga MX",
               "15",
-              "8",
-              "5",
-              "1"
+              "11",
+              "6",
+              "0"
+            ],
+            [
+              "Scottish Championship",
+              "34",
+              "29",
+              "6",
+              "0"
             ],
             [
               "Portuguese Liga Portugal",
@@ -784,10 +1137,10 @@
               "0"
             ],
             [
-              "Belgian Pro League",
-              "32",
-              "22",
-              "4",
+              "J1 League",
+              "15",
+              "8",
+              "5",
               "1"
             ],
             [
@@ -798,10 +1151,31 @@
               "1"
             ],
             [
+              "Belgian Pro League",
+              "32",
+              "22",
+              "4",
+              "1"
+            ],
+            [
               "French Ligue 1",
               "34",
               "26",
               "4",
+              "0"
+            ],
+            [
+              "French Ligue 2",
+              "31",
+              "21",
+              "3",
+              "0"
+            ],
+            [
+              "German 2. Bundesliga",
+              "34",
+              "20",
+              "3",
               "0"
             ],
             [
@@ -815,6 +1189,13 @@
               "Dutch Eredivisie",
               "34",
               "29",
+              "3",
+              "0"
+            ],
+            [
+              "MLS",
+              "15",
+              "9",
               "3",
               "0"
             ],
@@ -833,25 +1214,18 @@
               "0"
             ],
             [
-              "French Ligue 2",
-              "31",
-              "21",
-              "3",
-              "0"
-            ],
-            [
-              "MLS",
+              "Bundesliga",
               "15",
-              "9",
-              "3",
+              "11",
+              "2",
               "0"
             ],
             [
-              "German 2. Bundesliga",
-              "34",
-              "20",
-              "3",
-              "0"
+              "Super League",
+              "13",
+              "10",
+              "2",
+              "1"
             ],
             [
               "Allsvenskan",
@@ -861,16 +1235,9 @@
               "1"
             ],
             [
-              "Serie A",
-              "15",
-              "12",
-              "2",
-              "1"
-            ],
-            [
-              "Ekstraklasa",
-              "15",
-              "7",
+              "Spanish La Liga",
+              "34",
+              "26",
               "2",
               "0"
             ],
@@ -882,11 +1249,11 @@
               "0"
             ],
             [
-              "Spanish La Liga",
-              "34",
-              "26",
+              "Serie A",
+              "15",
+              "12",
               "2",
-              "0"
+              "1"
             ],
             [
               "Liga Profesional",
@@ -896,51 +1263,16 @@
               "1"
             ],
             [
-              "Super League",
-              "13",
-              "10",
-              "2",
-              "1"
-            ],
-            [
-              "Bundesliga",
+              "Ekstraklasa",
               "15",
-              "11",
+              "7",
               "2",
-              "0"
-            ],
-            [
-              "Champions League",
-              "26",
-              "6",
-              "1",
-              "1"
-            ],
-            [
-              "Greek Super League",
-              "28",
-              "21",
-              "1",
               "0"
             ],
             [
               "Italian Serie A",
               "34",
               "27",
-              "1",
-              "0"
-            ],
-            [
-              "Premier League",
-              "14",
-              "11",
-              "1",
-              "0"
-            ],
-            [
-              "Superliga",
-              "15",
-              "8",
               "1",
               "0"
             ],
@@ -952,9 +1284,37 @@
               "0"
             ],
             [
-              "UEFA Conference League",
+              "Premier League",
+              "14",
+              "11",
+              "1",
+              "0"
+            ],
+            [
+              "Champions League",
+              "26",
               "6",
               "1",
+              "1"
+            ],
+            [
+              "Superliga",
+              "15",
+              "8",
+              "1",
+              "0"
+            ],
+            [
+              "Greek Super League",
+              "28",
+              "21",
+              "1",
+              "0"
+            ],
+            [
+              "Superliga",
+              "15",
+              "12",
               "0",
               "0"
             ],
@@ -966,9 +1326,9 @@
               "0"
             ],
             [
-              "Copa De La Liga Profesional",
-              "5",
-              "0",
+              "UEFA Conference League",
+              "6",
+              "1",
               "0",
               "0"
             ],
@@ -980,9 +1340,9 @@
               "0"
             ],
             [
-              "Superliga",
-              "15",
-              "12",
+              "Copa De La Liga Profesional",
+              "5",
+              "0",
               "0",
               "0"
             ]
@@ -993,7 +1353,7 @@
     {
       "id": "e9120057-111c-4988-ae41-af70e21785b7",
       "cell_type": "markdown",
-      "source": "## Findings\n\n**The choke is rarer than the legend suggests \u2014 and almost never happens from a truly big lead.**\n\nScope: 311,832 completed matches across 1,004 league-seasons (deduplicated\nacross importer name variants). For every team-season we replayed the\nfixture list and recorded the maximum points lead over the nearest rival\nat any point.\n\n1. **Big leads are common; blown leads are not.** Someone led by 8+\n   points in 711 of 1,004 seasons \u2014 but only **143 times did a\n   non-champion hold that lead and lose it**. Champions who led by 8+\n   held on 622 times: a **81% hold rate** once you're that far clear.\n\n2. **The cliff is between 10 and 14 points.** Blown-lead rate by peak\n   lead: 8\u20139 pts \u2192 **36%** blown (93 of 255); 10\u201313 \u2192 17%; 14\u201319 \u2192 3%;\n   **20+ \u2192 0%**. Nobody in the dataset has ever blown a 20-point lead.\n   Eight points is a choke; fourteen is a coronation.\n\n3. **The famous chokes cluster just above the threshold.** The largest\n   recorded blown leads: Chesterfield +16 (League Two 2000/01, finished\n   P2), Botafogo +16 (2023, P5), Leeds +15 (League One 2007/08, P2),\n   Hartlepool +15 (League Two 2002/03, P2). Newcastle's 1995/96 EPL\n   collapse (+12 \u2192 P2 to United) is the Premier League's entry.\n\n4. **Lower leagues choke more.** Scottish League Two (12 blown leads in\n   30 seasons) and English League Two (11 in 34) top the table \u2014 thinner\n   squads, fewer resources to absorb a slump. The EPL had 7 blown leads\n   in 34 seasons, one by 12+.\n\n5. **Caveats:** standings replay assumes 3/1/0 with GD-then-GF tiebreaks;\n   league labels come from source data (some seasons appear under variant\n   names); \"max lead\" is measured against the *nearest* rival, so a team\n   can hold +12 over second while third is closer.",
+      "source": "## Findings\n\n**The choke is rarer than the legend suggests — and almost never happens from a truly big lead.**\n\nScope: 311,832 completed matches across 1,004 league-seasons (deduplicated\nacross importer name variants). For every team-season we replayed the\nfixture list and recorded the maximum points lead over the nearest rival\nat any point.\n\n1. **Big leads are common; blown leads are not.** Someone led by 8+\n   points in 711 of 1,004 seasons — but only **143 times did a\n   non-champion hold that lead and lose it**. Champions who led by 8+\n   held on 622 times: a **81% hold rate** once you're that far clear.\n\n2. **The cliff is between 10 and 14 points.** Blown-lead rate by peak\n   lead: 8–9 pts → **36%** blown (93 of 255); 10–13 → 17%; 14–19 → 3%;\n   **20+ → 0%**. Nobody in the dataset has ever blown a 20-point lead.\n   Eight points is a choke; fourteen is a coronation.\n\n3. **The famous chokes cluster just above the threshold.** The largest\n   recorded blown leads: Chesterfield +16 (League Two 2000/01, finished\n   P2), Botafogo +16 (2023, P5), Leeds +15 (League One 2007/08, P2),\n   Hartlepool +15 (League Two 2002/03, P2). Newcastle's 1995/96 EPL\n   collapse (+12 → P2 to United) is the Premier League's entry.\n\n4. **Lower leagues choke more.** Scottish League Two (12 blown leads in\n   30 seasons) and English League Two (11 in 34) top the table — thinner\n   squads, fewer resources to absorb a slump. The EPL had 7 blown leads\n   in 34 seasons, one by 12+.\n\n5. **Caveats:** standings replay assumes 3/1/0 with GD-then-GF tiebreaks;\n   league labels come from source data (some seasons appear under variant\n   names); \"max lead\" is measured against the *nearest* rival, so a team\n   can hold +12 over second while third is closer.",
       "metadata": {},
       "outputs": []
     }

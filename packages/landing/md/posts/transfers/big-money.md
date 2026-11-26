@@ -180,7 +180,6 @@ mars_table(&["fee band","deals","med G+A/90 before","after","% improved","Δ med
 ```
 
 ```text
-players with match stats: 11701
 big-money deals with before+after data: 189
 ```
 
@@ -192,7 +191,6 @@ big-money deals with before+after data: 189
 | €100m+   | 11    | 0.48              | 0.20  | 18%        | -0.28    |
 
 ```rust
-
 // biggest busts and best hits among >=20m deals
 let mut big: Vec<&Deal> = deals.iter().filter(|d| d.fee >= 20_000_000.0).collect();
 big.sort_by(|a,b| (a.after_ga90 - a.before_ga90).partial_cmp(&(b.after_ga90 - b.before_ga90)).unwrap());
@@ -204,29 +202,7 @@ let bust_rows: Vec<Vec<String>> = big.iter().take(15).map(|d| vec![
     format!("{:.2} → {:.2}", d.before_ga90, d.after_ga90),
 ]).collect();
 mars_table(&["player","fee","move","G+A/90 before→after"], &bust_rows);
-
-big.sort_by(|a,b| (b.after_ga90 - b.before_ga90).partial_cmp(&(a.after_ga90 - a.before_ga90)).unwrap());
-let hit_rows: Vec<Vec<String>> = big.iter().take(15).map(|d| vec![
-    pname.get(&d.pid).cloned().unwrap_or_default().chars().take(24).collect(),
-    eur(d.fee),
-    format!("{} → {}", tname.get(&d.from).cloned().unwrap_or_default().chars().take(18).collect::<String>(),
-                            tname.get(&d.to).cloned().unwrap_or_default().chars().take(18).collect::<String>()),
-    format!("{:.2} → {:.2}", d.before_ga90, d.after_ga90),
-]).collect();
-mars_table(&["player","fee","move","G+A/90 before→after"], &hit_rows);
 ```
-
-```text
-players with match stats: 11701
-big-money deals with before+after data: 189
-```
-
-| fee band | deals | med G+A/90 before | after | % improved | Δ median |
-| -------- | ----- | ----------------- | ----- | ---------- | -------- |
-| €10–25m  | 96    | 0.06              | 0.09  | 34%        | +0.02    |
-| €25–50m  | 53    | 0.11              | 0.00  | 28%        | -0.11    |
-| €50–100m | 29    | 0.31              | 0.18  | 38%        | -0.13    |
-| €100m+   | 11    | 0.48              | 0.20  | 18%        | -0.28    |
 
 | player                   | fee     | move                              | G+A/90 before→after |
 | ------------------------ | ------- | --------------------------------- | ------------------- |
@@ -245,6 +221,18 @@ big-money deals with before+after data: 189
 | Sergej Milinković-Savić  | €40.0m  | Lazio → Al Hilal                  | 0.40 → 0.00         |
 | Paul Pogba               | €105.0m | Juventus → Manchester United      | 0.53 → 0.14         |
 | Ousmane Dembélé          | €35.0m  | Stade Rennais → Borussia Dortmund | 0.80 → 0.43         |
+
+```rust
+big.sort_by(|a,b| (b.after_ga90 - b.before_ga90).partial_cmp(&(a.after_ga90 - a.before_ga90)).unwrap());
+let hit_rows: Vec<Vec<String>> = big.iter().take(15).map(|d| vec![
+    pname.get(&d.pid).cloned().unwrap_or_default().chars().take(24).collect(),
+    eur(d.fee),
+    format!("{} → {}", tname.get(&d.from).cloned().unwrap_or_default().chars().take(18).collect::<String>(),
+                            tname.get(&d.to).cloned().unwrap_or_default().chars().take(18).collect::<String>()),
+    format!("{:.2} → {:.2}", d.before_ga90, d.after_ga90),
+]).collect();
+mars_table(&["player","fee","move","G+A/90 before→after"], &hit_rows);
+```
 
 | player                   | fee     | move                                   | G+A/90 before→after |
 | ------------------------ | ------- | -------------------------------------- | ------------------- |
@@ -283,54 +271,6 @@ let quart_rows: Vec<Vec<String>> = (0..4).map(|q| {
 }).collect();
 mars_table(&["fee quartile","deals","med fee","med before","med after","% improved","Δ"], &quart_rows);
 ```
-
-```text
-players with match stats: 11701
-big-money deals with before+after data: 189
-```
-
-| fee band | deals | med G+A/90 before | after | % improved | Δ median |
-| -------- | ----- | ----------------- | ----- | ---------- | -------- |
-| €10–25m  | 96    | 0.06              | 0.09  | 34%        | +0.02    |
-| €25–50m  | 53    | 0.11              | 0.00  | 28%        | -0.11    |
-| €50–100m | 29    | 0.31              | 0.18  | 38%        | -0.13    |
-| €100m+   | 11    | 0.48              | 0.20  | 18%        | -0.28    |
-
-| player                   | fee     | move                              | G+A/90 before→after |
-| ------------------------ | ------- | --------------------------------- | ------------------- |
-| Gonçalo Matias Ramos     | €65.0m  | Benfica → Paris Saint-Germai      | 0.88 → 0.00         |
-| Romelu Lukaku Menama     | €113.0m | Inter Milan → Chelsea             | 0.81 → 0.00         |
-| Aleksandar Mitrović      | €52.6m  | Fulham → Al Hilal                 | 0.72 → 0.00         |
-| Kevin Gameiro            | €32.0m  | Sevilla → Atlético Madrid         | 0.67 → 0.00         |
-| Harry Kane               | €95.0m  | Tottenham Hotspur → Bayern Munich | 1.12 → 0.47         |
-| Youssef En-Nesyri        | €20.0m  | Leganes → Sevilla                 | 0.55 → 0.00         |
-| Wissam Ben Yedder        | €40.0m  | Sevilla → AS Monaco               | 0.50 → 0.00         |
-| Antoine Griezmann        | €22.0m  | Barcelona → Atlético Madrid       | 0.47 → 0.00         |
-| Robert Lewandowski       | €45.0m  | Bayern Munich → Barcelona         | 1.12 → 0.65         |
-| Michy Batshuayi Tunga    | €39.0m  | Marseille → Chelsea               | 0.69 → 0.25         |
-| Kylian Mbappé Lottin     | €180.0m | AS Monaco → Paris Saint-Germai    | 0.79 → 0.36         |
-| Moisés Isaac Caicedo Cor | €116.0m | Brighton & Hove Al → Chelsea      | 0.40 → 0.00         |
-| Sergej Milinković-Savić  | €40.0m  | Lazio → Al Hilal                  | 0.40 → 0.00         |
-| Paul Pogba               | €105.0m | Juventus → Manchester United      | 0.53 → 0.14         |
-| Ousmane Dembélé          | €35.0m  | Stade Rennais → Borussia Dortmund | 0.80 → 0.43         |
-
-| player                   | fee     | move                                   | G+A/90 before→after |
-| ------------------------ | ------- | -------------------------------------- | ------------------- |
-| Juan Guillermo Cuadrado  | €20.0m  | Chelsea → Juventus                     | 0.23 → 1.00         |
-| Thorgan Hazard           | €25.5m  | Borussia Mönchengl → Borussia Dortmund | 0.00 → 0.65         |
-| Ángel Fabián Di María He | €75.0m  | Real Madrid → Manchester United        | 0.54 → 1.18         |
-| Álvaro Borja Morata Mart | €35.0m  | Chelsea → Atlético Madrid              | 0.00 → 0.64         |
-| Carlos Arturo Bacca Ahum | €33.3m  | Sevilla → AC Milan                     | 0.00 → 0.60         |
-| Kasper Dolberg           | €20.5m  | Ajax Amsterdam → OGC Nice              | 0.00 → 0.59         |
-| Ángel Fabián Di María He | €63.0m  | Manchester United → Paris Saint-Germai | 0.72 → 1.18         |
-| Ikoma Loïs Openda        | €40.0m  | Lens → RB Leipzig                      | 0.00 → 0.37         |
-| Jude Bellingham          | €127.0m | Borussia Dortmund → Real Madrid        | 0.27 → 0.63         |
-| Cody Mathès Gakpo        | €42.0m  | PSV Eindhoven → Liverpool              | 0.37 → 0.69         |
-| Fabián Ruiz Peña         | €22.5m  | Napoli → Paris Saint-Germai            | 0.00 → 0.30         |
-| John Stones              | €55.6m  | Everton → Manchester City              | 0.00 → 0.30         |
-| Antoine Griezmann        | €54.0m  | Real Sociedad → Atlético Madrid        | 0.55 → 0.84         |
-| Nuno Mendes              | €38.0m  | Sporting CP → Paris Saint-Germai       | 0.00 → 0.27         |
-| Alexis Mac Allister      | €42.0m  | Brighton & Hove Al → Liverpool         | 0.30 → 0.55         |
 
 | fee quartile | deals | med fee | med before | med after | % improved | Δ     |
 | ------------ | ----- | ------- | ---------- | --------- | ---------- | ----- |

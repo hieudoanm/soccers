@@ -156,8 +156,6 @@ mars_table(&["award","category","winners","years","most wins"], &arows);
 ```
 
 ```text
-award_winner rows: 590
-rows with resolved player: 335
 resolved winners: 154, podium finishes: 588
 ```
 
@@ -174,7 +172,6 @@ resolved winners: 154, podium finishes: 588
 | The Best FIFA Women's Goalkeeper | PLAYER   | 7       | 2019–2025 | Mary Alexandra Earps (2)   |
 
 ```rust
-
 // most awarded players overall (wins + podiums)
 let mut win_count: HashMap<i64,usize> = HashMap::new();
 let mut pod_count: HashMap<i64,usize> = HashMap::new();
@@ -188,7 +185,32 @@ let prows: Vec<Vec<String>> = pl_rows.iter().take(20).map(|(p,w,pd)| vec![
     w.to_string(), pd.to_string(),
 ]).collect();
 mars_table(&["player","wins","podium finishes"], &prows);
+```
 
+| player                         | wins | podium finishes |
+| ------------------------------ | ---- | --------------- |
+| Lionel Andrés Messi Cuccittini | 18   | 30              |
+| Cristiano Ronaldo dos Santos A | 14   | 26              |
+| Ronaldo Aparecido Rodrigues    | 6    | 10              |
+| Aitana Bonmati Conca           | 6    | 6               |
+| Alexia Putellas Segura         | 5    | 6               |
+| Zinédine Zidane                | 4    | 9               |
+| Thierry Henry                  | 4    | 8               |
+| Luis Alberto Suárez Díaz       | 4    | 7               |
+| Robert Lewandowski             | 4    | 5               |
+| Michel Platini                 | 3    | 5               |
+| Mohamed Salah                  | 3    | 5               |
+| Johan Cruyff                   | 3    | 4               |
+| Harry Kane                     | 3    | 3               |
+| Franz Beckenbauer              | 2    | 5               |
+| Alan Shearer                   | 2    | 4               |
+| Mary Alexandra Earps           | 2    | 3               |
+| Karl-Heinz Rummenigge          | 2    | 3               |
+| Kevin De Bruyne                | 2    | 3               |
+| Lothar Matthäus                | 2    | 3               |
+| Damián Emiliano Martínez       | 2    | 2               |
+
+```rust
 // repeat-winner rate: players with >1 win
 let multi = pl_rows.iter().filter(|(_,w,_)| *w>1).count();
 println!("players with multiple wins: {} of {}", multi, pl_rows.len());
@@ -206,47 +228,9 @@ if !shoe.is_empty() {
 ```
 
 ```text
-award_winner rows: 590
-rows with resolved player: 335
-resolved winners: 154, podium finishes: 588
 players with multiple wins: 27 of 76
 ()
 ```
-
-| award                            | category | winners | years     | most wins                  |
-| -------------------------------- | -------- | ------- | --------- | -------------------------- |
-| Ballon d'Or                      | PLAYER   | 37      | 1960–2026 | Lionel Andrés Messi Cu (8) |
-| PFA Players' Player of the Year  | PLAYER   | 32      | 1973–2025 | Mohamed Salah (3)          |
-| European Golden Shoe             | PLAYER   | 31      | 1973–2025 | Lionel Andrés Messi Cu (6) |
-| FIFA World Player of the Year    | PLAYER   | 11      | 1991–2009 | Ronaldo Aparecido Rodr (3) |
-| The Best FIFA Men's Player       | PLAYER   | 10      | 2016–2025 | Lionel Andrés Messi Cu (3) |
-| The Best FIFA Women's Player     | PLAYER   | 9       | 2017–2025 | Aitana Bonmati Conca (3)   |
-| The Best FIFA Men's Goalkeeper   | PLAYER   | 9       | 2017–2025 | Damián Emiliano Martín (2) |
-| Ballon d'Or Féminin              | PLAYER   | 8       | 2018–2026 | Aitana Bonmati Conca (3)   |
-| The Best FIFA Women's Goalkeeper | PLAYER   | 7       | 2019–2025 | Mary Alexandra Earps (2)   |
-
-| player                         | wins | podium finishes |
-| ------------------------------ | ---- | --------------- |
-| Lionel Andrés Messi Cuccittini | 18   | 30              |
-| Cristiano Ronaldo dos Santos A | 14   | 26              |
-| Ronaldo Aparecido Rodrigues    | 6    | 10              |
-| Aitana Bonmati Conca           | 6    | 6               |
-| Alexia Putellas Segura         | 5    | 6               |
-| Zinédine Zidane                | 4    | 9               |
-| Thierry Henry                  | 4    | 8               |
-| Luis Alberto Suárez Díaz       | 4    | 7               |
-| Robert Lewandowski             | 4    | 5               |
-| Mohamed Salah                  | 3    | 5               |
-| Michel Platini                 | 3    | 5               |
-| Johan Cruyff                   | 3    | 4               |
-| Harry Kane                     | 3    | 3               |
-| Franz Beckenbauer              | 2    | 5               |
-| Alan Shearer                   | 2    | 4               |
-| Mary Alexandra Earps           | 2    | 3               |
-| Karl-Heinz Rummenigge          | 2    | 3               |
-| Lothar Matthäus                | 2    | 3               |
-| Kevin De Bruyne                | 2    | 3               |
-| Fabio Cannavaro                | 2    | 2               |
 
 | player                     | year | goals |
 | -------------------------- | ---- | ----- |

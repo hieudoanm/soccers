@@ -149,10 +149,6 @@ let yrows: Vec<Vec<String>> = years.iter().map(|&y| {
 mars_table(&["year","deals","median fee","record","record move","player"], &yrows);
 ```
 
-```text
-deals with fee since 2005: 5351
-```
-
 | year | deals | median fee | record  | record move                       | player                       |
 | ---- | ----- | ---------- | ------- | --------------------------------- | ---------------------------- |
 | 2005 | 6     | €0.4m      | €27.0m  | Sevilla → Real Madrid             | Sergio Ramos García          |
@@ -179,7 +175,6 @@ deals with fee since 2005: 5351
 | 2026 | 106   | €4.5m      | €80.0m  | Newcastle United → Barcelona      | Anthony Gordon               |
 
 ```rust
-
 // top-15 fees all time + medians by position and destination league
 let mut top: Vec<(f64,i64)> = deals.iter().map(|d|(d.fee,d.pid)).collect();
 top.sort_by(|a,b| b.0.partial_cmp(&a.0).unwrap());
@@ -190,60 +185,7 @@ let trows: Vec<Vec<String>> = top.iter().take(15).map(|&(f,pid)| {
         d.year.to_string()]
 }).collect();
 mars_table(&["fee","player","move","year"], &trows);
-
-// by position group
-let mut by_pos: HashMap<&str, Vec<f64>> = HashMap::new();
-for d in &deals { by_pos.entry(pos_group(ppos.get(&d.pid).map(|s|s.as_str()).unwrap_or(""))).or_default().push(d.fee); }
-let prows: Vec<Vec<String>> = ["GK","DEF","MID","FWD","UNK"].iter().filter_map(|g| {
-    by_pos.get(g).map(|v| vec![g.to_string(), v.len().to_string(), eur(median(&mut v.clone()))])
-}).collect();
-mars_table(&["position","deals","median fee"], &prows);
-
-// by destination league (primary league of buying club), leagues with >=15 deals
-let mut by_lg: HashMap<i64, Vec<f64>> = HashMap::new();
-for d in &deals {
-    if let Some(&(lgid,_)) = team_lg.get(&d.to) {
-        if lgid > 0 { by_lg.entry(lgid).or_default().push(d.fee); }
-    }
-}
-let mut lgs: Vec<(i64,usize,f64)> = by_lg.iter().filter_map(|(&l,v)| {
-    if v.len() >= 15 { Some((l, v.len(), median(&mut v.clone()))) } else { None }
-}).collect();
-lgs.sort_by(|a,b| b.1.cmp(&a.1));
-let lrows: Vec<Vec<String>> = lgs.iter().take(15).map(|&(l,n,m)| {
-    vec![lname.get(&l).cloned().unwrap_or_default(), n.to_string(), eur(m)]
-}).collect();
-mars_table(&["destination league","deals","median fee"], &lrows);
 ```
-
-```text
-deals with fee since 2005: 5351
-```
-
-| year | deals | median fee | record  | record move                       | player                       |
-| ---- | ----- | ---------- | ------- | --------------------------------- | ---------------------------- |
-| 2005 | 6     | €0.4m      | €27.0m  | Sevilla → Real Madrid             | Sergio Ramos García          |
-| 2006 | 9     | €0.9m      | €3.0m   | → Udinese                         | Alexis Alejandro Sánchez Sán |
-| 2007 | 28    | €3.0m      | €13.2m  | Watford → Aston Villa             | Ashley Young                 |
-| 2008 | 27    | €2.7m      | €22.5m  | Dinamo Zagreb → Tottenham Hotspur | Luka Modrić                  |
-| 2009 | 38    | €2.1m      | €94.0m  | Manchester United → Real Madrid   | Cristiano Ronaldo dos Santos |
-| 2010 | 56    | €2.6m      | €33.0m  | Benfica → Real Madrid             | Ángel Fabián Di María Hernán |
-| 2011 | 105   | €2.5m      | €40.0m  | FC Porto → Atlético Madrid        | Radamel Falcao García Zárate |
-| 2012 | 115   | €2.7m      | €42.0m  | AC Milan → Paris Saint-Germain    | Thiago Emiliano da Silva     |
-| 2013 | 179   | €2.9m      | €64.5m  | Napoli → Paris Saint-Germain      | Edinson Roberto Cavani Gómez |
-| 2014 | 210   | €3.0m      | €81.7m  | Liverpool → Barcelona             | Luis Javier Suárez Charris   |
-| 2015 | 286   | €3.8m      | €76.0m  | VfL Wolfsburg → Manchester City   | Kevin De Bruyne              |
-| 2016 | 336   | €3.6m      | €105.0m | Juventus → Manchester United      | Paul Pogba                   |
-| 2017 | 401   | €3.9m      | €148.0m | Borussia Dortmund → Barcelona     | Ousmane Dembélé              |
-| 2018 | 422   | €4.0m      | €180.0m | AS Monaco → Paris Saint-Germain   | Kylian Mbappé Lottin         |
-| 2019 | 464   | €5.0m      | €127.2m | Benfica → Atlético Madrid         | João Félix Sequeira          |
-| 2020 | 380   | €4.3m      | €100.0m | Bayer Leverkusen → Chelsea        | Kai Havertz                  |
-| 2021 | 337   | €3.5m      | €117.5m | Aston Villa → Manchester City     | Jack Grealish                |
-| 2022 | 486   | €4.0m      | €85.4m  | Fiorentina → Juventus             | Dušan Vlahović               |
-| 2023 | 535   | €5.0m      | €127.0m | Borussia Dortmund → Real Madrid   | Jude Bellingham              |
-| 2024 | 405   | €4.0m      | €75.0m  | Manchester City → Atlético Madrid | Julián Álvarez               |
-| 2025 | 420   | €5.0m      | €145.0m | Newcastle United → Liverpool      | Alexander Isak               |
-| 2026 | 106   | €4.5m      | €80.0m  | Newcastle United → Barcelona      | Anthony Gordon               |
 
 | fee     | player                         | move                             | year |
 | ------- | ------------------------------ | -------------------------------- | ---- |
@@ -263,6 +205,16 @@ deals with fee since 2005: 5351
 | €113.0m | Romelu Lukaku Menama           | Inter Milan → Chelsea            | 2021 |
 | €105.0m | Paul Pogba                     | Juventus → Manchester United     | 2016 |
 
+```rust
+// by position group
+let mut by_pos: HashMap<&str, Vec<f64>> = HashMap::new();
+for d in &deals { by_pos.entry(pos_group(ppos.get(&d.pid).map(|s|s.as_str()).unwrap_or(""))).or_default().push(d.fee); }
+let prows: Vec<Vec<String>> = ["GK","DEF","MID","FWD","UNK"].iter().filter_map(|g| {
+    by_pos.get(g).map(|v| vec![g.to_string(), v.len().to_string(), eur(median(&mut v.clone()))])
+}).collect();
+mars_table(&["position","deals","median fee"], &prows);
+```
+
 | position | deals | median fee |
 | -------- | ----- | ---------- |
 | GK       | 289   | €2.7m      |
@@ -270,6 +222,24 @@ deals with fee since 2005: 5351
 | MID      | 1617  | €4.0m      |
 | FWD      | 1787  | €4.7m      |
 | UNK      | 416   | €2.3m      |
+
+```rust
+// by destination league (primary league of buying club), leagues with >=15 deals
+let mut by_lg: HashMap<i64, Vec<f64>> = HashMap::new();
+for d in &deals {
+    if let Some(&(lgid,_)) = team_lg.get(&d.to) {
+        if lgid > 0 { by_lg.entry(lgid).or_default().push(d.fee); }
+    }
+}
+let mut lgs: Vec<(i64,usize,f64)> = by_lg.iter().filter_map(|(&l,v)| {
+    if v.len() >= 15 { Some((l, v.len(), median(&mut v.clone()))) } else { None }
+}).collect();
+lgs.sort_by(|a,b| b.1.cmp(&a.1));
+let lrows: Vec<Vec<String>> = lgs.iter().take(15).map(|&(l,n,m)| {
+    vec![lname.get(&l).cloned().unwrap_or_default(), n.to_string(), eur(m)]
+}).collect();
+mars_table(&["destination league","deals","median fee"], &lrows);
+```
 
 | destination league     | deals | median fee |
 | ---------------------- | ----- | ---------- |

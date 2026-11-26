@@ -47,13 +47,1485 @@
     {
       "id": "a1d40898-1681-409a-910d-90ea5b629137",
       "cell_type": "code",
-      "source": "// ---- tournament editions ----\n#[derive(Clone)]\nstruct TMatch {\n    date: String,\n    h: String,\n    a: String,\n    hg: i64,\n    ag: i64,\n}\n\nstruct Edition {\n    season: String,\n    n: usize,\n    matches: Vec<TMatch>,\n    champion: String,\n    runner_up: String,\n    final_hg: i64,\n    final_ag: i64,\n    pens: bool,\n}\n\nlet mut by_season: BTreeMap<String, Vec<TMatch>> = BTreeMap::new();\nfor (s, h, a, d, hg, ag) in &all_matches {\n    by_season.entry(s.clone()).or_default().push(TMatch {\n        date: d.clone(), h: h.clone(), a: a.clone(), hg: *hg, ag: *ag,\n    });\n}\n\nlet mut editions: Vec<Edition> = Vec::new();\nfor (sname, mut ms) in by_season {\n    if ms.is_empty() {\n        continue;\n    }\n    ms.sort_by(|x, y| x.date.cmp(&y.date));\n    let last = ms.last().unwrap();\n    // champions are only recorded for editions with substantial coverage;\n    // scattered finals/group games can't identify the winner reliably\n    let pens_winners: &[(&str, &str)] = &[(\"2002/2003\", \"Milan\"), (\"2004/2005\", \"Liverpool\"), (\"2007/2008\", \"Man United\"), (\"2011/2012\", \"Chelsea\"), (\"2015/2016\", \"Real Madrid\"), (\"2025/2026\", \"Paris SG\")];\n    let (champ, runner, pens) = if ms.len() < 10 {\n        (String::new(), String::new(), false)\n    } else if last.hg > last.ag {\n        (last.h.clone(), last.a.clone(), false)\n    } else if last.hg < last.ag {\n        (last.a.clone(), last.h.clone(), false)\n    } else if let Some((_, w)) = pens_winners.iter().find(|(y, _)| *y == sname) {\n        let ru = if last.h == *w { last.a.clone() } else { last.h.clone() };\n        (w.to_string(), ru, true)\n    } else {\n        (\"decided on penalties\".to_string(), String::new(), true)\n    };\n    editions.push(Edition {\n        season: sname,\n        n: ms.len(),\n        champion: champ,\n        runner_up: runner,\n        final_hg: last.hg,\n        final_ag: last.ag,\n        pens,\n        matches: ms,\n    });\n}\nprintln!(\"editions: {}\", editions.len());\nfor e in &editions {\n    println!(\"  {}: {} matches, champion-ish: {} (final {}-{}{})\", e.season, e.n, e.champion, e.final_hg, e.final_ag, if e.pens { \" pens\" } else { \"\" });\n}\n\n// T1: most titles per nation\nlet mut titles: BTreeMap<String, Vec<String>> = BTreeMap::new();\nfor e in &editions {\n    if !e.champion.is_empty() && e.champion != \"decided on penalties\" {\n        titles.entry(e.champion.clone()).or_default().push(e.season.clone());\n    }\n}\nlet mut tv: Vec<(String, Vec<String>)> = titles.into_iter().collect();\ntv.sort_by(|a, b| b.1.len().cmp(&a.1.len()).then(a.0.cmp(&b.0)));\nlet title_rows: Vec<Vec<String>> = tv.iter().take(8)\n    .map(|(t, ss)| vec![t.clone(), ss.len().to_string(), ss.iter().rev().take(4).cloned().collect::<Vec<_>>().join(\", \")])\n    .collect();\nmars_table(&[\"nation\", \"titles\", \"most recent\"], &title_rows);\n\n// T2: every edition — champion, final score, champion's tournament record\nlet mut ed_rows: Vec<Vec<String>> = Vec::new();\nfor e in &editions {\n    // champion's record across the whole edition\n    let mut w = 0i64; let mut d = 0i64; let mut l = 0i64;\n    let mut gf = 0i64; let mut ga = 0i64;\n    for m in &e.matches {\n        let (hg, ag) = if m.h == e.champion {\n            (m.hg, m.ag)\n        } else if m.a == e.champion {\n            (m.ag, m.hg)\n        } else { continue };\n        gf += hg; ga += ag;\n        if hg > ag { w += 1; } else if hg == ag { d += 1; } else { l += 1; }\n    }\n    let note = if e.n < 10 { \" (partial coverage)\" } else { \"\" };\n    ed_rows.push(vec![\n        format!(\"{}{}\", e.season, note),\n        if e.champion.is_empty() { \"—\".to_string() } else { e.champion.clone() },\n        if e.champion.is_empty() { \"—\".to_string() } else { format!(\"{}-{}{}\", e.final_hg, e.final_ag, if e.pens { \" (pens)\" } else { \"\" }) },\n        format!(\"{}W {}D {}L\", w, d, l),\n        format!(\"{}/{}\", gf, ga),\n    ]);\n}\nmars_table(&[\"edition\", \"champion\", \"final\", \"tournament record\", \"gf/ga\"], &ed_rows);\n\n// T3: records across all editions\n// biggest wins & highest scoring (all matches)\nlet mut margins: Vec<(i64, String, i64, i64, String, String)> = Vec::new();\nlet mut totals: Vec<(i64, String, i64, i64, String, String)> = Vec::new();\nfor e in &editions {\n    for m in &e.matches {\n        margins.push((m.hg - m.ag, e.season.clone(), m.hg, m.ag, m.h.clone(), m.a.clone()));\n        totals.push((m.hg + m.ag, e.season.clone(), m.hg, m.ag, m.h.clone(), m.a.clone()));\n    }\n}\nmargins.sort_by(|a, b| b.0.cmp(&a.0));\ntotals.sort_by(|a, b| b.0.cmp(&a.0));\nlet win_rows: Vec<Vec<String>> = margins.iter().take(8)\n    .map(|(mg, s, hg, ag, h, a)| vec![format!(\"{} vs {} ({})\", h, a, s), format!(\"{}-{}\", hg, ag), format!(\"+{}\", mg)])\n    .collect();\nmars_table(&[\"biggest wins\", \"score\", \"margin\"], &win_rows);\nlet score_rows: Vec<Vec<String>> = totals.iter().take(8)\n    .map(|(t, s, hg, ag, h, a)| vec![format!(\"{} vs {} ({})\", h, a, s), format!(\"{}-{}\", hg, ag), t.to_string()])\n    .collect();\nmars_table(&[\"highest-scoring\", \"score\", \"total goals\"], &score_rows);\n\n// champion records: most goals for, fewest against, best GD, most wins\nlet mut champ_stats: Vec<(String, String, i64, i64, i64, i64, i64)> = Vec::new(); // season, champ, gf, ga, w, d, l\nfor e in &editions {\n    if e.champion.is_empty() || e.champion == \"decided on penalties\" { continue; }\n    let mut w = 0i64; let mut d = 0i64; let mut l = 0i64;\n    let mut gf = 0i64; let mut ga = 0i64;\n    for m in &e.matches {\n        let (hg, ag) = if m.h == e.champion { (m.hg, m.ag) }\n            else if m.a == e.champion { (m.ag, m.hg) }\n            else { continue };\n        gf += hg; ga += ag;\n        if hg > ag { w += 1; } else if hg == ag { d += 1; } else { l += 1; }\n    }\n    champ_stats.push((e.season.clone(), e.champion.clone(), gf, ga, w, d, l));\n}\nlet rec_rows: Vec<Vec<String>> = vec![\n    (\"most goals scored\", champ_stats.iter().max_by_key(|c| c.2).unwrap()),\n    (\"fewest goals conceded\", champ_stats.iter().min_by_key(|c| c.3).unwrap()),\n    (\"best goal difference\", champ_stats.iter().max_by_key(|c| c.2 - c.3).unwrap()),\n    (\"most wins\", champ_stats.iter().max_by_key(|c| c.4).unwrap()),\n    (\"fewest losses\", champ_stats.iter().min_by_key(|c| c.6).unwrap()),\n]\n.iter()\n.map(|(label, c)| vec![label.to_string(), format!(\"{} {}\", c.1, c.0), format!(\"{}W {}D {}L\", c.4, c.5, c.6), format!(\"{}/{}\", c.2, c.3), (c.2 - c.3).to_string()])\n.collect();\nmars_table(&[\"record\", \"champion edition\", \"record\", \"gf/ga\", \"gd\"], &rec_rows);\n\n// unbeaten champions\nlet unbeaten: Vec<&(String, String, i64, i64, i64, i64, i64)> = champ_stats.iter().filter(|c| c.6 == 0 && c.4 + c.5 >= 3).collect();\nlet unb_rows: Vec<Vec<String>> = unbeaten.iter()\n    .map(|c| vec![format!(\"{} {}\", c.1, c.0), format!(\"{}W {}D\", c.4, c.5), c.2.to_string(), c.3.to_string()])\n    .collect();\nmars_table(&[\"unbeaten champions\", \"record\", \"gf\", \"ga\"], &unb_rows);\nprintln!(\"unbeaten champions: {}\", unbeaten.len());\n\n// closest finals (smallest margin or draw)\nlet mut finals: Vec<&Edition> = editions.iter().filter(|e| !e.champion.is_empty() && e.champion != \"decided on penalties\").collect();\nfinals.sort_by_key(|e| (e.final_hg - e.final_ag).abs());\nlet fin_rows: Vec<Vec<String>> = finals.iter().take(8)\n    .map(|e| vec![e.season.clone(), format!(\"{} vs {}{}\", e.champion, e.runner_up, if e.pens {\" (pens)\"} else {\"\"}), format!(\"{}-{}\", e.final_hg, e.final_ag)])\n    .collect();\nmars_table(&[\"closest finals\", \"matchup\", \"score\"], &fin_rows);\n\n// T4: top scorers (latest edition with player data — SCORERS picks best-covered year)\n// Player-level stats only exist for a handful of StatsBomb-covered\n// matches in this competition, so a \"top scorers\" table would be\n// misleading — skipped deliberately.\nprintln!(\"player-level coverage too sparse for a top-scorers table\");",
+      "source": "// ---- tournament editions ----\n#[derive(Clone)]\nstruct TMatch {\n    date: String,\n    h: String,\n    a: String,\n    hg: i64,\n    ag: i64,\n}\n\nstruct Edition {\n    season: String,\n    n: usize,\n    matches: Vec<TMatch>,\n    champion: String,\n    runner_up: String,\n    final_hg: i64,\n    final_ag: i64,\n    pens: bool,\n}\n\nlet mut by_season: BTreeMap<String, Vec<TMatch>> = BTreeMap::new();\nfor (s, h, a, d, hg, ag) in &all_matches {\n    by_season.entry(s.clone()).or_default().push(TMatch {\n        date: d.clone(), h: h.clone(), a: a.clone(), hg: *hg, ag: *ag,\n    });\n}\n\nlet mut editions: Vec<Edition> = Vec::new();\nfor (sname, mut ms) in by_season {\n    if ms.is_empty() {\n        continue;\n    }\n    ms.sort_by(|x, y| x.date.cmp(&y.date));\n    let last = ms.last().unwrap();\n    // champions are only recorded for editions with substantial coverage;\n    // scattered finals/group games can't identify the winner reliably\n    let pens_winners: &[(&str, &str)] = &[(\"2002/2003\", \"Milan\"), (\"2004/2005\", \"Liverpool\"), (\"2007/2008\", \"Man United\"), (\"2011/2012\", \"Chelsea\"), (\"2015/2016\", \"Real Madrid\"), (\"2025/2026\", \"Paris SG\")];\n    let (champ, runner, pens) = if ms.len() < 10 {\n        (String::new(), String::new(), false)\n    } else if last.hg > last.ag {\n        (last.h.clone(), last.a.clone(), false)\n    } else if last.hg < last.ag {\n        (last.a.clone(), last.h.clone(), false)\n    } else if let Some((_, w)) = pens_winners.iter().find(|(y, _)| *y == sname) {\n        let ru = if last.h == *w { last.a.clone() } else { last.h.clone() };\n        (w.to_string(), ru, true)\n    } else {\n        (\"decided on penalties\".to_string(), String::new(), true)\n    };\n    editions.push(Edition {\n        season: sname,\n        n: ms.len(),\n        champion: champ,\n        runner_up: runner,\n        final_hg: last.hg,\n        final_ag: last.ag,\n        pens,\n        matches: ms,\n    });\n}\nprintln!(\"editions: {}\", editions.len());\nfor e in &editions {\n    println!(\"  {}: {} matches, champion-ish: {} (final {}-{}{})\", e.season, e.n, e.champion, e.final_hg, e.final_ag, if e.pens { \" pens\" } else { \"\" });\n}\n\n// T1: most titles per nation\nlet mut titles: BTreeMap<String, Vec<String>> = BTreeMap::new();\nfor e in &editions {\n    if !e.champion.is_empty() && e.champion != \"decided on penalties\" {\n        titles.entry(e.champion.clone()).or_default().push(e.season.clone());\n    }\n}\nlet mut tv: Vec<(String, Vec<String>)> = titles.into_iter().collect();\ntv.sort_by(|a, b| b.1.len().cmp(&a.1.len()).then(a.0.cmp(&b.0)));\nlet title_rows: Vec<Vec<String>> = tv.iter().take(8)\n    .map(|(t, ss)| vec![t.clone(), ss.len().to_string(), ss.iter().rev().take(4).cloned().collect::<Vec<_>>().join(\", \")])\n    .collect();\nmars_table(&[\"nation\", \"titles\", \"most recent\"], &title_rows);\n",
       "metadata": {},
       "execution_count": 3,
       "outputs": [
         {
           "type": "text",
-          "text": "Champions League matches: 4955\nfinished matches: 4865 (0 duplicate fixtures dropped) | team-season entries: 1613\ncomplete seasons: 21 (2001/2002 -> 2025/2026)\ntop scorers available for season year 2004 (StatsBomb coverage)\neditions: 29\n  1970/1971: 1 matches, champion-ish:  (final 2-0)\n  1971/1972: 1 matches, champion-ish:  (final 2-0)\n  1972/1973: 1 matches, champion-ish:  (final 1-0)\n  1999/2000: 1 matches, champion-ish:  (final 2-0)\n  2001/2002: 216 matches, champion-ish: Real Madrid (final 1-2)\n  2002/2003: 225 matches, champion-ish: Milan (final 0-0 pens)\n  2003/2004: 171 matches, champion-ish: Porto (final 0-3)\n  2004/2005: 171 matches, champion-ish: Liverpool (final 3-3 pens)\n  2005/2006: 209 matches, champion-ish: Barcelona (final 2-1)\n  2006/2007: 207 matches, champion-ish: Milan (final 2-1)\n  2007/2008: 213 matches, champion-ish: Man United (final 1-1 pens)\n  2008/2009: 213 matches, champion-ish: Barcelona (final 2-0)\n  2009/2010: 213 matches, champion-ish: Inter (final 0-2)\n  2010/2011: 212 matches, champion-ish: Barcelona (final 3-1)\n  2011/2012: 213 matches, champion-ish: Chelsea (final 1-1 pens)\n  2012/2013: 213 matches, champion-ish: Bayern Munich (final 1-2)\n  2013/2014: 213 matches, champion-ish: Real Madrid (final 4-1)\n  2014/2015: 215 matches, champion-ish: Barcelona (final 1-3)\n  2015/2016: 217 matches, champion-ish: Real Madrid (final 1-1 pens)\n  2016/2017: 217 matches, champion-ish: Real Madrid (final 1-4)\n  2017/2018: 219 matches, champion-ish: Real Madrid (final 3-1)\n  2018/2019: 216 matches, champion-ish: Liverpool (final 0-2)\n  2019/2020: 210 matches, champion-ish: Bayern Munich (final 0-1)\n  2020/2021: 125 matches, champion-ish: Chelsea (final 0-1)\n  2021/2022: 125 matches, champion-ish: Real Madrid (final 0-1)\n  2022/2023: 125 matches, champion-ish: Man City (final 1-0)\n  2023/2024: 125 matches, champion-ish: Real Madrid (final 0-2)\n  2024/2025: 189 matches, champion-ish: Paris SG (final 5-0)\n  2025/2026: 189 matches, champion-ish: Paris SG (final 1-1 pens)\nunbeaten champions: 5\n()\n"
+          "text": "Champions League matches: 4955\nfinished matches: 4865 (0 duplicate fixtures dropped) | team-season entries: 1613\ncomplete seasons: 21 (2001/2002 -> 2025/2026)\ntop scorers available for season year 2004 (StatsBomb coverage)\neditions: 29\n  1970/1971: 1 matches, champion-ish:  (final 2-0)\n  1971/1972: 1 matches, champion-ish:  (final 2-0)\n  1972/1973: 1 matches, champion-ish:  (final 1-0)\n  1999/2000: 1 matches, champion-ish:  (final 2-0)\n  2001/2002: 216 matches, champion-ish: Real Madrid (final 1-2)\n  2002/2003: 225 matches, champion-ish: Milan (final 0-0 pens)\n  2003/2004: 171 matches, champion-ish: Porto (final 0-3)\n  2004/2005: 171 matches, champion-ish: Liverpool (final 3-3 pens)\n  2005/2006: 209 matches, champion-ish: Barcelona (final 2-1)\n  2006/2007: 207 matches, champion-ish: Milan (final 2-1)\n  2007/2008: 213 matches, champion-ish: Man United (final 1-1 pens)\n  2008/2009: 213 matches, champion-ish: Barcelona (final 2-0)\n  2009/2010: 213 matches, champion-ish: Inter (final 0-2)\n  2010/2011: 212 matches, champion-ish: Barcelona (final 3-1)\n  2011/2012: 213 matches, champion-ish: Chelsea (final 1-1 pens)\n  2012/2013: 213 matches, champion-ish: Bayern Munich (final 1-2)\n  2013/2014: 213 matches, champion-ish: Real Madrid (final 4-1)\n  2014/2015: 215 matches, champion-ish: Barcelona (final 1-3)\n  2015/2016: 217 matches, champion-ish: Real Madrid (final 1-1 pens)\n  2016/2017: 217 matches, champion-ish: Real Madrid (final 1-4)\n  2017/2018: 219 matches, champion-ish: Real Madrid (final 3-1)\n  2018/2019: 216 matches, champion-ish: Liverpool (final 0-2)\n  2019/2020: 210 matches, champion-ish: Bayern Munich (final 0-1)\n  2020/2021: 125 matches, champion-ish: Chelsea (final 0-1)\n  2021/2022: 125 matches, champion-ish: Real Madrid (final 0-1)\n  2022/2023: 125 matches, champion-ish: Man City (final 1-0)\n  2023/2024: 125 matches, champion-ish: Real Madrid (final 0-2)\n  2024/2025: 189 matches, champion-ish: Paris SG (final 5-0)\n  2025/2026: 189 matches, champion-ish: Paris SG (final 1-1 pens)\n"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "nation",
+            "titles",
+            "most recent"
+          ],
+          "rows": [
+            [
+              "Real Madrid",
+              "7",
+              "2023/2024, 2021/2022, 2017/2018, 2016/2017"
+            ],
+            [
+              "Barcelona",
+              "4",
+              "2014/2015, 2010/2011, 2008/2009, 2005/2006"
+            ],
+            [
+              "Bayern Munich",
+              "2",
+              "2019/2020, 2012/2013"
+            ],
+            [
+              "Chelsea",
+              "2",
+              "2020/2021, 2011/2012"
+            ],
+            [
+              "Liverpool",
+              "2",
+              "2018/2019, 2004/2005"
+            ],
+            [
+              "Milan",
+              "2",
+              "2006/2007, 2002/2003"
+            ],
+            [
+              "Paris SG",
+              "2",
+              "2025/2026, 2024/2025"
+            ],
+            [
+              "Inter",
+              "1",
+              "2009/2010"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "5805f06c-431d-4d19-a6e3-76fe553f859a",
+      "cell_type": "code",
+      "source": "// T2: every edition — champion, final score, champion's tournament record\nlet mut ed_rows: Vec<Vec<String>> = Vec::new();\nfor e in &editions {\n    // champion's record across the whole edition\n    let mut w = 0i64; let mut d = 0i64; let mut l = 0i64;\n    let mut gf = 0i64; let mut ga = 0i64;\n    for m in &e.matches {\n        let (hg, ag) = if m.h == e.champion {\n            (m.hg, m.ag)\n        } else if m.a == e.champion {\n            (m.ag, m.hg)\n        } else { continue };\n        gf += hg; ga += ag;\n        if hg > ag { w += 1; } else if hg == ag { d += 1; } else { l += 1; }\n    }\n    let note = if e.n < 10 { \" (partial coverage)\" } else { \"\" };\n    ed_rows.push(vec![\n        format!(\"{}{}\", e.season, note),\n        if e.champion.is_empty() { \"—\".to_string() } else { e.champion.clone() },\n        if e.champion.is_empty() { \"—\".to_string() } else { format!(\"{}-{}{}\", e.final_hg, e.final_ag, if e.pens { \" (pens)\" } else { \"\" }) },\n        format!(\"{}W {}D {}L\", w, d, l),\n        format!(\"{}/{}\", gf, ga),\n    ]);\n}\nmars_table(&[\"edition\", \"champion\", \"final\", \"tournament record\", \"gf/ga\"], &ed_rows);\n",
+      "metadata": {},
+      "execution_count": 4,
+      "outputs": [
+        {
+          "type": "text",
+          "text": "Champions League matches: 4955\nfinished matches: 4865 (0 duplicate fixtures dropped) | team-season entries: 1613\ncomplete seasons: 21 (2001/2002 -> 2025/2026)\ntop scorers available for season year 2004 (StatsBomb coverage)\neditions: 29\n  1970/1971: 1 matches, champion-ish:  (final 2-0)\n  1971/1972: 1 matches, champion-ish:  (final 2-0)\n  1972/1973: 1 matches, champion-ish:  (final 1-0)\n  1999/2000: 1 matches, champion-ish:  (final 2-0)\n  2001/2002: 216 matches, champion-ish: Real Madrid (final 1-2)\n  2002/2003: 225 matches, champion-ish: Milan (final 0-0 pens)\n  2003/2004: 171 matches, champion-ish: Porto (final 0-3)\n  2004/2005: 171 matches, champion-ish: Liverpool (final 3-3 pens)\n  2005/2006: 209 matches, champion-ish: Barcelona (final 2-1)\n  2006/2007: 207 matches, champion-ish: Milan (final 2-1)\n  2007/2008: 213 matches, champion-ish: Man United (final 1-1 pens)\n  2008/2009: 213 matches, champion-ish: Barcelona (final 2-0)\n  2009/2010: 213 matches, champion-ish: Inter (final 0-2)\n  2010/2011: 212 matches, champion-ish: Barcelona (final 3-1)\n  2011/2012: 213 matches, champion-ish: Chelsea (final 1-1 pens)\n  2012/2013: 213 matches, champion-ish: Bayern Munich (final 1-2)\n  2013/2014: 213 matches, champion-ish: Real Madrid (final 4-1)\n  2014/2015: 215 matches, champion-ish: Barcelona (final 1-3)\n  2015/2016: 217 matches, champion-ish: Real Madrid (final 1-1 pens)\n  2016/2017: 217 matches, champion-ish: Real Madrid (final 1-4)\n  2017/2018: 219 matches, champion-ish: Real Madrid (final 3-1)\n  2018/2019: 216 matches, champion-ish: Liverpool (final 0-2)\n  2019/2020: 210 matches, champion-ish: Bayern Munich (final 0-1)\n  2020/2021: 125 matches, champion-ish: Chelsea (final 0-1)\n  2021/2022: 125 matches, champion-ish: Real Madrid (final 0-1)\n  2022/2023: 125 matches, champion-ish: Man City (final 1-0)\n  2023/2024: 125 matches, champion-ish: Real Madrid (final 0-2)\n  2024/2025: 189 matches, champion-ish: Paris SG (final 5-0)\n  2025/2026: 189 matches, champion-ish: Paris SG (final 1-1 pens)\n"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "nation",
+            "titles",
+            "most recent"
+          ],
+          "rows": [
+            [
+              "Real Madrid",
+              "7",
+              "2023/2024, 2021/2022, 2017/2018, 2016/2017"
+            ],
+            [
+              "Barcelona",
+              "4",
+              "2014/2015, 2010/2011, 2008/2009, 2005/2006"
+            ],
+            [
+              "Bayern Munich",
+              "2",
+              "2019/2020, 2012/2013"
+            ],
+            [
+              "Chelsea",
+              "2",
+              "2020/2021, 2011/2012"
+            ],
+            [
+              "Liverpool",
+              "2",
+              "2018/2019, 2004/2005"
+            ],
+            [
+              "Milan",
+              "2",
+              "2006/2007, 2002/2003"
+            ],
+            [
+              "Paris SG",
+              "2",
+              "2025/2026, 2024/2025"
+            ],
+            [
+              "Inter",
+              "1",
+              "2009/2010"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "edition",
+            "champion",
+            "final",
+            "tournament record",
+            "gf/ga"
+          ],
+          "rows": [
+            [
+              "1970/1971 (partial coverage)",
+              "—",
+              "—",
+              "0W 0D 0L",
+              "0/0"
+            ],
+            [
+              "1971/1972 (partial coverage)",
+              "—",
+              "—",
+              "0W 0D 0L",
+              "0/0"
+            ],
+            [
+              "1972/1973 (partial coverage)",
+              "—",
+              "—",
+              "0W 0D 0L",
+              "0/0"
+            ],
+            [
+              "1999/2000 (partial coverage)",
+              "—",
+              "—",
+              "0W 0D 0L",
+              "0/0"
+            ],
+            [
+              "2001/2002",
+              "Real Madrid",
+              "1-2",
+              "12W 3D 2L",
+              "35/14"
+            ],
+            [
+              "2002/2003",
+              "Milan",
+              "0-0 (pens)",
+              "10W 4D 5L",
+              "23/16"
+            ],
+            [
+              "2003/2004",
+              "Porto",
+              "0-3",
+              "7W 5D 1L",
+              "20/12"
+            ],
+            [
+              "2004/2005",
+              "Liverpool",
+              "3-3 (pens)",
+              "8W 4D 3L",
+              "20/10"
+            ],
+            [
+              "2005/2006",
+              "Barcelona",
+              "2-1",
+              "9W 4D 0L",
+              "24/5"
+            ],
+            [
+              "2006/2007",
+              "Milan",
+              "2-1",
+              "9W 3D 3L",
+              "23/11"
+            ],
+            [
+              "2007/2008",
+              "Man United",
+              "1-1 (pens)",
+              "9W 4D 0L",
+              "20/6"
+            ],
+            [
+              "2008/2009",
+              "Barcelona",
+              "2-0",
+              "8W 5D 2L",
+              "36/14"
+            ],
+            [
+              "2009/2010",
+              "Inter",
+              "0-2",
+              "8W 4D 3L",
+              "17/10"
+            ],
+            [
+              "2010/2011",
+              "Barcelona",
+              "3-1",
+              "9W 3D 1L",
+              "30/9"
+            ],
+            [
+              "2011/2012",
+              "Chelsea",
+              "1-1 (pens)",
+              "7W 4D 2L",
+              "25/12"
+            ],
+            [
+              "2012/2013",
+              "Bayern Munich",
+              "1-2",
+              "10W 1D 2L",
+              "31/11"
+            ],
+            [
+              "2013/2014",
+              "Real Madrid",
+              "4-1",
+              "11W 1D 1L",
+              "41/10"
+            ],
+            [
+              "2014/2015",
+              "Barcelona",
+              "1-3",
+              "11W 0D 2L",
+              "31/11"
+            ],
+            [
+              "2015/2016",
+              "Real Madrid",
+              "1-1 (pens)",
+              "9W 3D 1L",
+              "28/6"
+            ],
+            [
+              "2016/2017",
+              "Real Madrid",
+              "1-4",
+              "9W 3D 1L",
+              "36/18"
+            ],
+            [
+              "2017/2018",
+              "Real Madrid",
+              "3-1",
+              "9W 2D 2L",
+              "33/16"
+            ],
+            [
+              "2018/2019",
+              "Liverpool",
+              "0-2",
+              "8W 1D 4L",
+              "24/12"
+            ],
+            [
+              "2019/2020",
+              "Bayern Munich",
+              "0-1",
+              "11W 0D 0L",
+              "43/8"
+            ],
+            [
+              "2020/2021",
+              "Chelsea",
+              "0-1",
+              "9W 3D 1L",
+              "23/4"
+            ],
+            [
+              "2021/2022",
+              "Real Madrid",
+              "0-1",
+              "9W 0D 4L",
+              "29/14"
+            ],
+            [
+              "2022/2023",
+              "Man City",
+              "1-0",
+              "8W 5D 0L",
+              "32/5"
+            ],
+            [
+              "2023/2024",
+              "Real Madrid",
+              "0-2",
+              "9W 4D 0L",
+              "28/15"
+            ],
+            [
+              "2024/2025",
+              "Paris SG",
+              "5-0",
+              "11W 1D 5L",
+              "38/15"
+            ],
+            [
+              "2025/2026",
+              "Paris SG",
+              "1-1 (pens)",
+              "10W 5D 2L",
+              "45/23"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "8ab493c6-8e30-4885-b02f-f8fa72ac5ffe",
+      "cell_type": "code",
+      "source": "// T3: records across all editions\n// biggest wins & highest scoring (all matches)\nlet mut margins: Vec<(i64, String, i64, i64, String, String)> = Vec::new();\nlet mut totals: Vec<(i64, String, i64, i64, String, String)> = Vec::new();\nfor e in &editions {\n    for m in &e.matches {\n        margins.push((m.hg - m.ag, e.season.clone(), m.hg, m.ag, m.h.clone(), m.a.clone()));\n        totals.push((m.hg + m.ag, e.season.clone(), m.hg, m.ag, m.h.clone(), m.a.clone()));\n    }\n}\nmargins.sort_by(|a, b| b.0.cmp(&a.0));\ntotals.sort_by(|a, b| b.0.cmp(&a.0));\nlet win_rows: Vec<Vec<String>> = margins.iter().take(8)\n    .map(|(mg, s, hg, ag, h, a)| vec![format!(\"{} vs {} ({})\", h, a, s), format!(\"{}-{}\", hg, ag), format!(\"+{}\", mg)])\n    .collect();\nmars_table(&[\"biggest wins\", \"score\", \"margin\"], &win_rows);\n",
+      "metadata": {},
+      "execution_count": 5,
+      "outputs": [
+        {
+          "type": "text",
+          "text": "Champions League matches: 4955\nfinished matches: 4865 (0 duplicate fixtures dropped) | team-season entries: 1613\ncomplete seasons: 21 (2001/2002 -> 2025/2026)\ntop scorers available for season year 2004 (StatsBomb coverage)\neditions: 29\n  1970/1971: 1 matches, champion-ish:  (final 2-0)\n  1971/1972: 1 matches, champion-ish:  (final 2-0)\n  1972/1973: 1 matches, champion-ish:  (final 1-0)\n  1999/2000: 1 matches, champion-ish:  (final 2-0)\n  2001/2002: 216 matches, champion-ish: Real Madrid (final 1-2)\n  2002/2003: 225 matches, champion-ish: Milan (final 0-0 pens)\n  2003/2004: 171 matches, champion-ish: Porto (final 0-3)\n  2004/2005: 171 matches, champion-ish: Liverpool (final 3-3 pens)\n  2005/2006: 209 matches, champion-ish: Barcelona (final 2-1)\n  2006/2007: 207 matches, champion-ish: Milan (final 2-1)\n  2007/2008: 213 matches, champion-ish: Man United (final 1-1 pens)\n  2008/2009: 213 matches, champion-ish: Barcelona (final 2-0)\n  2009/2010: 213 matches, champion-ish: Inter (final 0-2)\n  2010/2011: 212 matches, champion-ish: Barcelona (final 3-1)\n  2011/2012: 213 matches, champion-ish: Chelsea (final 1-1 pens)\n  2012/2013: 213 matches, champion-ish: Bayern Munich (final 1-2)\n  2013/2014: 213 matches, champion-ish: Real Madrid (final 4-1)\n  2014/2015: 215 matches, champion-ish: Barcelona (final 1-3)\n  2015/2016: 217 matches, champion-ish: Real Madrid (final 1-1 pens)\n  2016/2017: 217 matches, champion-ish: Real Madrid (final 1-4)\n  2017/2018: 219 matches, champion-ish: Real Madrid (final 3-1)\n  2018/2019: 216 matches, champion-ish: Liverpool (final 0-2)\n  2019/2020: 210 matches, champion-ish: Bayern Munich (final 0-1)\n  2020/2021: 125 matches, champion-ish: Chelsea (final 0-1)\n  2021/2022: 125 matches, champion-ish: Real Madrid (final 0-1)\n  2022/2023: 125 matches, champion-ish: Man City (final 1-0)\n  2023/2024: 125 matches, champion-ish: Real Madrid (final 0-2)\n  2024/2025: 189 matches, champion-ish: Paris SG (final 5-0)\n  2025/2026: 189 matches, champion-ish: Paris SG (final 1-1 pens)\n"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "nation",
+            "titles",
+            "most recent"
+          ],
+          "rows": [
+            [
+              "Real Madrid",
+              "7",
+              "2023/2024, 2021/2022, 2017/2018, 2016/2017"
+            ],
+            [
+              "Barcelona",
+              "4",
+              "2014/2015, 2010/2011, 2008/2009, 2005/2006"
+            ],
+            [
+              "Bayern Munich",
+              "2",
+              "2019/2020, 2012/2013"
+            ],
+            [
+              "Chelsea",
+              "2",
+              "2020/2021, 2011/2012"
+            ],
+            [
+              "Liverpool",
+              "2",
+              "2018/2019, 2004/2005"
+            ],
+            [
+              "Milan",
+              "2",
+              "2006/2007, 2002/2003"
+            ],
+            [
+              "Paris SG",
+              "2",
+              "2025/2026, 2024/2025"
+            ],
+            [
+              "Inter",
+              "1",
+              "2009/2010"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "edition",
+            "champion",
+            "final",
+            "tournament record",
+            "gf/ga"
+          ],
+          "rows": [
+            [
+              "1970/1971 (partial coverage)",
+              "—",
+              "—",
+              "0W 0D 0L",
+              "0/0"
+            ],
+            [
+              "1971/1972 (partial coverage)",
+              "—",
+              "—",
+              "0W 0D 0L",
+              "0/0"
+            ],
+            [
+              "1972/1973 (partial coverage)",
+              "—",
+              "—",
+              "0W 0D 0L",
+              "0/0"
+            ],
+            [
+              "1999/2000 (partial coverage)",
+              "—",
+              "—",
+              "0W 0D 0L",
+              "0/0"
+            ],
+            [
+              "2001/2002",
+              "Real Madrid",
+              "1-2",
+              "12W 3D 2L",
+              "35/14"
+            ],
+            [
+              "2002/2003",
+              "Milan",
+              "0-0 (pens)",
+              "10W 4D 5L",
+              "23/16"
+            ],
+            [
+              "2003/2004",
+              "Porto",
+              "0-3",
+              "7W 5D 1L",
+              "20/12"
+            ],
+            [
+              "2004/2005",
+              "Liverpool",
+              "3-3 (pens)",
+              "8W 4D 3L",
+              "20/10"
+            ],
+            [
+              "2005/2006",
+              "Barcelona",
+              "2-1",
+              "9W 4D 0L",
+              "24/5"
+            ],
+            [
+              "2006/2007",
+              "Milan",
+              "2-1",
+              "9W 3D 3L",
+              "23/11"
+            ],
+            [
+              "2007/2008",
+              "Man United",
+              "1-1 (pens)",
+              "9W 4D 0L",
+              "20/6"
+            ],
+            [
+              "2008/2009",
+              "Barcelona",
+              "2-0",
+              "8W 5D 2L",
+              "36/14"
+            ],
+            [
+              "2009/2010",
+              "Inter",
+              "0-2",
+              "8W 4D 3L",
+              "17/10"
+            ],
+            [
+              "2010/2011",
+              "Barcelona",
+              "3-1",
+              "9W 3D 1L",
+              "30/9"
+            ],
+            [
+              "2011/2012",
+              "Chelsea",
+              "1-1 (pens)",
+              "7W 4D 2L",
+              "25/12"
+            ],
+            [
+              "2012/2013",
+              "Bayern Munich",
+              "1-2",
+              "10W 1D 2L",
+              "31/11"
+            ],
+            [
+              "2013/2014",
+              "Real Madrid",
+              "4-1",
+              "11W 1D 1L",
+              "41/10"
+            ],
+            [
+              "2014/2015",
+              "Barcelona",
+              "1-3",
+              "11W 0D 2L",
+              "31/11"
+            ],
+            [
+              "2015/2016",
+              "Real Madrid",
+              "1-1 (pens)",
+              "9W 3D 1L",
+              "28/6"
+            ],
+            [
+              "2016/2017",
+              "Real Madrid",
+              "1-4",
+              "9W 3D 1L",
+              "36/18"
+            ],
+            [
+              "2017/2018",
+              "Real Madrid",
+              "3-1",
+              "9W 2D 2L",
+              "33/16"
+            ],
+            [
+              "2018/2019",
+              "Liverpool",
+              "0-2",
+              "8W 1D 4L",
+              "24/12"
+            ],
+            [
+              "2019/2020",
+              "Bayern Munich",
+              "0-1",
+              "11W 0D 0L",
+              "43/8"
+            ],
+            [
+              "2020/2021",
+              "Chelsea",
+              "0-1",
+              "9W 3D 1L",
+              "23/4"
+            ],
+            [
+              "2021/2022",
+              "Real Madrid",
+              "0-1",
+              "9W 0D 4L",
+              "29/14"
+            ],
+            [
+              "2022/2023",
+              "Man City",
+              "1-0",
+              "8W 5D 0L",
+              "32/5"
+            ],
+            [
+              "2023/2024",
+              "Real Madrid",
+              "0-2",
+              "9W 4D 0L",
+              "28/15"
+            ],
+            [
+              "2024/2025",
+              "Paris SG",
+              "5-0",
+              "11W 1D 5L",
+              "38/15"
+            ],
+            [
+              "2025/2026",
+              "Paris SG",
+              "1-1 (pens)",
+              "10W 5D 2L",
+              "45/23"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "biggest wins",
+            "score",
+            "margin"
+          ],
+          "rows": [
+            [
+              "HJK Helsinki vs Bangor City (2011/2012)",
+              "10-0",
+              "+10"
+            ],
+            [
+              "Porto vs Barry Town (2001/2002)",
+              "8-0",
+              "+8"
+            ],
+            [
+              "Liverpool vs Besiktas (2007/2008)",
+              "8-0",
+              "+8"
+            ],
+            [
+              "Valletta vs Lusitanos (2012/2013)",
+              "8-0",
+              "+8"
+            ],
+            [
+              "Real Madrid vs Malmö FF (2015/2016)",
+              "8-0",
+              "+8"
+            ],
+            [
+              "Juventus vs Olympiacos (2003/2004)",
+              "7-0",
+              "+7"
+            ],
+            [
+              "Arsenal vs Slavia Prague (2007/2008)",
+              "7-0",
+              "+7"
+            ],
+            [
+              "Valencia vs Racing Genk (2011/2012)",
+              "7-0",
+              "+7"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "17037fef-8201-474c-b463-16785e2c8372",
+      "cell_type": "code",
+      "source": "let score_rows: Vec<Vec<String>> = totals.iter().take(8)\n    .map(|(t, s, hg, ag, h, a)| vec![format!(\"{} vs {} ({})\", h, a, s), format!(\"{}-{}\", hg, ag), t.to_string()])\n    .collect();\nmars_table(&[\"highest-scoring\", \"score\", \"total goals\"], &score_rows);\n",
+      "metadata": {},
+      "execution_count": 6,
+      "outputs": [
+        {
+          "type": "text",
+          "text": "Champions League matches: 4955\nfinished matches: 4865 (0 duplicate fixtures dropped) | team-season entries: 1613\ncomplete seasons: 21 (2001/2002 -> 2025/2026)\ntop scorers available for season year 2004 (StatsBomb coverage)\neditions: 29\n  1970/1971: 1 matches, champion-ish:  (final 2-0)\n  1971/1972: 1 matches, champion-ish:  (final 2-0)\n  1972/1973: 1 matches, champion-ish:  (final 1-0)\n  1999/2000: 1 matches, champion-ish:  (final 2-0)\n  2001/2002: 216 matches, champion-ish: Real Madrid (final 1-2)\n  2002/2003: 225 matches, champion-ish: Milan (final 0-0 pens)\n  2003/2004: 171 matches, champion-ish: Porto (final 0-3)\n  2004/2005: 171 matches, champion-ish: Liverpool (final 3-3 pens)\n  2005/2006: 209 matches, champion-ish: Barcelona (final 2-1)\n  2006/2007: 207 matches, champion-ish: Milan (final 2-1)\n  2007/2008: 213 matches, champion-ish: Man United (final 1-1 pens)\n  2008/2009: 213 matches, champion-ish: Barcelona (final 2-0)\n  2009/2010: 213 matches, champion-ish: Inter (final 0-2)\n  2010/2011: 212 matches, champion-ish: Barcelona (final 3-1)\n  2011/2012: 213 matches, champion-ish: Chelsea (final 1-1 pens)\n  2012/2013: 213 matches, champion-ish: Bayern Munich (final 1-2)\n  2013/2014: 213 matches, champion-ish: Real Madrid (final 4-1)\n  2014/2015: 215 matches, champion-ish: Barcelona (final 1-3)\n  2015/2016: 217 matches, champion-ish: Real Madrid (final 1-1 pens)\n  2016/2017: 217 matches, champion-ish: Real Madrid (final 1-4)\n  2017/2018: 219 matches, champion-ish: Real Madrid (final 3-1)\n  2018/2019: 216 matches, champion-ish: Liverpool (final 0-2)\n  2019/2020: 210 matches, champion-ish: Bayern Munich (final 0-1)\n  2020/2021: 125 matches, champion-ish: Chelsea (final 0-1)\n  2021/2022: 125 matches, champion-ish: Real Madrid (final 0-1)\n  2022/2023: 125 matches, champion-ish: Man City (final 1-0)\n  2023/2024: 125 matches, champion-ish: Real Madrid (final 0-2)\n  2024/2025: 189 matches, champion-ish: Paris SG (final 5-0)\n  2025/2026: 189 matches, champion-ish: Paris SG (final 1-1 pens)\n"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "nation",
+            "titles",
+            "most recent"
+          ],
+          "rows": [
+            [
+              "Real Madrid",
+              "7",
+              "2023/2024, 2021/2022, 2017/2018, 2016/2017"
+            ],
+            [
+              "Barcelona",
+              "4",
+              "2014/2015, 2010/2011, 2008/2009, 2005/2006"
+            ],
+            [
+              "Bayern Munich",
+              "2",
+              "2019/2020, 2012/2013"
+            ],
+            [
+              "Chelsea",
+              "2",
+              "2020/2021, 2011/2012"
+            ],
+            [
+              "Liverpool",
+              "2",
+              "2018/2019, 2004/2005"
+            ],
+            [
+              "Milan",
+              "2",
+              "2006/2007, 2002/2003"
+            ],
+            [
+              "Paris SG",
+              "2",
+              "2025/2026, 2024/2025"
+            ],
+            [
+              "Inter",
+              "1",
+              "2009/2010"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "edition",
+            "champion",
+            "final",
+            "tournament record",
+            "gf/ga"
+          ],
+          "rows": [
+            [
+              "1970/1971 (partial coverage)",
+              "—",
+              "—",
+              "0W 0D 0L",
+              "0/0"
+            ],
+            [
+              "1971/1972 (partial coverage)",
+              "—",
+              "—",
+              "0W 0D 0L",
+              "0/0"
+            ],
+            [
+              "1972/1973 (partial coverage)",
+              "—",
+              "—",
+              "0W 0D 0L",
+              "0/0"
+            ],
+            [
+              "1999/2000 (partial coverage)",
+              "—",
+              "—",
+              "0W 0D 0L",
+              "0/0"
+            ],
+            [
+              "2001/2002",
+              "Real Madrid",
+              "1-2",
+              "12W 3D 2L",
+              "35/14"
+            ],
+            [
+              "2002/2003",
+              "Milan",
+              "0-0 (pens)",
+              "10W 4D 5L",
+              "23/16"
+            ],
+            [
+              "2003/2004",
+              "Porto",
+              "0-3",
+              "7W 5D 1L",
+              "20/12"
+            ],
+            [
+              "2004/2005",
+              "Liverpool",
+              "3-3 (pens)",
+              "8W 4D 3L",
+              "20/10"
+            ],
+            [
+              "2005/2006",
+              "Barcelona",
+              "2-1",
+              "9W 4D 0L",
+              "24/5"
+            ],
+            [
+              "2006/2007",
+              "Milan",
+              "2-1",
+              "9W 3D 3L",
+              "23/11"
+            ],
+            [
+              "2007/2008",
+              "Man United",
+              "1-1 (pens)",
+              "9W 4D 0L",
+              "20/6"
+            ],
+            [
+              "2008/2009",
+              "Barcelona",
+              "2-0",
+              "8W 5D 2L",
+              "36/14"
+            ],
+            [
+              "2009/2010",
+              "Inter",
+              "0-2",
+              "8W 4D 3L",
+              "17/10"
+            ],
+            [
+              "2010/2011",
+              "Barcelona",
+              "3-1",
+              "9W 3D 1L",
+              "30/9"
+            ],
+            [
+              "2011/2012",
+              "Chelsea",
+              "1-1 (pens)",
+              "7W 4D 2L",
+              "25/12"
+            ],
+            [
+              "2012/2013",
+              "Bayern Munich",
+              "1-2",
+              "10W 1D 2L",
+              "31/11"
+            ],
+            [
+              "2013/2014",
+              "Real Madrid",
+              "4-1",
+              "11W 1D 1L",
+              "41/10"
+            ],
+            [
+              "2014/2015",
+              "Barcelona",
+              "1-3",
+              "11W 0D 2L",
+              "31/11"
+            ],
+            [
+              "2015/2016",
+              "Real Madrid",
+              "1-1 (pens)",
+              "9W 3D 1L",
+              "28/6"
+            ],
+            [
+              "2016/2017",
+              "Real Madrid",
+              "1-4",
+              "9W 3D 1L",
+              "36/18"
+            ],
+            [
+              "2017/2018",
+              "Real Madrid",
+              "3-1",
+              "9W 2D 2L",
+              "33/16"
+            ],
+            [
+              "2018/2019",
+              "Liverpool",
+              "0-2",
+              "8W 1D 4L",
+              "24/12"
+            ],
+            [
+              "2019/2020",
+              "Bayern Munich",
+              "0-1",
+              "11W 0D 0L",
+              "43/8"
+            ],
+            [
+              "2020/2021",
+              "Chelsea",
+              "0-1",
+              "9W 3D 1L",
+              "23/4"
+            ],
+            [
+              "2021/2022",
+              "Real Madrid",
+              "0-1",
+              "9W 0D 4L",
+              "29/14"
+            ],
+            [
+              "2022/2023",
+              "Man City",
+              "1-0",
+              "8W 5D 0L",
+              "32/5"
+            ],
+            [
+              "2023/2024",
+              "Real Madrid",
+              "0-2",
+              "9W 4D 0L",
+              "28/15"
+            ],
+            [
+              "2024/2025",
+              "Paris SG",
+              "5-0",
+              "11W 1D 5L",
+              "38/15"
+            ],
+            [
+              "2025/2026",
+              "Paris SG",
+              "1-1 (pens)",
+              "10W 5D 2L",
+              "45/23"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "biggest wins",
+            "score",
+            "margin"
+          ],
+          "rows": [
+            [
+              "HJK Helsinki vs Bangor City (2011/2012)",
+              "10-0",
+              "+10"
+            ],
+            [
+              "Porto vs Barry Town (2001/2002)",
+              "8-0",
+              "+8"
+            ],
+            [
+              "Liverpool vs Besiktas (2007/2008)",
+              "8-0",
+              "+8"
+            ],
+            [
+              "Valletta vs Lusitanos (2012/2013)",
+              "8-0",
+              "+8"
+            ],
+            [
+              "Real Madrid vs Malmö FF (2015/2016)",
+              "8-0",
+              "+8"
+            ],
+            [
+              "Juventus vs Olympiacos (2003/2004)",
+              "7-0",
+              "+7"
+            ],
+            [
+              "Arsenal vs Slavia Prague (2007/2008)",
+              "7-0",
+              "+7"
+            ],
+            [
+              "Valencia vs Racing Genk (2011/2012)",
+              "7-0",
+              "+7"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "highest-scoring",
+            "score",
+            "total goals"
+          ],
+          "rows": [
+            [
+              "Dortmund vs Legia Warsaw (2016/2017)",
+              "8-4",
+              "12"
+            ],
+            [
+              "Monaco vs Deportivo (2003/2004)",
+              "8-3",
+              "11"
+            ],
+            [
+              "Bayern Munich vs Dinamo Zagreb (2024/2025)",
+              "9-2",
+              "11"
+            ],
+            [
+              "HJK Helsinki vs Bangor City (2011/2012)",
+              "10-0",
+              "10"
+            ],
+            [
+              "Barcelona vs Bayern Munich (2019/2020)",
+              "2-8",
+              "10"
+            ],
+            [
+              "Lyon vs Werder Bremen (2004/2005)",
+              "7-2",
+              "9"
+            ],
+            [
+              "MSK Zilina vs F91 Dudelange (2007/2008)",
+              "5-4",
+              "9"
+            ],
+            [
+              "Villarreal vs AaB (2008/2009)",
+              "6-3",
+              "9"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f1f8ca06-aac0-41ec-b526-8dee2fd00ff5",
+      "cell_type": "code",
+      "source": "// champion records: most goals for, fewest against, best GD, most wins\nlet mut champ_stats: Vec<(String, String, i64, i64, i64, i64, i64)> = Vec::new(); // season, champ, gf, ga, w, d, l\nfor e in &editions {\n    if e.champion.is_empty() || e.champion == \"decided on penalties\" { continue; }\n    let mut w = 0i64; let mut d = 0i64; let mut l = 0i64;\n    let mut gf = 0i64; let mut ga = 0i64;\n    for m in &e.matches {\n        let (hg, ag) = if m.h == e.champion { (m.hg, m.ag) }\n            else if m.a == e.champion { (m.ag, m.hg) }\n            else { continue };\n        gf += hg; ga += ag;\n        if hg > ag { w += 1; } else if hg == ag { d += 1; } else { l += 1; }\n    }\n    champ_stats.push((e.season.clone(), e.champion.clone(), gf, ga, w, d, l));\n}\nlet rec_rows: Vec<Vec<String>> = vec![\n    (\"most goals scored\", champ_stats.iter().max_by_key(|c| c.2).unwrap()),\n    (\"fewest goals conceded\", champ_stats.iter().min_by_key(|c| c.3).unwrap()),\n    (\"best goal difference\", champ_stats.iter().max_by_key(|c| c.2 - c.3).unwrap()),\n    (\"most wins\", champ_stats.iter().max_by_key(|c| c.4).unwrap()),\n    (\"fewest losses\", champ_stats.iter().min_by_key(|c| c.6).unwrap()),\n]\n.iter()\n.map(|(label, c)| vec![label.to_string(), format!(\"{} {}\", c.1, c.0), format!(\"{}W {}D {}L\", c.4, c.5, c.6), format!(\"{}/{}\", c.2, c.3), (c.2 - c.3).to_string()])\n.collect();\nmars_table(&[\"record\", \"champion edition\", \"record\", \"gf/ga\", \"gd\"], &rec_rows);\n",
+      "metadata": {},
+      "execution_count": 7,
+      "outputs": [
+        {
+          "type": "text",
+          "text": "Champions League matches: 4955\nfinished matches: 4865 (0 duplicate fixtures dropped) | team-season entries: 1613\ncomplete seasons: 21 (2001/2002 -> 2025/2026)\ntop scorers available for season year 2004 (StatsBomb coverage)\neditions: 29\n  1970/1971: 1 matches, champion-ish:  (final 2-0)\n  1971/1972: 1 matches, champion-ish:  (final 2-0)\n  1972/1973: 1 matches, champion-ish:  (final 1-0)\n  1999/2000: 1 matches, champion-ish:  (final 2-0)\n  2001/2002: 216 matches, champion-ish: Real Madrid (final 1-2)\n  2002/2003: 225 matches, champion-ish: Milan (final 0-0 pens)\n  2003/2004: 171 matches, champion-ish: Porto (final 0-3)\n  2004/2005: 171 matches, champion-ish: Liverpool (final 3-3 pens)\n  2005/2006: 209 matches, champion-ish: Barcelona (final 2-1)\n  2006/2007: 207 matches, champion-ish: Milan (final 2-1)\n  2007/2008: 213 matches, champion-ish: Man United (final 1-1 pens)\n  2008/2009: 213 matches, champion-ish: Barcelona (final 2-0)\n  2009/2010: 213 matches, champion-ish: Inter (final 0-2)\n  2010/2011: 212 matches, champion-ish: Barcelona (final 3-1)\n  2011/2012: 213 matches, champion-ish: Chelsea (final 1-1 pens)\n  2012/2013: 213 matches, champion-ish: Bayern Munich (final 1-2)\n  2013/2014: 213 matches, champion-ish: Real Madrid (final 4-1)\n  2014/2015: 215 matches, champion-ish: Barcelona (final 1-3)\n  2015/2016: 217 matches, champion-ish: Real Madrid (final 1-1 pens)\n  2016/2017: 217 matches, champion-ish: Real Madrid (final 1-4)\n  2017/2018: 219 matches, champion-ish: Real Madrid (final 3-1)\n  2018/2019: 216 matches, champion-ish: Liverpool (final 0-2)\n  2019/2020: 210 matches, champion-ish: Bayern Munich (final 0-1)\n  2020/2021: 125 matches, champion-ish: Chelsea (final 0-1)\n  2021/2022: 125 matches, champion-ish: Real Madrid (final 0-1)\n  2022/2023: 125 matches, champion-ish: Man City (final 1-0)\n  2023/2024: 125 matches, champion-ish: Real Madrid (final 0-2)\n  2024/2025: 189 matches, champion-ish: Paris SG (final 5-0)\n  2025/2026: 189 matches, champion-ish: Paris SG (final 1-1 pens)\n"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "nation",
+            "titles",
+            "most recent"
+          ],
+          "rows": [
+            [
+              "Real Madrid",
+              "7",
+              "2023/2024, 2021/2022, 2017/2018, 2016/2017"
+            ],
+            [
+              "Barcelona",
+              "4",
+              "2014/2015, 2010/2011, 2008/2009, 2005/2006"
+            ],
+            [
+              "Bayern Munich",
+              "2",
+              "2019/2020, 2012/2013"
+            ],
+            [
+              "Chelsea",
+              "2",
+              "2020/2021, 2011/2012"
+            ],
+            [
+              "Liverpool",
+              "2",
+              "2018/2019, 2004/2005"
+            ],
+            [
+              "Milan",
+              "2",
+              "2006/2007, 2002/2003"
+            ],
+            [
+              "Paris SG",
+              "2",
+              "2025/2026, 2024/2025"
+            ],
+            [
+              "Inter",
+              "1",
+              "2009/2010"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "edition",
+            "champion",
+            "final",
+            "tournament record",
+            "gf/ga"
+          ],
+          "rows": [
+            [
+              "1970/1971 (partial coverage)",
+              "—",
+              "—",
+              "0W 0D 0L",
+              "0/0"
+            ],
+            [
+              "1971/1972 (partial coverage)",
+              "—",
+              "—",
+              "0W 0D 0L",
+              "0/0"
+            ],
+            [
+              "1972/1973 (partial coverage)",
+              "—",
+              "—",
+              "0W 0D 0L",
+              "0/0"
+            ],
+            [
+              "1999/2000 (partial coverage)",
+              "—",
+              "—",
+              "0W 0D 0L",
+              "0/0"
+            ],
+            [
+              "2001/2002",
+              "Real Madrid",
+              "1-2",
+              "12W 3D 2L",
+              "35/14"
+            ],
+            [
+              "2002/2003",
+              "Milan",
+              "0-0 (pens)",
+              "10W 4D 5L",
+              "23/16"
+            ],
+            [
+              "2003/2004",
+              "Porto",
+              "0-3",
+              "7W 5D 1L",
+              "20/12"
+            ],
+            [
+              "2004/2005",
+              "Liverpool",
+              "3-3 (pens)",
+              "8W 4D 3L",
+              "20/10"
+            ],
+            [
+              "2005/2006",
+              "Barcelona",
+              "2-1",
+              "9W 4D 0L",
+              "24/5"
+            ],
+            [
+              "2006/2007",
+              "Milan",
+              "2-1",
+              "9W 3D 3L",
+              "23/11"
+            ],
+            [
+              "2007/2008",
+              "Man United",
+              "1-1 (pens)",
+              "9W 4D 0L",
+              "20/6"
+            ],
+            [
+              "2008/2009",
+              "Barcelona",
+              "2-0",
+              "8W 5D 2L",
+              "36/14"
+            ],
+            [
+              "2009/2010",
+              "Inter",
+              "0-2",
+              "8W 4D 3L",
+              "17/10"
+            ],
+            [
+              "2010/2011",
+              "Barcelona",
+              "3-1",
+              "9W 3D 1L",
+              "30/9"
+            ],
+            [
+              "2011/2012",
+              "Chelsea",
+              "1-1 (pens)",
+              "7W 4D 2L",
+              "25/12"
+            ],
+            [
+              "2012/2013",
+              "Bayern Munich",
+              "1-2",
+              "10W 1D 2L",
+              "31/11"
+            ],
+            [
+              "2013/2014",
+              "Real Madrid",
+              "4-1",
+              "11W 1D 1L",
+              "41/10"
+            ],
+            [
+              "2014/2015",
+              "Barcelona",
+              "1-3",
+              "11W 0D 2L",
+              "31/11"
+            ],
+            [
+              "2015/2016",
+              "Real Madrid",
+              "1-1 (pens)",
+              "9W 3D 1L",
+              "28/6"
+            ],
+            [
+              "2016/2017",
+              "Real Madrid",
+              "1-4",
+              "9W 3D 1L",
+              "36/18"
+            ],
+            [
+              "2017/2018",
+              "Real Madrid",
+              "3-1",
+              "9W 2D 2L",
+              "33/16"
+            ],
+            [
+              "2018/2019",
+              "Liverpool",
+              "0-2",
+              "8W 1D 4L",
+              "24/12"
+            ],
+            [
+              "2019/2020",
+              "Bayern Munich",
+              "0-1",
+              "11W 0D 0L",
+              "43/8"
+            ],
+            [
+              "2020/2021",
+              "Chelsea",
+              "0-1",
+              "9W 3D 1L",
+              "23/4"
+            ],
+            [
+              "2021/2022",
+              "Real Madrid",
+              "0-1",
+              "9W 0D 4L",
+              "29/14"
+            ],
+            [
+              "2022/2023",
+              "Man City",
+              "1-0",
+              "8W 5D 0L",
+              "32/5"
+            ],
+            [
+              "2023/2024",
+              "Real Madrid",
+              "0-2",
+              "9W 4D 0L",
+              "28/15"
+            ],
+            [
+              "2024/2025",
+              "Paris SG",
+              "5-0",
+              "11W 1D 5L",
+              "38/15"
+            ],
+            [
+              "2025/2026",
+              "Paris SG",
+              "1-1 (pens)",
+              "10W 5D 2L",
+              "45/23"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "biggest wins",
+            "score",
+            "margin"
+          ],
+          "rows": [
+            [
+              "HJK Helsinki vs Bangor City (2011/2012)",
+              "10-0",
+              "+10"
+            ],
+            [
+              "Porto vs Barry Town (2001/2002)",
+              "8-0",
+              "+8"
+            ],
+            [
+              "Liverpool vs Besiktas (2007/2008)",
+              "8-0",
+              "+8"
+            ],
+            [
+              "Valletta vs Lusitanos (2012/2013)",
+              "8-0",
+              "+8"
+            ],
+            [
+              "Real Madrid vs Malmö FF (2015/2016)",
+              "8-0",
+              "+8"
+            ],
+            [
+              "Juventus vs Olympiacos (2003/2004)",
+              "7-0",
+              "+7"
+            ],
+            [
+              "Arsenal vs Slavia Prague (2007/2008)",
+              "7-0",
+              "+7"
+            ],
+            [
+              "Valencia vs Racing Genk (2011/2012)",
+              "7-0",
+              "+7"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "highest-scoring",
+            "score",
+            "total goals"
+          ],
+          "rows": [
+            [
+              "Dortmund vs Legia Warsaw (2016/2017)",
+              "8-4",
+              "12"
+            ],
+            [
+              "Monaco vs Deportivo (2003/2004)",
+              "8-3",
+              "11"
+            ],
+            [
+              "Bayern Munich vs Dinamo Zagreb (2024/2025)",
+              "9-2",
+              "11"
+            ],
+            [
+              "HJK Helsinki vs Bangor City (2011/2012)",
+              "10-0",
+              "10"
+            ],
+            [
+              "Barcelona vs Bayern Munich (2019/2020)",
+              "2-8",
+              "10"
+            ],
+            [
+              "Lyon vs Werder Bremen (2004/2005)",
+              "7-2",
+              "9"
+            ],
+            [
+              "MSK Zilina vs F91 Dudelange (2007/2008)",
+              "5-4",
+              "9"
+            ],
+            [
+              "Villarreal vs AaB (2008/2009)",
+              "6-3",
+              "9"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "record",
+            "champion edition",
+            "record",
+            "gf/ga",
+            "gd"
+          ],
+          "rows": [
+            [
+              "most goals scored",
+              "Paris SG 2025/2026",
+              "10W 5D 2L",
+              "45/23",
+              "22"
+            ],
+            [
+              "fewest goals conceded",
+              "Chelsea 2020/2021",
+              "9W 3D 1L",
+              "23/4",
+              "19"
+            ],
+            [
+              "best goal difference",
+              "Bayern Munich 2019/2020",
+              "11W 0D 0L",
+              "43/8",
+              "35"
+            ],
+            [
+              "most wins",
+              "Real Madrid 2001/2002",
+              "12W 3D 2L",
+              "35/14",
+              "21"
+            ],
+            [
+              "fewest losses",
+              "Barcelona 2005/2006",
+              "9W 4D 0L",
+              "24/5",
+              "19"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "6f80fa03-eb6b-4297-8897-5b044c9cb48b",
+      "cell_type": "code",
+      "source": "// unbeaten champions\nlet unbeaten: Vec<&(String, String, i64, i64, i64, i64, i64)> = champ_stats.iter().filter(|c| c.6 == 0 && c.4 + c.5 >= 3).collect();\nlet unb_rows: Vec<Vec<String>> = unbeaten.iter()\n    .map(|c| vec![format!(\"{} {}\", c.1, c.0), format!(\"{}W {}D\", c.4, c.5), c.2.to_string(), c.3.to_string()])\n    .collect();\nmars_table(&[\"unbeaten champions\", \"record\", \"gf\", \"ga\"], &unb_rows);\n",
+      "metadata": {},
+      "execution_count": 8,
+      "outputs": [
+        {
+          "type": "text",
+          "text": "Champions League matches: 4955\nfinished matches: 4865 (0 duplicate fixtures dropped) | team-season entries: 1613\ncomplete seasons: 21 (2001/2002 -> 2025/2026)\ntop scorers available for season year 2004 (StatsBomb coverage)\neditions: 29\n  1970/1971: 1 matches, champion-ish:  (final 2-0)\n  1971/1972: 1 matches, champion-ish:  (final 2-0)\n  1972/1973: 1 matches, champion-ish:  (final 1-0)\n  1999/2000: 1 matches, champion-ish:  (final 2-0)\n  2001/2002: 216 matches, champion-ish: Real Madrid (final 1-2)\n  2002/2003: 225 matches, champion-ish: Milan (final 0-0 pens)\n  2003/2004: 171 matches, champion-ish: Porto (final 0-3)\n  2004/2005: 171 matches, champion-ish: Liverpool (final 3-3 pens)\n  2005/2006: 209 matches, champion-ish: Barcelona (final 2-1)\n  2006/2007: 207 matches, champion-ish: Milan (final 2-1)\n  2007/2008: 213 matches, champion-ish: Man United (final 1-1 pens)\n  2008/2009: 213 matches, champion-ish: Barcelona (final 2-0)\n  2009/2010: 213 matches, champion-ish: Inter (final 0-2)\n  2010/2011: 212 matches, champion-ish: Barcelona (final 3-1)\n  2011/2012: 213 matches, champion-ish: Chelsea (final 1-1 pens)\n  2012/2013: 213 matches, champion-ish: Bayern Munich (final 1-2)\n  2013/2014: 213 matches, champion-ish: Real Madrid (final 4-1)\n  2014/2015: 215 matches, champion-ish: Barcelona (final 1-3)\n  2015/2016: 217 matches, champion-ish: Real Madrid (final 1-1 pens)\n  2016/2017: 217 matches, champion-ish: Real Madrid (final 1-4)\n  2017/2018: 219 matches, champion-ish: Real Madrid (final 3-1)\n  2018/2019: 216 matches, champion-ish: Liverpool (final 0-2)\n  2019/2020: 210 matches, champion-ish: Bayern Munich (final 0-1)\n  2020/2021: 125 matches, champion-ish: Chelsea (final 0-1)\n  2021/2022: 125 matches, champion-ish: Real Madrid (final 0-1)\n  2022/2023: 125 matches, champion-ish: Man City (final 1-0)\n  2023/2024: 125 matches, champion-ish: Real Madrid (final 0-2)\n  2024/2025: 189 matches, champion-ish: Paris SG (final 5-0)\n  2025/2026: 189 matches, champion-ish: Paris SG (final 1-1 pens)\n"
         },
         {
           "type": "table",
@@ -507,94 +1979,15 @@
               "15"
             ]
           ]
-        },
-        {
-          "type": "table",
-          "columns": [
-            "closest finals",
-            "matchup",
-            "score"
-          ],
-          "rows": [
-            [
-              "2002/2003",
-              "Milan vs Juventus (pens)",
-              "0-0"
-            ],
-            [
-              "2004/2005",
-              "Liverpool vs Milan (pens)",
-              "3-3"
-            ],
-            [
-              "2007/2008",
-              "Man United vs Chelsea (pens)",
-              "1-1"
-            ],
-            [
-              "2011/2012",
-              "Chelsea vs Bayern Munich (pens)",
-              "1-1"
-            ],
-            [
-              "2015/2016",
-              "Real Madrid vs Ath Madrid (pens)",
-              "1-1"
-            ],
-            [
-              "2025/2026",
-              "Paris SG vs Arsenal (pens)",
-              "1-1"
-            ],
-            [
-              "2001/2002",
-              "Real Madrid vs Leverkusen",
-              "1-2"
-            ],
-            [
-              "2005/2006",
-              "Barcelona vs Arsenal",
-              "2-1"
-            ]
-          ]
-        },
-        {
-          "type": "table",
-          "columns": [
-            "player",
-            "goals"
-          ],
-          "rows": [
-            [
-              "Hernán Jorge Crespo",
-              "2"
-            ],
-            [
-              "Vladimir Smicer",
-              "2"
-            ],
-            [
-              "Dietmar Hamann",
-              "1"
-            ],
-            [
-              "Djibril Cissé",
-              "1"
-            ],
-            [
-              "Jon Dahl Tomasson",
-              "1"
-            ]
-          ]
         }
       ]
     },
     {
-      "id": "2a574f53-0830-4aca-ab84-8b70679bdeb1",
+      "id": "a1b28381-95dc-4bfb-8ef6-916b9dac047d",
       "cell_type": "code",
-      "source": "use plotters::prelude::*;\n\nlet labels_t: Vec<String> = tv.iter().take(8).map(|(t, _)| t.chars().take(12).collect()).collect();\nlet counts_t: Vec<f64> = tv.iter().take(8).map(|(_, ss)| ss.len() as f64).collect();\nlet ymax_t = counts_t.iter().cloned().fold(1.0_f64, f64::max) * 1.2;\nlet n_t = counts_t.len();\nlet figure1 = plotters::evcxr::evcxr_figure((720, 400), |root| {\n    root.fill(&WHITE)?;\n    let mut chart = ChartBuilder::on(&root)\n        .caption(\"Most titles\", (\"sans-serif\", 18))\n        .margin(10)\n        .x_label_area_size(80)\n        .y_label_area_size(45)\n        .build_cartesian_2d(-0.5_f64..(n_t as f64 - 0.5), 0.0..ymax_t)?;\n    chart.configure_mesh().y_desc(\"titles\").x_labels(n_t)\n        .x_label_formatter(&|x: &f64| {\n            let i = (*x).round() as usize;\n            if i < labels_t.len() { labels_t[i].clone() } else { String::new() }\n        })\n        .draw()?;\n    chart.draw_series((0..n_t).map(|i| {\n        Rectangle::new([(i as f64 - 0.35, 0.0), (i as f64 + 0.35, counts_t[i])], BLUE.filled())\n    }))?;\n    Ok(())\n});\nfigure1.evcxr_display();\n\nlet n_e = champ_stats.len();\nlet pts_max_e = champ_stats.iter().map(|c| c.2 - c.3).fold(1i64, |a, b| a.max(b)) as f64 * 1.1;\nlet figure2 = plotters::evcxr::evcxr_figure((760, 400), |root| {\n    root.fill(&WHITE)?;\n    let mut chart = ChartBuilder::on(&root)\n        .caption(\"Champion's goal difference per edition\", (\"sans-serif\", 18))\n        .margin(10)\n        .x_label_area_size(30)\n        .y_label_area_size(45)\n        .build_cartesian_2d(-0.5_f64..(n_e as f64 - 0.5), 0.0..pts_max_e)?;\n    chart.configure_mesh().y_desc(\"goal diff\").x_labels(0).draw()?;\n    chart.draw_series(champ_stats.iter().enumerate().map(|(i, c)| {\n        Circle::new((i as f64, (c.2 - c.3) as f64), 3, BLUE.filled())\n    }))?;\n    chart.draw_series(LineSeries::new(\n        champ_stats.iter().enumerate().map(|(i, c)| (i as f64, (c.2 - c.3) as f64)),\n        BLUE.stroke_width(1),\n    ))?;\n    Ok(())\n});\nfigure2.evcxr_display();",
+      "source": "println!(\"unbeaten champions: {}\", unbeaten.len());\n\n// closest finals (smallest margin or draw)\nlet mut finals: Vec<&Edition> = editions.iter().filter(|e| !e.champion.is_empty() && e.champion != \"decided on penalties\").collect();\nfinals.sort_by_key(|e| (e.final_hg - e.final_ag).abs());\nlet fin_rows: Vec<Vec<String>> = finals.iter().take(8)\n    .map(|e| vec![e.season.clone(), format!(\"{} vs {}{}\", e.champion, e.runner_up, if e.pens {\" (pens)\"} else {\"\"}), format!(\"{}-{}\", e.final_hg, e.final_ag)])\n    .collect();\nmars_table(&[\"closest finals\", \"matchup\", \"score\"], &fin_rows);\n",
       "metadata": {},
-      "execution_count": 4,
+      "execution_count": 9,
       "outputs": [
         {
           "type": "text",
@@ -1102,33 +2495,1560 @@
               "2-1"
             ]
           ]
+        }
+      ]
+    },
+    {
+      "id": "91f55c2c-1219-4de3-a238-16820ab094a6",
+      "cell_type": "code",
+      "source": "// T4: top scorers (latest edition with player data — SCORERS picks best-covered year)\n// Player-level stats only exist for a handful of StatsBomb-covered\n// matches in this competition, so a \"top scorers\" table would be\n// misleading — skipped deliberately.\nprintln!(\"player-level coverage too sparse for a top-scorers table\");\n",
+      "metadata": {},
+      "execution_count": 10,
+      "outputs": [
+        {
+          "type": "text",
+          "text": "Champions League matches: 4955\nfinished matches: 4865 (0 duplicate fixtures dropped) | team-season entries: 1613\ncomplete seasons: 21 (2001/2002 -> 2025/2026)\ntop scorers available for season year 2004 (StatsBomb coverage)\neditions: 29\n  1970/1971: 1 matches, champion-ish:  (final 2-0)\n  1971/1972: 1 matches, champion-ish:  (final 2-0)\n  1972/1973: 1 matches, champion-ish:  (final 1-0)\n  1999/2000: 1 matches, champion-ish:  (final 2-0)\n  2001/2002: 216 matches, champion-ish: Real Madrid (final 1-2)\n  2002/2003: 225 matches, champion-ish: Milan (final 0-0 pens)\n  2003/2004: 171 matches, champion-ish: Porto (final 0-3)\n  2004/2005: 171 matches, champion-ish: Liverpool (final 3-3 pens)\n  2005/2006: 209 matches, champion-ish: Barcelona (final 2-1)\n  2006/2007: 207 matches, champion-ish: Milan (final 2-1)\n  2007/2008: 213 matches, champion-ish: Man United (final 1-1 pens)\n  2008/2009: 213 matches, champion-ish: Barcelona (final 2-0)\n  2009/2010: 213 matches, champion-ish: Inter (final 0-2)\n  2010/2011: 212 matches, champion-ish: Barcelona (final 3-1)\n  2011/2012: 213 matches, champion-ish: Chelsea (final 1-1 pens)\n  2012/2013: 213 matches, champion-ish: Bayern Munich (final 1-2)\n  2013/2014: 213 matches, champion-ish: Real Madrid (final 4-1)\n  2014/2015: 215 matches, champion-ish: Barcelona (final 1-3)\n  2015/2016: 217 matches, champion-ish: Real Madrid (final 1-1 pens)\n  2016/2017: 217 matches, champion-ish: Real Madrid (final 1-4)\n  2017/2018: 219 matches, champion-ish: Real Madrid (final 3-1)\n  2018/2019: 216 matches, champion-ish: Liverpool (final 0-2)\n  2019/2020: 210 matches, champion-ish: Bayern Munich (final 0-1)\n  2020/2021: 125 matches, champion-ish: Chelsea (final 0-1)\n  2021/2022: 125 matches, champion-ish: Real Madrid (final 0-1)\n  2022/2023: 125 matches, champion-ish: Man City (final 1-0)\n  2023/2024: 125 matches, champion-ish: Real Madrid (final 0-2)\n  2024/2025: 189 matches, champion-ish: Paris SG (final 5-0)\n  2025/2026: 189 matches, champion-ish: Paris SG (final 1-1 pens)\nunbeaten champions: 5\nplayer-level coverage too sparse for a top-scorers table\n"
         },
         {
           "type": "table",
           "columns": [
-            "player",
-            "goals"
+            "nation",
+            "titles",
+            "most recent"
           ],
           "rows": [
             [
-              "Hernán Jorge Crespo",
-              "2"
+              "Real Madrid",
+              "7",
+              "2023/2024, 2021/2022, 2017/2018, 2016/2017"
             ],
             [
-              "Vladimir Smicer",
-              "2"
+              "Barcelona",
+              "4",
+              "2014/2015, 2010/2011, 2008/2009, 2005/2006"
             ],
             [
-              "Dietmar Hamann",
-              "1"
+              "Bayern Munich",
+              "2",
+              "2019/2020, 2012/2013"
             ],
             [
-              "Djibril Cissé",
-              "1"
+              "Chelsea",
+              "2",
+              "2020/2021, 2011/2012"
             ],
             [
-              "Jon Dahl Tomasson",
-              "1"
+              "Liverpool",
+              "2",
+              "2018/2019, 2004/2005"
+            ],
+            [
+              "Milan",
+              "2",
+              "2006/2007, 2002/2003"
+            ],
+            [
+              "Paris SG",
+              "2",
+              "2025/2026, 2024/2025"
+            ],
+            [
+              "Inter",
+              "1",
+              "2009/2010"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "edition",
+            "champion",
+            "final",
+            "tournament record",
+            "gf/ga"
+          ],
+          "rows": [
+            [
+              "1970/1971 (partial coverage)",
+              "—",
+              "—",
+              "0W 0D 0L",
+              "0/0"
+            ],
+            [
+              "1971/1972 (partial coverage)",
+              "—",
+              "—",
+              "0W 0D 0L",
+              "0/0"
+            ],
+            [
+              "1972/1973 (partial coverage)",
+              "—",
+              "—",
+              "0W 0D 0L",
+              "0/0"
+            ],
+            [
+              "1999/2000 (partial coverage)",
+              "—",
+              "—",
+              "0W 0D 0L",
+              "0/0"
+            ],
+            [
+              "2001/2002",
+              "Real Madrid",
+              "1-2",
+              "12W 3D 2L",
+              "35/14"
+            ],
+            [
+              "2002/2003",
+              "Milan",
+              "0-0 (pens)",
+              "10W 4D 5L",
+              "23/16"
+            ],
+            [
+              "2003/2004",
+              "Porto",
+              "0-3",
+              "7W 5D 1L",
+              "20/12"
+            ],
+            [
+              "2004/2005",
+              "Liverpool",
+              "3-3 (pens)",
+              "8W 4D 3L",
+              "20/10"
+            ],
+            [
+              "2005/2006",
+              "Barcelona",
+              "2-1",
+              "9W 4D 0L",
+              "24/5"
+            ],
+            [
+              "2006/2007",
+              "Milan",
+              "2-1",
+              "9W 3D 3L",
+              "23/11"
+            ],
+            [
+              "2007/2008",
+              "Man United",
+              "1-1 (pens)",
+              "9W 4D 0L",
+              "20/6"
+            ],
+            [
+              "2008/2009",
+              "Barcelona",
+              "2-0",
+              "8W 5D 2L",
+              "36/14"
+            ],
+            [
+              "2009/2010",
+              "Inter",
+              "0-2",
+              "8W 4D 3L",
+              "17/10"
+            ],
+            [
+              "2010/2011",
+              "Barcelona",
+              "3-1",
+              "9W 3D 1L",
+              "30/9"
+            ],
+            [
+              "2011/2012",
+              "Chelsea",
+              "1-1 (pens)",
+              "7W 4D 2L",
+              "25/12"
+            ],
+            [
+              "2012/2013",
+              "Bayern Munich",
+              "1-2",
+              "10W 1D 2L",
+              "31/11"
+            ],
+            [
+              "2013/2014",
+              "Real Madrid",
+              "4-1",
+              "11W 1D 1L",
+              "41/10"
+            ],
+            [
+              "2014/2015",
+              "Barcelona",
+              "1-3",
+              "11W 0D 2L",
+              "31/11"
+            ],
+            [
+              "2015/2016",
+              "Real Madrid",
+              "1-1 (pens)",
+              "9W 3D 1L",
+              "28/6"
+            ],
+            [
+              "2016/2017",
+              "Real Madrid",
+              "1-4",
+              "9W 3D 1L",
+              "36/18"
+            ],
+            [
+              "2017/2018",
+              "Real Madrid",
+              "3-1",
+              "9W 2D 2L",
+              "33/16"
+            ],
+            [
+              "2018/2019",
+              "Liverpool",
+              "0-2",
+              "8W 1D 4L",
+              "24/12"
+            ],
+            [
+              "2019/2020",
+              "Bayern Munich",
+              "0-1",
+              "11W 0D 0L",
+              "43/8"
+            ],
+            [
+              "2020/2021",
+              "Chelsea",
+              "0-1",
+              "9W 3D 1L",
+              "23/4"
+            ],
+            [
+              "2021/2022",
+              "Real Madrid",
+              "0-1",
+              "9W 0D 4L",
+              "29/14"
+            ],
+            [
+              "2022/2023",
+              "Man City",
+              "1-0",
+              "8W 5D 0L",
+              "32/5"
+            ],
+            [
+              "2023/2024",
+              "Real Madrid",
+              "0-2",
+              "9W 4D 0L",
+              "28/15"
+            ],
+            [
+              "2024/2025",
+              "Paris SG",
+              "5-0",
+              "11W 1D 5L",
+              "38/15"
+            ],
+            [
+              "2025/2026",
+              "Paris SG",
+              "1-1 (pens)",
+              "10W 5D 2L",
+              "45/23"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "biggest wins",
+            "score",
+            "margin"
+          ],
+          "rows": [
+            [
+              "HJK Helsinki vs Bangor City (2011/2012)",
+              "10-0",
+              "+10"
+            ],
+            [
+              "Porto vs Barry Town (2001/2002)",
+              "8-0",
+              "+8"
+            ],
+            [
+              "Liverpool vs Besiktas (2007/2008)",
+              "8-0",
+              "+8"
+            ],
+            [
+              "Valletta vs Lusitanos (2012/2013)",
+              "8-0",
+              "+8"
+            ],
+            [
+              "Real Madrid vs Malmö FF (2015/2016)",
+              "8-0",
+              "+8"
+            ],
+            [
+              "Juventus vs Olympiacos (2003/2004)",
+              "7-0",
+              "+7"
+            ],
+            [
+              "Arsenal vs Slavia Prague (2007/2008)",
+              "7-0",
+              "+7"
+            ],
+            [
+              "Valencia vs Racing Genk (2011/2012)",
+              "7-0",
+              "+7"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "highest-scoring",
+            "score",
+            "total goals"
+          ],
+          "rows": [
+            [
+              "Dortmund vs Legia Warsaw (2016/2017)",
+              "8-4",
+              "12"
+            ],
+            [
+              "Monaco vs Deportivo (2003/2004)",
+              "8-3",
+              "11"
+            ],
+            [
+              "Bayern Munich vs Dinamo Zagreb (2024/2025)",
+              "9-2",
+              "11"
+            ],
+            [
+              "HJK Helsinki vs Bangor City (2011/2012)",
+              "10-0",
+              "10"
+            ],
+            [
+              "Barcelona vs Bayern Munich (2019/2020)",
+              "2-8",
+              "10"
+            ],
+            [
+              "Lyon vs Werder Bremen (2004/2005)",
+              "7-2",
+              "9"
+            ],
+            [
+              "MSK Zilina vs F91 Dudelange (2007/2008)",
+              "5-4",
+              "9"
+            ],
+            [
+              "Villarreal vs AaB (2008/2009)",
+              "6-3",
+              "9"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "record",
+            "champion edition",
+            "record",
+            "gf/ga",
+            "gd"
+          ],
+          "rows": [
+            [
+              "most goals scored",
+              "Paris SG 2025/2026",
+              "10W 5D 2L",
+              "45/23",
+              "22"
+            ],
+            [
+              "fewest goals conceded",
+              "Chelsea 2020/2021",
+              "9W 3D 1L",
+              "23/4",
+              "19"
+            ],
+            [
+              "best goal difference",
+              "Bayern Munich 2019/2020",
+              "11W 0D 0L",
+              "43/8",
+              "35"
+            ],
+            [
+              "most wins",
+              "Real Madrid 2001/2002",
+              "12W 3D 2L",
+              "35/14",
+              "21"
+            ],
+            [
+              "fewest losses",
+              "Barcelona 2005/2006",
+              "9W 4D 0L",
+              "24/5",
+              "19"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "unbeaten champions",
+            "record",
+            "gf",
+            "ga"
+          ],
+          "rows": [
+            [
+              "Barcelona 2005/2006",
+              "9W 4D",
+              "24",
+              "5"
+            ],
+            [
+              "Man United 2007/2008",
+              "9W 4D",
+              "20",
+              "6"
+            ],
+            [
+              "Bayern Munich 2019/2020",
+              "11W 0D",
+              "43",
+              "8"
+            ],
+            [
+              "Man City 2022/2023",
+              "8W 5D",
+              "32",
+              "5"
+            ],
+            [
+              "Real Madrid 2023/2024",
+              "9W 4D",
+              "28",
+              "15"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "closest finals",
+            "matchup",
+            "score"
+          ],
+          "rows": [
+            [
+              "2002/2003",
+              "Milan vs Juventus (pens)",
+              "0-0"
+            ],
+            [
+              "2004/2005",
+              "Liverpool vs Milan (pens)",
+              "3-3"
+            ],
+            [
+              "2007/2008",
+              "Man United vs Chelsea (pens)",
+              "1-1"
+            ],
+            [
+              "2011/2012",
+              "Chelsea vs Bayern Munich (pens)",
+              "1-1"
+            ],
+            [
+              "2015/2016",
+              "Real Madrid vs Ath Madrid (pens)",
+              "1-1"
+            ],
+            [
+              "2025/2026",
+              "Paris SG vs Arsenal (pens)",
+              "1-1"
+            ],
+            [
+              "2001/2002",
+              "Real Madrid vs Leverkusen",
+              "1-2"
+            ],
+            [
+              "2005/2006",
+              "Barcelona vs Arsenal",
+              "2-1"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "2a574f53-0830-4aca-ab84-8b70679bdeb1",
+      "cell_type": "code",
+      "source": "use plotters::prelude::*;\n\nlet labels_t: Vec<String> = tv.iter().take(8).map(|(t, _)| t.chars().take(12).collect()).collect();\nlet counts_t: Vec<f64> = tv.iter().take(8).map(|(_, ss)| ss.len() as f64).collect();\nlet ymax_t = counts_t.iter().cloned().fold(1.0_f64, f64::max) * 1.2;\nlet n_t = counts_t.len();\nlet figure1 = plotters::evcxr::evcxr_figure((720, 400), |root| {\n    root.fill(&WHITE)?;\n    let mut chart = ChartBuilder::on(&root)\n        .caption(\"Most titles\", (\"sans-serif\", 18))\n        .margin(10)\n        .x_label_area_size(80)\n        .y_label_area_size(45)\n        .build_cartesian_2d(-0.5_f64..(n_t as f64 - 0.5), 0.0..ymax_t)?;\n    chart.configure_mesh().y_desc(\"titles\").x_labels(n_t)\n        .x_label_formatter(&|x: &f64| {\n            let i = (*x).round() as usize;\n            if i < labels_t.len() { labels_t[i].clone() } else { String::new() }\n        })\n        .draw()?;\n    chart.draw_series((0..n_t).map(|i| {\n        Rectangle::new([(i as f64 - 0.35, 0.0), (i as f64 + 0.35, counts_t[i])], BLUE.filled())\n    }))?;\n    Ok(())\n});\nfigure1.evcxr_display();\n",
+      "metadata": {},
+      "execution_count": 11,
+      "outputs": [
+        {
+          "type": "text",
+          "text": "Champions League matches: 4955\nfinished matches: 4865 (0 duplicate fixtures dropped) | team-season entries: 1613\ncomplete seasons: 21 (2001/2002 -> 2025/2026)\ntop scorers available for season year 2004 (StatsBomb coverage)\neditions: 29\n  1970/1971: 1 matches, champion-ish:  (final 2-0)\n  1971/1972: 1 matches, champion-ish:  (final 2-0)\n  1972/1973: 1 matches, champion-ish:  (final 1-0)\n  1999/2000: 1 matches, champion-ish:  (final 2-0)\n  2001/2002: 216 matches, champion-ish: Real Madrid (final 1-2)\n  2002/2003: 225 matches, champion-ish: Milan (final 0-0 pens)\n  2003/2004: 171 matches, champion-ish: Porto (final 0-3)\n  2004/2005: 171 matches, champion-ish: Liverpool (final 3-3 pens)\n  2005/2006: 209 matches, champion-ish: Barcelona (final 2-1)\n  2006/2007: 207 matches, champion-ish: Milan (final 2-1)\n  2007/2008: 213 matches, champion-ish: Man United (final 1-1 pens)\n  2008/2009: 213 matches, champion-ish: Barcelona (final 2-0)\n  2009/2010: 213 matches, champion-ish: Inter (final 0-2)\n  2010/2011: 212 matches, champion-ish: Barcelona (final 3-1)\n  2011/2012: 213 matches, champion-ish: Chelsea (final 1-1 pens)\n  2012/2013: 213 matches, champion-ish: Bayern Munich (final 1-2)\n  2013/2014: 213 matches, champion-ish: Real Madrid (final 4-1)\n  2014/2015: 215 matches, champion-ish: Barcelona (final 1-3)\n  2015/2016: 217 matches, champion-ish: Real Madrid (final 1-1 pens)\n  2016/2017: 217 matches, champion-ish: Real Madrid (final 1-4)\n  2017/2018: 219 matches, champion-ish: Real Madrid (final 3-1)\n  2018/2019: 216 matches, champion-ish: Liverpool (final 0-2)\n  2019/2020: 210 matches, champion-ish: Bayern Munich (final 0-1)\n  2020/2021: 125 matches, champion-ish: Chelsea (final 0-1)\n  2021/2022: 125 matches, champion-ish: Real Madrid (final 0-1)\n  2022/2023: 125 matches, champion-ish: Man City (final 1-0)\n  2023/2024: 125 matches, champion-ish: Real Madrid (final 0-2)\n  2024/2025: 189 matches, champion-ish: Paris SG (final 5-0)\n  2025/2026: 189 matches, champion-ish: Paris SG (final 1-1 pens)\nunbeaten champions: 5\nplayer-level coverage too sparse for a top-scorers table\n"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "nation",
+            "titles",
+            "most recent"
+          ],
+          "rows": [
+            [
+              "Real Madrid",
+              "7",
+              "2023/2024, 2021/2022, 2017/2018, 2016/2017"
+            ],
+            [
+              "Barcelona",
+              "4",
+              "2014/2015, 2010/2011, 2008/2009, 2005/2006"
+            ],
+            [
+              "Bayern Munich",
+              "2",
+              "2019/2020, 2012/2013"
+            ],
+            [
+              "Chelsea",
+              "2",
+              "2020/2021, 2011/2012"
+            ],
+            [
+              "Liverpool",
+              "2",
+              "2018/2019, 2004/2005"
+            ],
+            [
+              "Milan",
+              "2",
+              "2006/2007, 2002/2003"
+            ],
+            [
+              "Paris SG",
+              "2",
+              "2025/2026, 2024/2025"
+            ],
+            [
+              "Inter",
+              "1",
+              "2009/2010"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "edition",
+            "champion",
+            "final",
+            "tournament record",
+            "gf/ga"
+          ],
+          "rows": [
+            [
+              "1970/1971 (partial coverage)",
+              "—",
+              "—",
+              "0W 0D 0L",
+              "0/0"
+            ],
+            [
+              "1971/1972 (partial coverage)",
+              "—",
+              "—",
+              "0W 0D 0L",
+              "0/0"
+            ],
+            [
+              "1972/1973 (partial coverage)",
+              "—",
+              "—",
+              "0W 0D 0L",
+              "0/0"
+            ],
+            [
+              "1999/2000 (partial coverage)",
+              "—",
+              "—",
+              "0W 0D 0L",
+              "0/0"
+            ],
+            [
+              "2001/2002",
+              "Real Madrid",
+              "1-2",
+              "12W 3D 2L",
+              "35/14"
+            ],
+            [
+              "2002/2003",
+              "Milan",
+              "0-0 (pens)",
+              "10W 4D 5L",
+              "23/16"
+            ],
+            [
+              "2003/2004",
+              "Porto",
+              "0-3",
+              "7W 5D 1L",
+              "20/12"
+            ],
+            [
+              "2004/2005",
+              "Liverpool",
+              "3-3 (pens)",
+              "8W 4D 3L",
+              "20/10"
+            ],
+            [
+              "2005/2006",
+              "Barcelona",
+              "2-1",
+              "9W 4D 0L",
+              "24/5"
+            ],
+            [
+              "2006/2007",
+              "Milan",
+              "2-1",
+              "9W 3D 3L",
+              "23/11"
+            ],
+            [
+              "2007/2008",
+              "Man United",
+              "1-1 (pens)",
+              "9W 4D 0L",
+              "20/6"
+            ],
+            [
+              "2008/2009",
+              "Barcelona",
+              "2-0",
+              "8W 5D 2L",
+              "36/14"
+            ],
+            [
+              "2009/2010",
+              "Inter",
+              "0-2",
+              "8W 4D 3L",
+              "17/10"
+            ],
+            [
+              "2010/2011",
+              "Barcelona",
+              "3-1",
+              "9W 3D 1L",
+              "30/9"
+            ],
+            [
+              "2011/2012",
+              "Chelsea",
+              "1-1 (pens)",
+              "7W 4D 2L",
+              "25/12"
+            ],
+            [
+              "2012/2013",
+              "Bayern Munich",
+              "1-2",
+              "10W 1D 2L",
+              "31/11"
+            ],
+            [
+              "2013/2014",
+              "Real Madrid",
+              "4-1",
+              "11W 1D 1L",
+              "41/10"
+            ],
+            [
+              "2014/2015",
+              "Barcelona",
+              "1-3",
+              "11W 0D 2L",
+              "31/11"
+            ],
+            [
+              "2015/2016",
+              "Real Madrid",
+              "1-1 (pens)",
+              "9W 3D 1L",
+              "28/6"
+            ],
+            [
+              "2016/2017",
+              "Real Madrid",
+              "1-4",
+              "9W 3D 1L",
+              "36/18"
+            ],
+            [
+              "2017/2018",
+              "Real Madrid",
+              "3-1",
+              "9W 2D 2L",
+              "33/16"
+            ],
+            [
+              "2018/2019",
+              "Liverpool",
+              "0-2",
+              "8W 1D 4L",
+              "24/12"
+            ],
+            [
+              "2019/2020",
+              "Bayern Munich",
+              "0-1",
+              "11W 0D 0L",
+              "43/8"
+            ],
+            [
+              "2020/2021",
+              "Chelsea",
+              "0-1",
+              "9W 3D 1L",
+              "23/4"
+            ],
+            [
+              "2021/2022",
+              "Real Madrid",
+              "0-1",
+              "9W 0D 4L",
+              "29/14"
+            ],
+            [
+              "2022/2023",
+              "Man City",
+              "1-0",
+              "8W 5D 0L",
+              "32/5"
+            ],
+            [
+              "2023/2024",
+              "Real Madrid",
+              "0-2",
+              "9W 4D 0L",
+              "28/15"
+            ],
+            [
+              "2024/2025",
+              "Paris SG",
+              "5-0",
+              "11W 1D 5L",
+              "38/15"
+            ],
+            [
+              "2025/2026",
+              "Paris SG",
+              "1-1 (pens)",
+              "10W 5D 2L",
+              "45/23"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "biggest wins",
+            "score",
+            "margin"
+          ],
+          "rows": [
+            [
+              "HJK Helsinki vs Bangor City (2011/2012)",
+              "10-0",
+              "+10"
+            ],
+            [
+              "Porto vs Barry Town (2001/2002)",
+              "8-0",
+              "+8"
+            ],
+            [
+              "Liverpool vs Besiktas (2007/2008)",
+              "8-0",
+              "+8"
+            ],
+            [
+              "Valletta vs Lusitanos (2012/2013)",
+              "8-0",
+              "+8"
+            ],
+            [
+              "Real Madrid vs Malmö FF (2015/2016)",
+              "8-0",
+              "+8"
+            ],
+            [
+              "Juventus vs Olympiacos (2003/2004)",
+              "7-0",
+              "+7"
+            ],
+            [
+              "Arsenal vs Slavia Prague (2007/2008)",
+              "7-0",
+              "+7"
+            ],
+            [
+              "Valencia vs Racing Genk (2011/2012)",
+              "7-0",
+              "+7"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "highest-scoring",
+            "score",
+            "total goals"
+          ],
+          "rows": [
+            [
+              "Dortmund vs Legia Warsaw (2016/2017)",
+              "8-4",
+              "12"
+            ],
+            [
+              "Monaco vs Deportivo (2003/2004)",
+              "8-3",
+              "11"
+            ],
+            [
+              "Bayern Munich vs Dinamo Zagreb (2024/2025)",
+              "9-2",
+              "11"
+            ],
+            [
+              "HJK Helsinki vs Bangor City (2011/2012)",
+              "10-0",
+              "10"
+            ],
+            [
+              "Barcelona vs Bayern Munich (2019/2020)",
+              "2-8",
+              "10"
+            ],
+            [
+              "Lyon vs Werder Bremen (2004/2005)",
+              "7-2",
+              "9"
+            ],
+            [
+              "MSK Zilina vs F91 Dudelange (2007/2008)",
+              "5-4",
+              "9"
+            ],
+            [
+              "Villarreal vs AaB (2008/2009)",
+              "6-3",
+              "9"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "record",
+            "champion edition",
+            "record",
+            "gf/ga",
+            "gd"
+          ],
+          "rows": [
+            [
+              "most goals scored",
+              "Paris SG 2025/2026",
+              "10W 5D 2L",
+              "45/23",
+              "22"
+            ],
+            [
+              "fewest goals conceded",
+              "Chelsea 2020/2021",
+              "9W 3D 1L",
+              "23/4",
+              "19"
+            ],
+            [
+              "best goal difference",
+              "Bayern Munich 2019/2020",
+              "11W 0D 0L",
+              "43/8",
+              "35"
+            ],
+            [
+              "most wins",
+              "Real Madrid 2001/2002",
+              "12W 3D 2L",
+              "35/14",
+              "21"
+            ],
+            [
+              "fewest losses",
+              "Barcelona 2005/2006",
+              "9W 4D 0L",
+              "24/5",
+              "19"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "unbeaten champions",
+            "record",
+            "gf",
+            "ga"
+          ],
+          "rows": [
+            [
+              "Barcelona 2005/2006",
+              "9W 4D",
+              "24",
+              "5"
+            ],
+            [
+              "Man United 2007/2008",
+              "9W 4D",
+              "20",
+              "6"
+            ],
+            [
+              "Bayern Munich 2019/2020",
+              "11W 0D",
+              "43",
+              "8"
+            ],
+            [
+              "Man City 2022/2023",
+              "8W 5D",
+              "32",
+              "5"
+            ],
+            [
+              "Real Madrid 2023/2024",
+              "9W 4D",
+              "28",
+              "15"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "closest finals",
+            "matchup",
+            "score"
+          ],
+          "rows": [
+            [
+              "2002/2003",
+              "Milan vs Juventus (pens)",
+              "0-0"
+            ],
+            [
+              "2004/2005",
+              "Liverpool vs Milan (pens)",
+              "3-3"
+            ],
+            [
+              "2007/2008",
+              "Man United vs Chelsea (pens)",
+              "1-1"
+            ],
+            [
+              "2011/2012",
+              "Chelsea vs Bayern Munich (pens)",
+              "1-1"
+            ],
+            [
+              "2015/2016",
+              "Real Madrid vs Ath Madrid (pens)",
+              "1-1"
+            ],
+            [
+              "2025/2026",
+              "Paris SG vs Arsenal (pens)",
+              "1-1"
+            ],
+            [
+              "2001/2002",
+              "Real Madrid vs Leverkusen",
+              "1-2"
+            ],
+            [
+              "2005/2006",
+              "Barcelona vs Arsenal",
+              "2-1"
+            ]
+          ]
+        },
+        {
+          "type": "mime_bundle",
+          "data": {
+            "image/svg+xml": "<svg width=\"720\" height=\"400\" viewBox=\"0 0 720 400\" xmlns=\"http://www.w3.org/2000/svg\">\n<rect x=\"0\" y=\"0\" width=\"720\" height=\"400\" opacity=\"1\" fill=\"#FFFFFF\" stroke=\"none\"/>\n<text x=\"360\" y=\"15\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"14.516129032258064\" opacity=\"1\" fill=\"#000000\">\nMost titles\n</text>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"63\" y1=\"309\" x2=\"63\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"79\" y1=\"309\" x2=\"79\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"95\" y1=\"309\" x2=\"95\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"112\" y1=\"309\" x2=\"112\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"128\" y1=\"309\" x2=\"128\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"144\" y1=\"309\" x2=\"144\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"161\" y1=\"309\" x2=\"161\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"177\" y1=\"309\" x2=\"177\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"193\" y1=\"309\" x2=\"193\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"210\" y1=\"309\" x2=\"210\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"226\" y1=\"309\" x2=\"226\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"243\" y1=\"309\" x2=\"243\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"259\" y1=\"309\" x2=\"259\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"275\" y1=\"309\" x2=\"275\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"292\" y1=\"309\" x2=\"292\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"308\" y1=\"309\" x2=\"308\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"324\" y1=\"309\" x2=\"324\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"341\" y1=\"309\" x2=\"341\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"357\" y1=\"309\" x2=\"357\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"373\" y1=\"309\" x2=\"373\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"390\" y1=\"309\" x2=\"390\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"406\" y1=\"309\" x2=\"406\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"422\" y1=\"309\" x2=\"422\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"439\" y1=\"309\" x2=\"439\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"455\" y1=\"309\" x2=\"455\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"471\" y1=\"309\" x2=\"471\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"488\" y1=\"309\" x2=\"488\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"504\" y1=\"309\" x2=\"504\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"520\" y1=\"309\" x2=\"520\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"537\" y1=\"309\" x2=\"537\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"553\" y1=\"309\" x2=\"553\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"570\" y1=\"309\" x2=\"570\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"586\" y1=\"309\" x2=\"586\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"602\" y1=\"309\" x2=\"602\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"619\" y1=\"309\" x2=\"619\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"635\" y1=\"309\" x2=\"635\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"651\" y1=\"309\" x2=\"651\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"668\" y1=\"309\" x2=\"668\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"684\" y1=\"309\" x2=\"684\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"309\" x2=\"709\" y2=\"309\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"306\" x2=\"709\" y2=\"306\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"303\" x2=\"709\" y2=\"303\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"300\" x2=\"709\" y2=\"300\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"296\" x2=\"709\" y2=\"296\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"293\" x2=\"709\" y2=\"293\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"290\" x2=\"709\" y2=\"290\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"287\" x2=\"709\" y2=\"287\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"283\" x2=\"709\" y2=\"283\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"280\" x2=\"709\" y2=\"280\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"277\" x2=\"709\" y2=\"277\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"273\" x2=\"709\" y2=\"273\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"270\" x2=\"709\" y2=\"270\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"267\" x2=\"709\" y2=\"267\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"264\" x2=\"709\" y2=\"264\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"260\" x2=\"709\" y2=\"260\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"257\" x2=\"709\" y2=\"257\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"254\" x2=\"709\" y2=\"254\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"251\" x2=\"709\" y2=\"251\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"247\" x2=\"709\" y2=\"247\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"244\" x2=\"709\" y2=\"244\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"241\" x2=\"709\" y2=\"241\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"237\" x2=\"709\" y2=\"237\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"234\" x2=\"709\" y2=\"234\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"231\" x2=\"709\" y2=\"231\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"228\" x2=\"709\" y2=\"228\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"224\" x2=\"709\" y2=\"224\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"221\" x2=\"709\" y2=\"221\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"218\" x2=\"709\" y2=\"218\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"215\" x2=\"709\" y2=\"215\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"211\" x2=\"709\" y2=\"211\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"208\" x2=\"709\" y2=\"208\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"205\" x2=\"709\" y2=\"205\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"201\" x2=\"709\" y2=\"201\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"198\" x2=\"709\" y2=\"198\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"195\" x2=\"709\" y2=\"195\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"192\" x2=\"709\" y2=\"192\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"188\" x2=\"709\" y2=\"188\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"185\" x2=\"709\" y2=\"185\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"182\" x2=\"709\" y2=\"182\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"179\" x2=\"709\" y2=\"179\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"175\" x2=\"709\" y2=\"175\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"172\" x2=\"709\" y2=\"172\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"169\" x2=\"709\" y2=\"169\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"165\" x2=\"709\" y2=\"165\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"162\" x2=\"709\" y2=\"162\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"159\" x2=\"709\" y2=\"159\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"156\" x2=\"709\" y2=\"156\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"152\" x2=\"709\" y2=\"152\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"149\" x2=\"709\" y2=\"149\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"146\" x2=\"709\" y2=\"146\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"143\" x2=\"709\" y2=\"143\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"139\" x2=\"709\" y2=\"139\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"136\" x2=\"709\" y2=\"136\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"133\" x2=\"709\" y2=\"133\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"129\" x2=\"709\" y2=\"129\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"126\" x2=\"709\" y2=\"126\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"123\" x2=\"709\" y2=\"123\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"120\" x2=\"709\" y2=\"120\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"116\" x2=\"709\" y2=\"116\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"113\" x2=\"709\" y2=\"113\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"110\" x2=\"709\" y2=\"110\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"107\" x2=\"709\" y2=\"107\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"103\" x2=\"709\" y2=\"103\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"100\" x2=\"709\" y2=\"100\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"97\" x2=\"709\" y2=\"97\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"93\" x2=\"709\" y2=\"93\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"90\" x2=\"709\" y2=\"90\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"87\" x2=\"709\" y2=\"87\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"84\" x2=\"709\" y2=\"84\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"80\" x2=\"709\" y2=\"80\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"77\" x2=\"709\" y2=\"77\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"74\" x2=\"709\" y2=\"74\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"71\" x2=\"709\" y2=\"71\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"67\" x2=\"709\" y2=\"67\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"64\" x2=\"709\" y2=\"64\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"61\" x2=\"709\" y2=\"61\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"57\" x2=\"709\" y2=\"57\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"54\" x2=\"709\" y2=\"54\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"51\" x2=\"709\" y2=\"51\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"48\" x2=\"709\" y2=\"48\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"44\" x2=\"709\" y2=\"44\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"41\" x2=\"709\" y2=\"41\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"38\" x2=\"709\" y2=\"38\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"34\" x2=\"709\" y2=\"34\"/>\n<text x=\"10\" y=\"172\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\" transform=\"rotate(270, 10, 172)\">\ntitles\n</text>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"95\" y1=\"309\" x2=\"95\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"177\" y1=\"309\" x2=\"177\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"259\" y1=\"309\" x2=\"259\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"341\" y1=\"309\" x2=\"341\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"422\" y1=\"309\" x2=\"422\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"504\" y1=\"309\" x2=\"504\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"586\" y1=\"309\" x2=\"586\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"668\" y1=\"309\" x2=\"668\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"309\" x2=\"709\" y2=\"309\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"277\" x2=\"709\" y2=\"277\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"244\" x2=\"709\" y2=\"244\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"211\" x2=\"709\" y2=\"211\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"179\" x2=\"709\" y2=\"179\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"146\" x2=\"709\" y2=\"146\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"113\" x2=\"709\" y2=\"113\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"80\" x2=\"709\" y2=\"80\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"48\" x2=\"709\" y2=\"48\"/>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"54,34 54,309 \"/>\n<text x=\"45\" y=\"309\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n0.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"49,309 54,309 \"/>\n<text x=\"45\" y=\"277\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n1.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"49,277 54,277 \"/>\n<text x=\"45\" y=\"244\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n2.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"49,244 54,244 \"/>\n<text x=\"45\" y=\"211\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n3.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"49,211 54,211 \"/>\n<text x=\"45\" y=\"179\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n4.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"49,179 54,179 \"/>\n<text x=\"45\" y=\"146\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n5.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"49,146 54,146 \"/>\n<text x=\"45\" y=\"113\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n6.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"49,113 54,113 \"/>\n<text x=\"45\" y=\"80\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n7.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"49,80 54,80 \"/>\n<text x=\"45\" y=\"48\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n8.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"49,48 54,48 \"/>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"55,310 709,310 \"/>\n<text x=\"95\" y=\"320\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nReal Madrid\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"95,310 95,315 \"/>\n<text x=\"177\" y=\"320\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nBarcelona\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"177,310 177,315 \"/>\n<text x=\"259\" y=\"320\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nBayern Munic\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"259,310 259,315 \"/>\n<text x=\"341\" y=\"320\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nChelsea\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"341,310 341,315 \"/>\n<text x=\"422\" y=\"320\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nLiverpool\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"422,310 422,315 \"/>\n<text x=\"504\" y=\"320\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nMilan\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"504,310 504,315 \"/>\n<text x=\"586\" y=\"320\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nParis SG\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"586,310 586,315 \"/>\n<text x=\"668\" y=\"320\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nInter\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"668,310 668,315 \"/>\n<rect x=\"67\" y=\"80\" width=\"57\" height=\"229\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"149\" y=\"179\" width=\"57\" height=\"130\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"230\" y=\"244\" width=\"57\" height=\"65\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"312\" y=\"244\" width=\"57\" height=\"65\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"394\" y=\"244\" width=\"57\" height=\"65\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"476\" y=\"244\" width=\"57\" height=\"65\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"557\" y=\"244\" width=\"57\" height=\"65\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n<rect x=\"639\" y=\"277\" width=\"57\" height=\"32\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n</svg>",
+            "text/plain": "Figure (SVG)"
+          },
+          "metadata": {}
+        }
+      ]
+    },
+    {
+      "id": "4c9bcaac-ce17-48e4-aefe-17ba86965251",
+      "cell_type": "code",
+      "source": "let n_e = champ_stats.len();\nlet pts_max_e = champ_stats.iter().map(|c| c.2 - c.3).fold(1i64, |a, b| a.max(b)) as f64 * 1.1;\nlet figure2 = plotters::evcxr::evcxr_figure((760, 400), |root| {\n    root.fill(&WHITE)?;\n    let mut chart = ChartBuilder::on(&root)\n        .caption(\"Champion's goal difference per edition\", (\"sans-serif\", 18))\n        .margin(10)\n        .x_label_area_size(30)\n        .y_label_area_size(45)\n        .build_cartesian_2d(-0.5_f64..(n_e as f64 - 0.5), 0.0..pts_max_e)?;\n    chart.configure_mesh().y_desc(\"goal diff\").x_labels(0).draw()?;\n    chart.draw_series(champ_stats.iter().enumerate().map(|(i, c)| {\n        Circle::new((i as f64, (c.2 - c.3) as f64), 3, BLUE.filled())\n    }))?;\n    chart.draw_series(LineSeries::new(\n        champ_stats.iter().enumerate().map(|(i, c)| (i as f64, (c.2 - c.3) as f64)),\n        BLUE.stroke_width(1),\n    ))?;\n    Ok(())\n});\nfigure2.evcxr_display();\n",
+      "metadata": {},
+      "execution_count": 12,
+      "outputs": [
+        {
+          "type": "text",
+          "text": "Champions League matches: 4955\nfinished matches: 4865 (0 duplicate fixtures dropped) | team-season entries: 1613\ncomplete seasons: 21 (2001/2002 -> 2025/2026)\ntop scorers available for season year 2004 (StatsBomb coverage)\neditions: 29\n  1970/1971: 1 matches, champion-ish:  (final 2-0)\n  1971/1972: 1 matches, champion-ish:  (final 2-0)\n  1972/1973: 1 matches, champion-ish:  (final 1-0)\n  1999/2000: 1 matches, champion-ish:  (final 2-0)\n  2001/2002: 216 matches, champion-ish: Real Madrid (final 1-2)\n  2002/2003: 225 matches, champion-ish: Milan (final 0-0 pens)\n  2003/2004: 171 matches, champion-ish: Porto (final 0-3)\n  2004/2005: 171 matches, champion-ish: Liverpool (final 3-3 pens)\n  2005/2006: 209 matches, champion-ish: Barcelona (final 2-1)\n  2006/2007: 207 matches, champion-ish: Milan (final 2-1)\n  2007/2008: 213 matches, champion-ish: Man United (final 1-1 pens)\n  2008/2009: 213 matches, champion-ish: Barcelona (final 2-0)\n  2009/2010: 213 matches, champion-ish: Inter (final 0-2)\n  2010/2011: 212 matches, champion-ish: Barcelona (final 3-1)\n  2011/2012: 213 matches, champion-ish: Chelsea (final 1-1 pens)\n  2012/2013: 213 matches, champion-ish: Bayern Munich (final 1-2)\n  2013/2014: 213 matches, champion-ish: Real Madrid (final 4-1)\n  2014/2015: 215 matches, champion-ish: Barcelona (final 1-3)\n  2015/2016: 217 matches, champion-ish: Real Madrid (final 1-1 pens)\n  2016/2017: 217 matches, champion-ish: Real Madrid (final 1-4)\n  2017/2018: 219 matches, champion-ish: Real Madrid (final 3-1)\n  2018/2019: 216 matches, champion-ish: Liverpool (final 0-2)\n  2019/2020: 210 matches, champion-ish: Bayern Munich (final 0-1)\n  2020/2021: 125 matches, champion-ish: Chelsea (final 0-1)\n  2021/2022: 125 matches, champion-ish: Real Madrid (final 0-1)\n  2022/2023: 125 matches, champion-ish: Man City (final 1-0)\n  2023/2024: 125 matches, champion-ish: Real Madrid (final 0-2)\n  2024/2025: 189 matches, champion-ish: Paris SG (final 5-0)\n  2025/2026: 189 matches, champion-ish: Paris SG (final 1-1 pens)\nunbeaten champions: 5\nplayer-level coverage too sparse for a top-scorers table\n"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "nation",
+            "titles",
+            "most recent"
+          ],
+          "rows": [
+            [
+              "Real Madrid",
+              "7",
+              "2023/2024, 2021/2022, 2017/2018, 2016/2017"
+            ],
+            [
+              "Barcelona",
+              "4",
+              "2014/2015, 2010/2011, 2008/2009, 2005/2006"
+            ],
+            [
+              "Bayern Munich",
+              "2",
+              "2019/2020, 2012/2013"
+            ],
+            [
+              "Chelsea",
+              "2",
+              "2020/2021, 2011/2012"
+            ],
+            [
+              "Liverpool",
+              "2",
+              "2018/2019, 2004/2005"
+            ],
+            [
+              "Milan",
+              "2",
+              "2006/2007, 2002/2003"
+            ],
+            [
+              "Paris SG",
+              "2",
+              "2025/2026, 2024/2025"
+            ],
+            [
+              "Inter",
+              "1",
+              "2009/2010"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "edition",
+            "champion",
+            "final",
+            "tournament record",
+            "gf/ga"
+          ],
+          "rows": [
+            [
+              "1970/1971 (partial coverage)",
+              "—",
+              "—",
+              "0W 0D 0L",
+              "0/0"
+            ],
+            [
+              "1971/1972 (partial coverage)",
+              "—",
+              "—",
+              "0W 0D 0L",
+              "0/0"
+            ],
+            [
+              "1972/1973 (partial coverage)",
+              "—",
+              "—",
+              "0W 0D 0L",
+              "0/0"
+            ],
+            [
+              "1999/2000 (partial coverage)",
+              "—",
+              "—",
+              "0W 0D 0L",
+              "0/0"
+            ],
+            [
+              "2001/2002",
+              "Real Madrid",
+              "1-2",
+              "12W 3D 2L",
+              "35/14"
+            ],
+            [
+              "2002/2003",
+              "Milan",
+              "0-0 (pens)",
+              "10W 4D 5L",
+              "23/16"
+            ],
+            [
+              "2003/2004",
+              "Porto",
+              "0-3",
+              "7W 5D 1L",
+              "20/12"
+            ],
+            [
+              "2004/2005",
+              "Liverpool",
+              "3-3 (pens)",
+              "8W 4D 3L",
+              "20/10"
+            ],
+            [
+              "2005/2006",
+              "Barcelona",
+              "2-1",
+              "9W 4D 0L",
+              "24/5"
+            ],
+            [
+              "2006/2007",
+              "Milan",
+              "2-1",
+              "9W 3D 3L",
+              "23/11"
+            ],
+            [
+              "2007/2008",
+              "Man United",
+              "1-1 (pens)",
+              "9W 4D 0L",
+              "20/6"
+            ],
+            [
+              "2008/2009",
+              "Barcelona",
+              "2-0",
+              "8W 5D 2L",
+              "36/14"
+            ],
+            [
+              "2009/2010",
+              "Inter",
+              "0-2",
+              "8W 4D 3L",
+              "17/10"
+            ],
+            [
+              "2010/2011",
+              "Barcelona",
+              "3-1",
+              "9W 3D 1L",
+              "30/9"
+            ],
+            [
+              "2011/2012",
+              "Chelsea",
+              "1-1 (pens)",
+              "7W 4D 2L",
+              "25/12"
+            ],
+            [
+              "2012/2013",
+              "Bayern Munich",
+              "1-2",
+              "10W 1D 2L",
+              "31/11"
+            ],
+            [
+              "2013/2014",
+              "Real Madrid",
+              "4-1",
+              "11W 1D 1L",
+              "41/10"
+            ],
+            [
+              "2014/2015",
+              "Barcelona",
+              "1-3",
+              "11W 0D 2L",
+              "31/11"
+            ],
+            [
+              "2015/2016",
+              "Real Madrid",
+              "1-1 (pens)",
+              "9W 3D 1L",
+              "28/6"
+            ],
+            [
+              "2016/2017",
+              "Real Madrid",
+              "1-4",
+              "9W 3D 1L",
+              "36/18"
+            ],
+            [
+              "2017/2018",
+              "Real Madrid",
+              "3-1",
+              "9W 2D 2L",
+              "33/16"
+            ],
+            [
+              "2018/2019",
+              "Liverpool",
+              "0-2",
+              "8W 1D 4L",
+              "24/12"
+            ],
+            [
+              "2019/2020",
+              "Bayern Munich",
+              "0-1",
+              "11W 0D 0L",
+              "43/8"
+            ],
+            [
+              "2020/2021",
+              "Chelsea",
+              "0-1",
+              "9W 3D 1L",
+              "23/4"
+            ],
+            [
+              "2021/2022",
+              "Real Madrid",
+              "0-1",
+              "9W 0D 4L",
+              "29/14"
+            ],
+            [
+              "2022/2023",
+              "Man City",
+              "1-0",
+              "8W 5D 0L",
+              "32/5"
+            ],
+            [
+              "2023/2024",
+              "Real Madrid",
+              "0-2",
+              "9W 4D 0L",
+              "28/15"
+            ],
+            [
+              "2024/2025",
+              "Paris SG",
+              "5-0",
+              "11W 1D 5L",
+              "38/15"
+            ],
+            [
+              "2025/2026",
+              "Paris SG",
+              "1-1 (pens)",
+              "10W 5D 2L",
+              "45/23"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "biggest wins",
+            "score",
+            "margin"
+          ],
+          "rows": [
+            [
+              "HJK Helsinki vs Bangor City (2011/2012)",
+              "10-0",
+              "+10"
+            ],
+            [
+              "Porto vs Barry Town (2001/2002)",
+              "8-0",
+              "+8"
+            ],
+            [
+              "Liverpool vs Besiktas (2007/2008)",
+              "8-0",
+              "+8"
+            ],
+            [
+              "Valletta vs Lusitanos (2012/2013)",
+              "8-0",
+              "+8"
+            ],
+            [
+              "Real Madrid vs Malmö FF (2015/2016)",
+              "8-0",
+              "+8"
+            ],
+            [
+              "Juventus vs Olympiacos (2003/2004)",
+              "7-0",
+              "+7"
+            ],
+            [
+              "Arsenal vs Slavia Prague (2007/2008)",
+              "7-0",
+              "+7"
+            ],
+            [
+              "Valencia vs Racing Genk (2011/2012)",
+              "7-0",
+              "+7"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "highest-scoring",
+            "score",
+            "total goals"
+          ],
+          "rows": [
+            [
+              "Dortmund vs Legia Warsaw (2016/2017)",
+              "8-4",
+              "12"
+            ],
+            [
+              "Monaco vs Deportivo (2003/2004)",
+              "8-3",
+              "11"
+            ],
+            [
+              "Bayern Munich vs Dinamo Zagreb (2024/2025)",
+              "9-2",
+              "11"
+            ],
+            [
+              "HJK Helsinki vs Bangor City (2011/2012)",
+              "10-0",
+              "10"
+            ],
+            [
+              "Barcelona vs Bayern Munich (2019/2020)",
+              "2-8",
+              "10"
+            ],
+            [
+              "Lyon vs Werder Bremen (2004/2005)",
+              "7-2",
+              "9"
+            ],
+            [
+              "MSK Zilina vs F91 Dudelange (2007/2008)",
+              "5-4",
+              "9"
+            ],
+            [
+              "Villarreal vs AaB (2008/2009)",
+              "6-3",
+              "9"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "record",
+            "champion edition",
+            "record",
+            "gf/ga",
+            "gd"
+          ],
+          "rows": [
+            [
+              "most goals scored",
+              "Paris SG 2025/2026",
+              "10W 5D 2L",
+              "45/23",
+              "22"
+            ],
+            [
+              "fewest goals conceded",
+              "Chelsea 2020/2021",
+              "9W 3D 1L",
+              "23/4",
+              "19"
+            ],
+            [
+              "best goal difference",
+              "Bayern Munich 2019/2020",
+              "11W 0D 0L",
+              "43/8",
+              "35"
+            ],
+            [
+              "most wins",
+              "Real Madrid 2001/2002",
+              "12W 3D 2L",
+              "35/14",
+              "21"
+            ],
+            [
+              "fewest losses",
+              "Barcelona 2005/2006",
+              "9W 4D 0L",
+              "24/5",
+              "19"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "unbeaten champions",
+            "record",
+            "gf",
+            "ga"
+          ],
+          "rows": [
+            [
+              "Barcelona 2005/2006",
+              "9W 4D",
+              "24",
+              "5"
+            ],
+            [
+              "Man United 2007/2008",
+              "9W 4D",
+              "20",
+              "6"
+            ],
+            [
+              "Bayern Munich 2019/2020",
+              "11W 0D",
+              "43",
+              "8"
+            ],
+            [
+              "Man City 2022/2023",
+              "8W 5D",
+              "32",
+              "5"
+            ],
+            [
+              "Real Madrid 2023/2024",
+              "9W 4D",
+              "28",
+              "15"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "closest finals",
+            "matchup",
+            "score"
+          ],
+          "rows": [
+            [
+              "2002/2003",
+              "Milan vs Juventus (pens)",
+              "0-0"
+            ],
+            [
+              "2004/2005",
+              "Liverpool vs Milan (pens)",
+              "3-3"
+            ],
+            [
+              "2007/2008",
+              "Man United vs Chelsea (pens)",
+              "1-1"
+            ],
+            [
+              "2011/2012",
+              "Chelsea vs Bayern Munich (pens)",
+              "1-1"
+            ],
+            [
+              "2015/2016",
+              "Real Madrid vs Ath Madrid (pens)",
+              "1-1"
+            ],
+            [
+              "2025/2026",
+              "Paris SG vs Arsenal (pens)",
+              "1-1"
+            ],
+            [
+              "2001/2002",
+              "Real Madrid vs Leverkusen",
+              "1-2"
+            ],
+            [
+              "2005/2006",
+              "Barcelona vs Arsenal",
+              "2-1"
             ]
           ]
         },
@@ -1153,7 +4073,9 @@
     {
       "id": "30ae4352-08ed-4332-b840-2a19d4376aa7",
       "cell_type": "markdown",
-      "source": "## What the record book says\n\n25 completed editions (2001/02 → 2025/26) plus four sparse StatsBomb-era\nseasons shown as partial coverage.\n\n- **Real Madrid are the kings of the modern era**: 7 titles in the window\n  (2002, 2014, 2016, 2017, 2018, 2022, 2024) — more than any other club.\n  Barcelona (4), Bayern Munich, Chelsea, Liverpool and Milan (2 each) and\n  PSG (2) complete the list; Inter's 2010 treble is the only other title.\n- **The greatest champion season**: Bayern Munich 2019/20 went **11W-0D**\n  (43 scored, 8 conceded) — the best goal difference (+35) and the most\n  dominant run in the dataset, capped by the Lisbon final.\n- **Deadliest champions**: PSG 2025/26 scored 45 goals en route to the\n  title — the most by any champion. Chelsea 2020/21 were the stingiest\n  (4 conceded).\n- **Unbeaten champions**: five editions were won without a single defeat —\n  Barcelona 2006, Man United 2008, Bayern 2020, Man City 2023, Real Madrid\n  2024.\n- **Penalties decide everything tight**: six of the eight closest finals\n  went to a shootout — including back-to-back PSG penalty triumphs in\n  2025 and 2026.\n- **Biggest win**: HJK Helsinki 10–0 Bangor City (2011/12 qualifying) —\n  the largest margin in Champions League history.\n\n*Source: ESPN import via `dev.db`; player-level stats too sparse for a\ntop-scorers table.*"
+      "source": "## What the record book says\n\n25 completed editions (2001/02 → 2025/26) plus four sparse StatsBomb-era\nseasons shown as partial coverage.\n\n- **Real Madrid are the kings of the modern era**: 7 titles in the window\n  (2002, 2014, 2016, 2017, 2018, 2022, 2024) — more than any other club.\n  Barcelona (4), Bayern Munich, Chelsea, Liverpool and Milan (2 each) and\n  PSG (2) complete the list; Inter's 2010 treble is the only other title.\n- **The greatest champion season**: Bayern Munich 2019/20 went **11W-0D**\n  (43 scored, 8 conceded) — the best goal difference (+35) and the most\n  dominant run in the dataset, capped by the Lisbon final.\n- **Deadliest champions**: PSG 2025/26 scored 45 goals en route to the\n  title — the most by any champion. Chelsea 2020/21 were the stingiest\n  (4 conceded).\n- **Unbeaten champions**: five editions were won without a single defeat —\n  Barcelona 2006, Man United 2008, Bayern 2020, Man City 2023, Real Madrid\n  2024.\n- **Penalties decide everything tight**: six of the eight closest finals\n  went to a shootout — including back-to-back PSG penalty triumphs in\n  2025 and 2026.\n- **Biggest win**: HJK Helsinki 10–0 Bangor City (2011/12 qualifying) —\n  the largest margin in Champions League history.\n\n*Source: ESPN import via `dev.db`; player-level stats too sparse for a\ntop-scorers table.*",
+      "metadata": {},
+      "outputs": []
     }
   ]
 }

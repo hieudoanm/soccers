@@ -122,9 +122,207 @@
     {
       "id": "5df97b5c-d3fe-4040-ae5c-cf3812d29d31",
       "cell_type": "code",
-      "source": "\n// most awarded players overall (wins + podiums)\nlet mut win_count: HashMap<i64,usize> = HashMap::new();\nlet mut pod_count: HashMap<i64,usize> = HashMap::new();\nfor w in &winners { *win_count.entry(w.pid).or_insert(0)+=1; }\nfor w in &podiums { if w.pid>0 { *pod_count.entry(w.pid).or_insert(0)+=1; } }\nlet mut pl_rows: Vec<(i64,usize,usize)> = win_count.iter()\n    .map(|(p,w)| (*p,*w,*pod_count.get(p).unwrap_or(&0))).collect();\npl_rows.sort_by(|a,b| b.1.cmp(&a.1).then(b.2.cmp(&a.2)));\nlet prows: Vec<Vec<String>> = pl_rows.iter().take(20).map(|(p,w,pd)| vec![\n    pname.get(p).cloned().unwrap_or_default().chars().take(30).collect(),\n    w.to_string(), pd.to_string(),\n]).collect();\nmars_table(&[\"player\",\"wins\",\"podium finishes\"], &prows);\n\n// repeat-winner rate: players with >1 win\nlet multi = pl_rows.iter().filter(|(_,w,_)| *w>1).count();\nprintln!(\"players with multiple wins: {} of {}\", multi, pl_rows.len());\n\n// Golden Shoe goals column check\nlet shoe: Vec<&W> = winners.iter().filter(|w| award_name.get(&w.aid).map(|s|s.contains(\"Shoe\")).unwrap_or(false)).collect();\nif !shoe.is_empty() {\n    let srows: Vec<Vec<String>> = shoe.iter().take(15).map(|w| vec![\n        pname.get(&w.pid).cloned().unwrap_or_default().chars().take(26).collect(),\n        w.year.to_string(),\n        if w.goals>0.0 {format!(\"{:.0}\",w.goals)} else {\"-\".into()},\n    ]).collect();\n    mars_table(&[\"player\",\"year\",\"goals\"], &srows);\n}\n",
+      "source": "// most awarded players overall (wins + podiums)\nlet mut win_count: HashMap<i64,usize> = HashMap::new();\nlet mut pod_count: HashMap<i64,usize> = HashMap::new();\nfor w in &winners { *win_count.entry(w.pid).or_insert(0)+=1; }\nfor w in &podiums { if w.pid>0 { *pod_count.entry(w.pid).or_insert(0)+=1; } }\nlet mut pl_rows: Vec<(i64,usize,usize)> = win_count.iter()\n    .map(|(p,w)| (*p,*w,*pod_count.get(p).unwrap_or(&0))).collect();\npl_rows.sort_by(|a,b| b.1.cmp(&a.1).then(b.2.cmp(&a.2)));\nlet prows: Vec<Vec<String>> = pl_rows.iter().take(20).map(|(p,w,pd)| vec![\n    pname.get(p).cloned().unwrap_or_default().chars().take(30).collect(),\n    w.to_string(), pd.to_string(),\n]).collect();\nmars_table(&[\"player\",\"wins\",\"podium finishes\"], &prows);\n",
       "metadata": {},
       "execution_count": 3,
+      "outputs": [
+        {
+          "type": "text",
+          "text": "award_winner rows: 590\nrows with resolved player: 335\nresolved winners: 154, podium finishes: 588\n"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "award",
+            "category",
+            "winners",
+            "years",
+            "most wins"
+          ],
+          "rows": [
+            [
+              "Ballon d'Or",
+              "PLAYER",
+              "37",
+              "1960–2026",
+              "Lionel Andrés Messi Cu (8)"
+            ],
+            [
+              "PFA Players' Player of the Year",
+              "PLAYER",
+              "32",
+              "1973–2025",
+              "Mohamed Salah (3)"
+            ],
+            [
+              "European Golden Shoe",
+              "PLAYER",
+              "31",
+              "1973–2025",
+              "Lionel Andrés Messi Cu (6)"
+            ],
+            [
+              "FIFA World Player of the Year",
+              "PLAYER",
+              "11",
+              "1991–2009",
+              "Ronaldo Aparecido Rodr (3)"
+            ],
+            [
+              "The Best FIFA Men's Player",
+              "PLAYER",
+              "10",
+              "2016–2025",
+              "Lionel Andrés Messi Cu (3)"
+            ],
+            [
+              "The Best FIFA Women's Player",
+              "PLAYER",
+              "9",
+              "2017–2025",
+              "Aitana Bonmati Conca (3)"
+            ],
+            [
+              "The Best FIFA Men's Goalkeeper",
+              "PLAYER",
+              "9",
+              "2017–2025",
+              "Damián Emiliano Martín (2)"
+            ],
+            [
+              "Ballon d'Or Féminin",
+              "PLAYER",
+              "8",
+              "2018–2026",
+              "Alexia Putellas Segura (3)"
+            ],
+            [
+              "The Best FIFA Women's Goalkeeper",
+              "PLAYER",
+              "7",
+              "2019–2025",
+              "Mary Alexandra Earps (2)"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "player",
+            "wins",
+            "podium finishes"
+          ],
+          "rows": [
+            [
+              "Lionel Andrés Messi Cuccittini",
+              "18",
+              "30"
+            ],
+            [
+              "Cristiano Ronaldo dos Santos A",
+              "14",
+              "26"
+            ],
+            [
+              "Ronaldo Aparecido Rodrigues",
+              "6",
+              "10"
+            ],
+            [
+              "Aitana Bonmati Conca",
+              "6",
+              "6"
+            ],
+            [
+              "Alexia Putellas Segura",
+              "5",
+              "6"
+            ],
+            [
+              "Zinédine Zidane",
+              "4",
+              "9"
+            ],
+            [
+              "Thierry Henry",
+              "4",
+              "8"
+            ],
+            [
+              "Luis Alberto Suárez Díaz",
+              "4",
+              "7"
+            ],
+            [
+              "Robert Lewandowski",
+              "4",
+              "5"
+            ],
+            [
+              "Michel Platini",
+              "3",
+              "5"
+            ],
+            [
+              "Mohamed Salah",
+              "3",
+              "5"
+            ],
+            [
+              "Johan Cruyff",
+              "3",
+              "4"
+            ],
+            [
+              "Harry Kane",
+              "3",
+              "3"
+            ],
+            [
+              "Franz Beckenbauer",
+              "2",
+              "5"
+            ],
+            [
+              "Alan Shearer",
+              "2",
+              "4"
+            ],
+            [
+              "Mary Alexandra Earps",
+              "2",
+              "3"
+            ],
+            [
+              "Karl-Heinz Rummenigge",
+              "2",
+              "3"
+            ],
+            [
+              "Kevin De Bruyne",
+              "2",
+              "3"
+            ],
+            [
+              "Lothar Matthäus",
+              "2",
+              "3"
+            ],
+            [
+              "Damián Emiliano Martínez",
+              "2",
+              "2"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "d508b0f0-d42c-4db1-87ac-34e0474cd1e6",
+      "cell_type": "code",
+      "source": "// repeat-winner rate: players with >1 win\nlet multi = pl_rows.iter().filter(|(_,w,_)| *w>1).count();\nprintln!(\"players with multiple wins: {} of {}\", multi, pl_rows.len());\n\n// Golden Shoe goals column check\nlet shoe: Vec<&W> = winners.iter().filter(|w| award_name.get(&w.aid).map(|s|s.contains(\"Shoe\")).unwrap_or(false)).collect();\nif !shoe.is_empty() {\n    let srows: Vec<Vec<String>> = shoe.iter().take(15).map(|w| vec![\n        pname.get(&w.pid).cloned().unwrap_or_default().chars().take(26).collect(),\n        w.year.to_string(),\n        if w.goals>0.0 {format!(\"{:.0}\",w.goals)} else {\"-\".into()},\n    ]).collect();\n    mars_table(&[\"player\",\"year\",\"goals\"], &srows);\n}\n",
+      "metadata": {},
+      "execution_count": 4,
       "outputs": [
         {
           "type": "text",
@@ -259,12 +457,12 @@
               "5"
             ],
             [
-              "Mohamed Salah",
+              "Michel Platini",
               "3",
               "5"
             ],
             [
-              "Michel Platini",
+              "Mohamed Salah",
               "3",
               "5"
             ],
@@ -289,7 +487,7 @@
               "4"
             ],
             [
-              "Mary Alexandra Earps",
+              "Kevin De Bruyne",
               "2",
               "3"
             ],
@@ -299,12 +497,12 @@
               "3"
             ],
             [
-              "Lothar Matthäus",
+              "Mary Alexandra Earps",
               "2",
               "3"
             ],
             [
-              "Kevin De Bruyne",
+              "Lothar Matthäus",
               "2",
               "3"
             ],

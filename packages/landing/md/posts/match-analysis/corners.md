@@ -8,6 +8,8 @@ order: 38
 tags: ['football', 'analysis', 'corners', 'mars', 'sqlite']
 ---
 
+# Do more corners actually help you win?
+
 ## Do more corners actually help you win?
 
 The assumption: _more corners = more pressure = more likely to win._ This
@@ -191,30 +193,6 @@ let rows_s: Vec<Vec<String>> = by_season.iter().map(|(s, n)| vec![s.clone(), n.t
 mars_table(&["EPL season", "matches with corners"], &rows_s);
 ```
 
-```text
-stat rows indexed: 374660
-matches with corner data (both teams): 166028
-EPL matches with corners: 10032 | all leagues: 166028
-```
-
-| league                 | matches | season span       |
-| ---------------------- | ------- | ----------------- |
-| English Championship   | 14543   | 2000/01 → 2026/27 |
-| English League Two     | 14424   | 2000/01 → 2026/27 |
-| English League One     | 14374   | 2000/01 → 2026/27 |
-| English Premier League | 10032   | 2000/01 → 2026/27 |
-| Spanish La Liga        | 8438    | 2004/05 → 2026/27 |
-| Italian Serie A        | 8086    | 2005/06 → 2026/27 |
-| French Ligue 1         | 7790    | 2005/06 → 2026/27 |
-| German Bundesliga      | 7750    | 2000/01 → 2026/27 |
-| Spanish La Liga 2      | 6527    | 2008/09 → 2026/27 |
-| MLS                    | 6264    | 2012 → 2026       |
-| Scottish Premiership   | 5958    | 2000/01 → 2026/27 |
-| French Ligue 2         | 5347    | 2008/09 → 2026/27 |
-| Italian Serie B        | 5214    | 2008/09 → 2026/27 |
-| Dutch Eredivisie       | 4798    | 2008/09 → 2026/27 |
-| German 2. Bundesliga   | 4661    | 2000/01 → 2026/27 |
-
 | EPL season | matches with corners |
 | ---------- | -------------------- |
 | 2000/01    | 380                  |
@@ -280,11 +258,31 @@ let band_table = |matches: &[&MRow]| -> Vec<Vec<String>> {
 let epl_refs: Vec<&MRow> = epl.iter().cloned().collect();
 let epl_bands = band_table(&epl_refs);
 mars_table(&["corner share %", "n", "win%", "draw%", "loss%"], &epl_bands);
+```
 
+| corner share % | n    | win%  | draw% | loss% |
+| -------------- | ---- | ----- | ----- | ----- |
+| <35            | 5281 | 31.5% | 25.0% | 43.5% |
+| 35-45          | 3071 | 36.8% | 24.8% | 38.4% |
+| 45-55          | 3351 | 37.8% | 24.5% | 37.7% |
+| 55-65          | 3070 | 38.2% | 24.9% | 36.9% |
+| >65            | 5289 | 43.5% | 25.0% | 31.5% |
+
+```rust
 let all_refs: Vec<&MRow> = rows.iter().collect();
 let all_bands = band_table(&all_refs);
 mars_table(&["corner share % — all leagues", "n", "win%", "draw%", "loss%"], &all_bands);
+```
 
+| corner share % — all leagues | n     | win%  | draw% | loss% |
+| ---------------------------- | ----- | ----- | ----- | ----- |
+| <35                          | 77963 | 35.5% | 26.3% | 38.2% |
+| 35-45                        | 46418 | 36.8% | 26.4% | 36.8% |
+| 45-55                        | 48749 | 37.0% | 26.0% | 37.0% |
+| 55-65                        | 46435 | 36.8% | 26.3% | 36.8% |
+| >65                          | 78059 | 38.2% | 26.3% | 35.5% |
+
+```rust
 // raw count bands: does 10+ corners specifically help?
 let cbands = [0.0, 3.0, 5.0, 7.0, 10.0, 100.0];
 let clabels = ["0-2", "3-4", "5-6", "7-9", "10+"];
@@ -306,79 +304,7 @@ let count_table = |matches: &[&MRow]| -> Vec<Vec<String>> {
 };
 let epl_counts = count_table(&epl_refs);
 mars_table(&["corners won (EPL)", "n", "win%", "draw%", "loss%"], &epl_counts);
-let all_counts = count_table(&all_refs);
-mars_table(&["corners won — all leagues", "n", "win%", "draw%", "loss%"], &all_counts);
 ```
-
-```text
-stat rows indexed: 374660
-matches with corner data (both teams): 166028
-EPL matches with corners: 10032 | all leagues: 166028
-```
-
-| league                 | matches | season span       |
-| ---------------------- | ------- | ----------------- |
-| English Championship   | 14543   | 2000/01 → 2026/27 |
-| English League Two     | 14424   | 2000/01 → 2026/27 |
-| English League One     | 14374   | 2000/01 → 2026/27 |
-| English Premier League | 10032   | 2000/01 → 2026/27 |
-| Spanish La Liga        | 8438    | 2004/05 → 2026/27 |
-| Italian Serie A        | 8086    | 2005/06 → 2026/27 |
-| French Ligue 1         | 7790    | 2005/06 → 2026/27 |
-| German Bundesliga      | 7750    | 2000/01 → 2026/27 |
-| Spanish La Liga 2      | 6527    | 2008/09 → 2026/27 |
-| MLS                    | 6264    | 2012 → 2026       |
-| Scottish Premiership   | 5958    | 2000/01 → 2026/27 |
-| French Ligue 2         | 5347    | 2008/09 → 2026/27 |
-| Italian Serie B        | 5214    | 2008/09 → 2026/27 |
-| Dutch Eredivisie       | 4798    | 2008/09 → 2026/27 |
-| German 2. Bundesliga   | 4661    | 2000/01 → 2026/27 |
-
-| EPL season | matches with corners |
-| ---------- | -------------------- |
-| 2000/01    | 380                  |
-| 2001/02    | 380                  |
-| 2002/03    | 380                  |
-| 2003/04    | 383                  |
-| 2004/05    | 380                  |
-| 2005/06    | 380                  |
-| 2006/07    | 380                  |
-| 2007/08    | 380                  |
-| 2008/09    | 380                  |
-| 2009/10    | 380                  |
-| 2010/11    | 380                  |
-| 2011/12    | 380                  |
-| 2012/13    | 380                  |
-| 2013/14    | 380                  |
-| 2014/15    | 380                  |
-| 2015/16    | 419                  |
-| 2016/17    | 380                  |
-| 2017/18    | 380                  |
-| 2018/19    | 380                  |
-| 2019/20    | 380                  |
-| 2020/21    | 380                  |
-| 2021/22    | 380                  |
-| 2022/23    | 380                  |
-| 2023/24    | 380                  |
-| 2024/25    | 380                  |
-| 2025/26    | 380                  |
-| 2026/27    | 110                  |
-
-| corner share % | n    | win%  | draw% | loss% |
-| -------------- | ---- | ----- | ----- | ----- |
-| <35            | 5281 | 31.5% | 25.0% | 43.5% |
-| 35-45          | 3071 | 36.8% | 24.8% | 38.4% |
-| 45-55          | 3351 | 37.8% | 24.5% | 37.7% |
-| 55-65          | 3070 | 38.2% | 24.9% | 36.9% |
-| >65            | 5289 | 43.5% | 25.0% | 31.5% |
-
-| corner share % — all leagues | n     | win%  | draw% | loss% |
-| ---------------------------- | ----- | ----- | ----- | ----- |
-| <35                          | 77963 | 35.5% | 26.3% | 38.2% |
-| 35-45                        | 46418 | 36.8% | 26.4% | 36.8% |
-| 45-55                        | 48749 | 37.0% | 26.0% | 37.0% |
-| 55-65                        | 46435 | 36.8% | 26.3% | 36.8% |
-| >65                          | 78059 | 38.2% | 26.3% | 35.5% |
 
 | corners won (EPL) | n    | win%  | draw% | loss% |
 | ----------------- | ---- | ----- | ----- | ----- |
@@ -387,6 +313,11 @@ EPL matches with corners: 10032 | all leagues: 166028
 | 5-6               | 4982 | 38.0% | 24.2% | 37.8% |
 | 7-9               | 4419 | 41.1% | 25.1% | 33.7% |
 | 10+               | 1915 | 42.3% | 26.6% | 31.0% |
+
+```rust
+let all_counts = count_table(&all_refs);
+mars_table(&["corners won — all leagues", "n", "win%", "draw%", "loss%"], &all_counts);
+```
 
 | corners won — all leagues | n     | win%  | draw% | loss% |
 | ------------------------- | ----- | ----- | ----- | ----- |
@@ -425,7 +356,29 @@ let d_rows: Vec<Vec<String>> = bins.iter().map(|(k, hw, n)| vec![
     format!("{:.1}%", if *n > 0 { 100.0 * *hw as f64 / *n as f64 } else { 0.0 }),
 ]).collect();
 mars_table(&["corner diff (home − away)", "matches", "home win%"], &d_rows);
+```
 
+| corner diff (home − away) | matches | home win% |
+| ------------------------- | ------- | --------- |
+| -16 to -14                | 6       | 16.7%     |
+| -14 to -12                | 22      | 36.4%     |
+| -12 to -10                | 53      | 50.9%     |
+| -10 to -8                 | 159     | 49.7%     |
+| -8 to -6                  | 322     | 37.3%     |
+| -6 to -4                  | 589     | 40.9%     |
+| -4 to -2                  | 1010    | 45.0%     |
+| -2 to +0                  | 1438    | 43.1%     |
+| +0 to +2                  | 1810    | 44.3%     |
+| +2 to +4                  | 1649    | 46.1%     |
+| +4 to +6                  | 1272    | 50.2%     |
+| +6 to +8                  | 862     | 49.3%     |
+| +8 to +10                 | 461     | 49.9%     |
+| +10 to +12                | 211     | 45.5%     |
+| +12 to +14                | 116     | 38.8%     |
+| +14 to +16                | 36      | 52.8%     |
+| +16 to +18                | 9       | 55.6%     |
+
+```rust
 // same for all leagues, wider bins of 4
 let mut bins2: Vec<(i64, usize, usize)> = Vec::new();
 for k in -5i64..=5 {
@@ -448,112 +401,6 @@ let d_rows2: Vec<Vec<String>> = bins2.iter().map(|(k, hw, n)| vec![
 ]).collect();
 mars_table(&["corner diff — all leagues", "matches", "home win%"], &d_rows2);
 ```
-
-```text
-stat rows indexed: 374660
-matches with corner data (both teams): 166028
-EPL matches with corners: 10032 | all leagues: 166028
-```
-
-| league                 | matches | season span       |
-| ---------------------- | ------- | ----------------- |
-| English Championship   | 14543   | 2000/01 → 2026/27 |
-| English League Two     | 14424   | 2000/01 → 2026/27 |
-| English League One     | 14374   | 2000/01 → 2026/27 |
-| English Premier League | 10032   | 2000/01 → 2026/27 |
-| Spanish La Liga        | 8438    | 2004/05 → 2026/27 |
-| Italian Serie A        | 8086    | 2005/06 → 2026/27 |
-| French Ligue 1         | 7790    | 2005/06 → 2026/27 |
-| German Bundesliga      | 7750    | 2000/01 → 2026/27 |
-| Spanish La Liga 2      | 6527    | 2008/09 → 2026/27 |
-| MLS                    | 6264    | 2012 → 2026       |
-| Scottish Premiership   | 5958    | 2000/01 → 2026/27 |
-| French Ligue 2         | 5347    | 2008/09 → 2026/27 |
-| Italian Serie B        | 5214    | 2008/09 → 2026/27 |
-| Dutch Eredivisie       | 4798    | 2008/09 → 2026/27 |
-| German 2. Bundesliga   | 4661    | 2000/01 → 2026/27 |
-
-| EPL season | matches with corners |
-| ---------- | -------------------- |
-| 2000/01    | 380                  |
-| 2001/02    | 380                  |
-| 2002/03    | 380                  |
-| 2003/04    | 383                  |
-| 2004/05    | 380                  |
-| 2005/06    | 380                  |
-| 2006/07    | 380                  |
-| 2007/08    | 380                  |
-| 2008/09    | 380                  |
-| 2009/10    | 380                  |
-| 2010/11    | 380                  |
-| 2011/12    | 380                  |
-| 2012/13    | 380                  |
-| 2013/14    | 380                  |
-| 2014/15    | 380                  |
-| 2015/16    | 419                  |
-| 2016/17    | 380                  |
-| 2017/18    | 380                  |
-| 2018/19    | 380                  |
-| 2019/20    | 380                  |
-| 2020/21    | 380                  |
-| 2021/22    | 380                  |
-| 2022/23    | 380                  |
-| 2023/24    | 380                  |
-| 2024/25    | 380                  |
-| 2025/26    | 380                  |
-| 2026/27    | 110                  |
-
-| corner share % | n    | win%  | draw% | loss% |
-| -------------- | ---- | ----- | ----- | ----- |
-| <35            | 5281 | 31.5% | 25.0% | 43.5% |
-| 35-45          | 3071 | 36.8% | 24.8% | 38.4% |
-| 45-55          | 3351 | 37.8% | 24.5% | 37.7% |
-| 55-65          | 3070 | 38.2% | 24.9% | 36.9% |
-| >65            | 5289 | 43.5% | 25.0% | 31.5% |
-
-| corner share % — all leagues | n     | win%  | draw% | loss% |
-| ---------------------------- | ----- | ----- | ----- | ----- |
-| <35                          | 77963 | 35.5% | 26.3% | 38.2% |
-| 35-45                        | 46418 | 36.8% | 26.4% | 36.8% |
-| 45-55                        | 48749 | 37.0% | 26.0% | 37.0% |
-| 55-65                        | 46435 | 36.8% | 26.3% | 36.8% |
-| >65                          | 78059 | 38.2% | 26.3% | 35.5% |
-
-| corners won (EPL) | n    | win%  | draw% | loss% |
-| ----------------- | ---- | ----- | ----- | ----- |
-| 0-2               | 3462 | 32.2% | 24.7% | 43.2% |
-| 3-4               | 5286 | 36.0% | 24.8% | 39.2% |
-| 5-6               | 4982 | 38.0% | 24.2% | 37.8% |
-| 7-9               | 4419 | 41.1% | 25.1% | 33.7% |
-| 10+               | 1915 | 42.3% | 26.6% | 31.0% |
-
-| corners won — all leagues | n     | win%  | draw% | loss% |
-| ------------------------- | ----- | ----- | ----- | ----- |
-| 0-2                       | 88929 | 37.1% | 23.6% | 39.3% |
-| 3-4                       | 84318 | 37.3% | 25.7% | 37.0% |
-| 5-6                       | 76410 | 37.3% | 26.1% | 36.6% |
-| 7-9                       | 60351 | 37.4% | 26.9% | 35.7% |
-| 10+                       | 22048 | 36.1% | 28.5% | 35.4% |
-
-| corner diff (home − away) | matches | home win% |
-| ------------------------- | ------- | --------- |
-| -16 to -14                | 6       | 16.7%     |
-| -14 to -12                | 22      | 36.4%     |
-| -12 to -10                | 53      | 50.9%     |
-| -10 to -8                 | 159     | 49.7%     |
-| -8 to -6                  | 322     | 37.3%     |
-| -6 to -4                  | 589     | 40.9%     |
-| -4 to -2                  | 1010    | 45.0%     |
-| -2 to +0                  | 1438    | 43.1%     |
-| +0 to +2                  | 1810    | 44.3%     |
-| +2 to +4                  | 1649    | 46.1%     |
-| +4 to +6                  | 1272    | 50.2%     |
-| +6 to +8                  | 862     | 49.3%     |
-| +8 to +10                 | 461     | 49.9%     |
-| +10 to +12                | 211     | 45.5%     |
-| +12 to +14                | 116     | 38.8%     |
-| +14 to +16                | 36      | 52.8%     |
-| +16 to +18                | 9       | 55.6%     |
 
 | corner diff — all leagues | matches | home win% |
 | ------------------------- | ------- | --------- |
@@ -649,129 +496,12 @@ println!("EPL SOG-share subset ({} matches): corr(shots on target share, home wi
 ```
 
 ```text
-stat rows indexed: 374660
-matches with corner data (both teams): 166028
-EPL matches with corners: 10032 | all leagues: 166028
 EPL (8496 matches): corr(home corner share, home win) = 0.050
 EPL: corr(home shot share,   home win) = 0.259
 EPL: corr(home possession,   home win) = 0.120
 ALL (111164 matches): corr(corner share)=-0.012 corr(shot share)=0.195 corr(possession)=0.016
 EPL SOG-share subset (10032 matches): corr(shots on target share, home win) = 0.400
 ```
-
-| league                 | matches | season span       |
-| ---------------------- | ------- | ----------------- |
-| English Championship   | 14543   | 2000/01 → 2026/27 |
-| English League Two     | 14424   | 2000/01 → 2026/27 |
-| English League One     | 14374   | 2000/01 → 2026/27 |
-| English Premier League | 10032   | 2000/01 → 2026/27 |
-| Spanish La Liga        | 8438    | 2004/05 → 2026/27 |
-| Italian Serie A        | 8086    | 2005/06 → 2026/27 |
-| French Ligue 1         | 7790    | 2005/06 → 2026/27 |
-| German Bundesliga      | 7750    | 2000/01 → 2026/27 |
-| Spanish La Liga 2      | 6527    | 2008/09 → 2026/27 |
-| MLS                    | 6264    | 2012 → 2026       |
-| Scottish Premiership   | 5958    | 2000/01 → 2026/27 |
-| French Ligue 2         | 5347    | 2008/09 → 2026/27 |
-| Italian Serie B        | 5214    | 2008/09 → 2026/27 |
-| Dutch Eredivisie       | 4798    | 2008/09 → 2026/27 |
-| German 2. Bundesliga   | 4661    | 2000/01 → 2026/27 |
-
-| EPL season | matches with corners |
-| ---------- | -------------------- |
-| 2000/01    | 380                  |
-| 2001/02    | 380                  |
-| 2002/03    | 380                  |
-| 2003/04    | 383                  |
-| 2004/05    | 380                  |
-| 2005/06    | 380                  |
-| 2006/07    | 380                  |
-| 2007/08    | 380                  |
-| 2008/09    | 380                  |
-| 2009/10    | 380                  |
-| 2010/11    | 380                  |
-| 2011/12    | 380                  |
-| 2012/13    | 380                  |
-| 2013/14    | 380                  |
-| 2014/15    | 380                  |
-| 2015/16    | 419                  |
-| 2016/17    | 380                  |
-| 2017/18    | 380                  |
-| 2018/19    | 380                  |
-| 2019/20    | 380                  |
-| 2020/21    | 380                  |
-| 2021/22    | 380                  |
-| 2022/23    | 380                  |
-| 2023/24    | 380                  |
-| 2024/25    | 380                  |
-| 2025/26    | 380                  |
-| 2026/27    | 110                  |
-
-| corner share % | n    | win%  | draw% | loss% |
-| -------------- | ---- | ----- | ----- | ----- |
-| <35            | 5281 | 31.5% | 25.0% | 43.5% |
-| 35-45          | 3071 | 36.8% | 24.8% | 38.4% |
-| 45-55          | 3351 | 37.8% | 24.5% | 37.7% |
-| 55-65          | 3070 | 38.2% | 24.9% | 36.9% |
-| >65            | 5289 | 43.5% | 25.0% | 31.5% |
-
-| corner share % — all leagues | n     | win%  | draw% | loss% |
-| ---------------------------- | ----- | ----- | ----- | ----- |
-| <35                          | 77963 | 35.5% | 26.3% | 38.2% |
-| 35-45                        | 46418 | 36.8% | 26.4% | 36.8% |
-| 45-55                        | 48749 | 37.0% | 26.0% | 37.0% |
-| 55-65                        | 46435 | 36.8% | 26.3% | 36.8% |
-| >65                          | 78059 | 38.2% | 26.3% | 35.5% |
-
-| corners won (EPL) | n    | win%  | draw% | loss% |
-| ----------------- | ---- | ----- | ----- | ----- |
-| 0-2               | 3462 | 32.2% | 24.7% | 43.2% |
-| 3-4               | 5286 | 36.0% | 24.8% | 39.2% |
-| 5-6               | 4982 | 38.0% | 24.2% | 37.8% |
-| 7-9               | 4419 | 41.1% | 25.1% | 33.7% |
-| 10+               | 1915 | 42.3% | 26.6% | 31.0% |
-
-| corners won — all leagues | n     | win%  | draw% | loss% |
-| ------------------------- | ----- | ----- | ----- | ----- |
-| 0-2                       | 88929 | 37.1% | 23.6% | 39.3% |
-| 3-4                       | 84318 | 37.3% | 25.7% | 37.0% |
-| 5-6                       | 76410 | 37.3% | 26.1% | 36.6% |
-| 7-9                       | 60351 | 37.4% | 26.9% | 35.7% |
-| 10+                       | 22048 | 36.1% | 28.5% | 35.4% |
-
-| corner diff (home − away) | matches | home win% |
-| ------------------------- | ------- | --------- |
-| -16 to -14                | 6       | 16.7%     |
-| -14 to -12                | 22      | 36.4%     |
-| -12 to -10                | 53      | 50.9%     |
-| -10 to -8                 | 159     | 49.7%     |
-| -8 to -6                  | 322     | 37.3%     |
-| -6 to -4                  | 589     | 40.9%     |
-| -4 to -2                  | 1010    | 45.0%     |
-| -2 to +0                  | 1438    | 43.1%     |
-| +0 to +2                  | 1810    | 44.3%     |
-| +2 to +4                  | 1649    | 46.1%     |
-| +4 to +6                  | 1272    | 50.2%     |
-| +6 to +8                  | 862     | 49.3%     |
-| +8 to +10                 | 461     | 49.9%     |
-| +10 to +12                | 211     | 45.5%     |
-| +12 to +14                | 116     | 38.8%     |
-| +14 to +16                | 36      | 52.8%     |
-| +16 to +18                | 9       | 55.6%     |
-
-| corner diff — all leagues | matches | home win% |
-| ------------------------- | ------- | --------- |
-| -20 to -16                | 23      | 34.8%     |
-| -16 to -12                | 228     | 44.3%     |
-| -12 to -8                 | 2115    | 46.6%     |
-| -8 to -4                  | 12634   | 45.3%     |
-| -4 to +0                  | 39147   | 45.7%     |
-| +0 to +4                  | 71312   | 45.6%     |
-| +4 to +8                  | 30686   | 43.2%     |
-| +8 to +12                 | 8330    | 40.8%     |
-| +12 to +16                | 1389    | 38.9%     |
-| +16 to +20                | 147     | 44.9%     |
-| +20 to +24                | 13      | 46.2%     |
 
 ## The paradox cases: corner dominance without victory
 
@@ -834,148 +564,12 @@ let top_rows: Vec<Vec<String>> = cand.iter().take(12).map(|(tm, t)| vec![
     format!("{:.0}%", 100.0 * t.0 as f64 / t.1.max(1) as f64),
 ]).collect();
 mars_table(&["team (EPL, all seasons)", "wins <35% share", "total wins", "low-share win share"], &top_rows);
-
-let mut cand_l: Vec<(&String, &(usize, usize, usize, usize))> = team_tot.iter()
-    .filter(|(_, t)| t.2 >= 8)
-    .collect();
-cand_l.sort_by(|a, b| {
-    let ra = (a.1).2 as f64 / (a.1).3.max(1) as f64;
-    let rb = (b.1).2 as f64 / (b.1).3.max(1) as f64;
-    rb.partial_cmp(&ra).unwrap()
-});
-let top_l: Vec<Vec<String>> = cand_l.iter().take(12).map(|(tm, t)| vec![
-    (*tm).clone(), t.2.to_string(), t.3.to_string(),
-    format!("{:.0}%", 100.0 * t.2 as f64 / t.3.max(1) as f64),
-]).collect();
-mars_table(&["team (EPL, all seasons)", "losses >65% share", "total losses", "high-share loss share"], &top_l);
 ```
 
 ```text
-stat rows indexed: 374660
-matches with corner data (both teams): 166028
-EPL matches with corners: 10032 | all leagues: 166028
-EPL (8496 matches): corr(home corner share, home win) = 0.050
-EPL: corr(home shot share,   home win) = 0.259
-EPL: corr(home possession,   home win) = 0.120
-ALL (111164 matches): corr(corner share)=-0.012 corr(shot share)=0.195 corr(possession)=0.016
-EPL SOG-share subset (10032 matches): corr(shots on target share, home win) = 0.400
 EPL team-matches: wins 7536 | wins with <35%% corner share: 1664 (22.1%% of wins)
 EPL losses 7536 | losses with >65%% corner share: 1664 (22.1%% of losses)
 ```
-
-| league                 | matches | season span       |
-| ---------------------- | ------- | ----------------- |
-| English Championship   | 14543   | 2000/01 → 2026/27 |
-| English League Two     | 14424   | 2000/01 → 2026/27 |
-| English League One     | 14374   | 2000/01 → 2026/27 |
-| English Premier League | 10032   | 2000/01 → 2026/27 |
-| Spanish La Liga        | 8438    | 2004/05 → 2026/27 |
-| Italian Serie A        | 8086    | 2005/06 → 2026/27 |
-| French Ligue 1         | 7790    | 2005/06 → 2026/27 |
-| German Bundesliga      | 7750    | 2000/01 → 2026/27 |
-| Spanish La Liga 2      | 6527    | 2008/09 → 2026/27 |
-| MLS                    | 6264    | 2012 → 2026       |
-| Scottish Premiership   | 5958    | 2000/01 → 2026/27 |
-| French Ligue 2         | 5347    | 2008/09 → 2026/27 |
-| Italian Serie B        | 5214    | 2008/09 → 2026/27 |
-| Dutch Eredivisie       | 4798    | 2008/09 → 2026/27 |
-| German 2. Bundesliga   | 4661    | 2000/01 → 2026/27 |
-
-| EPL season | matches with corners |
-| ---------- | -------------------- |
-| 2000/01    | 380                  |
-| 2001/02    | 380                  |
-| 2002/03    | 380                  |
-| 2003/04    | 383                  |
-| 2004/05    | 380                  |
-| 2005/06    | 380                  |
-| 2006/07    | 380                  |
-| 2007/08    | 380                  |
-| 2008/09    | 380                  |
-| 2009/10    | 380                  |
-| 2010/11    | 380                  |
-| 2011/12    | 380                  |
-| 2012/13    | 380                  |
-| 2013/14    | 380                  |
-| 2014/15    | 380                  |
-| 2015/16    | 419                  |
-| 2016/17    | 380                  |
-| 2017/18    | 380                  |
-| 2018/19    | 380                  |
-| 2019/20    | 380                  |
-| 2020/21    | 380                  |
-| 2021/22    | 380                  |
-| 2022/23    | 380                  |
-| 2023/24    | 380                  |
-| 2024/25    | 380                  |
-| 2025/26    | 380                  |
-| 2026/27    | 110                  |
-
-| corner share % | n    | win%  | draw% | loss% |
-| -------------- | ---- | ----- | ----- | ----- |
-| <35            | 5281 | 31.5% | 25.0% | 43.5% |
-| 35-45          | 3071 | 36.8% | 24.8% | 38.4% |
-| 45-55          | 3351 | 37.8% | 24.5% | 37.7% |
-| 55-65          | 3070 | 38.2% | 24.9% | 36.9% |
-| >65            | 5289 | 43.5% | 25.0% | 31.5% |
-
-| corner share % — all leagues | n     | win%  | draw% | loss% |
-| ---------------------------- | ----- | ----- | ----- | ----- |
-| <35                          | 77963 | 35.5% | 26.3% | 38.2% |
-| 35-45                        | 46418 | 36.8% | 26.4% | 36.8% |
-| 45-55                        | 48749 | 37.0% | 26.0% | 37.0% |
-| 55-65                        | 46435 | 36.8% | 26.3% | 36.8% |
-| >65                          | 78059 | 38.2% | 26.3% | 35.5% |
-
-| corners won (EPL) | n    | win%  | draw% | loss% |
-| ----------------- | ---- | ----- | ----- | ----- |
-| 0-2               | 3462 | 32.2% | 24.7% | 43.2% |
-| 3-4               | 5286 | 36.0% | 24.8% | 39.2% |
-| 5-6               | 4982 | 38.0% | 24.2% | 37.8% |
-| 7-9               | 4419 | 41.1% | 25.1% | 33.7% |
-| 10+               | 1915 | 42.3% | 26.6% | 31.0% |
-
-| corners won — all leagues | n     | win%  | draw% | loss% |
-| ------------------------- | ----- | ----- | ----- | ----- |
-| 0-2                       | 88929 | 37.1% | 23.6% | 39.3% |
-| 3-4                       | 84318 | 37.3% | 25.7% | 37.0% |
-| 5-6                       | 76410 | 37.3% | 26.1% | 36.6% |
-| 7-9                       | 60351 | 37.4% | 26.9% | 35.7% |
-| 10+                       | 22048 | 36.1% | 28.5% | 35.4% |
-
-| corner diff (home − away) | matches | home win% |
-| ------------------------- | ------- | --------- |
-| -16 to -14                | 6       | 16.7%     |
-| -14 to -12                | 22      | 36.4%     |
-| -12 to -10                | 53      | 50.9%     |
-| -10 to -8                 | 159     | 49.7%     |
-| -8 to -6                  | 322     | 37.3%     |
-| -6 to -4                  | 589     | 40.9%     |
-| -4 to -2                  | 1010    | 45.0%     |
-| -2 to +0                  | 1438    | 43.1%     |
-| +0 to +2                  | 1810    | 44.3%     |
-| +2 to +4                  | 1649    | 46.1%     |
-| +4 to +6                  | 1272    | 50.2%     |
-| +6 to +8                  | 862     | 49.3%     |
-| +8 to +10                 | 461     | 49.9%     |
-| +10 to +12                | 211     | 45.5%     |
-| +12 to +14                | 116     | 38.8%     |
-| +14 to +16                | 36      | 52.8%     |
-| +16 to +18                | 9       | 55.6%     |
-
-| corner diff — all leagues | matches | home win% |
-| ------------------------- | ------- | --------- |
-| -20 to -16                | 23      | 34.8%     |
-| -16 to -12                | 228     | 44.3%     |
-| -12 to -8                 | 2115    | 46.6%     |
-| -8 to -4                  | 12634   | 45.3%     |
-| -4 to +0                  | 39147   | 45.7%     |
-| +0 to +4                  | 71312   | 45.6%     |
-| +4 to +8                  | 30686   | 43.2%     |
-| +8 to +12                 | 8330    | 40.8%     |
-| +12 to +16                | 1389    | 38.9%     |
-| +16 to +20                | 147     | 44.9%     |
-| +20 to +24                | 13      | 46.2%     |
 
 | team (EPL, all seasons) | wins <35% share | total wins | low-share win share |
 | ----------------------- | --------------- | ---------- | ------------------- |
@@ -991,6 +585,22 @@ EPL losses 7536 | losses with >65%% corner share: 1664 (22.1%% of losses)
 | Stoke                   | 39              | 116        | 34%                 |
 | Sheffield United        | 11              | 34         | 32%                 |
 | Blackburn               | 45              | 140        | 32%                 |
+
+```rust
+let mut cand_l: Vec<(&String, &(usize, usize, usize, usize))> = team_tot.iter()
+    .filter(|(_, t)| t.2 >= 8)
+    .collect();
+cand_l.sort_by(|a, b| {
+    let ra = (a.1).2 as f64 / (a.1).3.max(1) as f64;
+    let rb = (b.1).2 as f64 / (b.1).3.max(1) as f64;
+    rb.partial_cmp(&ra).unwrap()
+});
+let top_l: Vec<Vec<String>> = cand_l.iter().take(12).map(|(tm, t)| vec![
+    (*tm).clone(), t.2.to_string(), t.3.to_string(),
+    format!("{:.0}%", 100.0 * t.2 as f64 / t.3.max(1) as f64),
+]).collect();
+mars_table(&["team (EPL, all seasons)", "losses >65% share", "total losses", "high-share loss share"], &top_l);
+```
 
 | team (EPL, all seasons) | losses >65% share | total losses | high-share loss share |
 | ----------------------- | ----------------- | ------------ | --------------------- |
@@ -1061,6 +671,17 @@ let ctx_rows: Vec<Vec<String>> = (0..5).map(|b| vec![
         100.0*res[b*2+1].0 as f64/res[b*2+1].1.max(1) as f64),
 ]).collect();
 mars_table(&["corner share", "n vs weak / strong", "win% vs weak / strong"], &ctx_rows);
+```
+
+| corner share | n vs weak / strong | win% vs weak / strong |
+| ------------ | ------------------ | --------------------- |
+| <35          | 1917 / 3364        | 46% / 24%             |
+| 35-45        | 1393 / 1678        | 49% / 27%             |
+| 45-55        | 1672 / 1679        | 49% / 27%             |
+| 55-65        | 1626 / 1444        | 48% / 27%             |
+| >65          | 3210 / 2079        | 51% / 33%             |
+
+```rust
 println!("opponent strength = top-half finishers in same league-season (points)");
 
 // home vs away: same bands applied to each side separately
@@ -1090,7 +711,21 @@ let ha_rows: Vec<Vec<String>> = (0..5).map(|b| vec![
     away_b[b][2].clone(), away_b[b][4].clone(),
 ]).collect();
 mars_table(&["corner share", "home win% / loss%", "away win% / loss%"], &ha_rows);
+```
 
+```text
+opponent strength = top-half finishers in same league-season (points)
+```
+
+| corner share | home win% / loss% | away win% / loss% |
+| ------------ | ----------------- | ----------------- |
+| <35          | 42.1%             | 33.1%             |
+| 35-45        | 44.5%             | 30.9%             |
+| 45-55        | 44.7%             | 30.8%             |
+| 55-65        | 43.7%             | 31.2%             |
+| >65          | 49.6%             | 25.4%             |
+
+```rust
 // average home corner share per EPL season — venue baseline
 let mut hshare_by_season: HashMap<String, (f64, usize)> = HashMap::new();
 for r in &epl {
@@ -1105,180 +740,6 @@ let mut hs_rows: Vec<Vec<String>> = hshare_by_season.iter().map(|(s, (sum, n))| 
 hs_rows.sort();
 mars_table(&["EPL season", "avg home corner share", "matches"], &hs_rows);
 ```
-
-```text
-stat rows indexed: 374660
-matches with corner data (both teams): 166028
-EPL matches with corners: 10032 | all leagues: 166028
-EPL (8496 matches): corr(home corner share, home win) = 0.050
-EPL: corr(home shot share,   home win) = 0.259
-EPL: corr(home possession,   home win) = 0.120
-ALL (111164 matches): corr(corner share)=-0.012 corr(shot share)=0.195 corr(possession)=0.016
-EPL SOG-share subset (10032 matches): corr(shots on target share, home win) = 0.400
-EPL team-matches: wins 7536 | wins with <35%% corner share: 1664 (22.1%% of wins)
-EPL losses 7536 | losses with >65%% corner share: 1664 (22.1%% of losses)
-opponent strength = top-half finishers in same league-season (points)
-```
-
-| league                 | matches | season span       |
-| ---------------------- | ------- | ----------------- |
-| English Championship   | 14543   | 2000/01 → 2026/27 |
-| English League Two     | 14424   | 2000/01 → 2026/27 |
-| English League One     | 14374   | 2000/01 → 2026/27 |
-| English Premier League | 10032   | 2000/01 → 2026/27 |
-| Spanish La Liga        | 8438    | 2004/05 → 2026/27 |
-| Italian Serie A        | 8086    | 2005/06 → 2026/27 |
-| French Ligue 1         | 7790    | 2005/06 → 2026/27 |
-| German Bundesliga      | 7750    | 2000/01 → 2026/27 |
-| Spanish La Liga 2      | 6527    | 2008/09 → 2026/27 |
-| MLS                    | 6264    | 2012 → 2026       |
-| Scottish Premiership   | 5958    | 2000/01 → 2026/27 |
-| French Ligue 2         | 5347    | 2008/09 → 2026/27 |
-| Italian Serie B        | 5214    | 2008/09 → 2026/27 |
-| Dutch Eredivisie       | 4798    | 2008/09 → 2026/27 |
-| German 2. Bundesliga   | 4661    | 2000/01 → 2026/27 |
-
-| EPL season | matches with corners |
-| ---------- | -------------------- |
-| 2000/01    | 380                  |
-| 2001/02    | 380                  |
-| 2002/03    | 380                  |
-| 2003/04    | 383                  |
-| 2004/05    | 380                  |
-| 2005/06    | 380                  |
-| 2006/07    | 380                  |
-| 2007/08    | 380                  |
-| 2008/09    | 380                  |
-| 2009/10    | 380                  |
-| 2010/11    | 380                  |
-| 2011/12    | 380                  |
-| 2012/13    | 380                  |
-| 2013/14    | 380                  |
-| 2014/15    | 380                  |
-| 2015/16    | 419                  |
-| 2016/17    | 380                  |
-| 2017/18    | 380                  |
-| 2018/19    | 380                  |
-| 2019/20    | 380                  |
-| 2020/21    | 380                  |
-| 2021/22    | 380                  |
-| 2022/23    | 380                  |
-| 2023/24    | 380                  |
-| 2024/25    | 380                  |
-| 2025/26    | 380                  |
-| 2026/27    | 110                  |
-
-| corner share % | n    | win%  | draw% | loss% |
-| -------------- | ---- | ----- | ----- | ----- |
-| <35            | 5281 | 31.5% | 25.0% | 43.5% |
-| 35-45          | 3071 | 36.8% | 24.8% | 38.4% |
-| 45-55          | 3351 | 37.8% | 24.5% | 37.7% |
-| 55-65          | 3070 | 38.2% | 24.9% | 36.9% |
-| >65            | 5289 | 43.5% | 25.0% | 31.5% |
-
-| corner share % — all leagues | n     | win%  | draw% | loss% |
-| ---------------------------- | ----- | ----- | ----- | ----- |
-| <35                          | 77963 | 35.5% | 26.3% | 38.2% |
-| 35-45                        | 46418 | 36.8% | 26.4% | 36.8% |
-| 45-55                        | 48749 | 37.0% | 26.0% | 37.0% |
-| 55-65                        | 46435 | 36.8% | 26.3% | 36.8% |
-| >65                          | 78059 | 38.2% | 26.3% | 35.5% |
-
-| corners won (EPL) | n    | win%  | draw% | loss% |
-| ----------------- | ---- | ----- | ----- | ----- |
-| 0-2               | 3462 | 32.2% | 24.7% | 43.2% |
-| 3-4               | 5286 | 36.0% | 24.8% | 39.2% |
-| 5-6               | 4982 | 38.0% | 24.2% | 37.8% |
-| 7-9               | 4419 | 41.1% | 25.1% | 33.7% |
-| 10+               | 1915 | 42.3% | 26.6% | 31.0% |
-
-| corners won — all leagues | n     | win%  | draw% | loss% |
-| ------------------------- | ----- | ----- | ----- | ----- |
-| 0-2                       | 88929 | 37.1% | 23.6% | 39.3% |
-| 3-4                       | 84318 | 37.3% | 25.7% | 37.0% |
-| 5-6                       | 76410 | 37.3% | 26.1% | 36.6% |
-| 7-9                       | 60351 | 37.4% | 26.9% | 35.7% |
-| 10+                       | 22048 | 36.1% | 28.5% | 35.4% |
-
-| corner diff (home − away) | matches | home win% |
-| ------------------------- | ------- | --------- |
-| -16 to -14                | 6       | 16.7%     |
-| -14 to -12                | 22      | 36.4%     |
-| -12 to -10                | 53      | 50.9%     |
-| -10 to -8                 | 159     | 49.7%     |
-| -8 to -6                  | 322     | 37.3%     |
-| -6 to -4                  | 589     | 40.9%     |
-| -4 to -2                  | 1010    | 45.0%     |
-| -2 to +0                  | 1438    | 43.1%     |
-| +0 to +2                  | 1810    | 44.3%     |
-| +2 to +4                  | 1649    | 46.1%     |
-| +4 to +6                  | 1272    | 50.2%     |
-| +6 to +8                  | 862     | 49.3%     |
-| +8 to +10                 | 461     | 49.9%     |
-| +10 to +12                | 211     | 45.5%     |
-| +12 to +14                | 116     | 38.8%     |
-| +14 to +16                | 36      | 52.8%     |
-| +16 to +18                | 9       | 55.6%     |
-
-| corner diff — all leagues | matches | home win% |
-| ------------------------- | ------- | --------- |
-| -20 to -16                | 23      | 34.8%     |
-| -16 to -12                | 228     | 44.3%     |
-| -12 to -8                 | 2115    | 46.6%     |
-| -8 to -4                  | 12634   | 45.3%     |
-| -4 to +0                  | 39147   | 45.7%     |
-| +0 to +4                  | 71312   | 45.6%     |
-| +4 to +8                  | 30686   | 43.2%     |
-| +8 to +12                 | 8330    | 40.8%     |
-| +12 to +16                | 1389    | 38.9%     |
-| +16 to +20                | 147     | 44.9%     |
-| +20 to +24                | 13      | 46.2%     |
-
-| team (EPL, all seasons) | wins <35% share | total wins | low-share win share |
-| ----------------------- | --------------- | ---------- | ------------------- |
-| QPR                     | 11              | 22         | 50%                 |
-| Burnley                 | 41              | 92         | 45%                 |
-| Derby                   | 8               | 19         | 42%                 |
-| Nott'm Forest           | 21              | 50         | 42%                 |
-| Hull                    | 18              | 44         | 41%                 |
-| Sunderland              | 53              | 143        | 37%                 |
-| Ipswich                 | 13              | 36         | 36%                 |
-| Charlton                | 29              | 85         | 34%                 |
-| Watford                 | 23              | 68         | 34%                 |
-| Stoke                   | 39              | 116        | 34%                 |
-| Sheffield United        | 11              | 34         | 32%                 |
-| Blackburn               | 45              | 140        | 32%                 |
-
-| team (EPL, all seasons) | losses >65% share | total losses | high-share loss share |
-| ----------------------- | ----------------- | ------------ | --------------------- |
-| Liverpool               | 91                | 204          | 45%                   |
-| Man City                | 92                | 240          | 38%                   |
-| Chelsea                 | 78                | 210          | 37%                   |
-| Man United              | 73                | 205          | 36%                   |
-| Reading                 | 19                | 59           | 32%                   |
-| Leeds                   | 40                | 127          | 31%                   |
-| Arsenal                 | 60                | 195          | 31%                   |
-| Tottenham               | 85                | 321          | 26%                   |
-| Ipswich                 | 16                | 62           | 26%                   |
-| Everton                 | 88                | 352          | 25%                   |
-| Aston Villa             | 83                | 335          | 25%                   |
-| Blackburn               | 40                | 168          | 24%                   |
-
-| corner share | n vs weak / strong | win% vs weak / strong |
-| ------------ | ------------------ | --------------------- |
-| <35          | 1917 / 3364        | 45% / 24%             |
-| 35-45        | 1385 / 1686        | 49% / 27%             |
-| 45-55        | 1678 / 1673        | 49% / 27%             |
-| 55-65        | 1625 / 1445        | 48% / 27%             |
-| >65          | 3213 / 2076        | 51% / 32%             |
-
-| corner share | home win% / loss% | away win% / loss% |
-| ------------ | ----------------- | ----------------- |
-| <35          | 42.1%             | 33.1%             |
-| 35-45        | 44.5%             | 30.9%             |
-| 45-55        | 44.7%             | 30.8%             |
-| 55-65        | 43.7%             | 31.2%             |
-| >65          | 49.6%             | 25.4%             |
 
 | EPL season | avg home corner share | matches |
 | ---------- | --------------------- | ------- |
@@ -1368,209 +829,8 @@ mars_table(&["EPL season", "corr(corner diff, home win)", "matches", "avg corner
 ```
 
 ```text
-stat rows indexed: 374660
-matches with corner data (both teams): 166028
-EPL matches with corners: 10032 | all leagues: 166028
-EPL (8496 matches): corr(home corner share, home win) = 0.050
-EPL: corr(home shot share,   home win) = 0.259
-EPL: corr(home possession,   home win) = 0.120
-ALL (111164 matches): corr(corner share)=-0.012 corr(shot share)=0.195 corr(possession)=0.016
-EPL SOG-share subset (10032 matches): corr(shots on target share, home win) = 0.400
-EPL team-matches: wins 7536 | wins with <35%% corner share: 1664 (22.1%% of wins)
-EPL losses 7536 | losses with >65%% corner share: 1664 (22.1%% of losses)
-opponent strength = top-half finishers in same league-season (points)
 EPL team-seasons: 521 | corr(avg corner share, season points) = 0.744
 ```
-
-| league                 | matches | season span       |
-| ---------------------- | ------- | ----------------- |
-| English Championship   | 14543   | 2000/01 → 2026/27 |
-| English League Two     | 14424   | 2000/01 → 2026/27 |
-| English League One     | 14374   | 2000/01 → 2026/27 |
-| English Premier League | 10032   | 2000/01 → 2026/27 |
-| Spanish La Liga        | 8438    | 2004/05 → 2026/27 |
-| Italian Serie A        | 8086    | 2005/06 → 2026/27 |
-| French Ligue 1         | 7790    | 2005/06 → 2026/27 |
-| German Bundesliga      | 7750    | 2000/01 → 2026/27 |
-| Spanish La Liga 2      | 6527    | 2008/09 → 2026/27 |
-| MLS                    | 6264    | 2012 → 2026       |
-| Scottish Premiership   | 5958    | 2000/01 → 2026/27 |
-| French Ligue 2         | 5347    | 2008/09 → 2026/27 |
-| Italian Serie B        | 5214    | 2008/09 → 2026/27 |
-| Dutch Eredivisie       | 4798    | 2008/09 → 2026/27 |
-| German 2. Bundesliga   | 4661    | 2000/01 → 2026/27 |
-
-| EPL season | matches with corners |
-| ---------- | -------------------- |
-| 2000/01    | 380                  |
-| 2001/02    | 380                  |
-| 2002/03    | 380                  |
-| 2003/04    | 383                  |
-| 2004/05    | 380                  |
-| 2005/06    | 380                  |
-| 2006/07    | 380                  |
-| 2007/08    | 380                  |
-| 2008/09    | 380                  |
-| 2009/10    | 380                  |
-| 2010/11    | 380                  |
-| 2011/12    | 380                  |
-| 2012/13    | 380                  |
-| 2013/14    | 380                  |
-| 2014/15    | 380                  |
-| 2015/16    | 419                  |
-| 2016/17    | 380                  |
-| 2017/18    | 380                  |
-| 2018/19    | 380                  |
-| 2019/20    | 380                  |
-| 2020/21    | 380                  |
-| 2021/22    | 380                  |
-| 2022/23    | 380                  |
-| 2023/24    | 380                  |
-| 2024/25    | 380                  |
-| 2025/26    | 380                  |
-| 2026/27    | 110                  |
-
-| corner share % | n    | win%  | draw% | loss% |
-| -------------- | ---- | ----- | ----- | ----- |
-| <35            | 5281 | 31.5% | 25.0% | 43.5% |
-| 35-45          | 3071 | 36.8% | 24.8% | 38.4% |
-| 45-55          | 3351 | 37.8% | 24.5% | 37.7% |
-| 55-65          | 3070 | 38.2% | 24.9% | 36.9% |
-| >65            | 5289 | 43.5% | 25.0% | 31.5% |
-
-| corner share % — all leagues | n     | win%  | draw% | loss% |
-| ---------------------------- | ----- | ----- | ----- | ----- |
-| <35                          | 77963 | 35.5% | 26.3% | 38.2% |
-| 35-45                        | 46418 | 36.8% | 26.4% | 36.8% |
-| 45-55                        | 48749 | 37.0% | 26.0% | 37.0% |
-| 55-65                        | 46435 | 36.8% | 26.3% | 36.8% |
-| >65                          | 78059 | 38.2% | 26.3% | 35.5% |
-
-| corners won (EPL) | n    | win%  | draw% | loss% |
-| ----------------- | ---- | ----- | ----- | ----- |
-| 0-2               | 3462 | 32.2% | 24.7% | 43.2% |
-| 3-4               | 5286 | 36.0% | 24.8% | 39.2% |
-| 5-6               | 4982 | 38.0% | 24.2% | 37.8% |
-| 7-9               | 4419 | 41.1% | 25.1% | 33.7% |
-| 10+               | 1915 | 42.3% | 26.6% | 31.0% |
-
-| corners won — all leagues | n     | win%  | draw% | loss% |
-| ------------------------- | ----- | ----- | ----- | ----- |
-| 0-2                       | 88929 | 37.1% | 23.6% | 39.3% |
-| 3-4                       | 84318 | 37.3% | 25.7% | 37.0% |
-| 5-6                       | 76410 | 37.3% | 26.1% | 36.6% |
-| 7-9                       | 60351 | 37.4% | 26.9% | 35.7% |
-| 10+                       | 22048 | 36.1% | 28.5% | 35.4% |
-
-| corner diff (home − away) | matches | home win% |
-| ------------------------- | ------- | --------- |
-| -16 to -14                | 6       | 16.7%     |
-| -14 to -12                | 22      | 36.4%     |
-| -12 to -10                | 53      | 50.9%     |
-| -10 to -8                 | 159     | 49.7%     |
-| -8 to -6                  | 322     | 37.3%     |
-| -6 to -4                  | 589     | 40.9%     |
-| -4 to -2                  | 1010    | 45.0%     |
-| -2 to +0                  | 1438    | 43.1%     |
-| +0 to +2                  | 1810    | 44.3%     |
-| +2 to +4                  | 1649    | 46.1%     |
-| +4 to +6                  | 1272    | 50.2%     |
-| +6 to +8                  | 862     | 49.3%     |
-| +8 to +10                 | 461     | 49.9%     |
-| +10 to +12                | 211     | 45.5%     |
-| +12 to +14                | 116     | 38.8%     |
-| +14 to +16                | 36      | 52.8%     |
-| +16 to +18                | 9       | 55.6%     |
-
-| corner diff — all leagues | matches | home win% |
-| ------------------------- | ------- | --------- |
-| -20 to -16                | 23      | 34.8%     |
-| -16 to -12                | 228     | 44.3%     |
-| -12 to -8                 | 2115    | 46.6%     |
-| -8 to -4                  | 12634   | 45.3%     |
-| -4 to +0                  | 39147   | 45.7%     |
-| +0 to +4                  | 71312   | 45.6%     |
-| +4 to +8                  | 30686   | 43.2%     |
-| +8 to +12                 | 8330    | 40.8%     |
-| +12 to +16                | 1389    | 38.9%     |
-| +16 to +20                | 147     | 44.9%     |
-| +20 to +24                | 13      | 46.2%     |
-
-| team (EPL, all seasons) | wins <35% share | total wins | low-share win share |
-| ----------------------- | --------------- | ---------- | ------------------- |
-| QPR                     | 11              | 22         | 50%                 |
-| Burnley                 | 41              | 92         | 45%                 |
-| Derby                   | 8               | 19         | 42%                 |
-| Nott'm Forest           | 21              | 50         | 42%                 |
-| Hull                    | 18              | 44         | 41%                 |
-| Sunderland              | 53              | 143        | 37%                 |
-| Ipswich                 | 13              | 36         | 36%                 |
-| Charlton                | 29              | 85         | 34%                 |
-| Watford                 | 23              | 68         | 34%                 |
-| Stoke                   | 39              | 116        | 34%                 |
-| Sheffield United        | 11              | 34         | 32%                 |
-| Blackburn               | 45              | 140        | 32%                 |
-
-| team (EPL, all seasons) | losses >65% share | total losses | high-share loss share |
-| ----------------------- | ----------------- | ------------ | --------------------- |
-| Liverpool               | 91                | 204          | 45%                   |
-| Man City                | 92                | 240          | 38%                   |
-| Chelsea                 | 78                | 210          | 37%                   |
-| Man United              | 73                | 205          | 36%                   |
-| Reading                 | 19                | 59           | 32%                   |
-| Leeds                   | 40                | 127          | 31%                   |
-| Arsenal                 | 60                | 195          | 31%                   |
-| Tottenham               | 85                | 321          | 26%                   |
-| Ipswich                 | 16                | 62           | 26%                   |
-| Everton                 | 88                | 352          | 25%                   |
-| Aston Villa             | 83                | 335          | 25%                   |
-| Blackburn               | 40                | 168          | 24%                   |
-
-| corner share | n vs weak / strong | win% vs weak / strong |
-| ------------ | ------------------ | --------------------- |
-| <35          | 1921 / 3360        | 45% / 24%             |
-| 35-45        | 1389 / 1682        | 49% / 27%             |
-| 45-55        | 1678 / 1673        | 49% / 27%             |
-| 55-65        | 1622 / 1448        | 48% / 27%             |
-| >65          | 3208 / 2081        | 51% / 32%             |
-
-| corner share | home win% / loss% | away win% / loss% |
-| ------------ | ----------------- | ----------------- |
-| <35          | 42.1%             | 33.1%             |
-| 35-45        | 44.5%             | 30.9%             |
-| 45-55        | 44.7%             | 30.8%             |
-| 55-65        | 43.7%             | 31.2%             |
-| >65          | 49.6%             | 25.4%             |
-
-| EPL season | avg home corner share | matches |
-| ---------- | --------------------- | ------- |
-| 2000/01    | 57.6%                 | 380     |
-| 2001/02    | 29.4%                 | 380     |
-| 2002/03    | 57.2%                 | 380     |
-| 2003/04    | 56.1%                 | 383     |
-| 2004/05    | 56.2%                 | 380     |
-| 2005/06    | 56.2%                 | 380     |
-| 2006/07    | 56.8%                 | 380     |
-| 2007/08    | 56.8%                 | 380     |
-| 2008/09    | 56.1%                 | 380     |
-| 2009/10    | 55.2%                 | 380     |
-| 2010/11    | 54.5%                 | 379     |
-| 2011/12    | 57.1%                 | 380     |
-| 2012/13    | 56.3%                 | 380     |
-| 2013/14    | 56.7%                 | 380     |
-| 2014/15    | 55.3%                 | 380     |
-| 2015/16    | 53.4%                 | 419     |
-| 2016/17    | 54.2%                 | 380     |
-| 2017/18    | 55.9%                 | 380     |
-| 2018/19    | 55.7%                 | 380     |
-| 2019/20    | 53.4%                 | 380     |
-| 2020/21    | 53.7%                 | 380     |
-| 2021/22    | 53.3%                 | 380     |
-| 2022/23    | 55.2%                 | 380     |
-| 2023/24    | 56.3%                 | 380     |
-| 2024/25    | 52.6%                 | 380     |
-| 2025/26    | 54.0%                 | 380     |
-| 2026/27    | 52.8%                 | 110     |
 
 | EPL season | corr(corner diff, home win) | matches | avg corners/team |
 | ---------- | --------------------------- | ------- | ---------------- |

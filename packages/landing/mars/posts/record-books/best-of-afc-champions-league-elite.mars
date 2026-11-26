@@ -47,13 +47,1010 @@
     {
       "id": "c4241d79-33ad-4f50-9403-ac9116a9dc71",
       "cell_type": "code",
-      "source": "// ---- tournament editions ----\n#[derive(Clone)]\nstruct TMatch {\n    date: String,\n    h: String,\n    a: String,\n    hg: i64,\n    ag: i64,\n}\n\nstruct Edition {\n    season: String,\n    n: usize,\n    matches: Vec<TMatch>,\n    champion: String,\n    runner_up: String,\n    final_hg: i64,\n    final_ag: i64,\n    pens: bool,\n}\n\nlet mut by_season: BTreeMap<String, Vec<TMatch>> = BTreeMap::new();\nfor (s, h, a, d, hg, ag) in &all_matches {\n    by_season.entry(s.clone()).or_default().push(TMatch {\n        date: d.clone(), h: h.clone(), a: a.clone(), hg: *hg, ag: *ag,\n    });\n}\n\nlet mut editions: Vec<Edition> = Vec::new();\nfor (sname, mut ms) in by_season {\n    if ms.is_empty() {\n        continue;\n    }\n    ms.sort_by(|x, y| x.date.cmp(&y.date));\n    let last = ms.last().unwrap();\n    // champions are only recorded for editions with substantial coverage;\n    // scattered finals/group games can't identify the winner reliably\n    let pens_winners: &[(&str, &str)] = &[];\n    let (champ, runner, pens) = if ms.len() < 10 {\n        (String::new(), String::new(), false)\n    } else if last.hg > last.ag {\n        (last.h.clone(), last.a.clone(), false)\n    } else if last.hg < last.ag {\n        (last.a.clone(), last.h.clone(), false)\n    } else if let Some((_, w)) = pens_winners.iter().find(|(y, _)| *y == sname) {\n        let ru = if last.h == *w { last.a.clone() } else { last.h.clone() };\n        (w.to_string(), ru, true)\n    } else {\n        (\"decided on penalties\".to_string(), String::new(), true)\n    };\n    editions.push(Edition {\n        season: sname,\n        n: ms.len(),\n        champion: champ,\n        runner_up: runner,\n        final_hg: last.hg,\n        final_ag: last.ag,\n        pens,\n        matches: ms,\n    });\n}\nprintln!(\"editions: {}\", editions.len());\nfor e in &editions {\n    println!(\"  {}: {} matches, champion-ish: {} (final {}-{}{})\", e.season, e.n, e.champion, e.final_hg, e.final_ag, if e.pens { \" pens\" } else { \"\" });\n}\n\n// T1: most titles per nation\nlet mut titles: BTreeMap<String, Vec<String>> = BTreeMap::new();\nfor e in &editions {\n    if !e.champion.is_empty() && e.champion != \"decided on penalties\" {\n        titles.entry(e.champion.clone()).or_default().push(e.season.clone());\n    }\n}\nlet mut tv: Vec<(String, Vec<String>)> = titles.into_iter().collect();\ntv.sort_by(|a, b| b.1.len().cmp(&a.1.len()).then(a.0.cmp(&b.0)));\nlet title_rows: Vec<Vec<String>> = tv.iter().take(8)\n    .map(|(t, ss)| vec![t.clone(), ss.len().to_string(), ss.iter().rev().take(4).cloned().collect::<Vec<_>>().join(\", \")])\n    .collect();\nmars_table(&[\"nation\", \"titles\", \"most recent\"], &title_rows);\n\n// T2: every edition — champion, final score, champion's tournament record\nlet mut ed_rows: Vec<Vec<String>> = Vec::new();\nfor e in &editions {\n    // champion's record across the whole edition\n    let mut w = 0i64; let mut d = 0i64; let mut l = 0i64;\n    let mut gf = 0i64; let mut ga = 0i64;\n    for m in &e.matches {\n        let (hg, ag) = if m.h == e.champion {\n            (m.hg, m.ag)\n        } else if m.a == e.champion {\n            (m.ag, m.hg)\n        } else { continue };\n        gf += hg; ga += ag;\n        if hg > ag { w += 1; } else if hg == ag { d += 1; } else { l += 1; }\n    }\n    let note = if e.n < 10 { \" (partial coverage)\" } else { \"\" };\n    ed_rows.push(vec![\n        format!(\"{}{}\", e.season, note),\n        if e.champion.is_empty() { \"—\".to_string() } else { e.champion.clone() },\n        if e.champion.is_empty() { \"—\".to_string() } else { format!(\"{}-{}{}\", e.final_hg, e.final_ag, if e.pens { \" (pens)\" } else { \"\" }) },\n        format!(\"{}W {}D {}L\", w, d, l),\n        format!(\"{}/{}\", gf, ga),\n    ]);\n}\nmars_table(&[\"edition\", \"champion\", \"final\", \"tournament record\", \"gf/ga\"], &ed_rows);\n\n// T3: records across all editions\n// biggest wins & highest scoring (all matches)\nlet mut margins: Vec<(i64, String, i64, i64, String, String)> = Vec::new();\nlet mut totals: Vec<(i64, String, i64, i64, String, String)> = Vec::new();\nfor e in &editions {\n    for m in &e.matches {\n        margins.push((m.hg - m.ag, e.season.clone(), m.hg, m.ag, m.h.clone(), m.a.clone()));\n        totals.push((m.hg + m.ag, e.season.clone(), m.hg, m.ag, m.h.clone(), m.a.clone()));\n    }\n}\nmargins.sort_by(|a, b| b.0.cmp(&a.0));\ntotals.sort_by(|a, b| b.0.cmp(&a.0));\nlet win_rows: Vec<Vec<String>> = margins.iter().take(8)\n    .map(|(mg, s, hg, ag, h, a)| vec![format!(\"{} vs {} ({})\", h, a, s), format!(\"{}-{}\", hg, ag), format!(\"+{}\", mg)])\n    .collect();\nmars_table(&[\"biggest wins\", \"score\", \"margin\"], &win_rows);\nlet score_rows: Vec<Vec<String>> = totals.iter().take(8)\n    .map(|(t, s, hg, ag, h, a)| vec![format!(\"{} vs {} ({})\", h, a, s), format!(\"{}-{}\", hg, ag), t.to_string()])\n    .collect();\nmars_table(&[\"highest-scoring\", \"score\", \"total goals\"], &score_rows);\n\n// champion records: most goals for, fewest against, best GD, most wins\nlet mut champ_stats: Vec<(String, String, i64, i64, i64, i64, i64)> = Vec::new(); // season, champ, gf, ga, w, d, l\nfor e in &editions {\n    if e.champion.is_empty() || e.champion == \"decided on penalties\" { continue; }\n    let mut w = 0i64; let mut d = 0i64; let mut l = 0i64;\n    let mut gf = 0i64; let mut ga = 0i64;\n    for m in &e.matches {\n        let (hg, ag) = if m.h == e.champion { (m.hg, m.ag) }\n            else if m.a == e.champion { (m.ag, m.hg) }\n            else { continue };\n        gf += hg; ga += ag;\n        if hg > ag { w += 1; } else if hg == ag { d += 1; } else { l += 1; }\n    }\n    champ_stats.push((e.season.clone(), e.champion.clone(), gf, ga, w, d, l));\n}\nlet rec_rows: Vec<Vec<String>> = vec![\n    (\"most goals scored\", champ_stats.iter().max_by_key(|c| c.2).unwrap()),\n    (\"fewest goals conceded\", champ_stats.iter().min_by_key(|c| c.3).unwrap()),\n    (\"best goal difference\", champ_stats.iter().max_by_key(|c| c.2 - c.3).unwrap()),\n    (\"most wins\", champ_stats.iter().max_by_key(|c| c.4).unwrap()),\n    (\"fewest losses\", champ_stats.iter().min_by_key(|c| c.6).unwrap()),\n]\n.iter()\n.map(|(label, c)| vec![label.to_string(), format!(\"{} {}\", c.1, c.0), format!(\"{}W {}D {}L\", c.4, c.5, c.6), format!(\"{}/{}\", c.2, c.3), (c.2 - c.3).to_string()])\n.collect();\nmars_table(&[\"record\", \"champion edition\", \"record\", \"gf/ga\", \"gd\"], &rec_rows);\n\n// unbeaten champions\nlet unbeaten: Vec<&(String, String, i64, i64, i64, i64, i64)> = champ_stats.iter().filter(|c| c.6 == 0 && c.4 + c.5 >= 3).collect();\nlet unb_rows: Vec<Vec<String>> = unbeaten.iter()\n    .map(|c| vec![format!(\"{} {}\", c.1, c.0), format!(\"{}W {}D\", c.4, c.5), c.2.to_string(), c.3.to_string()])\n    .collect();\nmars_table(&[\"unbeaten champions\", \"record\", \"gf\", \"ga\"], &unb_rows);\nprintln!(\"unbeaten champions: {}\", unbeaten.len());\n\n// closest finals (smallest margin or draw)\nlet mut finals: Vec<&Edition> = editions.iter().filter(|e| !e.champion.is_empty() && e.champion != \"decided on penalties\").collect();\nfinals.sort_by_key(|e| (e.final_hg - e.final_ag).abs());\nlet fin_rows: Vec<Vec<String>> = finals.iter().take(8)\n    .map(|e| vec![e.season.clone(), format!(\"{} vs {}{}\", e.champion, e.runner_up, if e.pens {\" (pens)\"} else {\"\"}), format!(\"{}-{}\", e.final_hg, e.final_ag)])\n    .collect();\nmars_table(&[\"closest finals\", \"matchup\", \"score\"], &fin_rows);\n\n// T4: top scorers (latest edition with player data — SCORERS picks best-covered year)\n// Player-level stats only exist for a handful of StatsBomb-covered\n// matches in this competition, so a \"top scorers\" table would be\n// misleading — skipped deliberately.\nprintln!(\"player-level coverage too sparse for a top-scorers table\");",
+      "source": "// ---- tournament editions ----\n#[derive(Clone)]\nstruct TMatch {\n    date: String,\n    h: String,\n    a: String,\n    hg: i64,\n    ag: i64,\n}\n\nstruct Edition {\n    season: String,\n    n: usize,\n    matches: Vec<TMatch>,\n    champion: String,\n    runner_up: String,\n    final_hg: i64,\n    final_ag: i64,\n    pens: bool,\n}\n\nlet mut by_season: BTreeMap<String, Vec<TMatch>> = BTreeMap::new();\nfor (s, h, a, d, hg, ag) in &all_matches {\n    by_season.entry(s.clone()).or_default().push(TMatch {\n        date: d.clone(), h: h.clone(), a: a.clone(), hg: *hg, ag: *ag,\n    });\n}\n\nlet mut editions: Vec<Edition> = Vec::new();\nfor (sname, mut ms) in by_season {\n    if ms.is_empty() {\n        continue;\n    }\n    ms.sort_by(|x, y| x.date.cmp(&y.date));\n    let last = ms.last().unwrap();\n    // champions are only recorded for editions with substantial coverage;\n    // scattered finals/group games can't identify the winner reliably\n    let pens_winners: &[(&str, &str)] = &[];\n    let (champ, runner, pens) = if ms.len() < 10 {\n        (String::new(), String::new(), false)\n    } else if last.hg > last.ag {\n        (last.h.clone(), last.a.clone(), false)\n    } else if last.hg < last.ag {\n        (last.a.clone(), last.h.clone(), false)\n    } else if let Some((_, w)) = pens_winners.iter().find(|(y, _)| *y == sname) {\n        let ru = if last.h == *w { last.a.clone() } else { last.h.clone() };\n        (w.to_string(), ru, true)\n    } else {\n        (\"decided on penalties\".to_string(), String::new(), true)\n    };\n    editions.push(Edition {\n        season: sname,\n        n: ms.len(),\n        champion: champ,\n        runner_up: runner,\n        final_hg: last.hg,\n        final_ag: last.ag,\n        pens,\n        matches: ms,\n    });\n}\nprintln!(\"editions: {}\", editions.len());\nfor e in &editions {\n    println!(\"  {}: {} matches, champion-ish: {} (final {}-{}{})\", e.season, e.n, e.champion, e.final_hg, e.final_ag, if e.pens { \" pens\" } else { \"\" });\n}\n\n// T1: most titles per nation\nlet mut titles: BTreeMap<String, Vec<String>> = BTreeMap::new();\nfor e in &editions {\n    if !e.champion.is_empty() && e.champion != \"decided on penalties\" {\n        titles.entry(e.champion.clone()).or_default().push(e.season.clone());\n    }\n}\nlet mut tv: Vec<(String, Vec<String>)> = titles.into_iter().collect();\ntv.sort_by(|a, b| b.1.len().cmp(&a.1.len()).then(a.0.cmp(&b.0)));\nlet title_rows: Vec<Vec<String>> = tv.iter().take(8)\n    .map(|(t, ss)| vec![t.clone(), ss.len().to_string(), ss.iter().rev().take(4).cloned().collect::<Vec<_>>().join(\", \")])\n    .collect();\nmars_table(&[\"nation\", \"titles\", \"most recent\"], &title_rows);\n",
       "metadata": {},
       "execution_count": 3,
       "outputs": [
         {
           "type": "text",
-          "text": "AFC Champions League Elite matches: 306\nfinished matches: 227 (0 duplicate fixtures dropped) | team-season entries: 48\ncomplete seasons: 0 ( -> )\nno player-level scorer data for this competition\neditions: 2\n  2024/2025: 112 matches, champion-ish: Al Ahli (final 2-0)\n  2025/2026: 115 matches, champion-ish: Al Ahli (final 1-0)\nunbeaten champions: 1\n()\n"
+          "text": "AFC Champions League Elite matches: 306\nfinished matches: 227 (0 duplicate fixtures dropped) | team-season entries: 48\ncomplete seasons: 0 ( -> )\nno player-level scorer data for this competition\neditions: 2\n  2024/2025: 112 matches, champion-ish: Al Ahli (final 2-0)\n  2025/2026: 115 matches, champion-ish: Al Ahli (final 1-0)\n"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "nation",
+            "titles",
+            "most recent"
+          ],
+          "rows": [
+            [
+              "Al Ahli",
+              "2",
+              "2025/2026, 2024/2025"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cc4f5377-15a1-4ae2-8b6e-898fa43c8d9a",
+      "cell_type": "code",
+      "source": "// T2: every edition — champion, final score, champion's tournament record\nlet mut ed_rows: Vec<Vec<String>> = Vec::new();\nfor e in &editions {\n    // champion's record across the whole edition\n    let mut w = 0i64; let mut d = 0i64; let mut l = 0i64;\n    let mut gf = 0i64; let mut ga = 0i64;\n    for m in &e.matches {\n        let (hg, ag) = if m.h == e.champion {\n            (m.hg, m.ag)\n        } else if m.a == e.champion {\n            (m.ag, m.hg)\n        } else { continue };\n        gf += hg; ga += ag;\n        if hg > ag { w += 1; } else if hg == ag { d += 1; } else { l += 1; }\n    }\n    let note = if e.n < 10 { \" (partial coverage)\" } else { \"\" };\n    ed_rows.push(vec![\n        format!(\"{}{}\", e.season, note),\n        if e.champion.is_empty() { \"—\".to_string() } else { e.champion.clone() },\n        if e.champion.is_empty() { \"—\".to_string() } else { format!(\"{}-{}{}\", e.final_hg, e.final_ag, if e.pens { \" (pens)\" } else { \"\" }) },\n        format!(\"{}W {}D {}L\", w, d, l),\n        format!(\"{}/{}\", gf, ga),\n    ]);\n}\nmars_table(&[\"edition\", \"champion\", \"final\", \"tournament record\", \"gf/ga\"], &ed_rows);\n",
+      "metadata": {},
+      "execution_count": 4,
+      "outputs": [
+        {
+          "type": "text",
+          "text": "AFC Champions League Elite matches: 306\nfinished matches: 227 (0 duplicate fixtures dropped) | team-season entries: 48\ncomplete seasons: 0 ( -> )\nno player-level scorer data for this competition\neditions: 2\n  2024/2025: 112 matches, champion-ish: Al Ahli (final 2-0)\n  2025/2026: 115 matches, champion-ish: Al Ahli (final 1-0)\n"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "nation",
+            "titles",
+            "most recent"
+          ],
+          "rows": [
+            [
+              "Al Ahli",
+              "2",
+              "2025/2026, 2024/2025"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "edition",
+            "champion",
+            "final",
+            "tournament record",
+            "gf/ga"
+          ],
+          "rows": [
+            [
+              "2024/2025",
+              "Al Ahli",
+              "2-0",
+              "12W 1D 0L",
+              "34/10"
+            ],
+            [
+              "2025/2026",
+              "Al Ahli",
+              "1-0",
+              "9W 2D 1L",
+              "27/11"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "000aa895-2db9-47b3-8e13-0408b203faf0",
+      "cell_type": "code",
+      "source": "// T3: records across all editions\n// biggest wins & highest scoring (all matches)\nlet mut margins: Vec<(i64, String, i64, i64, String, String)> = Vec::new();\nlet mut totals: Vec<(i64, String, i64, i64, String, String)> = Vec::new();\nfor e in &editions {\n    for m in &e.matches {\n        margins.push((m.hg - m.ag, e.season.clone(), m.hg, m.ag, m.h.clone(), m.a.clone()));\n        totals.push((m.hg + m.ag, e.season.clone(), m.hg, m.ag, m.h.clone(), m.a.clone()));\n    }\n}\nmargins.sort_by(|a, b| b.0.cmp(&a.0));\ntotals.sort_by(|a, b| b.0.cmp(&a.0));\nlet win_rows: Vec<Vec<String>> = margins.iter().take(8)\n    .map(|(mg, s, hg, ag, h, a)| vec![format!(\"{} vs {} ({})\", h, a, s), format!(\"{}-{}\", hg, ag), format!(\"+{}\", mg)])\n    .collect();\nmars_table(&[\"biggest wins\", \"score\", \"margin\"], &win_rows);\n",
+      "metadata": {},
+      "execution_count": 5,
+      "outputs": [
+        {
+          "type": "text",
+          "text": "AFC Champions League Elite matches: 306\nfinished matches: 227 (0 duplicate fixtures dropped) | team-season entries: 48\ncomplete seasons: 0 ( -> )\nno player-level scorer data for this competition\neditions: 2\n  2024/2025: 112 matches, champion-ish: Al Ahli (final 2-0)\n  2025/2026: 115 matches, champion-ish: Al Ahli (final 1-0)\n"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "nation",
+            "titles",
+            "most recent"
+          ],
+          "rows": [
+            [
+              "Al Ahli",
+              "2",
+              "2025/2026, 2024/2025"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "edition",
+            "champion",
+            "final",
+            "tournament record",
+            "gf/ga"
+          ],
+          "rows": [
+            [
+              "2024/2025",
+              "Al Ahli",
+              "2-0",
+              "12W 1D 0L",
+              "34/10"
+            ],
+            [
+              "2025/2026",
+              "Al Ahli",
+              "1-0",
+              "9W 2D 1L",
+              "27/11"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "biggest wins",
+            "score",
+            "margin"
+          ],
+          "rows": [
+            [
+              "Al Hilal vs Gwangju FC (2024/2025)",
+              "7-0",
+              "+7"
+            ],
+            [
+              "Al Ittihad vs Al-Gharafa (2025/2026)",
+              "7-0",
+              "+7"
+            ],
+            [
+              "Al Hilal vs Al-Shorta SC (2024/2025)",
+              "5-0",
+              "+5"
+            ],
+            [
+              "Yokohama F. Marinos vs Buriram United (2024/2025)",
+              "5-0",
+              "+5"
+            ],
+            [
+              "Gwangju FC vs Yokohama F. Marinos (2024/2025)",
+              "7-3",
+              "+4"
+            ],
+            [
+              "Yokohama F. Marinos vs Ulsan HD (2024/2025)",
+              "4-0",
+              "+4"
+            ],
+            [
+              "Al Ahli vs Al-Shorta SC (2024/2025)",
+              "5-1",
+              "+4"
+            ],
+            [
+              "Al Nassr vs Al Ain (2024/2025)",
+              "5-1",
+              "+4"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "6fa28f23-381b-4e77-895c-00c2698b7c76",
+      "cell_type": "code",
+      "source": "let score_rows: Vec<Vec<String>> = totals.iter().take(8)\n    .map(|(t, s, hg, ag, h, a)| vec![format!(\"{} vs {} ({})\", h, a, s), format!(\"{}-{}\", hg, ag), t.to_string()])\n    .collect();\nmars_table(&[\"highest-scoring\", \"score\", \"total goals\"], &score_rows);\n",
+      "metadata": {},
+      "execution_count": 6,
+      "outputs": [
+        {
+          "type": "text",
+          "text": "AFC Champions League Elite matches: 306\nfinished matches: 227 (0 duplicate fixtures dropped) | team-season entries: 48\ncomplete seasons: 0 ( -> )\nno player-level scorer data for this competition\neditions: 2\n  2024/2025: 112 matches, champion-ish: Al Ahli (final 2-0)\n  2025/2026: 115 matches, champion-ish: Al Ahli (final 1-0)\n"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "nation",
+            "titles",
+            "most recent"
+          ],
+          "rows": [
+            [
+              "Al Ahli",
+              "2",
+              "2025/2026, 2024/2025"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "edition",
+            "champion",
+            "final",
+            "tournament record",
+            "gf/ga"
+          ],
+          "rows": [
+            [
+              "2024/2025",
+              "Al Ahli",
+              "2-0",
+              "12W 1D 0L",
+              "34/10"
+            ],
+            [
+              "2025/2026",
+              "Al Ahli",
+              "1-0",
+              "9W 2D 1L",
+              "27/11"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "biggest wins",
+            "score",
+            "margin"
+          ],
+          "rows": [
+            [
+              "Al Hilal vs Gwangju FC (2024/2025)",
+              "7-0",
+              "+7"
+            ],
+            [
+              "Al Ittihad vs Al-Gharafa (2025/2026)",
+              "7-0",
+              "+7"
+            ],
+            [
+              "Al Hilal vs Al-Shorta SC (2024/2025)",
+              "5-0",
+              "+5"
+            ],
+            [
+              "Yokohama F. Marinos vs Buriram United (2024/2025)",
+              "5-0",
+              "+5"
+            ],
+            [
+              "Gwangju FC vs Yokohama F. Marinos (2024/2025)",
+              "7-3",
+              "+4"
+            ],
+            [
+              "Yokohama F. Marinos vs Ulsan HD (2024/2025)",
+              "4-0",
+              "+4"
+            ],
+            [
+              "Al Ahli vs Al-Shorta SC (2024/2025)",
+              "5-1",
+              "+4"
+            ],
+            [
+              "Al Nassr vs Al Ain (2024/2025)",
+              "5-1",
+              "+4"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "highest-scoring",
+            "score",
+            "total goals"
+          ],
+          "rows": [
+            [
+              "Gwangju FC vs Yokohama F. Marinos (2024/2025)",
+              "7-3",
+              "10"
+            ],
+            [
+              "Al Ain vs Al Hilal (2024/2025)",
+              "4-5",
+              "9"
+            ],
+            [
+              "Johor Darul Ta'zim vs Pohang Steelers (2024/2025)",
+              "5-2",
+              "7"
+            ],
+            [
+              "Al Hilal vs Gwangju FC (2024/2025)",
+              "7-0",
+              "7"
+            ],
+            [
+              "Sharjah vs Al-Gharafa (2025/2026)",
+              "4-3",
+              "7"
+            ],
+            [
+              "Gangwon FC vs Vissel Kobe (2025/2026)",
+              "4-3",
+              "7"
+            ],
+            [
+              "Al Ittihad vs Al-Gharafa (2025/2026)",
+              "7-0",
+              "7"
+            ],
+            [
+              "Al Ahli vs Shabab Al Ahli (2025/2026)",
+              "4-3",
+              "7"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "1f5af4f8-1094-4e2d-a149-5c5740eff24e",
+      "cell_type": "code",
+      "source": "// champion records: most goals for, fewest against, best GD, most wins\nlet mut champ_stats: Vec<(String, String, i64, i64, i64, i64, i64)> = Vec::new(); // season, champ, gf, ga, w, d, l\nfor e in &editions {\n    if e.champion.is_empty() || e.champion == \"decided on penalties\" { continue; }\n    let mut w = 0i64; let mut d = 0i64; let mut l = 0i64;\n    let mut gf = 0i64; let mut ga = 0i64;\n    for m in &e.matches {\n        let (hg, ag) = if m.h == e.champion { (m.hg, m.ag) }\n            else if m.a == e.champion { (m.ag, m.hg) }\n            else { continue };\n        gf += hg; ga += ag;\n        if hg > ag { w += 1; } else if hg == ag { d += 1; } else { l += 1; }\n    }\n    champ_stats.push((e.season.clone(), e.champion.clone(), gf, ga, w, d, l));\n}\nlet rec_rows: Vec<Vec<String>> = vec![\n    (\"most goals scored\", champ_stats.iter().max_by_key(|c| c.2).unwrap()),\n    (\"fewest goals conceded\", champ_stats.iter().min_by_key(|c| c.3).unwrap()),\n    (\"best goal difference\", champ_stats.iter().max_by_key(|c| c.2 - c.3).unwrap()),\n    (\"most wins\", champ_stats.iter().max_by_key(|c| c.4).unwrap()),\n    (\"fewest losses\", champ_stats.iter().min_by_key(|c| c.6).unwrap()),\n]\n.iter()\n.map(|(label, c)| vec![label.to_string(), format!(\"{} {}\", c.1, c.0), format!(\"{}W {}D {}L\", c.4, c.5, c.6), format!(\"{}/{}\", c.2, c.3), (c.2 - c.3).to_string()])\n.collect();\nmars_table(&[\"record\", \"champion edition\", \"record\", \"gf/ga\", \"gd\"], &rec_rows);\n",
+      "metadata": {},
+      "execution_count": 7,
+      "outputs": [
+        {
+          "type": "text",
+          "text": "AFC Champions League Elite matches: 306\nfinished matches: 227 (0 duplicate fixtures dropped) | team-season entries: 48\ncomplete seasons: 0 ( -> )\nno player-level scorer data for this competition\neditions: 2\n  2024/2025: 112 matches, champion-ish: Al Ahli (final 2-0)\n  2025/2026: 115 matches, champion-ish: Al Ahli (final 1-0)\n"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "nation",
+            "titles",
+            "most recent"
+          ],
+          "rows": [
+            [
+              "Al Ahli",
+              "2",
+              "2025/2026, 2024/2025"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "edition",
+            "champion",
+            "final",
+            "tournament record",
+            "gf/ga"
+          ],
+          "rows": [
+            [
+              "2024/2025",
+              "Al Ahli",
+              "2-0",
+              "12W 1D 0L",
+              "34/10"
+            ],
+            [
+              "2025/2026",
+              "Al Ahli",
+              "1-0",
+              "9W 2D 1L",
+              "27/11"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "biggest wins",
+            "score",
+            "margin"
+          ],
+          "rows": [
+            [
+              "Al Hilal vs Gwangju FC (2024/2025)",
+              "7-0",
+              "+7"
+            ],
+            [
+              "Al Ittihad vs Al-Gharafa (2025/2026)",
+              "7-0",
+              "+7"
+            ],
+            [
+              "Al Hilal vs Al-Shorta SC (2024/2025)",
+              "5-0",
+              "+5"
+            ],
+            [
+              "Yokohama F. Marinos vs Buriram United (2024/2025)",
+              "5-0",
+              "+5"
+            ],
+            [
+              "Gwangju FC vs Yokohama F. Marinos (2024/2025)",
+              "7-3",
+              "+4"
+            ],
+            [
+              "Yokohama F. Marinos vs Ulsan HD (2024/2025)",
+              "4-0",
+              "+4"
+            ],
+            [
+              "Al Ahli vs Al-Shorta SC (2024/2025)",
+              "5-1",
+              "+4"
+            ],
+            [
+              "Al Nassr vs Al Ain (2024/2025)",
+              "5-1",
+              "+4"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "highest-scoring",
+            "score",
+            "total goals"
+          ],
+          "rows": [
+            [
+              "Gwangju FC vs Yokohama F. Marinos (2024/2025)",
+              "7-3",
+              "10"
+            ],
+            [
+              "Al Ain vs Al Hilal (2024/2025)",
+              "4-5",
+              "9"
+            ],
+            [
+              "Johor Darul Ta'zim vs Pohang Steelers (2024/2025)",
+              "5-2",
+              "7"
+            ],
+            [
+              "Al Hilal vs Gwangju FC (2024/2025)",
+              "7-0",
+              "7"
+            ],
+            [
+              "Sharjah vs Al-Gharafa (2025/2026)",
+              "4-3",
+              "7"
+            ],
+            [
+              "Gangwon FC vs Vissel Kobe (2025/2026)",
+              "4-3",
+              "7"
+            ],
+            [
+              "Al Ittihad vs Al-Gharafa (2025/2026)",
+              "7-0",
+              "7"
+            ],
+            [
+              "Al Ahli vs Shabab Al Ahli (2025/2026)",
+              "4-3",
+              "7"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "record",
+            "champion edition",
+            "record",
+            "gf/ga",
+            "gd"
+          ],
+          "rows": [
+            [
+              "most goals scored",
+              "Al Ahli 2024/2025",
+              "12W 1D 0L",
+              "34/10",
+              "24"
+            ],
+            [
+              "fewest goals conceded",
+              "Al Ahli 2024/2025",
+              "12W 1D 0L",
+              "34/10",
+              "24"
+            ],
+            [
+              "best goal difference",
+              "Al Ahli 2024/2025",
+              "12W 1D 0L",
+              "34/10",
+              "24"
+            ],
+            [
+              "most wins",
+              "Al Ahli 2024/2025",
+              "12W 1D 0L",
+              "34/10",
+              "24"
+            ],
+            [
+              "fewest losses",
+              "Al Ahli 2024/2025",
+              "12W 1D 0L",
+              "34/10",
+              "24"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "95a9886f-2ca7-4f07-878b-133046389942",
+      "cell_type": "code",
+      "source": "// unbeaten champions\nlet unbeaten: Vec<&(String, String, i64, i64, i64, i64, i64)> = champ_stats.iter().filter(|c| c.6 == 0 && c.4 + c.5 >= 3).collect();\nlet unb_rows: Vec<Vec<String>> = unbeaten.iter()\n    .map(|c| vec![format!(\"{} {}\", c.1, c.0), format!(\"{}W {}D\", c.4, c.5), c.2.to_string(), c.3.to_string()])\n    .collect();\nmars_table(&[\"unbeaten champions\", \"record\", \"gf\", \"ga\"], &unb_rows);\n",
+      "metadata": {},
+      "execution_count": 8,
+      "outputs": [
+        {
+          "type": "text",
+          "text": "AFC Champions League Elite matches: 306\nfinished matches: 227 (0 duplicate fixtures dropped) | team-season entries: 48\ncomplete seasons: 0 ( -> )\nno player-level scorer data for this competition\neditions: 2\n  2024/2025: 112 matches, champion-ish: Al Ahli (final 2-0)\n  2025/2026: 115 matches, champion-ish: Al Ahli (final 1-0)\n"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "nation",
+            "titles",
+            "most recent"
+          ],
+          "rows": [
+            [
+              "Al Ahli",
+              "2",
+              "2025/2026, 2024/2025"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "edition",
+            "champion",
+            "final",
+            "tournament record",
+            "gf/ga"
+          ],
+          "rows": [
+            [
+              "2024/2025",
+              "Al Ahli",
+              "2-0",
+              "12W 1D 0L",
+              "34/10"
+            ],
+            [
+              "2025/2026",
+              "Al Ahli",
+              "1-0",
+              "9W 2D 1L",
+              "27/11"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "biggest wins",
+            "score",
+            "margin"
+          ],
+          "rows": [
+            [
+              "Al Hilal vs Gwangju FC (2024/2025)",
+              "7-0",
+              "+7"
+            ],
+            [
+              "Al Ittihad vs Al-Gharafa (2025/2026)",
+              "7-0",
+              "+7"
+            ],
+            [
+              "Al Hilal vs Al-Shorta SC (2024/2025)",
+              "5-0",
+              "+5"
+            ],
+            [
+              "Yokohama F. Marinos vs Buriram United (2024/2025)",
+              "5-0",
+              "+5"
+            ],
+            [
+              "Gwangju FC vs Yokohama F. Marinos (2024/2025)",
+              "7-3",
+              "+4"
+            ],
+            [
+              "Yokohama F. Marinos vs Ulsan HD (2024/2025)",
+              "4-0",
+              "+4"
+            ],
+            [
+              "Al Ahli vs Al-Shorta SC (2024/2025)",
+              "5-1",
+              "+4"
+            ],
+            [
+              "Al Nassr vs Al Ain (2024/2025)",
+              "5-1",
+              "+4"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "highest-scoring",
+            "score",
+            "total goals"
+          ],
+          "rows": [
+            [
+              "Gwangju FC vs Yokohama F. Marinos (2024/2025)",
+              "7-3",
+              "10"
+            ],
+            [
+              "Al Ain vs Al Hilal (2024/2025)",
+              "4-5",
+              "9"
+            ],
+            [
+              "Johor Darul Ta'zim vs Pohang Steelers (2024/2025)",
+              "5-2",
+              "7"
+            ],
+            [
+              "Al Hilal vs Gwangju FC (2024/2025)",
+              "7-0",
+              "7"
+            ],
+            [
+              "Sharjah vs Al-Gharafa (2025/2026)",
+              "4-3",
+              "7"
+            ],
+            [
+              "Gangwon FC vs Vissel Kobe (2025/2026)",
+              "4-3",
+              "7"
+            ],
+            [
+              "Al Ittihad vs Al-Gharafa (2025/2026)",
+              "7-0",
+              "7"
+            ],
+            [
+              "Al Ahli vs Shabab Al Ahli (2025/2026)",
+              "4-3",
+              "7"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "record",
+            "champion edition",
+            "record",
+            "gf/ga",
+            "gd"
+          ],
+          "rows": [
+            [
+              "most goals scored",
+              "Al Ahli 2024/2025",
+              "12W 1D 0L",
+              "34/10",
+              "24"
+            ],
+            [
+              "fewest goals conceded",
+              "Al Ahli 2024/2025",
+              "12W 1D 0L",
+              "34/10",
+              "24"
+            ],
+            [
+              "best goal difference",
+              "Al Ahli 2024/2025",
+              "12W 1D 0L",
+              "34/10",
+              "24"
+            ],
+            [
+              "most wins",
+              "Al Ahli 2024/2025",
+              "12W 1D 0L",
+              "34/10",
+              "24"
+            ],
+            [
+              "fewest losses",
+              "Al Ahli 2024/2025",
+              "12W 1D 0L",
+              "34/10",
+              "24"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "unbeaten champions",
+            "record",
+            "gf",
+            "ga"
+          ],
+          "rows": [
+            [
+              "Al Ahli 2024/2025",
+              "12W 1D",
+              "34",
+              "10"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "e6bfa15d-368e-4eff-ba43-3eeecd68ff7c",
+      "cell_type": "code",
+      "source": "println!(\"unbeaten champions: {}\", unbeaten.len());\n\n// closest finals (smallest margin or draw)\nlet mut finals: Vec<&Edition> = editions.iter().filter(|e| !e.champion.is_empty() && e.champion != \"decided on penalties\").collect();\nfinals.sort_by_key(|e| (e.final_hg - e.final_ag).abs());\nlet fin_rows: Vec<Vec<String>> = finals.iter().take(8)\n    .map(|e| vec![e.season.clone(), format!(\"{} vs {}{}\", e.champion, e.runner_up, if e.pens {\" (pens)\"} else {\"\"}), format!(\"{}-{}\", e.final_hg, e.final_ag)])\n    .collect();\nmars_table(&[\"closest finals\", \"matchup\", \"score\"], &fin_rows);\n",
+      "metadata": {},
+      "execution_count": 9,
+      "outputs": [
+        {
+          "type": "text",
+          "text": "AFC Champions League Elite matches: 306\nfinished matches: 227 (0 duplicate fixtures dropped) | team-season entries: 48\ncomplete seasons: 0 ( -> )\nno player-level scorer data for this competition\neditions: 2\n  2024/2025: 112 matches, champion-ish: Al Ahli (final 2-0)\n  2025/2026: 115 matches, champion-ish: Al Ahli (final 1-0)\nunbeaten champions: 1\n"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "nation",
+            "titles",
+            "most recent"
+          ],
+          "rows": [
+            [
+              "Al Ahli",
+              "2",
+              "2025/2026, 2024/2025"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "edition",
+            "champion",
+            "final",
+            "tournament record",
+            "gf/ga"
+          ],
+          "rows": [
+            [
+              "2024/2025",
+              "Al Ahli",
+              "2-0",
+              "12W 1D 0L",
+              "34/10"
+            ],
+            [
+              "2025/2026",
+              "Al Ahli",
+              "1-0",
+              "9W 2D 1L",
+              "27/11"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "biggest wins",
+            "score",
+            "margin"
+          ],
+          "rows": [
+            [
+              "Al Hilal vs Gwangju FC (2024/2025)",
+              "7-0",
+              "+7"
+            ],
+            [
+              "Al Ittihad vs Al-Gharafa (2025/2026)",
+              "7-0",
+              "+7"
+            ],
+            [
+              "Al Hilal vs Al-Shorta SC (2024/2025)",
+              "5-0",
+              "+5"
+            ],
+            [
+              "Yokohama F. Marinos vs Buriram United (2024/2025)",
+              "5-0",
+              "+5"
+            ],
+            [
+              "Gwangju FC vs Yokohama F. Marinos (2024/2025)",
+              "7-3",
+              "+4"
+            ],
+            [
+              "Yokohama F. Marinos vs Ulsan HD (2024/2025)",
+              "4-0",
+              "+4"
+            ],
+            [
+              "Al Ahli vs Al-Shorta SC (2024/2025)",
+              "5-1",
+              "+4"
+            ],
+            [
+              "Al Nassr vs Al Ain (2024/2025)",
+              "5-1",
+              "+4"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "highest-scoring",
+            "score",
+            "total goals"
+          ],
+          "rows": [
+            [
+              "Gwangju FC vs Yokohama F. Marinos (2024/2025)",
+              "7-3",
+              "10"
+            ],
+            [
+              "Al Ain vs Al Hilal (2024/2025)",
+              "4-5",
+              "9"
+            ],
+            [
+              "Johor Darul Ta'zim vs Pohang Steelers (2024/2025)",
+              "5-2",
+              "7"
+            ],
+            [
+              "Al Hilal vs Gwangju FC (2024/2025)",
+              "7-0",
+              "7"
+            ],
+            [
+              "Sharjah vs Al-Gharafa (2025/2026)",
+              "4-3",
+              "7"
+            ],
+            [
+              "Gangwon FC vs Vissel Kobe (2025/2026)",
+              "4-3",
+              "7"
+            ],
+            [
+              "Al Ittihad vs Al-Gharafa (2025/2026)",
+              "7-0",
+              "7"
+            ],
+            [
+              "Al Ahli vs Shabab Al Ahli (2025/2026)",
+              "4-3",
+              "7"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "record",
+            "champion edition",
+            "record",
+            "gf/ga",
+            "gd"
+          ],
+          "rows": [
+            [
+              "most goals scored",
+              "Al Ahli 2024/2025",
+              "12W 1D 0L",
+              "34/10",
+              "24"
+            ],
+            [
+              "fewest goals conceded",
+              "Al Ahli 2024/2025",
+              "12W 1D 0L",
+              "34/10",
+              "24"
+            ],
+            [
+              "best goal difference",
+              "Al Ahli 2024/2025",
+              "12W 1D 0L",
+              "34/10",
+              "24"
+            ],
+            [
+              "most wins",
+              "Al Ahli 2024/2025",
+              "12W 1D 0L",
+              "34/10",
+              "24"
+            ],
+            [
+              "fewest losses",
+              "Al Ahli 2024/2025",
+              "12W 1D 0L",
+              "34/10",
+              "24"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "unbeaten champions",
+            "record",
+            "gf",
+            "ga"
+          ],
+          "rows": [
+            [
+              "Al Ahli 2024/2025",
+              "12W 1D",
+              "34",
+              "10"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "closest finals",
+            "matchup",
+            "score"
+          ],
+          "rows": [
+            [
+              "2025/2026",
+              "Al Ahli vs Machida Zelvia",
+              "1-0"
+            ],
+            [
+              "2024/2025",
+              "Al Ahli vs Kawasaki Frontale",
+              "2-0"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "78713f86-55b0-4838-8431-1570722f31dd",
+      "cell_type": "code",
+      "source": "// T4: top scorers (latest edition with player data — SCORERS picks best-covered year)\n// Player-level stats only exist for a handful of StatsBomb-covered\n// matches in this competition, so a \"top scorers\" table would be\n// misleading — skipped deliberately.\nprintln!(\"player-level coverage too sparse for a top-scorers table\");\n",
+      "metadata": {},
+      "execution_count": 10,
+      "outputs": [
+        {
+          "type": "text",
+          "text": "AFC Champions League Elite matches: 306\nfinished matches: 227 (0 duplicate fixtures dropped) | team-season entries: 48\ncomplete seasons: 0 ( -> )\nno player-level scorer data for this competition\neditions: 2\n  2024/2025: 112 matches, champion-ish: Al Ahli (final 2-0)\n  2025/2026: 115 matches, champion-ish: Al Ahli (final 1-0)\nunbeaten champions: 1\nplayer-level coverage too sparse for a top-scorers table\n"
         },
         {
           "type": "table",
@@ -285,13 +1282,259 @@
     {
       "id": "466575ac-533c-4158-a2e1-99d30ee4224d",
       "cell_type": "code",
-      "source": "use plotters::prelude::*;\n\nlet labels_t: Vec<String> = tv.iter().take(8).map(|(t, _)| t.chars().take(12).collect()).collect();\nlet counts_t: Vec<f64> = tv.iter().take(8).map(|(_, ss)| ss.len() as f64).collect();\nlet ymax_t = counts_t.iter().cloned().fold(1.0_f64, f64::max) * 1.2;\nlet n_t = counts_t.len();\nlet figure1 = plotters::evcxr::evcxr_figure((720, 400), |root| {\n    root.fill(&WHITE)?;\n    let mut chart = ChartBuilder::on(&root)\n        .caption(\"Most titles\", (\"sans-serif\", 18))\n        .margin(10)\n        .x_label_area_size(80)\n        .y_label_area_size(45)\n        .build_cartesian_2d(-0.5_f64..(n_t as f64 - 0.5), 0.0..ymax_t)?;\n    chart.configure_mesh().y_desc(\"titles\").x_labels(n_t)\n        .x_label_formatter(&|x: &f64| {\n            let i = (*x).round() as usize;\n            if i < labels_t.len() { labels_t[i].clone() } else { String::new() }\n        })\n        .draw()?;\n    chart.draw_series((0..n_t).map(|i| {\n        Rectangle::new([(i as f64 - 0.35, 0.0), (i as f64 + 0.35, counts_t[i])], BLUE.filled())\n    }))?;\n    Ok(())\n});\nfigure1.evcxr_display();\n\nlet n_e = champ_stats.len();\nlet pts_max_e = champ_stats.iter().map(|c| c.2 - c.3).fold(1i64, |a, b| a.max(b)) as f64 * 1.1;\nlet figure2 = plotters::evcxr::evcxr_figure((760, 400), |root| {\n    root.fill(&WHITE)?;\n    let mut chart = ChartBuilder::on(&root)\n        .caption(\"Champion's goal difference per edition\", (\"sans-serif\", 18))\n        .margin(10)\n        .x_label_area_size(30)\n        .y_label_area_size(45)\n        .build_cartesian_2d(-0.5_f64..(n_e as f64 - 0.5), 0.0..pts_max_e)?;\n    chart.configure_mesh().y_desc(\"goal diff\").x_labels(0).draw()?;\n    chart.draw_series(champ_stats.iter().enumerate().map(|(i, c)| {\n        Circle::new((i as f64, (c.2 - c.3) as f64), 3, BLUE.filled())\n    }))?;\n    chart.draw_series(LineSeries::new(\n        champ_stats.iter().enumerate().map(|(i, c)| (i as f64, (c.2 - c.3) as f64)),\n        BLUE.stroke_width(1),\n    ))?;\n    Ok(())\n});\nfigure2.evcxr_display();",
+      "source": "use plotters::prelude::*;\n\nlet labels_t: Vec<String> = tv.iter().take(8).map(|(t, _)| t.chars().take(12).collect()).collect();\nlet counts_t: Vec<f64> = tv.iter().take(8).map(|(_, ss)| ss.len() as f64).collect();\nlet ymax_t = counts_t.iter().cloned().fold(1.0_f64, f64::max) * 1.2;\nlet n_t = counts_t.len();\nlet figure1 = plotters::evcxr::evcxr_figure((720, 400), |root| {\n    root.fill(&WHITE)?;\n    let mut chart = ChartBuilder::on(&root)\n        .caption(\"Most titles\", (\"sans-serif\", 18))\n        .margin(10)\n        .x_label_area_size(80)\n        .y_label_area_size(45)\n        .build_cartesian_2d(-0.5_f64..(n_t as f64 - 0.5), 0.0..ymax_t)?;\n    chart.configure_mesh().y_desc(\"titles\").x_labels(n_t)\n        .x_label_formatter(&|x: &f64| {\n            let i = (*x).round() as usize;\n            if i < labels_t.len() { labels_t[i].clone() } else { String::new() }\n        })\n        .draw()?;\n    chart.draw_series((0..n_t).map(|i| {\n        Rectangle::new([(i as f64 - 0.35, 0.0), (i as f64 + 0.35, counts_t[i])], BLUE.filled())\n    }))?;\n    Ok(())\n});\nfigure1.evcxr_display();\n",
       "metadata": {},
-      "execution_count": 4,
+      "execution_count": 11,
       "outputs": [
         {
           "type": "text",
-          "text": "AFC Champions League Elite matches: 306\nfinished matches: 227 (0 duplicate fixtures dropped) | team-season entries: 48\ncomplete seasons: 0 ( -> )\nno player-level scorer data for this competition\neditions: 2\n  2024/2025: 112 matches, champion-ish: Al Ahli (final 2-0)\n  2025/2026: 115 matches, champion-ish: Al Ahli (final 1-0)\nunbeaten champions: 1\n"
+          "text": "AFC Champions League Elite matches: 306\nfinished matches: 227 (0 duplicate fixtures dropped) | team-season entries: 48\ncomplete seasons: 0 ( -> )\nno player-level scorer data for this competition\neditions: 2\n  2024/2025: 112 matches, champion-ish: Al Ahli (final 2-0)\n  2025/2026: 115 matches, champion-ish: Al Ahli (final 1-0)\nunbeaten champions: 1\nplayer-level coverage too sparse for a top-scorers table\n"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "nation",
+            "titles",
+            "most recent"
+          ],
+          "rows": [
+            [
+              "Al Ahli",
+              "2",
+              "2025/2026, 2024/2025"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "edition",
+            "champion",
+            "final",
+            "tournament record",
+            "gf/ga"
+          ],
+          "rows": [
+            [
+              "2024/2025",
+              "Al Ahli",
+              "2-0",
+              "12W 1D 0L",
+              "34/10"
+            ],
+            [
+              "2025/2026",
+              "Al Ahli",
+              "1-0",
+              "9W 2D 1L",
+              "27/11"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "biggest wins",
+            "score",
+            "margin"
+          ],
+          "rows": [
+            [
+              "Al Hilal vs Gwangju FC (2024/2025)",
+              "7-0",
+              "+7"
+            ],
+            [
+              "Al Ittihad vs Al-Gharafa (2025/2026)",
+              "7-0",
+              "+7"
+            ],
+            [
+              "Al Hilal vs Al-Shorta SC (2024/2025)",
+              "5-0",
+              "+5"
+            ],
+            [
+              "Yokohama F. Marinos vs Buriram United (2024/2025)",
+              "5-0",
+              "+5"
+            ],
+            [
+              "Gwangju FC vs Yokohama F. Marinos (2024/2025)",
+              "7-3",
+              "+4"
+            ],
+            [
+              "Yokohama F. Marinos vs Ulsan HD (2024/2025)",
+              "4-0",
+              "+4"
+            ],
+            [
+              "Al Ahli vs Al-Shorta SC (2024/2025)",
+              "5-1",
+              "+4"
+            ],
+            [
+              "Al Nassr vs Al Ain (2024/2025)",
+              "5-1",
+              "+4"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "highest-scoring",
+            "score",
+            "total goals"
+          ],
+          "rows": [
+            [
+              "Gwangju FC vs Yokohama F. Marinos (2024/2025)",
+              "7-3",
+              "10"
+            ],
+            [
+              "Al Ain vs Al Hilal (2024/2025)",
+              "4-5",
+              "9"
+            ],
+            [
+              "Johor Darul Ta'zim vs Pohang Steelers (2024/2025)",
+              "5-2",
+              "7"
+            ],
+            [
+              "Al Hilal vs Gwangju FC (2024/2025)",
+              "7-0",
+              "7"
+            ],
+            [
+              "Sharjah vs Al-Gharafa (2025/2026)",
+              "4-3",
+              "7"
+            ],
+            [
+              "Gangwon FC vs Vissel Kobe (2025/2026)",
+              "4-3",
+              "7"
+            ],
+            [
+              "Al Ittihad vs Al-Gharafa (2025/2026)",
+              "7-0",
+              "7"
+            ],
+            [
+              "Al Ahli vs Shabab Al Ahli (2025/2026)",
+              "4-3",
+              "7"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "record",
+            "champion edition",
+            "record",
+            "gf/ga",
+            "gd"
+          ],
+          "rows": [
+            [
+              "most goals scored",
+              "Al Ahli 2024/2025",
+              "12W 1D 0L",
+              "34/10",
+              "24"
+            ],
+            [
+              "fewest goals conceded",
+              "Al Ahli 2024/2025",
+              "12W 1D 0L",
+              "34/10",
+              "24"
+            ],
+            [
+              "best goal difference",
+              "Al Ahli 2024/2025",
+              "12W 1D 0L",
+              "34/10",
+              "24"
+            ],
+            [
+              "most wins",
+              "Al Ahli 2024/2025",
+              "12W 1D 0L",
+              "34/10",
+              "24"
+            ],
+            [
+              "fewest losses",
+              "Al Ahli 2024/2025",
+              "12W 1D 0L",
+              "34/10",
+              "24"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "unbeaten champions",
+            "record",
+            "gf",
+            "ga"
+          ],
+          "rows": [
+            [
+              "Al Ahli 2024/2025",
+              "12W 1D",
+              "34",
+              "10"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "closest finals",
+            "matchup",
+            "score"
+          ],
+          "rows": [
+            [
+              "2025/2026",
+              "Al Ahli vs Machida Zelvia",
+              "1-0"
+            ],
+            [
+              "2024/2025",
+              "Al Ahli vs Kawasaki Frontale",
+              "2-0"
+            ]
+          ]
+        },
+        {
+          "type": "mime_bundle",
+          "data": {
+            "image/svg+xml": "<svg width=\"720\" height=\"400\" viewBox=\"0 0 720 400\" xmlns=\"http://www.w3.org/2000/svg\">\n<rect x=\"0\" y=\"0\" width=\"720\" height=\"400\" opacity=\"1\" fill=\"#FFFFFF\" stroke=\"none\"/>\n<text x=\"360\" y=\"15\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"14.516129032258064\" opacity=\"1\" fill=\"#000000\">\nMost titles\n</text>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"120\" y1=\"309\" x2=\"120\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"251\" y1=\"309\" x2=\"251\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"382\" y1=\"309\" x2=\"382\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"512\" y1=\"309\" x2=\"512\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"643\" y1=\"309\" x2=\"643\" y2=\"34\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"309\" x2=\"709\" y2=\"309\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"304\" x2=\"709\" y2=\"304\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"298\" x2=\"709\" y2=\"298\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"292\" x2=\"709\" y2=\"292\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"287\" x2=\"709\" y2=\"287\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"281\" x2=\"709\" y2=\"281\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"275\" x2=\"709\" y2=\"275\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"269\" x2=\"709\" y2=\"269\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"264\" x2=\"709\" y2=\"264\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"258\" x2=\"709\" y2=\"258\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"252\" x2=\"709\" y2=\"252\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"246\" x2=\"709\" y2=\"246\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"241\" x2=\"709\" y2=\"241\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"235\" x2=\"709\" y2=\"235\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"229\" x2=\"709\" y2=\"229\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"224\" x2=\"709\" y2=\"224\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"218\" x2=\"709\" y2=\"218\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"212\" x2=\"709\" y2=\"212\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"206\" x2=\"709\" y2=\"206\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"201\" x2=\"709\" y2=\"201\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"195\" x2=\"709\" y2=\"195\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"189\" x2=\"709\" y2=\"189\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"183\" x2=\"709\" y2=\"183\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"178\" x2=\"709\" y2=\"178\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"172\" x2=\"709\" y2=\"172\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"166\" x2=\"709\" y2=\"166\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"161\" x2=\"709\" y2=\"161\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"155\" x2=\"709\" y2=\"155\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"149\" x2=\"709\" y2=\"149\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"143\" x2=\"709\" y2=\"143\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"138\" x2=\"709\" y2=\"138\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"132\" x2=\"709\" y2=\"132\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"126\" x2=\"709\" y2=\"126\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"120\" x2=\"709\" y2=\"120\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"115\" x2=\"709\" y2=\"115\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"109\" x2=\"709\" y2=\"109\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"103\" x2=\"709\" y2=\"103\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"98\" x2=\"709\" y2=\"98\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"92\" x2=\"709\" y2=\"92\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"86\" x2=\"709\" y2=\"86\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"80\" x2=\"709\" y2=\"80\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"75\" x2=\"709\" y2=\"75\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"69\" x2=\"709\" y2=\"69\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"63\" x2=\"709\" y2=\"63\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"57\" x2=\"709\" y2=\"57\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"52\" x2=\"709\" y2=\"52\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"46\" x2=\"709\" y2=\"46\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"40\" x2=\"709\" y2=\"40\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"34\" x2=\"709\" y2=\"34\"/>\n<text x=\"10\" y=\"172\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\" transform=\"rotate(270, 10, 172)\">\ntitles\n</text>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"382\" y1=\"309\" x2=\"382\" y2=\"34\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"309\" x2=\"709\" y2=\"309\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"252\" x2=\"709\" y2=\"252\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"195\" x2=\"709\" y2=\"195\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"138\" x2=\"709\" y2=\"138\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"55\" y1=\"80\" x2=\"709\" y2=\"80\"/>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"54,34 54,309 \"/>\n<text x=\"45\" y=\"309\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n0.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"49,309 54,309 \"/>\n<text x=\"45\" y=\"252\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n0.5\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"49,252 54,252 \"/>\n<text x=\"45\" y=\"195\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n1.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"49,195 54,195 \"/>\n<text x=\"45\" y=\"138\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n1.5\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"49,138 54,138 \"/>\n<text x=\"45\" y=\"80\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n2.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"49,80 54,80 \"/>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"55,310 709,310 \"/>\n<text x=\"382\" y=\"320\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\nAl Ahli\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"382,310 382,315 \"/>\n<rect x=\"153\" y=\"80\" width=\"457\" height=\"229\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\"/>\n</svg>",
+            "text/plain": "Figure (SVG)"
+          },
+          "metadata": {}
+        }
+      ]
+    },
+    {
+      "id": "f548a076-0cf9-4417-b757-7fd9a4e3376a",
+      "cell_type": "code",
+      "source": "let n_e = champ_stats.len();\nlet pts_max_e = champ_stats.iter().map(|c| c.2 - c.3).fold(1i64, |a, b| a.max(b)) as f64 * 1.1;\nlet figure2 = plotters::evcxr::evcxr_figure((760, 400), |root| {\n    root.fill(&WHITE)?;\n    let mut chart = ChartBuilder::on(&root)\n        .caption(\"Champion's goal difference per edition\", (\"sans-serif\", 18))\n        .margin(10)\n        .x_label_area_size(30)\n        .y_label_area_size(45)\n        .build_cartesian_2d(-0.5_f64..(n_e as f64 - 0.5), 0.0..pts_max_e)?;\n    chart.configure_mesh().y_desc(\"goal diff\").x_labels(0).draw()?;\n    chart.draw_series(champ_stats.iter().enumerate().map(|(i, c)| {\n        Circle::new((i as f64, (c.2 - c.3) as f64), 3, BLUE.filled())\n    }))?;\n    chart.draw_series(LineSeries::new(\n        champ_stats.iter().enumerate().map(|(i, c)| (i as f64, (c.2 - c.3) as f64)),\n        BLUE.stroke_width(1),\n    ))?;\n    Ok(())\n});\nfigure2.evcxr_display();\n",
+      "metadata": {},
+      "execution_count": 12,
+      "outputs": [
+        {
+          "type": "text",
+          "text": "AFC Champions League Elite matches: 306\nfinished matches: 227 (0 duplicate fixtures dropped) | team-season entries: 48\ncomplete seasons: 0 ( -> )\nno player-level scorer data for this competition\neditions: 2\n  2024/2025: 112 matches, champion-ish: Al Ahli (final 2-0)\n  2025/2026: 115 matches, champion-ish: Al Ahli (final 1-0)\nunbeaten champions: 1\nplayer-level coverage too sparse for a top-scorers table\n"
         },
         {
           "type": "table",
@@ -539,7 +1782,9 @@
     {
       "id": "c7519607-c59c-4bdd-a242-c557d161fb1e",
       "cell_type": "markdown",
-      "source": "## What the record book says\n\nThree seasons exist (2024/25 → 2026/27 in progress); the two completed\neditions are covered in full.\n\n- **Al Ahli are back-to-back champions**: winners of both the 2025 and\n  2026 editions — the only club to lift the new Elite trophy, and the\n  first dynasty of the competition's new era.\n- **Al Ahli 2024/25 was the most dominant season**: 12W-1D-0L (34/10),\n  unbeaten, sweeping every champion record in the dataset.\n- **The 2026 final was a one-goal game**: Al Ahli 1–0 Machida Zelvia —\n  tighter than their 2–0 win over Kawasaki Frontale in 2025.\n- **Biggest wins**: Al Hilal 7–0 Gwangju and Al Ittihad 7–0 Al-Gharafa —\n  Saudi clubs set the margin record.\n- **Highest-scoring match**: Gwangju 7–3 Yokohama F. Marinos (10 goals)\n  — the tournament's wildest game.\n\n*Source: ESPN import via `dev.db`; only the Elite era (2024/25 onward)\nis included — the old AFC Champions League is a different competition.\nPlayer-level stats too sparse for a top-scorers table.*"
+      "source": "## What the record book says\n\nThree seasons exist (2024/25 → 2026/27 in progress); the two completed\neditions are covered in full.\n\n- **Al Ahli are back-to-back champions**: winners of both the 2025 and\n  2026 editions — the only club to lift the new Elite trophy, and the\n  first dynasty of the competition's new era.\n- **Al Ahli 2024/25 was the most dominant season**: 12W-1D-0L (34/10),\n  unbeaten, sweeping every champion record in the dataset.\n- **The 2026 final was a one-goal game**: Al Ahli 1–0 Machida Zelvia —\n  tighter than their 2–0 win over Kawasaki Frontale in 2025.\n- **Biggest wins**: Al Hilal 7–0 Gwangju and Al Ittihad 7–0 Al-Gharafa —\n  Saudi clubs set the margin record.\n- **Highest-scoring match**: Gwangju 7–3 Yokohama F. Marinos (10 goals)\n  — the tournament's wildest game.\n\n*Source: ESPN import via `dev.db`; only the Elite era (2024/25 onward)\nis included — the old AFC Champions League is a different competition.\nPlayer-level stats too sparse for a top-scorers table.*",
+      "metadata": {},
+      "outputs": []
     }
   ]
 }

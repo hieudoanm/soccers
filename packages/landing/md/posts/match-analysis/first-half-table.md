@@ -8,6 +8,8 @@ order: 44
 tags: ['football', 'analysis', 'standings', 'mars', 'sqlite']
 ---
 
+# Does the first half of the season predict the final table?
+
 ## Does the first half of the season predict the final table?
 
 The oldest question in football analysis: **is the table at Christmas real, or
@@ -306,9 +308,9 @@ println!("mid leader wins title: {}/{} = {:.0}%", lw, results.len(), 100.0*lw as
 completed matches after dedup: 311832 (1190 dupes dropped)
 league-seasons analysed: 897
 mean Spearman(mid,final) = 0.838 | median = 0.857
-mid top-4 -> final top-4: 2700/3588 = 75%
-mid bottom-3 -> final bottom-3: 1744/2691 = 65%
-mid leader wins title: 510/897 = 57%
+mid top-4 -> final top-4: 2701/3588 = 75%
+mid bottom-3 -> final bottom-3: 1742/2691 = 65%
+mid leader wins title: 511/897 = 57%
 ```
 
 ## By league: which tables are most predictable?
@@ -337,17 +339,17 @@ mars_table(&["league","seasons","mean ρ","median ρ"], &lrows);
 completed matches after dedup: 311832 (1190 dupes dropped)
 league-seasons analysed: 897
 mean Spearman(mid,final) = 0.838 | median = 0.857
-mid top-4 -> final top-4: 2702/3588 = 75%
+mid top-4 -> final top-4: 2701/3588 = 75%
 mid bottom-3 -> final bottom-3: 1746/2691 = 65%
-mid leader wins title: 510/897 = 57%
+mid leader wins title: 511/897 = 57%
 ```
 
 | league                      | seasons | mean ρ | median ρ |
 | --------------------------- | ------- | ------ | -------- |
-| Champions League            | 22      | 0.928  | 0.940    |
+| Champions League            | 22      | 0.928  | 0.941    |
 | FA Women's Super League     | 4       | 0.928  | 0.930    |
-| UEFA Conference League      | 5       | 0.916  | 0.926    |
-| UEFA Europa League          | 6       | 0.904  | 0.944    |
+| UEFA Conference League      | 5       | 0.916  | 0.927    |
+| UEFA Europa League          | 6       | 0.905  | 0.945    |
 | AFC Champions League Elite  | 3       | 0.896  | 0.922    |
 | Eliteserien                 | 3       | 0.893  | 0.894    |
 | Italian Serie A             | 34      | 0.889  | 0.899    |
@@ -360,28 +362,28 @@ mid leader wins title: 510/897 = 57%
 | Belgian Pro League          | 32      | 0.860  | 0.870    |
 | Super League                | 11      | 0.859  | 0.886    |
 | Portuguese Liga Portugal    | 34      | 0.854  | 0.868    |
-| Premier League              | 4       | 0.850  | 0.888    |
 | German Bundesliga           | 34      | 0.850  | 0.878    |
+| Premier League              | 4       | 0.850  | 0.888    |
 | Scottish League Two         | 30      | 0.842  | 0.867    |
-| English League Two          | 34      | 0.838  | 0.837    |
+| Allsvenskan                 | 3       | 0.842  | 0.838    |
 | Turkish Süper Lig           | 33      | 0.838  | 0.870    |
+| English League Two          | 34      | 0.838  | 0.837    |
 | Spanish La Liga             | 34      | 0.837  | 0.848    |
-| Allsvenskan                 | 3       | 0.835  | 0.838    |
-| French Ligue 1              | 34      | 0.833  | 0.836    |
 | Superliga                   | 5       | 0.833  | 0.871    |
+| French Ligue 1              | 34      | 0.833  | 0.836    |
 | English League One          | 34      | 0.829  | 0.837    |
 | Bundesliga                  | 13      | 0.828  | 0.846    |
 | Serie A                     | 15      | 0.823  | 0.848    |
 | Italian Serie B             | 30      | 0.818  | 0.839    |
 | Scottish League One         | 30      | 0.816  | 0.867    |
-| Veikkausliiga               | 5       | 0.808  | 0.832    |
+| Veikkausliiga               | 5       | 0.806  | 0.832    |
 | Liga MX                     | 15      | 0.805  | 0.804    |
 | German 2. Bundesliga        | 34      | 0.805  | 0.812    |
 | English Championship        | 34      | 0.801  | 0.817    |
 | Liga Profesional            | 14      | 0.797  | 0.812    |
-| Superliga                   | 12      | 0.792  | 0.853    |
+| Superliga                   | 12      | 0.794  | 0.853    |
 | Spanish La Liga 2           | 34      | 0.792  | 0.792    |
-| French Ligue 2              | 31      | 0.786  | 0.815    |
+| French Ligue 2              | 31      | 0.785  | 0.815    |
 | MLS                         | 15      | 0.751  | 0.753    |
 | Copa De La Liga Profesional | 5       | 0.740  | 0.795    |
 | Super League                | 10      | 0.740  | 0.709    |
@@ -393,7 +395,6 @@ The biggest rank swings between the mid-season and final table — teams that
 proved the halfway table wrong in both directions.
 
 ```rust
-
 // biggest rank changes mid->final across all lgsns
 struct Swing { lg:String, sn:String, team:String, mid:usize, fin:usize, delta:i64 }
 let mut swings: Vec<Swing> = Vec::new();
@@ -429,7 +430,41 @@ let rrows: Vec<Vec<String>> = risers.iter().take(20).map(|s| vec![
     format!("P{}", s.mid), format!("P{}", s.fin), format!("{:+}", -s.delta),
 ]).collect();
 mars_table(&["league","season","team","mid pos","final pos","places up"], &rrows);
+```
 
+```text
+completed matches after dedup: 311832 (1190 dupes dropped)
+league-seasons analysed: 897
+mean Spearman(mid,final) = 0.838 | median = 0.857
+mid top-4 -> final top-4: 2702/3588 = 75%
+mid bottom-3 -> final bottom-3: 1745/2691 = 65%
+mid leader wins title: 511/897 = 57%
+```
+
+| league                 | season    | team           | mid pos | final pos | places up |
+| ---------------------- | --------- | -------------- | ------- | --------- | --------- |
+| Champions League       | 2019/2020 | Atalanta       | P79     | P17       | +62       |
+| Champions League       | 2018/2019 | Tottenham      | P44     | P5        | +39       |
+| Champions League       | 2019/2020 | Leverkusen     | P76     | P40       | +36       |
+| Champions League       | 2008/2009 | FC Porto       | P48     | P16       | +32       |
+| Champions League       | 2016/2017 | Dynamo Kyiv    | P69     | P37       | +32       |
+| Champions League       | 2005/2006 | Benfica        | P42     | P11       | +31       |
+| UEFA Europa League     | 2020/2021 | Man United     | P39     | P8        | +31       |
+| Champions League       | 2005/2006 | AC Milan       | P37     | P7        | +30       |
+| Champions League       | 2012/2013 | Galatasaray    | P40     | P10       | +30       |
+| Champions League       | 2018/2019 | Liverpool      | P32     | P3        | +29       |
+| Champions League       | 2005/2006 | Olympiacos     | P74     | P45       | +29       |
+| Champions League       | 2011/2012 | FC Basel       | P41     | P12       | +29       |
+| Champions League       | 2015/2016 | VfL Wolfsburg  | P34     | P6        | +28       |
+| Champions League       | 2015/2016 | Arsenal        | P57     | P29       | +28       |
+| UEFA Conference League | 2023/2024 | Olympiacos     | P32     | P4        | +28       |
+| Champions League       | 2014/2015 | Juventus       | P32     | P5        | +27       |
+| Champions League       | 2018/2019 | Viktoria Plzen | P67     | P41       | +26       |
+| Champions League       | 2018/2019 | Man City       | P30     | P4        | +26       |
+| Champions League       | 2011/2012 | Napoli         | P37     | P11       | +26       |
+| Champions League       | 2008/2009 | Celtic         | P65     | P39       | +26       |
+
+```rust
 let mut fallers: Vec<&Swing> = swings.iter().collect(); fallers.sort_by(|a,b| b.delta.cmp(&a.delta));
 let frows: Vec<Vec<String>> = fallers.iter().take(20).map(|s| vec![
     s.lg.split('|').nth(1).unwrap_or("").to_string(), s.sn.clone(), s.team.clone(),
@@ -441,102 +476,34 @@ mars_table(&["league","season","team","mid pos","final pos","places down"], &fro
 ```text
 completed matches after dedup: 311832 (1190 dupes dropped)
 league-seasons analysed: 897
-mean Spearman(mid,final) = 0.838 | median = 0.857
-mid top-4 -> final top-4: 2700/3588 = 75%
+mean Spearman(mid,final) = 0.838 | median = 0.856
+mid top-4 -> final top-4: 2702/3588 = 75%
 mid bottom-3 -> final bottom-3: 1742/2691 = 65%
-mid leader wins title: 511/897 = 57%
+mid leader wins title: 510/897 = 57%
 ```
-
-| league                      | seasons | mean ρ | median ρ |
-| --------------------------- | ------- | ------ | -------- |
-| FA Women's Super League     | 4       | 0.928  | 0.930    |
-| Champions League            | 22      | 0.928  | 0.941    |
-| UEFA Conference League      | 5       | 0.916  | 0.927    |
-| UEFA Europa League          | 6       | 0.905  | 0.944    |
-| AFC Champions League Elite  | 3       | 0.897  | 0.922    |
-| Eliteserien                 | 3       | 0.893  | 0.894    |
-| Italian Serie A             | 34      | 0.889  | 0.899    |
-| Scottish Premiership        | 33      | 0.884  | 0.902    |
-| Dutch Eredivisie            | 34      | 0.879  | 0.891    |
-| Scottish Championship       | 34      | 0.871  | 0.879    |
-| English Premier League      | 34      | 0.868  | 0.884    |
-| Greek Super League          | 28      | 0.863  | 0.886    |
-| J1 League                   | 12      | 0.861  | 0.872    |
-| Belgian Pro League          | 32      | 0.860  | 0.870    |
-| Super League                | 11      | 0.859  | 0.886    |
-| Portuguese Liga Portugal    | 34      | 0.854  | 0.868    |
-| German Bundesliga           | 34      | 0.850  | 0.878    |
-| Premier League              | 4       | 0.850  | 0.888    |
-| Scottish League Two         | 30      | 0.842  | 0.867    |
-| Allsvenskan                 | 3       | 0.842  | 0.838    |
-| English League Two          | 34      | 0.838  | 0.837    |
-| Turkish Süper Lig           | 33      | 0.837  | 0.870    |
-| Spanish La Liga             | 34      | 0.837  | 0.848    |
-| French Ligue 1              | 34      | 0.833  | 0.836    |
-| Superliga                   | 5       | 0.833  | 0.871    |
-| English League One          | 34      | 0.829  | 0.837    |
-| Bundesliga                  | 13      | 0.828  | 0.846    |
-| Serie A                     | 15      | 0.823  | 0.848    |
-| Italian Serie B             | 30      | 0.818  | 0.839    |
-| Scottish League One         | 30      | 0.816  | 0.867    |
-| Veikkausliiga               | 5       | 0.808  | 0.832    |
-| German 2. Bundesliga        | 34      | 0.805  | 0.812    |
-| Liga MX                     | 15      | 0.805  | 0.804    |
-| English Championship        | 34      | 0.800  | 0.817    |
-| Liga Profesional            | 14      | 0.796  | 0.812    |
-| Superliga                   | 12      | 0.792  | 0.853    |
-| Spanish La Liga 2           | 34      | 0.792  | 0.792    |
-| French Ligue 2              | 31      | 0.785  | 0.815    |
-| MLS                         | 15      | 0.751  | 0.753    |
-| Super League                | 10      | 0.740  | 0.709    |
-| Copa De La Liga Profesional | 5       | 0.740  | 0.795    |
-| Ekstraklasa                 | 14      | 0.727  | 0.721    |
-
-| league                 | season    | team           | mid pos | final pos | places up |
-| ---------------------- | --------- | -------------- | ------- | --------- | --------- |
-| Champions League       | 2019/2020 | Atalanta       | P79     | P17       | +62       |
-| Champions League       | 2018/2019 | Tottenham      | P44     | P5        | +39       |
-| Champions League       | 2019/2020 | Leverkusen     | P76     | P40       | +36       |
-| Champions League       | 2016/2017 | Dynamo Kyiv    | P69     | P37       | +32       |
-| Champions League       | 2008/2009 | FC Porto       | P47     | P16       | +31       |
-| Champions League       | 2005/2006 | Benfica        | P42     | P11       | +31       |
-| UEFA Europa League     | 2020/2021 | Man United     | P39     | P8        | +31       |
-| Champions League       | 2005/2006 | AC Milan       | P37     | P7        | +30       |
-| Champions League       | 2012/2013 | Galatasaray    | P40     | P10       | +30       |
-| Champions League       | 2011/2012 | FC Basel       | P41     | P12       | +29       |
-| Champions League       | 2005/2006 | Olympiacos     | P74     | P45       | +29       |
-| Champions League       | 2018/2019 | Liverpool      | P32     | P3        | +29       |
-| UEFA Conference League | 2023/2024 | Olympiacos     | P32     | P4        | +28       |
-| Champions League       | 2015/2016 | Arsenal        | P57     | P29       | +28       |
-| Champions League       | 2015/2016 | VfL Wolfsburg  | P34     | P6        | +28       |
-| Champions League       | 2014/2015 | Juventus       | P32     | P5        | +27       |
-| Champions League       | 2011/2012 | Napoli         | P37     | P11       | +26       |
-| Champions League       | 2018/2019 | Man City       | P30     | P4        | +26       |
-| Champions League       | 2018/2019 | Viktoria Plzen | P67     | P41       | +26       |
-| Champions League       | 2008/2009 | Celtic         | P65     | P40       | +25       |
 
 | league                      | season    | team               | mid pos | final pos | places down |
 | --------------------------- | --------- | ------------------ | ------- | --------- | ----------- |
 | Copa De La Liga Profesional | 2023      | Defensa y Justicia | P8      | P24       | +16         |
-| English Championship        | 2022/23   | QPR                | P6      | P21       | +15         |
-| Champions League            | 2019/2020 | Apoel Nicosia      | P11     | P26       | +15         |
-| Champions League            | 2017/2018 | Olympiacos         | P10     | P25       | +15         |
 | Champions League            | 2012/2013 | Helsingborg        | P11     | P26       | +15         |
-| Champions League            | 2026/2027 | PSV Eindhoven      | P16     | P30       | +14         |
-| Champions League            | 2026/2027 | VfB Stuttgart      | P3      | P17       | +14         |
-| English Championship        | 2019/20   | Sheffield Weds     | P3      | P17       | +14         |
-| English League Two          | 2003/04   | York               | P10     | P24       | +14         |
-| UEFA Europa League          | 2024/2025 | Galatasaray        | P5      | P19       | +14         |
-| UEFA Europa League          | 2024/2025 | Anderlecht         | P3      | P17       | +14         |
-| English League Two          | 1996/97   | Torquay            | P7      | P21       | +14         |
-| Champions League            | 2017/2018 | FC Astana          | P12     | P26       | +14         |
-| Champions League            | 2017/2018 | Hapoel Be'er       | P8      | P22       | +14         |
-| Champions League            | 2017/2018 | Apoel Nicosia      | P4      | P18       | +14         |
-| Champions League            | 2017/2018 | Legia Warsaw       | P13     | P27       | +14         |
-| Champions League            | 2017/2018 | FK Qarabag         | P3      | P17       | +14         |
+| Champions League            | 2019/2020 | Apoel Nicosia      | P11     | P26       | +15         |
+| English Championship        | 2022/23   | QPR                | P6      | P21       | +15         |
+| Champions League            | 2017/2018 | Olympiacos         | P10     | P25       | +15         |
 | Champions League            | 2018/2019 | AEK Athens         | P21     | P35       | +14         |
+| Champions League            | 2018/2019 | Ludogorets Razgrad | P22     | P36       | +14         |
 | Champions League            | 2018/2019 | Dinamo Zagreb      | P4      | P18       | +14         |
 | Champions League            | 2018/2019 | Celtic             | P5      | P19       | +14         |
+| English Championship        | 2019/20   | Sheffield Weds     | P3      | P17       | +14         |
+| Champions League            | 2026/2027 | PSV Eindhoven      | P16     | P30       | +14         |
+| Champions League            | 2026/2027 | VfB Stuttgart      | P3      | P17       | +14         |
+| Champions League            | 2007/2008 | Dinamo Zagreb      | P13     | P27       | +14         |
+| English Championship        | 2002/03   | Coventry           | P6      | P20       | +14         |
+| UEFA Europa League          | 2024/2025 | Anderlecht         | P3      | P17       | +14         |
+| UEFA Europa League          | 2024/2025 | Galatasaray        | P5      | P19       | +14         |
+| English League Two          | 2003/04   | York               | P10     | P24       | +14         |
+| Champions League            | 2017/2018 | FC Astana          | P12     | P26       | +14         |
+| Champions League            | 2017/2018 | Hapoel Be'er       | P8      | P22       | +14         |
+| Champions League            | 2017/2018 | Legia Warsaw       | P13     | P27       | +14         |
 
 ## Findings
 

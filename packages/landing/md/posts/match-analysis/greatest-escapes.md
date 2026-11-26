@@ -8,6 +8,8 @@ order: 40
 tags: ['football', 'analysis', 'relegation', 'standings', 'mars', 'sqlite']
 ---
 
+# Greatest escapes: the teams that survived from the drop zone
+
 ## Greatest escapes: the teams that survived from the drop zone
 
 The mirror image of the choke. This notebook asks: **how often does a team sit
@@ -356,53 +358,53 @@ mars_table(&["league","season","team","bottom-3 until","final position"], &rows)
 ```text
 completed matches after dedup: 311832 (1190 dupes dropped)
 team-seasons: 21299
-team-seasons that were bottom-3 with <=10 games left: 4742
-escapes (finished outside bottom 3): 1747
-near misses (stayed bottom 3): 2995
+team-seasons that were bottom-3 with <=10 games left: 4735
+escapes (finished outside bottom 3): 1739
+near misses (stayed bottom 3): 2996
 ```
 
 | league                      | season    | team                | bottom-3 until | final position |
 | --------------------------- | --------- | ------------------- | -------------- | -------------- |
 | AFC Champions League Elite  | 2024/2025 | Yokohama F. Marinos | 10 left        | P3/24          |
 | Scottish League Two         | 2025/26   | Forfar              | 10 left        | P4/10          |
-| German 2. Bundesliga        | 2026/27   | Kaiserslautern      | 10 left        | P5/18          |
 | Scottish League Two         | 2004/05   | Montrose            | 10 left        | P5/10          |
 | Scottish League One         | 2009/10   | Peterhead           | 10 left        | P5/10          |
+| German 2. Bundesliga        | 2026/27   | Kaiserslautern      | 10 left        | P5/18          |
 | Scottish League One         | 2022/23   | Queen of Sth        | 10 left        | P5/10          |
 | Indian Super league         | 2021/2022 | Bengaluru           | 10 left        | P6/11          |
 | Scottish Premiership        | 2009/10   | Hamilton            | 10 left        | P6/12          |
 | German 2. Bundesliga        | 2017/18   | Bochum              | 10 left        | P6/18          |
 | Indian Super league         | 2021/2022 | Odisha              | 10 left        | P7/11          |
 | Scottish Premiership        | 1994/95   | Kilmarnock          | 10 left        | P7/10          |
-| English League Two          | 2026/27   | Exeter              | 10 left        | P8/24          |
 | Bundesliga                  | 2026/2027 | Tirol               | 10 left        | P8/12          |
-| German Bundesliga           | 2016/17   | Werder Bremen       | 10 left        | P8/18          |
+| Super League                | 2025/2026 | Servette            | 10 left        | P8/12          |
 | Italian Serie A             | 2000/01   | Brescia             | 10 left        | P8/18          |
+| German Bundesliga           | 2016/17   | Werder Bremen       | 10 left        | P8/18          |
 | Portuguese Liga Portugal    | 2026/27   | Sp Braga            | 10 left        | P8/18          |
 | Spanish La Liga             | 2026/27   | Ath Bilbao          | 10 left        | P8/20          |
-| Super League                | 2025/2026 | Servette            | 10 left        | P8/12          |
-| Dutch Eredivisie            | 2013/14   | Den Haag            | 10 left        | P9/18          |
-| Spanish La Liga 2           | 2013/14   | Alcorcon            | 10 left        | P9/22          |
+| English League Two          | 2026/27   | Exeter              | 10 left        | P8/24          |
 | Scottish Premiership        | 2002/03   | Livingston          | 10 left        | P9/12          |
+| Spanish La Liga 2           | 2013/14   | Alcorcon            | 10 left        | P9/22          |
+| Dutch Eredivisie            | 2013/14   | Den Haag            | 10 left        | P9/18          |
 | Superliga                   | 2014/2015 | Odense              | 10 left        | P9/12          |
+| Superliga                   | 2019/2020 | Academica Clinceni  | 10 left        | P10/15         |
+| English Premier League      | 1994/95   | Southampton         | 10 left        | P10/22         |
 | Serie A                     | 2026      | Vasco               | 10 left        | P10/20         |
 | German 2. Bundesliga        | 2011/12   | Duisburg            | 10 left        | P10/18         |
-| Veikkausliiga               | 2026      | SJK                 | 10 left        | P10/13         |
-| English Premier League      | 1994/95   | Southampton         | 10 left        | P10/22         |
-| Dutch Eredivisie            | 2013/14   | Utrecht             | 10 left        | P10/18         |
-| Superliga                   | 2019/2020 | Academica Clinceni  | 10 left        | P10/15         |
-| Greek Super League          | 2006/07   | Xanthi              | 10 left        | P10/16         |
-| Allsvenskan                 | 2024      | Varnamo             | 10 left        | P10/17         |
 | English Premier League      | 2001/02   | Blackburn           | 10 left        | P10/20         |
-| Belgian Pro League          | 2019/20   | Kortrijk            | 10 left        | P11/16         |
+| Greek Super League          | 2006/07   | Xanthi              | 10 left        | P10/16         |
+| Veikkausliiga               | 2026      | SJK                 | 10 left        | P10/13         |
+| Allsvenskan                 | 2024      | Varnamo             | 10 left        | P10/17         |
+| Dutch Eredivisie            | 2013/14   | Utrecht             | 10 left        | P10/18         |
+| Copa De La Liga Profesional | 2021      | Argentinos Jrs      | 10 left        | P11/26         |
 | German Bundesliga           | 2005/06   | Mainz               | 10 left        | P11/18         |
 | Belgian Pro League          | 2003/04   | Lokeren             | 10 left        | P11/18         |
+| Belgian Pro League          | 2019/20   | Kortrijk            | 10 left        | P11/16         |
+| Greek Super League          | 2019/20   | Lamia               | 10 left        | P11/14         |
 | Ekstraklasa                 | 2017/2018 | Pogon Szczecin      | 10 left        | P11/16         |
 | Italian Serie B             | 2025/26   | Mantova             | 10 left        | P11/20         |
-| Superliga                   | 2017/2018 | Randers FC          | 10 left        | P11/16         |
-| Copa De La Liga Profesional | 2021      | Argentinos Jrs      | 10 left        | P11/26         |
-| Greek Super League          | 2019/20   | Lamia               | 10 left        | P11/14         |
 | Premier League              | 2021/2022 | Khimki              | 10 left        | P11/18         |
+| Superliga                   | 2017/2018 | Randers FC          | 10 left        | P11/16         |
 
 ## The escape artists
 
@@ -411,7 +413,6 @@ left when they were last in the bottom three. Near misses (those that stayed
 down) are counted for the base rate.
 
 ```rust
-
 // per-league escape rates + deepest escapes (smallest games-left at bottom-3)
 // recompute compactly: reuse same replay but only record min games-left bottom-3
 let mut groups: HashMap<(String,String), Vec<usize>> = HashMap::new();
@@ -477,7 +478,51 @@ let rows: Vec<Vec<String>> = escapes2.iter().take(30).map(|r| vec![
     r.team.clone(), format!("{} left", r.gl), format!("P{}/{}", r.rank, r.n),
 ]).collect();
 mars_table(&["league","season","team","last bottom-3 at","final position"], &rows);
+```
 
+```text
+completed matches after dedup: 311832 (1190 dupes dropped)
+team-seasons: 21299
+team-seasons that were bottom-3 with <=10 games left: 4739
+escapes (finished outside bottom 3): 1744
+near misses (stayed bottom 3): 2995
+escapes total: 1726
+```
+
+| league                | season    | team           | last bottom-3 at | final position |
+| --------------------- | --------- | -------------- | ---------------- | -------------- |
+| Scottish League One   | 2005/06   | Ayr            | 1 left           | P6/10          |
+| Scottish Premiership  | 1994/95   | Hearts         | 1 left           | P6/10          |
+| Scottish Premiership  | 1997/98   | Aberdeen       | 1 left           | P6/10          |
+| Scottish League Two   | 2013/14   | Montrose       | 1 left           | P6/10          |
+| Scottish Championship | 1997/98   | St Mirren      | 1 left           | P6/10          |
+| Scottish League One   | 2002/03   | Dumbarton      | 1 left           | P6/10          |
+| Scottish League One   | 1998/99   | Stirling       | 1 left           | P6/10          |
+| Super League          | 2017/2018 | Sion           | 1 left           | P6/10          |
+| Scottish League One   | 2013/14   | Airdrie Utd    | 1 left           | P6/10          |
+| Bundesliga            | 2025/2026 | Hartberg       | 1 left           | P6/12          |
+| Bundesliga            | 2012/2013 | Neustadt       | 1 left           | P7/10          |
+| Scottish Premiership  | 2013/14   | Ross County    | 1 left           | P7/12          |
+| Scottish League One   | 2015/16   | Brechin        | 1 left           | P7/10          |
+| Scottish League Two   | 2013/14   | Albion Rvs     | 1 left           | P7/10          |
+| Scottish Championship | 1997/98   | Ayr            | 1 left           | P7/10          |
+| Scottish League One   | 2016/17   | Stranraer      | 1 left           | P7/10          |
+| Scottish League Two   | 2024/25   | Clyde          | 1 left           | P7/10          |
+| Scottish League Two   | 2018/19   | Elgin          | 1 left           | P7/10          |
+| Scottish Championship | 2011/12   | Raith Rvs      | 1 left           | P7/10          |
+| Scottish Championship | 1995/96   | Clydebank      | 1 left           | P7/10          |
+| Scottish League One   | 2026/27   | Peterhead      | 1 left           | P7/10          |
+| Scottish Championship | 1994/95   | St Mirren      | 1 left           | P7/10          |
+| Scottish Championship | 2016/17   | St Mirren      | 1 left           | P7/10          |
+| Bundesliga            | 2016/2017 | Mattersburg    | 1 left           | P7/10          |
+| Scottish League Two   | 2012/13   | Stirling       | 1 left           | P7/10          |
+| Super League          | 2021/2022 | Luzern         | 1 left           | P7/11          |
+| Scottish League One   | 2008/09   | Arbroath       | 1 left           | P7/10          |
+| Scottish League One   | 2006/07   | Alloa          | 1 left           | P7/10          |
+| Premier Division      | 2025      | Sligo Rovers   | 1 left           | P7/10          |
+| Scottish League Two   | 2025/26   | Annan Athletic | 1 left           | P7/10          |
+
+```rust
 // per-league escape rate
 let mut lrows: Vec<Vec<String>> = by_league.iter().filter(|(_,v)| v.0>=10).map(|(l,v)| vec![
     l.split('|').nth(1).unwrap_or("").to_string(), v.0.to_string(), v.1.to_string(),
@@ -490,112 +535,36 @@ mars_table(&["league","bottom-3 team-seasons","escapes","escape rate"], &lrows);
 ```text
 completed matches after dedup: 311832 (1190 dupes dropped)
 team-seasons: 21299
-team-seasons that were bottom-3 with <=10 games left: 4744
-escapes (finished outside bottom 3): 1748
-near misses (stayed bottom 3): 2996
-escapes total: 1731
+team-seasons that were bottom-3 with <=10 games left: 4741
+escapes (finished outside bottom 3): 1743
+near misses (stayed bottom 3): 2998
+escapes total: 1729
 ```
-
-| league                      | season    | team                | bottom-3 until | final position |
-| --------------------------- | --------- | ------------------- | -------------- | -------------- |
-| AFC Champions League Elite  | 2024/2025 | Yokohama F. Marinos | 10 left        | P3/24          |
-| Scottish League Two         | 2025/26   | Forfar              | 10 left        | P4/10          |
-| Scottish League One         | 2009/10   | Peterhead           | 10 left        | P5/10          |
-| Scottish League Two         | 2004/05   | Montrose            | 10 left        | P5/10          |
-| German 2. Bundesliga        | 2026/27   | Kaiserslautern      | 10 left        | P5/18          |
-| Scottish League One         | 2022/23   | Queen of Sth        | 10 left        | P5/10          |
-| Scottish Premiership        | 2009/10   | Hamilton            | 10 left        | P6/12          |
-| German 2. Bundesliga        | 2017/18   | Bochum              | 10 left        | P6/18          |
-| Indian Super league         | 2021/2022 | Bengaluru           | 10 left        | P6/11          |
-| Scottish Premiership        | 1994/95   | Kilmarnock          | 10 left        | P7/10          |
-| Indian Super league         | 2021/2022 | Odisha              | 10 left        | P7/11          |
-| Spanish La Liga             | 2026/27   | Ath Bilbao          | 10 left        | P8/20          |
-| Super League                | 2025/2026 | Servette            | 10 left        | P8/12          |
-| Portuguese Liga Portugal    | 2026/27   | Sp Braga            | 10 left        | P8/18          |
-| English League Two          | 2026/27   | Exeter              | 10 left        | P8/24          |
-| Italian Serie A             | 2000/01   | Brescia             | 10 left        | P8/18          |
-| Bundesliga                  | 2026/2027 | Tirol               | 10 left        | P8/12          |
-| German Bundesliga           | 2016/17   | Werder Bremen       | 10 left        | P8/18          |
-| Scottish Premiership        | 2002/03   | Livingston          | 10 left        | P9/12          |
-| Spanish La Liga 2           | 2013/14   | Alcorcon            | 10 left        | P9/22          |
-| Superliga                   | 2014/2015 | Odense              | 10 left        | P9/12          |
-| Dutch Eredivisie            | 2013/14   | Den Haag            | 10 left        | P9/18          |
-| Superliga                   | 2019/2020 | Academica Clinceni  | 10 left        | P10/15         |
-| English Premier League      | 1994/95   | Southampton         | 10 left        | P10/22         |
-| Dutch Eredivisie            | 2013/14   | Utrecht             | 10 left        | P10/18         |
-| Allsvenskan                 | 2024      | Varnamo             | 10 left        | P10/17         |
-| Serie A                     | 2026      | Vasco               | 10 left        | P10/20         |
-| Veikkausliiga               | 2026      | SJK                 | 10 left        | P10/13         |
-| English Premier League      | 2001/02   | Blackburn           | 10 left        | P10/20         |
-| German 2. Bundesliga        | 2011/12   | Duisburg            | 10 left        | P10/18         |
-| Greek Super League          | 2006/07   | Xanthi              | 10 left        | P10/16         |
-| Greek Super League          | 2019/20   | Lamia               | 10 left        | P11/14         |
-| Belgian Pro League          | 2019/20   | Kortrijk            | 10 left        | P11/16         |
-| Belgian Pro League          | 2003/04   | Lokeren             | 10 left        | P11/18         |
-| Premier League              | 2021/2022 | Khimki              | 10 left        | P11/18         |
-| Superliga                   | 2017/2018 | Randers FC          | 10 left        | P11/16         |
-| Ekstraklasa                 | 2017/2018 | Pogon Szczecin      | 10 left        | P11/16         |
-| Italian Serie B             | 2025/26   | Mantova             | 10 left        | P11/20         |
-| Copa De La Liga Profesional | 2021      | Argentinos Jrs      | 10 left        | P11/26         |
-| German Bundesliga           | 2005/06   | Mainz               | 10 left        | P11/18         |
-
-| league                | season    | team         | last bottom-3 at | final position |
-| --------------------- | --------- | ------------ | ---------------- | -------------- |
-| Scottish League One   | 2013/14   | Airdrie Utd  | 1 left           | P6/10          |
-| Scottish Premiership  | 1997/98   | Aberdeen     | 1 left           | P6/10          |
-| Scottish Championship | 1997/98   | St Mirren    | 1 left           | P6/10          |
-| Scottish League One   | 2002/03   | Dumbarton    | 1 left           | P6/10          |
-| Scottish League One   | 2005/06   | Ayr          | 1 left           | P6/10          |
-| Super League          | 2017/2018 | Sion         | 1 left           | P6/10          |
-| Scottish Premiership  | 1994/95   | Hearts       | 1 left           | P6/10          |
-| Scottish League Two   | 2013/14   | Montrose     | 1 left           | P6/10          |
-| Scottish League One   | 1998/99   | Stirling     | 1 left           | P6/10          |
-| Bundesliga            | 2025/2026 | Hartberg     | 1 left           | P6/12          |
-| Scottish League Two   | 2024/25   | Clyde        | 1 left           | P7/10          |
-| Scottish Championship | 1994/95   | St Mirren    | 1 left           | P7/10          |
-| Scottish League Two   | 2003/04   | Queens Park  | 1 left           | P7/10          |
-| Scottish League One   | 2006/07   | Alloa        | 1 left           | P7/10          |
-| Scottish Championship | 1997/98   | Ayr          | 1 left           | P7/10          |
-| Scottish League One   | 2016/17   | Stranraer    | 1 left           | P7/10          |
-| Scottish Premiership  | 2013/14   | Ross County  | 1 left           | P7/12          |
-| Scottish League One   | 2011/12   | Forfar       | 1 left           | P7/10          |
-| Super League          | 2021/2022 | Luzern       | 1 left           | P7/11          |
-| Premier Division      | 2025      | Sligo Rovers | 1 left           | P7/10          |
-| Scottish League Two   | 2012/13   | Stirling     | 1 left           | P7/10          |
-| Scottish Championship | 2011/12   | Raith Rvs    | 1 left           | P7/10          |
-| Scottish Championship | 2016/17   | St Mirren    | 1 left           | P7/10          |
-| Scottish League One   | 2026/27   | Peterhead    | 1 left           | P7/10          |
-| Scottish League Two   | 2018/19   | Elgin        | 1 left           | P7/10          |
-| Scottish Championship | 1995/96   | Clydebank    | 1 left           | P7/10          |
-| Scottish League One   | 2015/16   | Brechin      | 1 left           | P7/10          |
-| Bundesliga            | 2012/2013 | Neustadt     | 1 left           | P7/10          |
-| Scottish League Two   | 2013/14   | Albion Rvs   | 1 left           | P7/10          |
-| Bundesliga            | 2016/2017 | Mattersburg  | 1 left           | P7/10          |
 
 | league                      | bottom-3 team-seasons | escapes | escape rate |
 | --------------------------- | --------------------- | ------- | ----------- |
 | English Championship        | 181                   | 79      | 44%         |
 | Spanish La Liga             | 175                   | 73      | 42%         |
-| German 2. Bundesliga        | 175                   | 73      | 42%         |
 | English League Two          | 175                   | 73      | 42%         |
+| German 2. Bundesliga        | 175                   | 73      | 42%         |
 | Italian Serie B             | 161                   | 71      | 44%         |
 | German Bundesliga           | 171                   | 69      | 40%         |
 | French Ligue 2              | 160                   | 67      | 42%         |
-| French Ligue 1              | 168                   | 65      | 39%         |
-| Portuguese Liga Portugal    | 165                   | 63      | 38%         |
+| French Ligue 1              | 169                   | 66      | 39%         |
+| Portuguese Liga Portugal    | 166                   | 64      | 39%         |
 | Turkish Süper Lig           | 162                   | 63      | 39%         |
 | Spanish La Liga 2           | 163                   | 61      | 37%         |
-| English League One          | 160                   | 58      | 36%         |
+| English League One          | 161                   | 59      | 37%         |
+| Champions League            | 138                   | 57      | 41%         |
 | English Premier League      | 159                   | 57      | 36%         |
-| Champions League            | 137                   | 56      | 41%         |
 | Italian Serie A             | 152                   | 49      | 32%         |
 | Greek Super League          | 134                   | 45      | 34%         |
 | Scottish Premiership        | 143                   | 44      | 31%         |
 | Belgian Pro League          | 140                   | 43      | 31%         |
 | Dutch Eredivisie            | 142                   | 40      | 28%         |
+| Scottish League One         | 126                   | 36      | 29%         |
 | MLS                         | 82                    | 36      | 44%         |
 | Ekstraklasa                 | 81                    | 36      | 44%         |
-| Scottish League One         | 126                   | 36      | 29%         |
 | Liga Profesional            | 76                    | 34      | 45%         |
 | Scottish Championship       | 135                   | 33      | 24%         |
 | Serie A                     | 75                    | 30      | 40%         |
@@ -605,19 +574,19 @@ escapes total: 1731
 | Superliga                   | 69                    | 24      | 35%         |
 | Superliga                   | 68                    | 23      | 34%         |
 | Copa De La Liga Profesional | 37                    | 22      | 59%         |
+| Bundesliga                  | 66                    | 21      | 32%         |
 | Super League                | 60                    | 21      | 35%         |
 | UEFA Europa League          | 75                    | 21      | 28%         |
-| Bundesliga                  | 66                    | 21      | 32%         |
 | Premier League              | 60                    | 18      | 30%         |
-| UEFA Conference League      | 36                    | 18      | 50%         |
 | Allsvenskan                 | 62                    | 17      | 27%         |
 | Veikkausliiga               | 62                    | 17      | 27%         |
+| UEFA Conference League      | 35                    | 17      | 49%         |
 | Super League                | 60                    | 15      | 25%         |
 | J1 League                   | 59                    | 14      | 24%         |
 | AFC Champions League Elite  | 22                    | 13      | 59%         |
-| FIFA World Cup              | 19                    | 13      | 68%         |
+| FIFA World Cup              | 17                    | 10      | 59%         |
 | Premier Division            | 55                    | 10      | 18%         |
-| UEFA Euro                   | 14                    | 8       | 57%         |
+| UEFA Euro                   | 15                    | 8       | 53%         |
 | FA Women's Super League     | 18                    | 6       | 33%         |
 
 ## Findings

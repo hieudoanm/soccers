@@ -8,6 +8,8 @@ order: 43
 tags: ['football', 'analysis', 'clean-sheets', 'defence', 'standings']
 ---
 
+# Clean sheets: the other way to be defensively elite
+
 ## Clean sheets: the other way to be defensively elite
 
 Every analyst ranks defences by goals conceded. But the cleaner question:
@@ -287,9 +289,6 @@ println!("team-seasons with CS%>40: {} | 25-40%%: {}", hi, mid);
 ```
 
 ```text
-completed matches after dedup: 311832 (1190 dupes dropped)
-team-seasons: 21435
-team-seasons with >=25 matches: 15743
 team-seasons with CS%>40: 1950 | 25-40%%: 7525
 ```
 
@@ -368,48 +367,11 @@ println!("corr(CS%%, points) = {:.3} | corr(-GA/game, points) = {:.3}", pearson(
 ```
 
 ```text
-completed matches after dedup: 311832 (1190 dupes dropped)
-team-seasons: 21435
-team-seasons with >=25 matches: 15743
-team-seasons with CS%>40: 1950 | 25-40%%: 7525
 team-seasons ranked: 15736
 corr(clean-sheet rank, points) = 0.506
 corr(goals-conceded rank, points) = 0.548
 corr(CS%%, points) = 0.557 | corr(-GA/game, points) = 0.622
 ```
-
-| league                   | season    | team          | played | clean sheets | CS%   | GA  | pts |
-| ------------------------ | --------- | ------------- | ------ | ------------ | ----- | --- | --- |
-| Greek Super League       | 1996/97   | Olympiakos    | 34     | 25           | 73.5% | 14  | 84  |
-| Liga F                   | 2023/2024 | Barcelona WFC | 30     | 21           | 70.0% | 10  | 88  |
-| Portuguese Liga Portugal | 2007/08   | Porto         | 30     | 21           | 70.0% | 13  | 75  |
-| Scottish Championship    | 1993/94   | La Coruna     | 38     | 26           | 68.4% | 18  | 78  |
-| Scottish Premiership     | 2020/21   | Rangers       | 38     | 26           | 68.4% | 13  | 102 |
-| Portuguese Liga Portugal | 1993/94   | La Coruna     | 38     | 26           | 68.4% | 18  | 78  |
-| Spanish La Liga          | 1993/94   | La Coruna     | 38     | 26           | 68.4% | 18  | 78  |
-| Spanish La Liga 2        | 1993/94   | La Coruna     | 38     | 26           | 68.4% | 18  | 78  |
-| Spanish La Liga          | 2022/23   | Barcelona     | 38     | 26           | 68.4% | 20  | 88  |
-| Dutch Eredivisie         | 2019/20   | AZ Alkmaar    | 25     | 17           | 68.0% | 17  | 56  |
-| Portuguese Liga Portugal | 1994/95   | Porto         | 34     | 23           | 67.6% | 15  | 91  |
-| Dutch Eredivisie         | 2004/05   | PSV Eindhoven | 34     | 23           | 67.6% | 18  | 87  |
-| Portuguese Liga Portugal | 2014/15   | Porto         | 34     | 23           | 67.6% | 13  | 82  |
-| Premier League           | 2016/2017 | CSKA Moscow   | 30     | 20           | 66.7% | 15  | 62  |
-| Greek Super League       | 2022/23   | AEK           | 36     | 24           | 66.7% | 17  | 83  |
-| Greek Super League       | 2017/18   | AEK           | 30     | 20           | 66.7% | 12  | 70  |
-| Scottish Premiership     | 2011/12   | Celtic        | 38     | 25           | 65.8% | 21  | 93  |
-| English Premier League   | 2004/05   | Chelsea       | 38     | 25           | 65.8% | 15  | 95  |
-| English Championship     | 2024/25   | Burnley       | 46     | 30           | 65.2% | 16  | 100 |
-| Dutch Eredivisie         | 2021/22   | Ajax          | 34     | 22           | 64.7% | 19  | 83  |
-| Portuguese Liga Portugal | 1995/96   | Porto         | 34     | 22           | 64.7% | 20  | 84  |
-| Greek Super League       | 1999/00   | Olympiakos    | 34     | 22           | 64.7% | 18  | 92  |
-| Greek Super League       | 2013/14   | Olympiakos    | 34     | 22           | 64.7% | 19  | 86  |
-| Dutch Eredivisie         | 2008/09   | AZ Alkmaar    | 34     | 22           | 64.7% | 22  | 80  |
-| Portuguese Liga Portugal | 2005/06   | Porto         | 34     | 22           | 64.7% | 16  | 79  |
-| Italian Serie A          | 1993/94   | Milan         | 34     | 22           | 64.7% | 15  | 69  |
-| German Bundesliga        | 2014/15   | Bayern Munich | 34     | 22           | 64.7% | 18  | 79  |
-| Premier Division         | 2019      | Dundalk       | 36     | 23           | 63.9% | 18  | 86  |
-| Scottish League One      | 2013/14   | Rangers       | 36     | 23           | 63.9% | 18  | 102 |
-| Premier Division         | 2016      | Cork City     | 33     | 21           | 63.6% | 23  | 70  |
 
 ## Do champions keep the most clean sheets?
 
@@ -467,51 +429,10 @@ println!("champion top-3 clean sheets: {}/{} | top-3 GA: {}/{}", cs_top3,n_champ
 ```
 
 ```text
-completed matches after dedup: 311832 (1190 dupes dropped)
-team-seasons: 21435
-team-seasons with >=25 matches: 15743
-team-seasons with CS%>40: 1950 | 25-40%%: 7525
-team-seasons ranked: 15736
-corr(clean-sheet rank, points) = 0.506
-corr(goals-conceded rank, points) = 0.548
-corr(CS%%, points) = 0.557 | corr(-GA/game, points) = 0.622
 champions analysed: 891
 avg rank — clean sheets: 2.8 | goals conceded: 2.3 (1=best, n=891)
 champion top-3 clean sheets: 679/891 | top-3 GA: 751/891
 ```
-
-| league                   | season    | team          | played | clean sheets | CS%   | GA  | pts |
-| ------------------------ | --------- | ------------- | ------ | ------------ | ----- | --- | --- |
-| Greek Super League       | 1996/97   | Olympiakos    | 34     | 25           | 73.5% | 14  | 84  |
-| Portuguese Liga Portugal | 2007/08   | Porto         | 30     | 21           | 70.0% | 13  | 75  |
-| Liga F                   | 2023/2024 | Barcelona WFC | 30     | 21           | 70.0% | 10  | 88  |
-| Spanish La Liga          | 2022/23   | Barcelona     | 38     | 26           | 68.4% | 20  | 88  |
-| Spanish La Liga 2        | 1993/94   | La Coruna     | 38     | 26           | 68.4% | 18  | 78  |
-| Scottish Premiership     | 2020/21   | Rangers       | 38     | 26           | 68.4% | 13  | 102 |
-| Scottish Championship    | 1993/94   | La Coruna     | 38     | 26           | 68.4% | 18  | 78  |
-| Spanish La Liga          | 1993/94   | La Coruna     | 38     | 26           | 68.4% | 18  | 78  |
-| Portuguese Liga Portugal | 1993/94   | La Coruna     | 38     | 26           | 68.4% | 18  | 78  |
-| Dutch Eredivisie         | 2019/20   | AZ Alkmaar    | 25     | 17           | 68.0% | 17  | 56  |
-| Portuguese Liga Portugal | 2014/15   | Porto         | 34     | 23           | 67.6% | 13  | 82  |
-| Dutch Eredivisie         | 2004/05   | PSV Eindhoven | 34     | 23           | 67.6% | 18  | 87  |
-| Portuguese Liga Portugal | 1994/95   | Porto         | 34     | 23           | 67.6% | 15  | 91  |
-| Premier League           | 2016/2017 | CSKA Moscow   | 30     | 20           | 66.7% | 15  | 62  |
-| Greek Super League       | 2022/23   | AEK           | 36     | 24           | 66.7% | 17  | 83  |
-| Greek Super League       | 2017/18   | AEK           | 30     | 20           | 66.7% | 12  | 70  |
-| Scottish Premiership     | 2011/12   | Celtic        | 38     | 25           | 65.8% | 21  | 93  |
-| English Premier League   | 2004/05   | Chelsea       | 38     | 25           | 65.8% | 15  | 95  |
-| English Championship     | 2024/25   | Burnley       | 46     | 30           | 65.2% | 16  | 100 |
-| Dutch Eredivisie         | 2008/09   | AZ Alkmaar    | 34     | 22           | 64.7% | 22  | 80  |
-| German Bundesliga        | 2014/15   | Bayern Munich | 34     | 22           | 64.7% | 18  | 79  |
-| Italian Serie A          | 1993/94   | Milan         | 34     | 22           | 64.7% | 15  | 69  |
-| Greek Super League       | 1999/00   | Olympiakos    | 34     | 22           | 64.7% | 18  | 92  |
-| Greek Super League       | 2013/14   | Olympiakos    | 34     | 22           | 64.7% | 19  | 86  |
-| Portuguese Liga Portugal | 1995/96   | Porto         | 34     | 22           | 64.7% | 20  | 84  |
-| Dutch Eredivisie         | 2021/22   | Ajax          | 34     | 22           | 64.7% | 19  | 83  |
-| Portuguese Liga Portugal | 2005/06   | Porto         | 34     | 22           | 64.7% | 16  | 79  |
-| Scottish League One      | 2013/14   | Rangers       | 36     | 23           | 63.9% | 18  | 102 |
-| Premier Division         | 2019      | Dundalk       | 36     | 23           | 63.9% | 18  | 86  |
-| Premier Division         | 2016      | Cork City     | 33     | 21           | 63.6% | 23  | 70  |
 
 ## Findings
 

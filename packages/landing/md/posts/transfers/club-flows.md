@@ -151,10 +151,6 @@ let srows = club_rows(&mut spend, &tname, &tcty, 20);
 mars_table(&["club","country","in","out","fees paid","fees received","net spend"], &srows);
 ```
 
-```text
-clubs tracked: 584, international moves: 8645
-```
-
 | club                | country | in  | out | fees paid | fees received | net spend |
 | ------------------- | ------- | --- | --- | --------- | ------------- | --------- |
 | Manchester United   | England | 97  | 87  | €1.85bn   | €567.4m       | €1.28bn   |
@@ -187,33 +183,6 @@ let rows2 = club_rows(&mut sell, &tname, &tcty, 20);
 mars_table(&["club","country","in","out","fees paid","fees received","net spend"], &rows2);
 ```
 
-```text
-clubs tracked: 584, international moves: 8645
-```
-
-| club                | country | in  | out | fees paid | fees received | net spend |
-| ------------------- | ------- | --- | --- | --------- | ------------- | --------- |
-| Manchester United   | England | 97  | 87  | €1.85bn   | €567.4m       | €1.28bn   |
-| Manchester City     | England | 122 | 115 | €1.95bn   | €724.0m       | €1.23bn   |
-| Arsenal             | England | 96  | 88  | €1.42bn   | €301.0m       | €1.12bn   |
-| Chelsea             | England | 183 | 185 | €2.07bn   | €1.04bn       | €1.03bn   |
-| Paris Saint-Germain | France  | 118 | 123 | €1.56bn   | €553.6m       | €1.01bn   |
-| Liverpool           | England | 86  | 78  | €1.50bn   | €699.4m       | €799.5m   |
-| Tottenham Hotspur   | England | 117 | 100 | €1.25bn   | €516.5m       | €735.0m   |
-| Barcelona           | Spain   | 154 | 175 | €1.41bn   | €771.7m       | €643.3m   |
-| AC Milan            |         | 121 | 103 | €914.1m   | €369.1m       | €544.9m   |
-| Juventus            | Italy   | 143 | 130 | €1.33bn   | €808.1m       | €518.8m   |
-| Bayern Munich       | Germany | 88  | 86  | €1.04bn   | €641.0m       | €403.1m   |
-| Napoli              | Italy   | 118 | 102 | €895.2m   | €546.4m       | €348.8m   |
-| Al Hilal            |         | 20  | 10  | €345.2m   | €6.5m         | €338.7m   |
-| Real Madrid         | Spain   | 80  | 81  | €1.01bn   | €681.3m       | €330.9m   |
-| West Ham United     | England | 75  | 64  | €730.0m   | €424.1m       | €305.9m   |
-| Al Nassr            |         | 25  | 14  | €303.0m   | €31.5m        | €271.5m   |
-| Inter Milan         | Italy   | 167 | 157 | €853.8m   | €586.4m       | €267.3m   |
-| Aston Villa         | England | 96  | 80  | €667.1m   | €403.7m       | €263.4m   |
-| Atlético Madrid     | Spain   | 123 | 122 | €984.6m   | €755.5m       | €229.1m   |
-| Al Ahli             |         | 19  | 12  | €200.8m   | €10.4m        | €190.5m   |
-
 | club                | country     | in  | out | fees paid | fees received | net spend |
 | ------------------- | ----------- | --- | --- | --------- | ------------- | --------- |
 | Benfica             | Portugal    | 112 | 124 | €400.0m   | €1.07bn       | €-673.4m  |
@@ -238,7 +207,6 @@ clubs tracked: 584, international moves: 8645
 | AZ Alkmaar          | Netherlands | 14  | 24  | €11.1m    | €180.2m       | €-169.1m  |
 
 ```rust
-
 // net talent flow: most players sold minus bought (min 15 total moves)
 let mut flow: Vec<(&i64,&Club)> = clubs.iter()
     .filter(|(_,c)| c.bought_n + c.sold_n >= 15).map(|(k,v)|(k,v)).collect();
@@ -251,7 +219,32 @@ let frows: Vec<Vec<String>> = flow.iter().take(20).map(|(id,c)| vec![
     eur(c.sold_fee), eur(c.bought_fee),
 ]).collect();
 mars_table(&["club","country","in","out","net out","fees received","fees paid"], &frows);
+```
 
+| club           | country     | in  | out | net out | fees received | fees paid |
+| -------------- | ----------- | --- | --- | ------- | ------------- | --------- |
+| Barcelona      | Spain       | 154 | 175 | 21      | €771.7m       | €1.41bn   |
+| Salzburg       | Austria     | 46  | 65  | 19      | €490.7m       | €85.7m    |
+| Toulouse       | France      | 44  | 60  | 16      | €184.8m       | €44.7m    |
+| Reims          | France      | 58  | 73  | 15      | €216.9m       | €72.7m    |
+| Sporting CP    |             | 67  | 82  | 15      | €614.4m       | €224.9m   |
+| Lyon           | France      | 89  | 102 | 13      | €723.5m       | €403.5m   |
+| Ajax Amsterdam |             | 61  | 74  | 13      | €857.1m       | €355.9m   |
+| Nordsjaelland  | Denmark     | 3   | 15  | 12      | €105.9m       | €0.3m     |
+| Stade Rennais  |             | 103 | 115 | 12      | €682.1m       | €517.9m   |
+| Sochaux        | France      | 11  | 23  | 12      | €13.2m        | €0.0m     |
+| Metz           | France      | 38  | 50  | 12      | €139.1m       | €37.4m    |
+| Benfica        | Portugal    | 112 | 124 | 12      | €1.07bn       | €400.0m   |
+| Bastia         | France      | 9   | 20  | 11      | €20.8m        | €0.2m     |
+| Bordeaux       | France      | 41  | 52  | 11      | €138.5m       | €37.2m    |
+| Lille          | France      | 93  | 103 | 10      | €758.6m       | €262.5m   |
+| NK Lokomotiva  |             | 9   | 19  | 10      | €15.1m        | €0.0m     |
+| AZ Alkmaar     | Netherlands | 14  | 24  | 10      | €180.2m       | €11.1m    |
+| Valenciennes   | France      | 11  | 21  | 10      | €11.3m        | €0.0m     |
+| Dinamo Zagreb  |             | 40  | 50  | 10      | €249.5m       | €21.4m    |
+| Caen           | France      | 15  | 25  | 10      | €60.0m        | €5.8m     |
+
+```rust
 // the factories: high sell-fee, low buy-fee ratio (min €20m sold)
 let mut fac: Vec<(&i64,&Club)> = clubs.iter()
     .filter(|(_,c)| c.sold_fee >= 20_000_000.0).map(|(k,v)|(k,v)).collect();
@@ -270,83 +263,10 @@ let facrows: Vec<Vec<String>> = fac.iter().take(15).map(|(id,c)| vec![
 mars_table(&["club","country","sold","bought","fees in","fees out","sell/buy"], &facrows);
 ```
 
-```text
-clubs tracked: 584, international moves: 8645
-```
-
-| club                | country | in  | out | fees paid | fees received | net spend |
-| ------------------- | ------- | --- | --- | --------- | ------------- | --------- |
-| Manchester United   | England | 97  | 87  | €1.85bn   | €567.4m       | €1.28bn   |
-| Manchester City     | England | 122 | 115 | €1.95bn   | €724.0m       | €1.23bn   |
-| Arsenal             | England | 96  | 88  | €1.42bn   | €301.0m       | €1.12bn   |
-| Chelsea             | England | 183 | 185 | €2.07bn   | €1.04bn       | €1.03bn   |
-| Paris Saint-Germain | France  | 118 | 123 | €1.56bn   | €553.6m       | €1.01bn   |
-| Liverpool           | England | 86  | 78  | €1.50bn   | €699.4m       | €799.5m   |
-| Tottenham Hotspur   | England | 117 | 100 | €1.25bn   | €516.5m       | €735.0m   |
-| Barcelona           | Spain   | 154 | 175 | €1.41bn   | €771.7m       | €643.3m   |
-| AC Milan            |         | 121 | 103 | €914.1m   | €369.1m       | €544.9m   |
-| Juventus            | Italy   | 143 | 130 | €1.33bn   | €808.1m       | €518.8m   |
-| Bayern Munich       | Germany | 88  | 86  | €1.04bn   | €641.0m       | €403.1m   |
-| Napoli              | Italy   | 118 | 102 | €895.2m   | €546.4m       | €348.8m   |
-| Al Hilal            |         | 20  | 10  | €345.2m   | €6.5m         | €338.7m   |
-| Real Madrid         | Spain   | 80  | 81  | €1.01bn   | €681.3m       | €330.9m   |
-| West Ham United     | England | 75  | 64  | €730.0m   | €424.1m       | €305.9m   |
-| Al Nassr            |         | 25  | 14  | €303.0m   | €31.5m        | €271.5m   |
-| Inter Milan         | Italy   | 167 | 157 | €853.8m   | €586.4m       | €267.3m   |
-| Aston Villa         | England | 96  | 80  | €667.1m   | €403.7m       | €263.4m   |
-| Atlético Madrid     | Spain   | 123 | 122 | €984.6m   | €755.5m       | €229.1m   |
-| Al Ahli             |         | 19  | 12  | €200.8m   | €10.4m        | €190.5m   |
-
-| club                | country     | in  | out | fees paid | fees received | net spend |
-| ------------------- | ----------- | --- | --- | --------- | ------------- | --------- |
-| Benfica             | Portugal    | 112 | 124 | €400.0m   | €1.07bn       | €-673.4m  |
-| Ajax Amsterdam      |             | 61  | 74  | €355.9m   | €857.1m       | €-501.1m  |
-| Lille               | France      | 93  | 103 | €262.5m   | €758.6m       | €-496.1m  |
-| Salzburg            | Austria     | 46  | 65  | €85.7m    | €490.7m       | €-405.0m  |
-| Sporting CP         |             | 67  | 82  | €224.9m   | €614.4m       | €-389.5m  |
-| AS Monaco           | Monaco      | 124 | 132 | €782.4m   | €1.11bn       | €-329.1m  |
-| Lyon                | France      | 89  | 102 | €403.5m   | €723.5m       | €-319.9m  |
-| FC Porto            |             | 95  | 96  | €264.3m   | €572.0m       | €-307.7m  |
-| Real Sociedad       | Spain       | 47  | 54  | €171.2m   | €426.6m       | €-255.4m  |
-| Eintracht Frankfurt | Germany     | 100 | 84  | €307.4m   | €561.8m       | €-254.4m  |
-| Udinese             | Italy       | 94  | 97  | €114.7m   | €343.2m       | €-228.5m  |
-| Dinamo Zagreb       |             | 40  | 50  | €21.4m    | €249.5m       | €-228.1m  |
-| PSV Eindhoven       | Netherlands | 58  | 54  | €205.1m   | €426.7m       | €-221.7m  |
-| VfB Stuttgart       |             | 85  | 82  | €204.2m   | €421.8m       | €-217.6m  |
-| Atalanta            | Italy       | 101 | 100 | €450.0m   | €665.8m       | €-215.8m  |
-| Sevilla             | Spain       | 119 | 112 | €449.9m   | €656.8m       | €-206.9m  |
-| FC Basel            |             | 45  | 50  | €51.7m    | €257.6m       | €-205.9m  |
-| Genoa               | Italy       | 102 | 103 | €136.2m   | €328.3m       | €-192.2m  |
-| Borussia Dortmund   | Germany     | 94  | 94  | €817.9m   | €1.00bn       | €-185.7m  |
-| AZ Alkmaar          | Netherlands | 14  | 24  | €11.1m    | €180.2m       | €-169.1m  |
-
-| club           | country     | in  | out | net out | fees received | fees paid |
-| -------------- | ----------- | --- | --- | ------- | ------------- | --------- |
-| Barcelona      | Spain       | 154 | 175 | 21      | €771.7m       | €1.41bn   |
-| Salzburg       | Austria     | 46  | 65  | 19      | €490.7m       | €85.7m    |
-| Toulouse       | France      | 44  | 60  | 16      | €184.8m       | €44.7m    |
-| Sporting CP    |             | 67  | 82  | 15      | €614.4m       | €224.9m   |
-| Reims          | France      | 58  | 73  | 15      | €216.9m       | €72.7m    |
-| Lyon           | France      | 89  | 102 | 13      | €723.5m       | €403.5m   |
-| Ajax Amsterdam |             | 61  | 74  | 13      | €857.1m       | €355.9m   |
-| Benfica        | Portugal    | 112 | 124 | 12      | €1.07bn       | €400.0m   |
-| Sochaux        | France      | 11  | 23  | 12      | €13.2m        | €0.0m     |
-| Stade Rennais  |             | 103 | 115 | 12      | €682.1m       | €517.9m   |
-| Metz           | France      | 38  | 50  | 12      | €139.1m       | €37.4m    |
-| Nordsjaelland  | Denmark     | 3   | 15  | 12      | €105.9m       | €0.3m     |
-| Bastia         | France      | 9   | 20  | 11      | €20.8m        | €0.2m     |
-| Bordeaux       | France      | 41  | 52  | 11      | €138.5m       | €37.2m    |
-| Lille          | France      | 93  | 103 | 10      | €758.6m       | €262.5m   |
-| Dinamo Zagreb  |             | 40  | 50  | 10      | €249.5m       | €21.4m    |
-| Valenciennes   | France      | 11  | 21  | 10      | €11.3m        | €0.0m     |
-| AZ Alkmaar     | Netherlands | 14  | 24  | 10      | €180.2m       | €11.1m    |
-| Angers         | France      | 41  | 51  | 10      | €139.8m       | €22.7m    |
-| Caen           | France      | 15  | 25  | 10      | €60.0m        | €5.8m     |
-
 | club              | country     | sold | bought | fees in | fees out | sell/buy |
 | ----------------- | ----------- | ---- | ------ | ------- | -------- | -------- |
-| Lanus             | Argentina   | 8    | 6      | €27.1m  | €0.0m    | ∞        |
 | Mechelen          | Belgium     | 8    | 6      | €20.8m  | €0.0m    | ∞        |
+| Lanus             | Argentina   | 8    | 6      | €27.1m  | €0.0m    | ∞        |
 | Nordsjaelland     | Denmark     | 15   | 3      | €105.9m | €0.3m    | 392.3x   |
 | Nacional          | Portugal    | 23   | 17     | €33.1m  | €0.3m    | 127.3x   |
 | Bastia            | France      | 20   | 9      | €20.8m  | €0.2m    | 83.2x    |

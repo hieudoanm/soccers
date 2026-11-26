@@ -14,14 +14,14 @@
     {
       "id": "19eef7f7-4ab2-4702-9b21-64dc81ad1de5",
       "cell_type": "markdown",
-      "source": "## Do more corners actually help you win?\n\nThe assumption: *more corners = more pressure = more likely to win.* This\nnotebook tests it on every match in the dataset where corner counts exist\n\u2014 sourced from football-data.co.uk (back to 2000/01 for the English\nleagues) and enriched by ESPN stats (`import-espn-stats.ts`) for the big\nEuropean leagues and MLS.\n\n**Data caveats up front:**\n\n- Corner *volume* is well covered \u2014 ~166k matches across ~35 leagues \u2014\n  but corner *outcomes* are not: the dataset has no event-level corner\n  data, so **goals from corners and corner conversion rates cannot be\n  measured**. Where relevant, set-piece-adjacent proxies are flagged.\n- Corners are a match-total stat: a team chasing a game legitimately wins\n  more of them. We cannot see *when* corners happen, so \"corners while\n  losing\" is untestable \u2014 noted where it matters.\n- `expected_goals` exists only for a small StatsBomb-covered subset, so\n  the \"beyond xG\" comparison reduces to shots.",
+      "source": "## Do more corners actually help you win?\n\nThe assumption: *more corners = more pressure = more likely to win.* This\nnotebook tests it on every match in the dataset where corner counts exist\n— sourced from football-data.co.uk (back to 2000/01 for the English\nleagues) and enriched by ESPN stats (`import-espn-stats.ts`) for the big\nEuropean leagues and MLS.\n\n**Data caveats up front:**\n\n- Corner *volume* is well covered — ~166k matches across ~35 leagues —\n  but corner *outcomes* are not: the dataset has no event-level corner\n  data, so **goals from corners and corner conversion rates cannot be\n  measured**. Where relevant, set-piece-adjacent proxies are flagged.\n- Corners are a match-total stat: a team chasing a game legitimately wins\n  more of them. We cannot see *when* corners happen, so \"corners while\n  losing\" is untestable — noted where it matters.\n- `expected_goals` exists only for a small StatsBomb-covered subset, so\n  the \"beyond xG\" comparison reduces to shots.",
       "metadata": {},
       "outputs": []
     },
     {
       "id": "aaafb573-049a-417f-aa79-db709f635dc9",
       "cell_type": "code",
-      "source": "\nuse polars::prelude::*;\nuse std::collections::HashMap;\n\nlet mf = LazyCsvReader::new(\"data/matches_full.csv\")\n    .finish().expect(\"matches_full.csv\")\n    .collect().expect(\"collect matches\");\nlet st = LazyCsvReader::new(\"data/match_team_stat.csv\")\n    .finish().expect(\"match_team_stat.csv\")\n    .collect().expect(\"collect stats\");\n\nfn col_str(df: &DataFrame, name: &str) -> Vec<String> {\n    df.column(name).unwrap().str().unwrap().iter()\n        .map(|o| o.unwrap_or(\"\").to_string()).collect()\n}\nfn col_i64(df: &DataFrame, name: &str) -> Vec<i64> {\n    let c = df.column(name).unwrap().clone();\n    let c = if c.dtype() == &DataType::Null { c.cast(&DataType::Int64).unwrap() } else { c };\n    c.i64().unwrap().iter().map(|o| o.unwrap_or(-1)).collect()\n}\nfn col_f64(df: &DataFrame, name: &str) -> Vec<f64> {\n    let c = df.column(name).unwrap().clone();\n    let c = if c.dtype() == &DataType::Null { c.cast(&DataType::Float64).unwrap() } else { c };\n    match c.dtype() {\n        DataType::Float64 => c.f64().unwrap().iter().map(|o| o.unwrap_or(f64::NAN)).collect(),\n        DataType::Int64 => c.i64().unwrap().iter().map(|o| o.map(|v| v as f64).unwrap_or(f64::NAN)).collect(),\n        DataType::String => c.str().unwrap().iter()\n            .map(|o| o.and_then(|s| s.parse::<f64>().ok()).unwrap_or(f64::NAN)).collect(),\n        _ => panic!(\"unexpected dtype for {name}: {:?}\", c.dtype()),\n    }\n}\n\n#[derive(Clone, Copy, Default)]\nstruct TStat {\n    poss: f64, shots: f64, sog: f64, corners: f64,\n}\n\n// (match_id, team_id) -> team stat line\nlet mut stat_map: HashMap<(i64, i64), TStat> = HashMap::new();\n{\n    let n = st.height();\n    let mid = col_i64(&st, \"match_id\");\n    let tid = col_i64(&st, \"team_id\");\n    let poss = col_f64(&st, \"possession\");\n    let shots = col_f64(&st, \"shots\");\n    let sog = col_f64(&st, \"shots_on_target\");\n    let cor = col_f64(&st, \"corners\");\n    for i in 0..n {\n        stat_map.insert((mid[i], tid[i]), TStat {\n            poss: poss[i], shots: shots[i], sog: sog[i], corners: cor[i],\n        });\n    }\n}\nprintln!(\"stat rows indexed: {}\", stat_map.len());\n\nlet s_id = col_i64(&mf, \"id\");\nlet s_hid = col_i64(&mf, \"hid\");\nlet s_aid = col_i64(&mf, \"aid\");\nlet s_hg = col_i64(&mf, \"hg\");\nlet s_ag = col_i64(&mf, \"ag\");\nlet s_country = col_str(&mf, \"country\");\nlet s_league = col_str(&mf, \"league\");\nlet s_season = col_str(&mf, \"season\");\nlet s_date = col_str(&mf, \"date\");\nlet s_home = col_str(&mf, \"home\");\nlet s_away = col_str(&mf, \"away\");\n\n#[derive(Clone)]\nstruct MRow {\n    league: String, season: String, date: String,\n    home: String, away: String, hid: i64, aid: i64,\n    hg: i64, ag: i64,\n    hp: f64, ap: f64, hs: f64, as_: f64,\n    hc: f64, ac: f64, hso: f64, aso: f64,\n}\n\nfn valid_corners(c: f64) -> bool { !c.is_nan() && c >= 0.0 }\n\nlet mut rows: Vec<MRow> = Vec::new();\nlet mut n_both = 0usize;\nfor i in 0..mf.height() {\n    if s_hg[i] < 0 || s_ag[i] < 0 { continue; }\n    let h = stat_map.get(&(s_id[i], s_hid[i]));\n    let a = stat_map.get(&(s_id[i], s_aid[i]));\n    let (Some(hs_), Some(as_)) = (h, a) else { continue; };\n    // corners are real counts (0 is legitimate); only NaN/missing excluded\n    if !(valid_corners(hs_.corners) && valid_corners(as_.corners)) { continue; }\n    n_both += 1;\n    rows.push(MRow {\n        league: s_league[i].clone(), season: s_season[i].clone(),\n        date: s_date[i][..10].to_string(),\n        home: s_home[i].clone(), away: s_away[i].clone(),\n        hid: s_hid[i], aid: s_aid[i], hg: s_hg[i], ag: s_ag[i],\n        hp: hs_.poss, ap: as_.poss,\n        hs: hs_.shots, as_: as_.shots,\n        hc: hs_.corners, ac: as_.corners,\n        hso: hs_.sog, aso: as_.sog,\n    });\n}\nrows.sort_by(|a, b| a.date.cmp(&b.date));\nprintln!(\"matches with corner data (both teams): {}\", n_both);\n\n// league coverage\nlet mut by_league: std::collections::BTreeMap<String, (usize, String, String)> = std::collections::BTreeMap::new();\nfor r in &rows {\n    let e = by_league.entry(r.league.clone()).or_insert((0, r.season.clone(), r.season.clone()));\n    e.0 += 1;\n    if r.season < e.1 { e.1 = r.season.clone(); }\n    if r.season > e.2 { e.2 = r.season.clone(); }\n}\nlet mut lg_rows: Vec<Vec<String>> = by_league.iter().map(|(l, (n, s0, s1))| vec![\n    l.clone(), n.to_string(), format!(\"{s0} \u2192 {s1}\"),\n]).collect();\nlg_rows.sort_by(|a, b| b[1].parse::<usize>().unwrap().cmp(&a[1].parse::<usize>().unwrap()));\nlg_rows.truncate(15);\nlet hdr = [\"league\", \"matches\", \"season span\"];\nmars_table(&hdr, &lg_rows);\n\nlet epl: Vec<&MRow> = rows.iter().filter(|r| r.league == \"English Premier League\").collect();\nprintln!(\"EPL matches with corners: {} | all leagues: {}\", epl.len(), rows.len());\n",
+      "source": "\nuse polars::prelude::*;\nuse std::collections::HashMap;\n\nlet mf = LazyCsvReader::new(\"data/matches_full.csv\")\n    .finish().expect(\"matches_full.csv\")\n    .collect().expect(\"collect matches\");\nlet st = LazyCsvReader::new(\"data/match_team_stat.csv\")\n    .finish().expect(\"match_team_stat.csv\")\n    .collect().expect(\"collect stats\");\n\nfn col_str(df: &DataFrame, name: &str) -> Vec<String> {\n    df.column(name).unwrap().str().unwrap().iter()\n        .map(|o| o.unwrap_or(\"\").to_string()).collect()\n}\nfn col_i64(df: &DataFrame, name: &str) -> Vec<i64> {\n    let c = df.column(name).unwrap().clone();\n    let c = if c.dtype() == &DataType::Null { c.cast(&DataType::Int64).unwrap() } else { c };\n    c.i64().unwrap().iter().map(|o| o.unwrap_or(-1)).collect()\n}\nfn col_f64(df: &DataFrame, name: &str) -> Vec<f64> {\n    let c = df.column(name).unwrap().clone();\n    let c = if c.dtype() == &DataType::Null { c.cast(&DataType::Float64).unwrap() } else { c };\n    match c.dtype() {\n        DataType::Float64 => c.f64().unwrap().iter().map(|o| o.unwrap_or(f64::NAN)).collect(),\n        DataType::Int64 => c.i64().unwrap().iter().map(|o| o.map(|v| v as f64).unwrap_or(f64::NAN)).collect(),\n        DataType::String => c.str().unwrap().iter()\n            .map(|o| o.and_then(|s| s.parse::<f64>().ok()).unwrap_or(f64::NAN)).collect(),\n        _ => panic!(\"unexpected dtype for {name}: {:?}\", c.dtype()),\n    }\n}\n\n#[derive(Clone, Copy, Default)]\nstruct TStat {\n    poss: f64, shots: f64, sog: f64, corners: f64,\n}\n\n// (match_id, team_id) -> team stat line\nlet mut stat_map: HashMap<(i64, i64), TStat> = HashMap::new();\n{\n    let n = st.height();\n    let mid = col_i64(&st, \"match_id\");\n    let tid = col_i64(&st, \"team_id\");\n    let poss = col_f64(&st, \"possession\");\n    let shots = col_f64(&st, \"shots\");\n    let sog = col_f64(&st, \"shots_on_target\");\n    let cor = col_f64(&st, \"corners\");\n    for i in 0..n {\n        stat_map.insert((mid[i], tid[i]), TStat {\n            poss: poss[i], shots: shots[i], sog: sog[i], corners: cor[i],\n        });\n    }\n}\nprintln!(\"stat rows indexed: {}\", stat_map.len());\n\nlet s_id = col_i64(&mf, \"id\");\nlet s_hid = col_i64(&mf, \"hid\");\nlet s_aid = col_i64(&mf, \"aid\");\nlet s_hg = col_i64(&mf, \"hg\");\nlet s_ag = col_i64(&mf, \"ag\");\nlet s_country = col_str(&mf, \"country\");\nlet s_league = col_str(&mf, \"league\");\nlet s_season = col_str(&mf, \"season\");\nlet s_date = col_str(&mf, \"date\");\nlet s_home = col_str(&mf, \"home\");\nlet s_away = col_str(&mf, \"away\");\n\n#[derive(Clone)]\nstruct MRow {\n    league: String, season: String, date: String,\n    home: String, away: String, hid: i64, aid: i64,\n    hg: i64, ag: i64,\n    hp: f64, ap: f64, hs: f64, as_: f64,\n    hc: f64, ac: f64, hso: f64, aso: f64,\n}\n\nfn valid_corners(c: f64) -> bool { !c.is_nan() && c >= 0.0 }\n\nlet mut rows: Vec<MRow> = Vec::new();\nlet mut n_both = 0usize;\nfor i in 0..mf.height() {\n    if s_hg[i] < 0 || s_ag[i] < 0 { continue; }\n    let h = stat_map.get(&(s_id[i], s_hid[i]));\n    let a = stat_map.get(&(s_id[i], s_aid[i]));\n    let (Some(hs_), Some(as_)) = (h, a) else { continue; };\n    // corners are real counts (0 is legitimate); only NaN/missing excluded\n    if !(valid_corners(hs_.corners) && valid_corners(as_.corners)) { continue; }\n    n_both += 1;\n    rows.push(MRow {\n        league: s_league[i].clone(), season: s_season[i].clone(),\n        date: s_date[i][..10].to_string(),\n        home: s_home[i].clone(), away: s_away[i].clone(),\n        hid: s_hid[i], aid: s_aid[i], hg: s_hg[i], ag: s_ag[i],\n        hp: hs_.poss, ap: as_.poss,\n        hs: hs_.shots, as_: as_.shots,\n        hc: hs_.corners, ac: as_.corners,\n        hso: hs_.sog, aso: as_.sog,\n    });\n}\nrows.sort_by(|a, b| a.date.cmp(&b.date));\nprintln!(\"matches with corner data (both teams): {}\", n_both);\n\n// league coverage\nlet mut by_league: std::collections::BTreeMap<String, (usize, String, String)> = std::collections::BTreeMap::new();\nfor r in &rows {\n    let e = by_league.entry(r.league.clone()).or_insert((0, r.season.clone(), r.season.clone()));\n    e.0 += 1;\n    if r.season < e.1 { e.1 = r.season.clone(); }\n    if r.season > e.2 { e.2 = r.season.clone(); }\n}\nlet mut lg_rows: Vec<Vec<String>> = by_league.iter().map(|(l, (n, s0, s1))| vec![\n    l.clone(), n.to_string(), format!(\"{s0} → {s1}\"),\n]).collect();\nlg_rows.sort_by(|a, b| b[1].parse::<usize>().unwrap().cmp(&a[1].parse::<usize>().unwrap()));\nlg_rows.truncate(15);\nlet hdr = [\"league\", \"matches\", \"season span\"];\nmars_table(&hdr, &lg_rows);\n\nlet epl: Vec<&MRow> = rows.iter().filter(|r| r.league == \"English Premier League\").collect();\nprintln!(\"EPL matches with corners: {} | all leagues: {}\", epl.len(), rows.len());\n",
       "metadata": {},
       "execution_count": 1,
       "outputs": [
@@ -40,77 +40,77 @@
             [
               "English Championship",
               "14543",
-              "2000/01 \u2192 2026/27"
+              "2000/01 → 2026/27"
             ],
             [
               "English League Two",
               "14424",
-              "2000/01 \u2192 2026/27"
+              "2000/01 → 2026/27"
             ],
             [
               "English League One",
               "14374",
-              "2000/01 \u2192 2026/27"
+              "2000/01 → 2026/27"
             ],
             [
               "English Premier League",
               "10032",
-              "2000/01 \u2192 2026/27"
+              "2000/01 → 2026/27"
             ],
             [
               "Spanish La Liga",
               "8438",
-              "2004/05 \u2192 2026/27"
+              "2004/05 → 2026/27"
             ],
             [
               "Italian Serie A",
               "8086",
-              "2005/06 \u2192 2026/27"
+              "2005/06 → 2026/27"
             ],
             [
               "French Ligue 1",
               "7790",
-              "2005/06 \u2192 2026/27"
+              "2005/06 → 2026/27"
             ],
             [
               "German Bundesliga",
               "7750",
-              "2000/01 \u2192 2026/27"
+              "2000/01 → 2026/27"
             ],
             [
               "Spanish La Liga 2",
               "6527",
-              "2008/09 \u2192 2026/27"
+              "2008/09 → 2026/27"
             ],
             [
               "MLS",
               "6264",
-              "2012 \u2192 2026"
+              "2012 → 2026"
             ],
             [
               "Scottish Premiership",
               "5958",
-              "2000/01 \u2192 2026/27"
+              "2000/01 → 2026/27"
             ],
             [
               "French Ligue 2",
               "5347",
-              "2008/09 \u2192 2026/27"
+              "2008/09 → 2026/27"
             ],
             [
               "Italian Serie B",
               "5214",
-              "2008/09 \u2192 2026/27"
+              "2008/09 → 2026/27"
             ],
             [
               "Dutch Eredivisie",
               "4798",
-              "2008/09 \u2192 2026/27"
+              "2008/09 → 2026/27"
             ],
             [
               "German 2. Bundesliga",
               "4661",
-              "2000/01 \u2192 2026/27"
+              "2000/01 → 2026/27"
             ]
           ]
         }
@@ -119,7 +119,7 @@
     {
       "id": "43f37812-c7f1-4c12-a59d-0f7c9cb644ce",
       "cell_type": "markdown",
-      "source": "## Coverage\n\nCorners exist for both football-data leagues (English pyramid back to\n2000/01) and ESPN-covered leagues (~2004 onward). The Premier League is\nthe primary lens; every covered league is pooled as a robustness check.\nOnly matches where **both** teams have a recorded corner count are used \u2014\na genuine 0\u20130 corner count is rare but possible and is kept.",
+      "source": "## Coverage\n\nCorners exist for both football-data leagues (English pyramid back to\n2000/01) and ESPN-covered leagues (~2004 onward). The Premier League is\nthe primary lens; every covered league is pooled as a robustness check.\nOnly matches where **both** teams have a recorded corner count are used —\na genuine 0–0 corner count is rare but possible and is kept.",
       "metadata": {},
       "outputs": []
     },
@@ -145,77 +145,77 @@
             [
               "English Championship",
               "14543",
-              "2000/01 \u2192 2026/27"
+              "2000/01 → 2026/27"
             ],
             [
               "English League Two",
               "14424",
-              "2000/01 \u2192 2026/27"
+              "2000/01 → 2026/27"
             ],
             [
               "English League One",
               "14374",
-              "2000/01 \u2192 2026/27"
+              "2000/01 → 2026/27"
             ],
             [
               "English Premier League",
               "10032",
-              "2000/01 \u2192 2026/27"
+              "2000/01 → 2026/27"
             ],
             [
               "Spanish La Liga",
               "8438",
-              "2004/05 \u2192 2026/27"
+              "2004/05 → 2026/27"
             ],
             [
               "Italian Serie A",
               "8086",
-              "2005/06 \u2192 2026/27"
+              "2005/06 → 2026/27"
             ],
             [
               "French Ligue 1",
               "7790",
-              "2005/06 \u2192 2026/27"
+              "2005/06 → 2026/27"
             ],
             [
               "German Bundesliga",
               "7750",
-              "2000/01 \u2192 2026/27"
+              "2000/01 → 2026/27"
             ],
             [
               "Spanish La Liga 2",
               "6527",
-              "2008/09 \u2192 2026/27"
+              "2008/09 → 2026/27"
             ],
             [
               "MLS",
               "6264",
-              "2012 \u2192 2026"
+              "2012 → 2026"
             ],
             [
               "Scottish Premiership",
               "5958",
-              "2000/01 \u2192 2026/27"
+              "2000/01 → 2026/27"
             ],
             [
               "French Ligue 2",
               "5347",
-              "2008/09 \u2192 2026/27"
+              "2008/09 → 2026/27"
             ],
             [
               "Italian Serie B",
               "5214",
-              "2008/09 \u2192 2026/27"
+              "2008/09 → 2026/27"
             ],
             [
               "Dutch Eredivisie",
               "4798",
-              "2008/09 \u2192 2026/27"
+              "2008/09 → 2026/27"
             ],
             [
               "German 2. Bundesliga",
               "4661",
-              "2000/01 \u2192 2026/27"
+              "2000/01 → 2026/27"
             ]
           ]
         },
@@ -341,14 +341,14 @@
     {
       "id": "2ee318e0-b4f3-4f87-8d55-a52bfc01e30f",
       "cell_type": "markdown",
-      "source": "## The band test: does winning more corners mean more wins?\n\nRaw corner counts aren't comparable across matches \u2014 a 0\u20130 corner-fest\nand a 14\u201312 shootout are different sports. The fair unit is **corner\nshare**: the team's corners as a percentage of the match total. Bands are\nthe team-perspective share, pooled across both teams per match.",
+      "source": "## The band test: does winning more corners mean more wins?\n\nRaw corner counts aren't comparable across matches — a 0–0 corner-fest\nand a 14–12 shootout are different sports. The fair unit is **corner\nshare**: the team's corners as a percentage of the match total. Bands are\nthe team-perspective share, pooled across both teams per match.",
       "metadata": {},
       "outputs": []
     },
     {
       "id": "bfbe883a-3243-4515-95ae-63d20048a1d0",
       "cell_type": "code",
-      "source": "// corner-share bands -> W/D/L, pooled team-perspective\nlet bands = [0.0, 35.0, 45.0, 55.0, 65.0, 100.0];\nlet blabels = [\"<35\", \"35-45\", \"45-55\", \"55-65\", \">65\"];\n\nlet band_table = |matches: &[&MRow]| -> Vec<Vec<String>> {\n    let mut w = vec![0usize; 5]; let mut d = vec![0usize; 5]; let mut l = vec![0usize; 5];\n    for r in matches {\n        let tot = r.hc + r.ac;\n        if tot <= 0.0 { continue; }\n        for (c, gf, ga) in [(r.hc, r.hg, r.ag), (r.ac, r.ag, r.hg)] {\n            let share = 100.0 * c / tot;\n            let b = bands.iter().position(|&hi| share < hi).unwrap_or(5) - 1;\n            if gf > ga { w[b] += 1; } else if gf == ga { d[b] += 1; } else { l[b] += 1; }\n        }\n    }\n    (0..5).map(|b| {\n        let n = (w[b] + d[b] + l[b]) as f64;\n        vec![blabels[b].to_string(), (w[b]+d[b]+l[b]).to_string(),\n             format!(\"{:.1}%\", 100.0*w[b] as f64/n),\n             format!(\"{:.1}%\", 100.0*d[b] as f64/n),\n             format!(\"{:.1}%\", 100.0*l[b] as f64/n)]\n    }).collect()\n};\n\nlet epl_refs: Vec<&MRow> = epl.iter().cloned().collect();\nlet epl_bands = band_table(&epl_refs);\nmars_table(&[\"corner share %\", \"n\", \"win%\", \"draw%\", \"loss%\"], &epl_bands);\n\nlet all_refs: Vec<&MRow> = rows.iter().collect();\nlet all_bands = band_table(&all_refs);\nmars_table(&[\"corner share % \u2014 all leagues\", \"n\", \"win%\", \"draw%\", \"loss%\"], &all_bands);\n\n// raw count bands: does 10+ corners specifically help?\nlet cbands = [0.0, 3.0, 5.0, 7.0, 10.0, 100.0];\nlet clabels = [\"0-2\", \"3-4\", \"5-6\", \"7-9\", \"10+\"];\nlet count_table = |matches: &[&MRow]| -> Vec<Vec<String>> {\n    let mut w = vec![0usize; 5]; let mut d = vec![0usize; 5]; let mut l = vec![0usize; 5];\n    for r in matches {\n        for (c, gf, ga) in [(r.hc, r.hg, r.ag), (r.ac, r.ag, r.hg)] {\n            let b = cbands.iter().position(|&hi| c < hi).unwrap_or(5) - 1;\n            if gf > ga { w[b] += 1; } else if gf == ga { d[b] += 1; } else { l[b] += 1; }\n        }\n    }\n    (0..5).map(|b| {\n        let n = (w[b] + d[b] + l[b]) as f64;\n        vec![clabels[b].to_string(), (w[b]+d[b]+l[b]).to_string(),\n             format!(\"{:.1}%\", 100.0*w[b] as f64/n),\n             format!(\"{:.1}%\", 100.0*d[b] as f64/n),\n             format!(\"{:.1}%\", 100.0*l[b] as f64/n)]\n    }).collect()\n};\nlet epl_counts = count_table(&epl_refs);\nmars_table(&[\"corners won (EPL)\", \"n\", \"win%\", \"draw%\", \"loss%\"], &epl_counts);\nlet all_counts = count_table(&all_refs);\nmars_table(&[\"corners won \u2014 all leagues\", \"n\", \"win%\", \"draw%\", \"loss%\"], &all_counts);",
+      "source": "// corner-share bands -> W/D/L, pooled team-perspective\nlet bands = [0.0, 35.0, 45.0, 55.0, 65.0, 100.0];\nlet blabels = [\"<35\", \"35-45\", \"45-55\", \"55-65\", \">65\"];\n\nlet band_table = |matches: &[&MRow]| -> Vec<Vec<String>> {\n    let mut w = vec![0usize; 5]; let mut d = vec![0usize; 5]; let mut l = vec![0usize; 5];\n    for r in matches {\n        let tot = r.hc + r.ac;\n        if tot <= 0.0 { continue; }\n        for (c, gf, ga) in [(r.hc, r.hg, r.ag), (r.ac, r.ag, r.hg)] {\n            let share = 100.0 * c / tot;\n            let b = bands.iter().position(|&hi| share < hi).unwrap_or(5) - 1;\n            if gf > ga { w[b] += 1; } else if gf == ga { d[b] += 1; } else { l[b] += 1; }\n        }\n    }\n    (0..5).map(|b| {\n        let n = (w[b] + d[b] + l[b]) as f64;\n        vec![blabels[b].to_string(), (w[b]+d[b]+l[b]).to_string(),\n             format!(\"{:.1}%\", 100.0*w[b] as f64/n),\n             format!(\"{:.1}%\", 100.0*d[b] as f64/n),\n             format!(\"{:.1}%\", 100.0*l[b] as f64/n)]\n    }).collect()\n};\n\nlet epl_refs: Vec<&MRow> = epl.iter().cloned().collect();\nlet epl_bands = band_table(&epl_refs);\nmars_table(&[\"corner share %\", \"n\", \"win%\", \"draw%\", \"loss%\"], &epl_bands);\n",
       "metadata": {},
       "execution_count": 3,
       "outputs": [
@@ -367,77 +367,339 @@
             [
               "English Championship",
               "14543",
-              "2000/01 \u2192 2026/27"
+              "2000/01 → 2026/27"
             ],
             [
               "English League Two",
               "14424",
-              "2000/01 \u2192 2026/27"
+              "2000/01 → 2026/27"
             ],
             [
               "English League One",
               "14374",
-              "2000/01 \u2192 2026/27"
+              "2000/01 → 2026/27"
             ],
             [
               "English Premier League",
               "10032",
-              "2000/01 \u2192 2026/27"
+              "2000/01 → 2026/27"
             ],
             [
               "Spanish La Liga",
               "8438",
-              "2004/05 \u2192 2026/27"
+              "2004/05 → 2026/27"
             ],
             [
               "Italian Serie A",
               "8086",
-              "2005/06 \u2192 2026/27"
+              "2005/06 → 2026/27"
             ],
             [
               "French Ligue 1",
               "7790",
-              "2005/06 \u2192 2026/27"
+              "2005/06 → 2026/27"
             ],
             [
               "German Bundesliga",
               "7750",
-              "2000/01 \u2192 2026/27"
+              "2000/01 → 2026/27"
             ],
             [
               "Spanish La Liga 2",
               "6527",
-              "2008/09 \u2192 2026/27"
+              "2008/09 → 2026/27"
             ],
             [
               "MLS",
               "6264",
-              "2012 \u2192 2026"
+              "2012 → 2026"
             ],
             [
               "Scottish Premiership",
               "5958",
-              "2000/01 \u2192 2026/27"
+              "2000/01 → 2026/27"
             ],
             [
               "French Ligue 2",
               "5347",
-              "2008/09 \u2192 2026/27"
+              "2008/09 → 2026/27"
             ],
             [
               "Italian Serie B",
               "5214",
-              "2008/09 \u2192 2026/27"
+              "2008/09 → 2026/27"
             ],
             [
               "Dutch Eredivisie",
               "4798",
-              "2008/09 \u2192 2026/27"
+              "2008/09 → 2026/27"
             ],
             [
               "German 2. Bundesliga",
               "4661",
-              "2000/01 \u2192 2026/27"
+              "2000/01 → 2026/27"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "EPL season",
+            "matches with corners"
+          ],
+          "rows": [
+            [
+              "2000/01",
+              "380"
+            ],
+            [
+              "2001/02",
+              "380"
+            ],
+            [
+              "2002/03",
+              "380"
+            ],
+            [
+              "2003/04",
+              "383"
+            ],
+            [
+              "2004/05",
+              "380"
+            ],
+            [
+              "2005/06",
+              "380"
+            ],
+            [
+              "2006/07",
+              "380"
+            ],
+            [
+              "2007/08",
+              "380"
+            ],
+            [
+              "2008/09",
+              "380"
+            ],
+            [
+              "2009/10",
+              "380"
+            ],
+            [
+              "2010/11",
+              "380"
+            ],
+            [
+              "2011/12",
+              "380"
+            ],
+            [
+              "2012/13",
+              "380"
+            ],
+            [
+              "2013/14",
+              "380"
+            ],
+            [
+              "2014/15",
+              "380"
+            ],
+            [
+              "2015/16",
+              "419"
+            ],
+            [
+              "2016/17",
+              "380"
+            ],
+            [
+              "2017/18",
+              "380"
+            ],
+            [
+              "2018/19",
+              "380"
+            ],
+            [
+              "2019/20",
+              "380"
+            ],
+            [
+              "2020/21",
+              "380"
+            ],
+            [
+              "2021/22",
+              "380"
+            ],
+            [
+              "2022/23",
+              "380"
+            ],
+            [
+              "2023/24",
+              "380"
+            ],
+            [
+              "2024/25",
+              "380"
+            ],
+            [
+              "2025/26",
+              "380"
+            ],
+            [
+              "2026/27",
+              "110"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "corner share %",
+            "n",
+            "win%",
+            "draw%",
+            "loss%"
+          ],
+          "rows": [
+            [
+              "<35",
+              "5281",
+              "31.5%",
+              "25.0%",
+              "43.5%"
+            ],
+            [
+              "35-45",
+              "3071",
+              "36.8%",
+              "24.8%",
+              "38.4%"
+            ],
+            [
+              "45-55",
+              "3351",
+              "37.8%",
+              "24.5%",
+              "37.7%"
+            ],
+            [
+              "55-65",
+              "3070",
+              "38.2%",
+              "24.9%",
+              "36.9%"
+            ],
+            [
+              ">65",
+              "5289",
+              "43.5%",
+              "25.0%",
+              "31.5%"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "2b1873a3-33c1-43ab-a1de-16fba5cdbdcb",
+      "cell_type": "code",
+      "source": "let all_refs: Vec<&MRow> = rows.iter().collect();\nlet all_bands = band_table(&all_refs);\nmars_table(&[\"corner share % — all leagues\", \"n\", \"win%\", \"draw%\", \"loss%\"], &all_bands);\n",
+      "metadata": {},
+      "execution_count": 4,
+      "outputs": [
+        {
+          "type": "text",
+          "text": "stat rows indexed: 374660\nmatches with corner data (both teams): 166028\nEPL matches with corners: 10032 | all leagues: 166028\n"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "league",
+            "matches",
+            "season span"
+          ],
+          "rows": [
+            [
+              "English Championship",
+              "14543",
+              "2000/01 → 2026/27"
+            ],
+            [
+              "English League Two",
+              "14424",
+              "2000/01 → 2026/27"
+            ],
+            [
+              "English League One",
+              "14374",
+              "2000/01 → 2026/27"
+            ],
+            [
+              "English Premier League",
+              "10032",
+              "2000/01 → 2026/27"
+            ],
+            [
+              "Spanish La Liga",
+              "8438",
+              "2004/05 → 2026/27"
+            ],
+            [
+              "Italian Serie A",
+              "8086",
+              "2005/06 → 2026/27"
+            ],
+            [
+              "French Ligue 1",
+              "7790",
+              "2005/06 → 2026/27"
+            ],
+            [
+              "German Bundesliga",
+              "7750",
+              "2000/01 → 2026/27"
+            ],
+            [
+              "Spanish La Liga 2",
+              "6527",
+              "2008/09 → 2026/27"
+            ],
+            [
+              "MLS",
+              "6264",
+              "2012 → 2026"
+            ],
+            [
+              "Scottish Premiership",
+              "5958",
+              "2000/01 → 2026/27"
+            ],
+            [
+              "French Ligue 2",
+              "5347",
+              "2008/09 → 2026/27"
+            ],
+            [
+              "Italian Serie B",
+              "5214",
+              "2008/09 → 2026/27"
+            ],
+            [
+              "Dutch Eredivisie",
+              "4798",
+              "2008/09 → 2026/27"
+            ],
+            [
+              "German 2. Bundesliga",
+              "4661",
+              "2000/01 → 2026/27"
             ]
           ]
         },
@@ -608,7 +870,672 @@
         {
           "type": "table",
           "columns": [
-            "corner share % \u2014 all leagues",
+            "corner share % — all leagues",
+            "n",
+            "win%",
+            "draw%",
+            "loss%"
+          ],
+          "rows": [
+            [
+              "<35",
+              "77963",
+              "35.5%",
+              "26.3%",
+              "38.2%"
+            ],
+            [
+              "35-45",
+              "46418",
+              "36.8%",
+              "26.4%",
+              "36.8%"
+            ],
+            [
+              "45-55",
+              "48749",
+              "37.0%",
+              "26.0%",
+              "37.0%"
+            ],
+            [
+              "55-65",
+              "46435",
+              "36.8%",
+              "26.3%",
+              "36.8%"
+            ],
+            [
+              ">65",
+              "78059",
+              "38.2%",
+              "26.3%",
+              "35.5%"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "18057d2b-cd70-41c0-b0a3-839ccc3c29cf",
+      "cell_type": "code",
+      "source": "// raw count bands: does 10+ corners specifically help?\nlet cbands = [0.0, 3.0, 5.0, 7.0, 10.0, 100.0];\nlet clabels = [\"0-2\", \"3-4\", \"5-6\", \"7-9\", \"10+\"];\nlet count_table = |matches: &[&MRow]| -> Vec<Vec<String>> {\n    let mut w = vec![0usize; 5]; let mut d = vec![0usize; 5]; let mut l = vec![0usize; 5];\n    for r in matches {\n        for (c, gf, ga) in [(r.hc, r.hg, r.ag), (r.ac, r.ag, r.hg)] {\n            let b = cbands.iter().position(|&hi| c < hi).unwrap_or(5) - 1;\n            if gf > ga { w[b] += 1; } else if gf == ga { d[b] += 1; } else { l[b] += 1; }\n        }\n    }\n    (0..5).map(|b| {\n        let n = (w[b] + d[b] + l[b]) as f64;\n        vec![clabels[b].to_string(), (w[b]+d[b]+l[b]).to_string(),\n             format!(\"{:.1}%\", 100.0*w[b] as f64/n),\n             format!(\"{:.1}%\", 100.0*d[b] as f64/n),\n             format!(\"{:.1}%\", 100.0*l[b] as f64/n)]\n    }).collect()\n};\nlet epl_counts = count_table(&epl_refs);\nmars_table(&[\"corners won (EPL)\", \"n\", \"win%\", \"draw%\", \"loss%\"], &epl_counts);\n",
+      "metadata": {},
+      "execution_count": 5,
+      "outputs": [
+        {
+          "type": "text",
+          "text": "stat rows indexed: 374660\nmatches with corner data (both teams): 166028\nEPL matches with corners: 10032 | all leagues: 166028\n"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "league",
+            "matches",
+            "season span"
+          ],
+          "rows": [
+            [
+              "English Championship",
+              "14543",
+              "2000/01 → 2026/27"
+            ],
+            [
+              "English League Two",
+              "14424",
+              "2000/01 → 2026/27"
+            ],
+            [
+              "English League One",
+              "14374",
+              "2000/01 → 2026/27"
+            ],
+            [
+              "English Premier League",
+              "10032",
+              "2000/01 → 2026/27"
+            ],
+            [
+              "Spanish La Liga",
+              "8438",
+              "2004/05 → 2026/27"
+            ],
+            [
+              "Italian Serie A",
+              "8086",
+              "2005/06 → 2026/27"
+            ],
+            [
+              "French Ligue 1",
+              "7790",
+              "2005/06 → 2026/27"
+            ],
+            [
+              "German Bundesliga",
+              "7750",
+              "2000/01 → 2026/27"
+            ],
+            [
+              "Spanish La Liga 2",
+              "6527",
+              "2008/09 → 2026/27"
+            ],
+            [
+              "MLS",
+              "6264",
+              "2012 → 2026"
+            ],
+            [
+              "Scottish Premiership",
+              "5958",
+              "2000/01 → 2026/27"
+            ],
+            [
+              "French Ligue 2",
+              "5347",
+              "2008/09 → 2026/27"
+            ],
+            [
+              "Italian Serie B",
+              "5214",
+              "2008/09 → 2026/27"
+            ],
+            [
+              "Dutch Eredivisie",
+              "4798",
+              "2008/09 → 2026/27"
+            ],
+            [
+              "German 2. Bundesliga",
+              "4661",
+              "2000/01 → 2026/27"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "EPL season",
+            "matches with corners"
+          ],
+          "rows": [
+            [
+              "2000/01",
+              "380"
+            ],
+            [
+              "2001/02",
+              "380"
+            ],
+            [
+              "2002/03",
+              "380"
+            ],
+            [
+              "2003/04",
+              "383"
+            ],
+            [
+              "2004/05",
+              "380"
+            ],
+            [
+              "2005/06",
+              "380"
+            ],
+            [
+              "2006/07",
+              "380"
+            ],
+            [
+              "2007/08",
+              "380"
+            ],
+            [
+              "2008/09",
+              "380"
+            ],
+            [
+              "2009/10",
+              "380"
+            ],
+            [
+              "2010/11",
+              "380"
+            ],
+            [
+              "2011/12",
+              "380"
+            ],
+            [
+              "2012/13",
+              "380"
+            ],
+            [
+              "2013/14",
+              "380"
+            ],
+            [
+              "2014/15",
+              "380"
+            ],
+            [
+              "2015/16",
+              "419"
+            ],
+            [
+              "2016/17",
+              "380"
+            ],
+            [
+              "2017/18",
+              "380"
+            ],
+            [
+              "2018/19",
+              "380"
+            ],
+            [
+              "2019/20",
+              "380"
+            ],
+            [
+              "2020/21",
+              "380"
+            ],
+            [
+              "2021/22",
+              "380"
+            ],
+            [
+              "2022/23",
+              "380"
+            ],
+            [
+              "2023/24",
+              "380"
+            ],
+            [
+              "2024/25",
+              "380"
+            ],
+            [
+              "2025/26",
+              "380"
+            ],
+            [
+              "2026/27",
+              "110"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "corner share %",
+            "n",
+            "win%",
+            "draw%",
+            "loss%"
+          ],
+          "rows": [
+            [
+              "<35",
+              "5281",
+              "31.5%",
+              "25.0%",
+              "43.5%"
+            ],
+            [
+              "35-45",
+              "3071",
+              "36.8%",
+              "24.8%",
+              "38.4%"
+            ],
+            [
+              "45-55",
+              "3351",
+              "37.8%",
+              "24.5%",
+              "37.7%"
+            ],
+            [
+              "55-65",
+              "3070",
+              "38.2%",
+              "24.9%",
+              "36.9%"
+            ],
+            [
+              ">65",
+              "5289",
+              "43.5%",
+              "25.0%",
+              "31.5%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "corner share % — all leagues",
+            "n",
+            "win%",
+            "draw%",
+            "loss%"
+          ],
+          "rows": [
+            [
+              "<35",
+              "77963",
+              "35.5%",
+              "26.3%",
+              "38.2%"
+            ],
+            [
+              "35-45",
+              "46418",
+              "36.8%",
+              "26.4%",
+              "36.8%"
+            ],
+            [
+              "45-55",
+              "48749",
+              "37.0%",
+              "26.0%",
+              "37.0%"
+            ],
+            [
+              "55-65",
+              "46435",
+              "36.8%",
+              "26.3%",
+              "36.8%"
+            ],
+            [
+              ">65",
+              "78059",
+              "38.2%",
+              "26.3%",
+              "35.5%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "corners won (EPL)",
+            "n",
+            "win%",
+            "draw%",
+            "loss%"
+          ],
+          "rows": [
+            [
+              "0-2",
+              "3462",
+              "32.2%",
+              "24.7%",
+              "43.2%"
+            ],
+            [
+              "3-4",
+              "5286",
+              "36.0%",
+              "24.8%",
+              "39.2%"
+            ],
+            [
+              "5-6",
+              "4982",
+              "38.0%",
+              "24.2%",
+              "37.8%"
+            ],
+            [
+              "7-9",
+              "4419",
+              "41.1%",
+              "25.1%",
+              "33.7%"
+            ],
+            [
+              "10+",
+              "1915",
+              "42.3%",
+              "26.6%",
+              "31.0%"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "e91647d7-79f5-4512-85a2-fe4684e76e8f",
+      "cell_type": "code",
+      "source": "let all_counts = count_table(&all_refs);\nmars_table(&[\"corners won — all leagues\", \"n\", \"win%\", \"draw%\", \"loss%\"], &all_counts);\n",
+      "metadata": {},
+      "execution_count": 6,
+      "outputs": [
+        {
+          "type": "text",
+          "text": "stat rows indexed: 374660\nmatches with corner data (both teams): 166028\nEPL matches with corners: 10032 | all leagues: 166028\n"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "league",
+            "matches",
+            "season span"
+          ],
+          "rows": [
+            [
+              "English Championship",
+              "14543",
+              "2000/01 → 2026/27"
+            ],
+            [
+              "English League Two",
+              "14424",
+              "2000/01 → 2026/27"
+            ],
+            [
+              "English League One",
+              "14374",
+              "2000/01 → 2026/27"
+            ],
+            [
+              "English Premier League",
+              "10032",
+              "2000/01 → 2026/27"
+            ],
+            [
+              "Spanish La Liga",
+              "8438",
+              "2004/05 → 2026/27"
+            ],
+            [
+              "Italian Serie A",
+              "8086",
+              "2005/06 → 2026/27"
+            ],
+            [
+              "French Ligue 1",
+              "7790",
+              "2005/06 → 2026/27"
+            ],
+            [
+              "German Bundesliga",
+              "7750",
+              "2000/01 → 2026/27"
+            ],
+            [
+              "Spanish La Liga 2",
+              "6527",
+              "2008/09 → 2026/27"
+            ],
+            [
+              "MLS",
+              "6264",
+              "2012 → 2026"
+            ],
+            [
+              "Scottish Premiership",
+              "5958",
+              "2000/01 → 2026/27"
+            ],
+            [
+              "French Ligue 2",
+              "5347",
+              "2008/09 → 2026/27"
+            ],
+            [
+              "Italian Serie B",
+              "5214",
+              "2008/09 → 2026/27"
+            ],
+            [
+              "Dutch Eredivisie",
+              "4798",
+              "2008/09 → 2026/27"
+            ],
+            [
+              "German 2. Bundesliga",
+              "4661",
+              "2000/01 → 2026/27"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "EPL season",
+            "matches with corners"
+          ],
+          "rows": [
+            [
+              "2000/01",
+              "380"
+            ],
+            [
+              "2001/02",
+              "380"
+            ],
+            [
+              "2002/03",
+              "380"
+            ],
+            [
+              "2003/04",
+              "383"
+            ],
+            [
+              "2004/05",
+              "380"
+            ],
+            [
+              "2005/06",
+              "380"
+            ],
+            [
+              "2006/07",
+              "380"
+            ],
+            [
+              "2007/08",
+              "380"
+            ],
+            [
+              "2008/09",
+              "380"
+            ],
+            [
+              "2009/10",
+              "380"
+            ],
+            [
+              "2010/11",
+              "380"
+            ],
+            [
+              "2011/12",
+              "380"
+            ],
+            [
+              "2012/13",
+              "380"
+            ],
+            [
+              "2013/14",
+              "380"
+            ],
+            [
+              "2014/15",
+              "380"
+            ],
+            [
+              "2015/16",
+              "419"
+            ],
+            [
+              "2016/17",
+              "380"
+            ],
+            [
+              "2017/18",
+              "380"
+            ],
+            [
+              "2018/19",
+              "380"
+            ],
+            [
+              "2019/20",
+              "380"
+            ],
+            [
+              "2020/21",
+              "380"
+            ],
+            [
+              "2021/22",
+              "380"
+            ],
+            [
+              "2022/23",
+              "380"
+            ],
+            [
+              "2023/24",
+              "380"
+            ],
+            [
+              "2024/25",
+              "380"
+            ],
+            [
+              "2025/26",
+              "380"
+            ],
+            [
+              "2026/27",
+              "110"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "corner share %",
+            "n",
+            "win%",
+            "draw%",
+            "loss%"
+          ],
+          "rows": [
+            [
+              "<35",
+              "5281",
+              "31.5%",
+              "25.0%",
+              "43.5%"
+            ],
+            [
+              "35-45",
+              "3071",
+              "36.8%",
+              "24.8%",
+              "38.4%"
+            ],
+            [
+              "45-55",
+              "3351",
+              "37.8%",
+              "24.5%",
+              "37.7%"
+            ],
+            [
+              "55-65",
+              "3070",
+              "38.2%",
+              "24.9%",
+              "36.9%"
+            ],
+            [
+              ">65",
+              "5289",
+              "43.5%",
+              "25.0%",
+              "31.5%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "corner share % — all leagues",
             "n",
             "win%",
             "draw%",
@@ -702,7 +1629,7 @@
         {
           "type": "table",
           "columns": [
-            "corners won \u2014 all leagues",
+            "corners won — all leagues",
             "n",
             "win%",
             "draw%",
@@ -751,16 +1678,16 @@
     {
       "id": "7d8c2368-06f4-4071-8727-2fdf31fed7bb",
       "cell_type": "markdown",
-      "source": "## Is the relationship linear \u2014 or is there a sweet spot?\n\nBin matches by **corner differential** (home corners minus away corners)\nand look at the home win rate. If corners drive results the curve should\nclimb steadily; a plateau or dip at the extreme would mean corner\ndominance stops paying (or turns into sterile possession).",
+      "source": "## Is the relationship linear — or is there a sweet spot?\n\nBin matches by **corner differential** (home corners minus away corners)\nand look at the home win rate. If corners drive results the curve should\nclimb steadily; a plateau or dip at the extreme would mean corner\ndominance stops paying (or turns into sterile possession).",
       "metadata": {},
       "outputs": []
     },
     {
       "id": "d43f0be9-ed2f-436e-a2aa-5a4084a8c517",
       "cell_type": "code",
-      "source": "// home win% by corner differential (bins of 2)\nlet mut bins: Vec<(i64, usize, usize)> = Vec::new();\nfor k in -8i64..=8 {\n    let lo = k as f64 * 2.0;\n    let hi = lo + 2.0;\n    let (mut hw, mut n) = (0usize, 0usize);\n    for r in &epl {\n        let d = r.hc - r.ac;\n        if d >= lo && d < hi {\n            n += 1;\n            if r.hg > r.ag { hw += 1; }\n        }\n    }\n    bins.push((k, hw, n));\n}\nlet d_rows: Vec<Vec<String>> = bins.iter().map(|(k, hw, n)| vec![\n    format!(\"{:+.0} to {:+.0}\", *k as f64 * 2.0, *k as f64 * 2.0 + 2.0),\n    n.to_string(),\n    format!(\"{:.1}%\", if *n > 0 { 100.0 * *hw as f64 / *n as f64 } else { 0.0 }),\n]).collect();\nmars_table(&[\"corner diff (home \u2212 away)\", \"matches\", \"home win%\"], &d_rows);\n\n// same for all leagues, wider bins of 4\nlet mut bins2: Vec<(i64, usize, usize)> = Vec::new();\nfor k in -5i64..=5 {\n    let lo = k as f64 * 4.0;\n    let hi = lo + 4.0;\n    let (mut hw, mut n) = (0usize, 0usize);\n    for r in &rows {\n        let d = r.hc - r.ac;\n        if d >= lo && d < hi {\n            n += 1;\n            if r.hg > r.ag { hw += 1; }\n        }\n    }\n    bins2.push((k, hw, n));\n}\nlet d_rows2: Vec<Vec<String>> = bins2.iter().map(|(k, hw, n)| vec![\n    format!(\"{:+.0} to {:+.0}\", *k as f64 * 4.0, *k as f64 * 4.0 + 4.0),\n    n.to_string(),\n    format!(\"{:.1}%\", if *n > 0 { 100.0 * *hw as f64 / *n as f64 } else { 0.0 }),\n]).collect();\nmars_table(&[\"corner diff \u2014 all leagues\", \"matches\", \"home win%\"], &d_rows2);",
+      "source": "// home win% by corner differential (bins of 2)\nlet mut bins: Vec<(i64, usize, usize)> = Vec::new();\nfor k in -8i64..=8 {\n    let lo = k as f64 * 2.0;\n    let hi = lo + 2.0;\n    let (mut hw, mut n) = (0usize, 0usize);\n    for r in &epl {\n        let d = r.hc - r.ac;\n        if d >= lo && d < hi {\n            n += 1;\n            if r.hg > r.ag { hw += 1; }\n        }\n    }\n    bins.push((k, hw, n));\n}\nlet d_rows: Vec<Vec<String>> = bins.iter().map(|(k, hw, n)| vec![\n    format!(\"{:+.0} to {:+.0}\", *k as f64 * 2.0, *k as f64 * 2.0 + 2.0),\n    n.to_string(),\n    format!(\"{:.1}%\", if *n > 0 { 100.0 * *hw as f64 / *n as f64 } else { 0.0 }),\n]).collect();\nmars_table(&[\"corner diff (home − away)\", \"matches\", \"home win%\"], &d_rows);\n",
       "metadata": {},
-      "execution_count": 4,
+      "execution_count": 7,
       "outputs": [
         {
           "type": "text",
@@ -777,77 +1704,77 @@
             [
               "English Championship",
               "14543",
-              "2000/01 \u2192 2026/27"
+              "2000/01 → 2026/27"
             ],
             [
               "English League Two",
               "14424",
-              "2000/01 \u2192 2026/27"
+              "2000/01 → 2026/27"
             ],
             [
               "English League One",
               "14374",
-              "2000/01 \u2192 2026/27"
+              "2000/01 → 2026/27"
             ],
             [
               "English Premier League",
               "10032",
-              "2000/01 \u2192 2026/27"
+              "2000/01 → 2026/27"
             ],
             [
               "Spanish La Liga",
               "8438",
-              "2004/05 \u2192 2026/27"
+              "2004/05 → 2026/27"
             ],
             [
               "Italian Serie A",
               "8086",
-              "2005/06 \u2192 2026/27"
+              "2005/06 → 2026/27"
             ],
             [
               "French Ligue 1",
               "7790",
-              "2005/06 \u2192 2026/27"
+              "2005/06 → 2026/27"
             ],
             [
               "German Bundesliga",
               "7750",
-              "2000/01 \u2192 2026/27"
+              "2000/01 → 2026/27"
             ],
             [
               "Spanish La Liga 2",
               "6527",
-              "2008/09 \u2192 2026/27"
+              "2008/09 → 2026/27"
             ],
             [
               "MLS",
               "6264",
-              "2012 \u2192 2026"
+              "2012 → 2026"
             ],
             [
               "Scottish Premiership",
               "5958",
-              "2000/01 \u2192 2026/27"
+              "2000/01 → 2026/27"
             ],
             [
               "French Ligue 2",
               "5347",
-              "2008/09 \u2192 2026/27"
+              "2008/09 → 2026/27"
             ],
             [
               "Italian Serie B",
               "5214",
-              "2008/09 \u2192 2026/27"
+              "2008/09 → 2026/27"
             ],
             [
               "Dutch Eredivisie",
               "4798",
-              "2008/09 \u2192 2026/27"
+              "2008/09 → 2026/27"
             ],
             [
               "German 2. Bundesliga",
               "4661",
-              "2000/01 \u2192 2026/27"
+              "2000/01 → 2026/27"
             ]
           ]
         },
@@ -1018,7 +1945,7 @@
         {
           "type": "table",
           "columns": [
-            "corner share % \u2014 all leagues",
+            "corner share % — all leagues",
             "n",
             "win%",
             "draw%",
@@ -1112,7 +2039,7 @@
         {
           "type": "table",
           "columns": [
-            "corners won \u2014 all leagues",
+            "corners won — all leagues",
             "n",
             "win%",
             "draw%",
@@ -1159,7 +2086,505 @@
         {
           "type": "table",
           "columns": [
-            "corner diff (home \u2212 away)",
+            "corner diff (home − away)",
+            "matches",
+            "home win%"
+          ],
+          "rows": [
+            [
+              "-16 to -14",
+              "6",
+              "16.7%"
+            ],
+            [
+              "-14 to -12",
+              "22",
+              "36.4%"
+            ],
+            [
+              "-12 to -10",
+              "53",
+              "50.9%"
+            ],
+            [
+              "-10 to -8",
+              "159",
+              "49.7%"
+            ],
+            [
+              "-8 to -6",
+              "322",
+              "37.3%"
+            ],
+            [
+              "-6 to -4",
+              "589",
+              "40.9%"
+            ],
+            [
+              "-4 to -2",
+              "1010",
+              "45.0%"
+            ],
+            [
+              "-2 to +0",
+              "1438",
+              "43.1%"
+            ],
+            [
+              "+0 to +2",
+              "1810",
+              "44.3%"
+            ],
+            [
+              "+2 to +4",
+              "1649",
+              "46.1%"
+            ],
+            [
+              "+4 to +6",
+              "1272",
+              "50.2%"
+            ],
+            [
+              "+6 to +8",
+              "862",
+              "49.3%"
+            ],
+            [
+              "+8 to +10",
+              "461",
+              "49.9%"
+            ],
+            [
+              "+10 to +12",
+              "211",
+              "45.5%"
+            ],
+            [
+              "+12 to +14",
+              "116",
+              "38.8%"
+            ],
+            [
+              "+14 to +16",
+              "36",
+              "52.8%"
+            ],
+            [
+              "+16 to +18",
+              "9",
+              "55.6%"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "0f3e3a1e-a9db-4fd4-9009-f0968dd52503",
+      "cell_type": "code",
+      "source": "// same for all leagues, wider bins of 4\nlet mut bins2: Vec<(i64, usize, usize)> = Vec::new();\nfor k in -5i64..=5 {\n    let lo = k as f64 * 4.0;\n    let hi = lo + 4.0;\n    let (mut hw, mut n) = (0usize, 0usize);\n    for r in &rows {\n        let d = r.hc - r.ac;\n        if d >= lo && d < hi {\n            n += 1;\n            if r.hg > r.ag { hw += 1; }\n        }\n    }\n    bins2.push((k, hw, n));\n}\nlet d_rows2: Vec<Vec<String>> = bins2.iter().map(|(k, hw, n)| vec![\n    format!(\"{:+.0} to {:+.0}\", *k as f64 * 4.0, *k as f64 * 4.0 + 4.0),\n    n.to_string(),\n    format!(\"{:.1}%\", if *n > 0 { 100.0 * *hw as f64 / *n as f64 } else { 0.0 }),\n]).collect();\nmars_table(&[\"corner diff — all leagues\", \"matches\", \"home win%\"], &d_rows2);\n",
+      "metadata": {},
+      "execution_count": 8,
+      "outputs": [
+        {
+          "type": "text",
+          "text": "stat rows indexed: 374660\nmatches with corner data (both teams): 166028\nEPL matches with corners: 10032 | all leagues: 166028\n"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "league",
+            "matches",
+            "season span"
+          ],
+          "rows": [
+            [
+              "English Championship",
+              "14543",
+              "2000/01 → 2026/27"
+            ],
+            [
+              "English League Two",
+              "14424",
+              "2000/01 → 2026/27"
+            ],
+            [
+              "English League One",
+              "14374",
+              "2000/01 → 2026/27"
+            ],
+            [
+              "English Premier League",
+              "10032",
+              "2000/01 → 2026/27"
+            ],
+            [
+              "Spanish La Liga",
+              "8438",
+              "2004/05 → 2026/27"
+            ],
+            [
+              "Italian Serie A",
+              "8086",
+              "2005/06 → 2026/27"
+            ],
+            [
+              "French Ligue 1",
+              "7790",
+              "2005/06 → 2026/27"
+            ],
+            [
+              "German Bundesliga",
+              "7750",
+              "2000/01 → 2026/27"
+            ],
+            [
+              "Spanish La Liga 2",
+              "6527",
+              "2008/09 → 2026/27"
+            ],
+            [
+              "MLS",
+              "6264",
+              "2012 → 2026"
+            ],
+            [
+              "Scottish Premiership",
+              "5958",
+              "2000/01 → 2026/27"
+            ],
+            [
+              "French Ligue 2",
+              "5347",
+              "2008/09 → 2026/27"
+            ],
+            [
+              "Italian Serie B",
+              "5214",
+              "2008/09 → 2026/27"
+            ],
+            [
+              "Dutch Eredivisie",
+              "4798",
+              "2008/09 → 2026/27"
+            ],
+            [
+              "German 2. Bundesliga",
+              "4661",
+              "2000/01 → 2026/27"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "EPL season",
+            "matches with corners"
+          ],
+          "rows": [
+            [
+              "2000/01",
+              "380"
+            ],
+            [
+              "2001/02",
+              "380"
+            ],
+            [
+              "2002/03",
+              "380"
+            ],
+            [
+              "2003/04",
+              "383"
+            ],
+            [
+              "2004/05",
+              "380"
+            ],
+            [
+              "2005/06",
+              "380"
+            ],
+            [
+              "2006/07",
+              "380"
+            ],
+            [
+              "2007/08",
+              "380"
+            ],
+            [
+              "2008/09",
+              "380"
+            ],
+            [
+              "2009/10",
+              "380"
+            ],
+            [
+              "2010/11",
+              "380"
+            ],
+            [
+              "2011/12",
+              "380"
+            ],
+            [
+              "2012/13",
+              "380"
+            ],
+            [
+              "2013/14",
+              "380"
+            ],
+            [
+              "2014/15",
+              "380"
+            ],
+            [
+              "2015/16",
+              "419"
+            ],
+            [
+              "2016/17",
+              "380"
+            ],
+            [
+              "2017/18",
+              "380"
+            ],
+            [
+              "2018/19",
+              "380"
+            ],
+            [
+              "2019/20",
+              "380"
+            ],
+            [
+              "2020/21",
+              "380"
+            ],
+            [
+              "2021/22",
+              "380"
+            ],
+            [
+              "2022/23",
+              "380"
+            ],
+            [
+              "2023/24",
+              "380"
+            ],
+            [
+              "2024/25",
+              "380"
+            ],
+            [
+              "2025/26",
+              "380"
+            ],
+            [
+              "2026/27",
+              "110"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "corner share %",
+            "n",
+            "win%",
+            "draw%",
+            "loss%"
+          ],
+          "rows": [
+            [
+              "<35",
+              "5281",
+              "31.5%",
+              "25.0%",
+              "43.5%"
+            ],
+            [
+              "35-45",
+              "3071",
+              "36.8%",
+              "24.8%",
+              "38.4%"
+            ],
+            [
+              "45-55",
+              "3351",
+              "37.8%",
+              "24.5%",
+              "37.7%"
+            ],
+            [
+              "55-65",
+              "3070",
+              "38.2%",
+              "24.9%",
+              "36.9%"
+            ],
+            [
+              ">65",
+              "5289",
+              "43.5%",
+              "25.0%",
+              "31.5%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "corner share % — all leagues",
+            "n",
+            "win%",
+            "draw%",
+            "loss%"
+          ],
+          "rows": [
+            [
+              "<35",
+              "77963",
+              "35.5%",
+              "26.3%",
+              "38.2%"
+            ],
+            [
+              "35-45",
+              "46418",
+              "36.8%",
+              "26.4%",
+              "36.8%"
+            ],
+            [
+              "45-55",
+              "48749",
+              "37.0%",
+              "26.0%",
+              "37.0%"
+            ],
+            [
+              "55-65",
+              "46435",
+              "36.8%",
+              "26.3%",
+              "36.8%"
+            ],
+            [
+              ">65",
+              "78059",
+              "38.2%",
+              "26.3%",
+              "35.5%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "corners won (EPL)",
+            "n",
+            "win%",
+            "draw%",
+            "loss%"
+          ],
+          "rows": [
+            [
+              "0-2",
+              "3462",
+              "32.2%",
+              "24.7%",
+              "43.2%"
+            ],
+            [
+              "3-4",
+              "5286",
+              "36.0%",
+              "24.8%",
+              "39.2%"
+            ],
+            [
+              "5-6",
+              "4982",
+              "38.0%",
+              "24.2%",
+              "37.8%"
+            ],
+            [
+              "7-9",
+              "4419",
+              "41.1%",
+              "25.1%",
+              "33.7%"
+            ],
+            [
+              "10+",
+              "1915",
+              "42.3%",
+              "26.6%",
+              "31.0%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "corners won — all leagues",
+            "n",
+            "win%",
+            "draw%",
+            "loss%"
+          ],
+          "rows": [
+            [
+              "0-2",
+              "88929",
+              "37.1%",
+              "23.6%",
+              "39.3%"
+            ],
+            [
+              "3-4",
+              "84318",
+              "37.3%",
+              "25.7%",
+              "37.0%"
+            ],
+            [
+              "5-6",
+              "76410",
+              "37.3%",
+              "26.1%",
+              "36.6%"
+            ],
+            [
+              "7-9",
+              "60351",
+              "37.4%",
+              "26.9%",
+              "35.7%"
+            ],
+            [
+              "10+",
+              "22048",
+              "36.1%",
+              "28.5%",
+              "35.4%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "corner diff (home − away)",
             "matches",
             "home win%"
           ],
@@ -1254,7 +2679,7 @@
         {
           "type": "table",
           "columns": [
-            "corner diff \u2014 all leagues",
+            "corner diff — all leagues",
             "matches",
             "home win%"
           ],
@@ -1321,7 +2746,7 @@
     {
       "id": "2f0b0203-4913-4daa-b52c-4addac0b55c8",
       "cell_type": "markdown",
-      "source": "## Quantity vs quality: is corner share just a proxy?\n\nCorners correlate with shots, which correlate with goals \u2014 so corner share\nmay predict wins only because it tracks general attacking pressure.\nCompare how well **corner share, shot share and possession share** each\npredict the home win, on identical matches. Shots-on-target is included\nas the quality-weighted attacking measure.",
+      "source": "## Quantity vs quality: is corner share just a proxy?\n\nCorners correlate with shots, which correlate with goals — so corner share\nmay predict wins only because it tracks general attacking pressure.\nCompare how well **corner share, shot share and possession share** each\npredict the home win, on identical matches. Shots-on-target is included\nas the quality-weighted attacking measure.",
       "metadata": {},
       "outputs": []
     },
@@ -1330,7 +2755,7 @@
       "cell_type": "code",
       "source": "// Pearson correlation between a metric share and home win (1/0)\nfn pearson(xs: &[f64], ys: &[f64]) -> f64 {\n    let n = xs.len() as f64;\n    if n < 3.0 { return f64::NAN; }\n    let mx = xs.iter().sum::<f64>() / n;\n    let my = ys.iter().sum::<f64>() / n;\n    let mut sxy = 0.0; let mut sxx = 0.0; let mut syy = 0.0;\n    for i in 0..xs.len() {\n        let dx = xs[i] - mx; let dy = ys[i] - my;\n        sxy += dx * dy; sxx += dx * dx; syy += dy * dy;\n    }\n    if sxx <= 0.0 || syy <= 0.0 { return f64::NAN; }\n    sxy / (sxx.sqrt() * syy.sqrt())\n}\n\n// correlations, EPL and all leagues\nlet mut xs_c = Vec::new(); let mut xs_s = Vec::new(); let mut xs_p = Vec::new(); let mut ys = Vec::new();\nlet mut xs_ce = Vec::new(); let mut xs_se = Vec::new(); let mut xs_pe = Vec::new(); let mut ys_e = Vec::new();\nfor r in &epl {\n    let tot_c = r.hc + r.ac;\n    if tot_c <= 0.0 { continue; }\n    let hw = if r.hg > r.ag { 1.0 } else { 0.0 };\n    xs_ce.push(100.0 * r.hc / tot_c); ys_e.push(hw);\n    let tot_s = r.hs + r.as_;\n    if !tot_s.is_nan() && tot_s > 0.0 {\n        xs_se.push(100.0 * r.hs / tot_s);\n        if r.hp > 0.0 && r.hp < 100.0 { xs_pe.push(r.hp); }\n    }\n}\n// align EPL vectors: rebuild cleanly to keep equal lengths\nxs_ce.clear(); xs_se.clear(); xs_pe.clear(); ys_e.clear();\nfor r in &epl {\n    let tot_c = r.hc + r.ac;\n    let tot_s = r.hs + r.as_;\n    if tot_c <= 0.0 || tot_s.is_nan() || tot_s <= 0.0 { continue; }\n    if !(r.hp > 0.0 && r.hp < 100.0) { continue; }\n    ys_e.push(if r.hg > r.ag { 1.0 } else { 0.0 });\n    xs_ce.push(100.0 * r.hc / tot_c);\n    xs_se.push(100.0 * r.hs / tot_s);\n    xs_pe.push(r.hp);\n}\nprintln!(\"EPL ({} matches): corr(home corner share, home win) = {:.3}\", ys_e.len(), pearson(&xs_ce, &ys_e));\nprintln!(\"EPL: corr(home shot share,   home win) = {:.3}\", pearson(&xs_se, &ys_e));\nprintln!(\"EPL: corr(home possession,   home win) = {:.3}\", pearson(&xs_pe, &ys_e));\n\nfor r in &rows {\n    let tot_c = r.hc + r.ac;\n    let tot_s = r.hs + r.as_;\n    if tot_c <= 0.0 || tot_s.is_nan() || tot_s <= 0.0 { continue; }\n    if !(r.hp > 0.0 && r.hp < 100.0) { continue; }\n    ys.push(if r.hg > r.ag { 1.0 } else { 0.0 });\n    xs_c.push(100.0 * r.hc / tot_c);\n    xs_s.push(100.0 * r.hs / tot_s);\n    xs_p.push(r.hp);\n}\nprintln!(\"ALL ({} matches): corr(corner share)={:.3} corr(shot share)={:.3} corr(possession)={:.3}\",\n    ys.len(), pearson(&xs_c, &ys), pearson(&xs_s, &ys), pearson(&xs_p, &ys));\n\n// shots-on-target share, EPL only (quality-weighted attacking measure)\nlet mut xs_o = Vec::new(); let mut ys_o = Vec::new();\nfor r in &epl {\n    let tot_o = r.hso + r.aso;\n    if tot_o.is_nan() || tot_o <= 0.0 { continue; }\n    ys_o.push(if r.hg > r.ag { 1.0 } else { 0.0 });\n    xs_o.push(100.0 * r.hso / tot_o);\n}\nprintln!(\"EPL SOG-share subset ({} matches): corr(shots on target share, home win) = {:.3}\",\n    ys_o.len(), pearson(&xs_o, &ys_o));",
       "metadata": {},
-      "execution_count": 5,
+      "execution_count": 9,
       "outputs": [
         {
           "type": "text",
@@ -1347,77 +2772,77 @@
             [
               "English Championship",
               "14543",
-              "2000/01 \u2192 2026/27"
+              "2000/01 → 2026/27"
             ],
             [
               "English League Two",
               "14424",
-              "2000/01 \u2192 2026/27"
+              "2000/01 → 2026/27"
             ],
             [
               "English League One",
               "14374",
-              "2000/01 \u2192 2026/27"
+              "2000/01 → 2026/27"
             ],
             [
               "English Premier League",
               "10032",
-              "2000/01 \u2192 2026/27"
+              "2000/01 → 2026/27"
             ],
             [
               "Spanish La Liga",
               "8438",
-              "2004/05 \u2192 2026/27"
+              "2004/05 → 2026/27"
             ],
             [
               "Italian Serie A",
               "8086",
-              "2005/06 \u2192 2026/27"
+              "2005/06 → 2026/27"
             ],
             [
               "French Ligue 1",
               "7790",
-              "2005/06 \u2192 2026/27"
+              "2005/06 → 2026/27"
             ],
             [
               "German Bundesliga",
               "7750",
-              "2000/01 \u2192 2026/27"
+              "2000/01 → 2026/27"
             ],
             [
               "Spanish La Liga 2",
               "6527",
-              "2008/09 \u2192 2026/27"
+              "2008/09 → 2026/27"
             ],
             [
               "MLS",
               "6264",
-              "2012 \u2192 2026"
+              "2012 → 2026"
             ],
             [
               "Scottish Premiership",
               "5958",
-              "2000/01 \u2192 2026/27"
+              "2000/01 → 2026/27"
             ],
             [
               "French Ligue 2",
               "5347",
-              "2008/09 \u2192 2026/27"
+              "2008/09 → 2026/27"
             ],
             [
               "Italian Serie B",
               "5214",
-              "2008/09 \u2192 2026/27"
+              "2008/09 → 2026/27"
             ],
             [
               "Dutch Eredivisie",
               "4798",
-              "2008/09 \u2192 2026/27"
+              "2008/09 → 2026/27"
             ],
             [
               "German 2. Bundesliga",
               "4661",
-              "2000/01 \u2192 2026/27"
+              "2000/01 → 2026/27"
             ]
           ]
         },
@@ -1588,7 +3013,7 @@
         {
           "type": "table",
           "columns": [
-            "corner share % \u2014 all leagues",
+            "corner share % — all leagues",
             "n",
             "win%",
             "draw%",
@@ -1682,7 +3107,7 @@
         {
           "type": "table",
           "columns": [
-            "corners won \u2014 all leagues",
+            "corners won — all leagues",
             "n",
             "win%",
             "draw%",
@@ -1729,7 +3154,7 @@
         {
           "type": "table",
           "columns": [
-            "corner diff (home \u2212 away)",
+            "corner diff (home − away)",
             "matches",
             "home win%"
           ],
@@ -1824,7 +3249,7 @@
         {
           "type": "table",
           "columns": [
-            "corner diff \u2014 all leagues",
+            "corner diff — all leagues",
             "matches",
             "home win%"
           ],
@@ -1898,9 +3323,9 @@
     {
       "id": "2cee874d-cfed-419c-a068-a7267361d5cc",
       "cell_type": "code",
-      "source": "// team-perspective: wins with <35% corner share, losses with >65%\n#[derive(Default)]\nstruct Tally { low_w: usize, tot_w: usize, high_l: usize, tot_l: usize }\nlet mut tally: HashMap<(String, String, String), Tally> = HashMap::new(); // (league, season, team)\nfor r in &rows {\n    let tot = r.hc + r.ac;\n    if tot <= 0.0 { continue; }\n    for (c, team, gf, ga) in [(r.hc, &r.home, r.hg, r.ag), (r.ac, &r.away, r.ag, r.hg)] {\n        let share = 100.0 * c / tot;\n        let key = (r.league.clone(), r.season.clone(), team.clone());\n        let t = tally.entry(key).or_default();\n        if gf > ga {\n            t.tot_w += 1;\n            if share < 35.0 { t.low_w += 1; }\n        } else if gf < ga {\n            t.tot_l += 1;\n            if share > 65.0 { t.high_l += 1; }\n        }\n    }\n}\n\nlet mut epl_low_w = 0usize; let mut epl_w = 0usize;\nlet mut epl_high_l = 0usize; let mut epl_l = 0usize;\nfor ((lg, _, _), t) in &tally {\n    if lg != \"English Premier League\" { continue; }\n    epl_low_w += t.low_w; epl_w += t.tot_w;\n    epl_high_l += t.high_l; epl_l += t.tot_l;\n}\nprintln!(\"EPL team-matches: wins {} | wins with <35%% corner share: {} ({:.1}%% of wins)\",\n    epl_w, epl_low_w, 100.0 * epl_low_w as f64 / epl_w.max(1) as f64);\nprintln!(\"EPL losses {} | losses with >65%% corner share: {} ({:.1}%% of losses)\",\n    epl_l, epl_high_l, 100.0 * epl_high_l as f64 / epl_l.max(1) as f64);\n\n// aggregate per team across all EPL seasons\nlet mut team_tot: HashMap<String, (usize, usize, usize, usize)> = HashMap::new();\nfor ((lg, _, tm), t) in &tally {\n    if lg != \"English Premier League\" { continue; }\n    let e = team_tot.entry(tm.clone()).or_insert((0, 0, 0, 0));\n    e.0 += t.low_w; e.1 += t.tot_w; e.2 += t.high_l; e.3 += t.tot_l;\n}\nlet mut cand: Vec<(&String, &(usize, usize, usize, usize))> = team_tot.iter()\n    .filter(|(_, t)| t.0 >= 8)\n    .collect();\ncand.sort_by(|a, b| {\n    let ra = (a.1).0 as f64 / (a.1).1.max(1) as f64;\n    let rb = (b.1).0 as f64 / (b.1).1.max(1) as f64;\n    rb.partial_cmp(&ra).unwrap()\n});\nlet top_rows: Vec<Vec<String>> = cand.iter().take(12).map(|(tm, t)| vec![\n    (*tm).clone(), t.0.to_string(), t.1.to_string(),\n    format!(\"{:.0}%\", 100.0 * t.0 as f64 / t.1.max(1) as f64),\n]).collect();\nmars_table(&[\"team (EPL, all seasons)\", \"wins <35% share\", \"total wins\", \"low-share win share\"], &top_rows);\n\nlet mut cand_l: Vec<(&String, &(usize, usize, usize, usize))> = team_tot.iter()\n    .filter(|(_, t)| t.2 >= 8)\n    .collect();\ncand_l.sort_by(|a, b| {\n    let ra = (a.1).2 as f64 / (a.1).3.max(1) as f64;\n    let rb = (b.1).2 as f64 / (b.1).3.max(1) as f64;\n    rb.partial_cmp(&ra).unwrap()\n});\nlet top_l: Vec<Vec<String>> = cand_l.iter().take(12).map(|(tm, t)| vec![\n    (*tm).clone(), t.2.to_string(), t.3.to_string(),\n    format!(\"{:.0}%\", 100.0 * t.2 as f64 / t.3.max(1) as f64),\n]).collect();\nmars_table(&[\"team (EPL, all seasons)\", \"losses >65% share\", \"total losses\", \"high-share loss share\"], &top_l);",
+      "source": "// team-perspective: wins with <35% corner share, losses with >65%\n#[derive(Default)]\nstruct Tally { low_w: usize, tot_w: usize, high_l: usize, tot_l: usize }\nlet mut tally: HashMap<(String, String, String), Tally> = HashMap::new(); // (league, season, team)\nfor r in &rows {\n    let tot = r.hc + r.ac;\n    if tot <= 0.0 { continue; }\n    for (c, team, gf, ga) in [(r.hc, &r.home, r.hg, r.ag), (r.ac, &r.away, r.ag, r.hg)] {\n        let share = 100.0 * c / tot;\n        let key = (r.league.clone(), r.season.clone(), team.clone());\n        let t = tally.entry(key).or_default();\n        if gf > ga {\n            t.tot_w += 1;\n            if share < 35.0 { t.low_w += 1; }\n        } else if gf < ga {\n            t.tot_l += 1;\n            if share > 65.0 { t.high_l += 1; }\n        }\n    }\n}\n\nlet mut epl_low_w = 0usize; let mut epl_w = 0usize;\nlet mut epl_high_l = 0usize; let mut epl_l = 0usize;\nfor ((lg, _, _), t) in &tally {\n    if lg != \"English Premier League\" { continue; }\n    epl_low_w += t.low_w; epl_w += t.tot_w;\n    epl_high_l += t.high_l; epl_l += t.tot_l;\n}\nprintln!(\"EPL team-matches: wins {} | wins with <35%% corner share: {} ({:.1}%% of wins)\",\n    epl_w, epl_low_w, 100.0 * epl_low_w as f64 / epl_w.max(1) as f64);\nprintln!(\"EPL losses {} | losses with >65%% corner share: {} ({:.1}%% of losses)\",\n    epl_l, epl_high_l, 100.0 * epl_high_l as f64 / epl_l.max(1) as f64);\n\n// aggregate per team across all EPL seasons\nlet mut team_tot: HashMap<String, (usize, usize, usize, usize)> = HashMap::new();\nfor ((lg, _, tm), t) in &tally {\n    if lg != \"English Premier League\" { continue; }\n    let e = team_tot.entry(tm.clone()).or_insert((0, 0, 0, 0));\n    e.0 += t.low_w; e.1 += t.tot_w; e.2 += t.high_l; e.3 += t.tot_l;\n}\nlet mut cand: Vec<(&String, &(usize, usize, usize, usize))> = team_tot.iter()\n    .filter(|(_, t)| t.0 >= 8)\n    .collect();\ncand.sort_by(|a, b| {\n    let ra = (a.1).0 as f64 / (a.1).1.max(1) as f64;\n    let rb = (b.1).0 as f64 / (b.1).1.max(1) as f64;\n    rb.partial_cmp(&ra).unwrap()\n});\nlet top_rows: Vec<Vec<String>> = cand.iter().take(12).map(|(tm, t)| vec![\n    (*tm).clone(), t.0.to_string(), t.1.to_string(),\n    format!(\"{:.0}%\", 100.0 * t.0 as f64 / t.1.max(1) as f64),\n]).collect();\nmars_table(&[\"team (EPL, all seasons)\", \"wins <35% share\", \"total wins\", \"low-share win share\"], &top_rows);\n",
       "metadata": {},
-      "execution_count": 6,
+      "execution_count": 10,
       "outputs": [
         {
           "type": "text",
@@ -1917,77 +3342,77 @@
             [
               "English Championship",
               "14543",
-              "2000/01 \u2192 2026/27"
+              "2000/01 → 2026/27"
             ],
             [
               "English League Two",
               "14424",
-              "2000/01 \u2192 2026/27"
+              "2000/01 → 2026/27"
             ],
             [
               "English League One",
               "14374",
-              "2000/01 \u2192 2026/27"
+              "2000/01 → 2026/27"
             ],
             [
               "English Premier League",
               "10032",
-              "2000/01 \u2192 2026/27"
+              "2000/01 → 2026/27"
             ],
             [
               "Spanish La Liga",
               "8438",
-              "2004/05 \u2192 2026/27"
+              "2004/05 → 2026/27"
             ],
             [
               "Italian Serie A",
               "8086",
-              "2005/06 \u2192 2026/27"
+              "2005/06 → 2026/27"
             ],
             [
               "French Ligue 1",
               "7790",
-              "2005/06 \u2192 2026/27"
+              "2005/06 → 2026/27"
             ],
             [
               "German Bundesliga",
               "7750",
-              "2000/01 \u2192 2026/27"
+              "2000/01 → 2026/27"
             ],
             [
               "Spanish La Liga 2",
               "6527",
-              "2008/09 \u2192 2026/27"
+              "2008/09 → 2026/27"
             ],
             [
               "MLS",
               "6264",
-              "2012 \u2192 2026"
+              "2012 → 2026"
             ],
             [
               "Scottish Premiership",
               "5958",
-              "2000/01 \u2192 2026/27"
+              "2000/01 → 2026/27"
             ],
             [
               "French Ligue 2",
               "5347",
-              "2008/09 \u2192 2026/27"
+              "2008/09 → 2026/27"
             ],
             [
               "Italian Serie B",
               "5214",
-              "2008/09 \u2192 2026/27"
+              "2008/09 → 2026/27"
             ],
             [
               "Dutch Eredivisie",
               "4798",
-              "2008/09 \u2192 2026/27"
+              "2008/09 → 2026/27"
             ],
             [
               "German 2. Bundesliga",
               "4661",
-              "2000/01 \u2192 2026/27"
+              "2000/01 → 2026/27"
             ]
           ]
         },
@@ -2158,7 +3583,7 @@
         {
           "type": "table",
           "columns": [
-            "corner share % \u2014 all leagues",
+            "corner share % — all leagues",
             "n",
             "win%",
             "draw%",
@@ -2252,7 +3677,7 @@
         {
           "type": "table",
           "columns": [
-            "corners won \u2014 all leagues",
+            "corners won — all leagues",
             "n",
             "win%",
             "draw%",
@@ -2299,7 +3724,7 @@
         {
           "type": "table",
           "columns": [
-            "corner diff (home \u2212 away)",
+            "corner diff (home − away)",
             "matches",
             "home win%"
           ],
@@ -2394,7 +3819,653 @@
         {
           "type": "table",
           "columns": [
-            "corner diff \u2014 all leagues",
+            "corner diff — all leagues",
+            "matches",
+            "home win%"
+          ],
+          "rows": [
+            [
+              "-20 to -16",
+              "23",
+              "34.8%"
+            ],
+            [
+              "-16 to -12",
+              "228",
+              "44.3%"
+            ],
+            [
+              "-12 to -8",
+              "2115",
+              "46.6%"
+            ],
+            [
+              "-8 to -4",
+              "12634",
+              "45.3%"
+            ],
+            [
+              "-4 to +0",
+              "39147",
+              "45.7%"
+            ],
+            [
+              "+0 to +4",
+              "71312",
+              "45.6%"
+            ],
+            [
+              "+4 to +8",
+              "30686",
+              "43.2%"
+            ],
+            [
+              "+8 to +12",
+              "8330",
+              "40.8%"
+            ],
+            [
+              "+12 to +16",
+              "1389",
+              "38.9%"
+            ],
+            [
+              "+16 to +20",
+              "147",
+              "44.9%"
+            ],
+            [
+              "+20 to +24",
+              "13",
+              "46.2%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "team (EPL, all seasons)",
+            "wins <35% share",
+            "total wins",
+            "low-share win share"
+          ],
+          "rows": [
+            [
+              "QPR",
+              "11",
+              "22",
+              "50%"
+            ],
+            [
+              "Burnley",
+              "41",
+              "92",
+              "45%"
+            ],
+            [
+              "Derby",
+              "8",
+              "19",
+              "42%"
+            ],
+            [
+              "Nott'm Forest",
+              "21",
+              "50",
+              "42%"
+            ],
+            [
+              "Hull",
+              "18",
+              "44",
+              "41%"
+            ],
+            [
+              "Sunderland",
+              "53",
+              "143",
+              "37%"
+            ],
+            [
+              "Ipswich",
+              "13",
+              "36",
+              "36%"
+            ],
+            [
+              "Charlton",
+              "29",
+              "85",
+              "34%"
+            ],
+            [
+              "Watford",
+              "23",
+              "68",
+              "34%"
+            ],
+            [
+              "Stoke",
+              "39",
+              "116",
+              "34%"
+            ],
+            [
+              "Sheffield United",
+              "11",
+              "34",
+              "32%"
+            ],
+            [
+              "Blackburn",
+              "45",
+              "140",
+              "32%"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "0029e6e9-114e-4d4c-93af-8ded7222bdf0",
+      "cell_type": "code",
+      "source": "let mut cand_l: Vec<(&String, &(usize, usize, usize, usize))> = team_tot.iter()\n    .filter(|(_, t)| t.2 >= 8)\n    .collect();\ncand_l.sort_by(|a, b| {\n    let ra = (a.1).2 as f64 / (a.1).3.max(1) as f64;\n    let rb = (b.1).2 as f64 / (b.1).3.max(1) as f64;\n    rb.partial_cmp(&ra).unwrap()\n});\nlet top_l: Vec<Vec<String>> = cand_l.iter().take(12).map(|(tm, t)| vec![\n    (*tm).clone(), t.2.to_string(), t.3.to_string(),\n    format!(\"{:.0}%\", 100.0 * t.2 as f64 / t.3.max(1) as f64),\n]).collect();\nmars_table(&[\"team (EPL, all seasons)\", \"losses >65% share\", \"total losses\", \"high-share loss share\"], &top_l);\n",
+      "metadata": {},
+      "execution_count": 11,
+      "outputs": [
+        {
+          "type": "text",
+          "text": "stat rows indexed: 374660\nmatches with corner data (both teams): 166028\nEPL matches with corners: 10032 | all leagues: 166028\nEPL (8496 matches): corr(home corner share, home win) = 0.050\nEPL: corr(home shot share,   home win) = 0.259\nEPL: corr(home possession,   home win) = 0.120\nALL (111164 matches): corr(corner share)=-0.012 corr(shot share)=0.195 corr(possession)=0.016\nEPL SOG-share subset (10032 matches): corr(shots on target share, home win) = 0.400\nEPL team-matches: wins 7536 | wins with <35%% corner share: 1664 (22.1%% of wins)\nEPL losses 7536 | losses with >65%% corner share: 1664 (22.1%% of losses)\n"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "league",
+            "matches",
+            "season span"
+          ],
+          "rows": [
+            [
+              "English Championship",
+              "14543",
+              "2000/01 → 2026/27"
+            ],
+            [
+              "English League Two",
+              "14424",
+              "2000/01 → 2026/27"
+            ],
+            [
+              "English League One",
+              "14374",
+              "2000/01 → 2026/27"
+            ],
+            [
+              "English Premier League",
+              "10032",
+              "2000/01 → 2026/27"
+            ],
+            [
+              "Spanish La Liga",
+              "8438",
+              "2004/05 → 2026/27"
+            ],
+            [
+              "Italian Serie A",
+              "8086",
+              "2005/06 → 2026/27"
+            ],
+            [
+              "French Ligue 1",
+              "7790",
+              "2005/06 → 2026/27"
+            ],
+            [
+              "German Bundesliga",
+              "7750",
+              "2000/01 → 2026/27"
+            ],
+            [
+              "Spanish La Liga 2",
+              "6527",
+              "2008/09 → 2026/27"
+            ],
+            [
+              "MLS",
+              "6264",
+              "2012 → 2026"
+            ],
+            [
+              "Scottish Premiership",
+              "5958",
+              "2000/01 → 2026/27"
+            ],
+            [
+              "French Ligue 2",
+              "5347",
+              "2008/09 → 2026/27"
+            ],
+            [
+              "Italian Serie B",
+              "5214",
+              "2008/09 → 2026/27"
+            ],
+            [
+              "Dutch Eredivisie",
+              "4798",
+              "2008/09 → 2026/27"
+            ],
+            [
+              "German 2. Bundesliga",
+              "4661",
+              "2000/01 → 2026/27"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "EPL season",
+            "matches with corners"
+          ],
+          "rows": [
+            [
+              "2000/01",
+              "380"
+            ],
+            [
+              "2001/02",
+              "380"
+            ],
+            [
+              "2002/03",
+              "380"
+            ],
+            [
+              "2003/04",
+              "383"
+            ],
+            [
+              "2004/05",
+              "380"
+            ],
+            [
+              "2005/06",
+              "380"
+            ],
+            [
+              "2006/07",
+              "380"
+            ],
+            [
+              "2007/08",
+              "380"
+            ],
+            [
+              "2008/09",
+              "380"
+            ],
+            [
+              "2009/10",
+              "380"
+            ],
+            [
+              "2010/11",
+              "380"
+            ],
+            [
+              "2011/12",
+              "380"
+            ],
+            [
+              "2012/13",
+              "380"
+            ],
+            [
+              "2013/14",
+              "380"
+            ],
+            [
+              "2014/15",
+              "380"
+            ],
+            [
+              "2015/16",
+              "419"
+            ],
+            [
+              "2016/17",
+              "380"
+            ],
+            [
+              "2017/18",
+              "380"
+            ],
+            [
+              "2018/19",
+              "380"
+            ],
+            [
+              "2019/20",
+              "380"
+            ],
+            [
+              "2020/21",
+              "380"
+            ],
+            [
+              "2021/22",
+              "380"
+            ],
+            [
+              "2022/23",
+              "380"
+            ],
+            [
+              "2023/24",
+              "380"
+            ],
+            [
+              "2024/25",
+              "380"
+            ],
+            [
+              "2025/26",
+              "380"
+            ],
+            [
+              "2026/27",
+              "110"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "corner share %",
+            "n",
+            "win%",
+            "draw%",
+            "loss%"
+          ],
+          "rows": [
+            [
+              "<35",
+              "5281",
+              "31.5%",
+              "25.0%",
+              "43.5%"
+            ],
+            [
+              "35-45",
+              "3071",
+              "36.8%",
+              "24.8%",
+              "38.4%"
+            ],
+            [
+              "45-55",
+              "3351",
+              "37.8%",
+              "24.5%",
+              "37.7%"
+            ],
+            [
+              "55-65",
+              "3070",
+              "38.2%",
+              "24.9%",
+              "36.9%"
+            ],
+            [
+              ">65",
+              "5289",
+              "43.5%",
+              "25.0%",
+              "31.5%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "corner share % — all leagues",
+            "n",
+            "win%",
+            "draw%",
+            "loss%"
+          ],
+          "rows": [
+            [
+              "<35",
+              "77963",
+              "35.5%",
+              "26.3%",
+              "38.2%"
+            ],
+            [
+              "35-45",
+              "46418",
+              "36.8%",
+              "26.4%",
+              "36.8%"
+            ],
+            [
+              "45-55",
+              "48749",
+              "37.0%",
+              "26.0%",
+              "37.0%"
+            ],
+            [
+              "55-65",
+              "46435",
+              "36.8%",
+              "26.3%",
+              "36.8%"
+            ],
+            [
+              ">65",
+              "78059",
+              "38.2%",
+              "26.3%",
+              "35.5%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "corners won (EPL)",
+            "n",
+            "win%",
+            "draw%",
+            "loss%"
+          ],
+          "rows": [
+            [
+              "0-2",
+              "3462",
+              "32.2%",
+              "24.7%",
+              "43.2%"
+            ],
+            [
+              "3-4",
+              "5286",
+              "36.0%",
+              "24.8%",
+              "39.2%"
+            ],
+            [
+              "5-6",
+              "4982",
+              "38.0%",
+              "24.2%",
+              "37.8%"
+            ],
+            [
+              "7-9",
+              "4419",
+              "41.1%",
+              "25.1%",
+              "33.7%"
+            ],
+            [
+              "10+",
+              "1915",
+              "42.3%",
+              "26.6%",
+              "31.0%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "corners won — all leagues",
+            "n",
+            "win%",
+            "draw%",
+            "loss%"
+          ],
+          "rows": [
+            [
+              "0-2",
+              "88929",
+              "37.1%",
+              "23.6%",
+              "39.3%"
+            ],
+            [
+              "3-4",
+              "84318",
+              "37.3%",
+              "25.7%",
+              "37.0%"
+            ],
+            [
+              "5-6",
+              "76410",
+              "37.3%",
+              "26.1%",
+              "36.6%"
+            ],
+            [
+              "7-9",
+              "60351",
+              "37.4%",
+              "26.9%",
+              "35.7%"
+            ],
+            [
+              "10+",
+              "22048",
+              "36.1%",
+              "28.5%",
+              "35.4%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "corner diff (home − away)",
+            "matches",
+            "home win%"
+          ],
+          "rows": [
+            [
+              "-16 to -14",
+              "6",
+              "16.7%"
+            ],
+            [
+              "-14 to -12",
+              "22",
+              "36.4%"
+            ],
+            [
+              "-12 to -10",
+              "53",
+              "50.9%"
+            ],
+            [
+              "-10 to -8",
+              "159",
+              "49.7%"
+            ],
+            [
+              "-8 to -6",
+              "322",
+              "37.3%"
+            ],
+            [
+              "-6 to -4",
+              "589",
+              "40.9%"
+            ],
+            [
+              "-4 to -2",
+              "1010",
+              "45.0%"
+            ],
+            [
+              "-2 to +0",
+              "1438",
+              "43.1%"
+            ],
+            [
+              "+0 to +2",
+              "1810",
+              "44.3%"
+            ],
+            [
+              "+2 to +4",
+              "1649",
+              "46.1%"
+            ],
+            [
+              "+4 to +6",
+              "1272",
+              "50.2%"
+            ],
+            [
+              "+6 to +8",
+              "862",
+              "49.3%"
+            ],
+            [
+              "+8 to +10",
+              "461",
+              "49.9%"
+            ],
+            [
+              "+10 to +12",
+              "211",
+              "45.5%"
+            ],
+            [
+              "+12 to +14",
+              "116",
+              "38.8%"
+            ],
+            [
+              "+14 to +16",
+              "36",
+              "52.8%"
+            ],
+            [
+              "+16 to +18",
+              "9",
+              "55.6%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "corner diff — all leagues",
             "matches",
             "home win%"
           ],
@@ -2627,20 +4698,20 @@
     {
       "id": "8f6cbd8c-985f-4980-9904-2609ffca203f",
       "cell_type": "markdown",
-      "source": "## Context: home advantage and opponent strength\n\nTwo confounds the band table ignores. **Home teams already win more** \u2014\nand home teams also win more corners (the home side takes roughly\n55\u201360% of match corners on average), so part of the corner-share effect\nis venue. And **corners are easier to come by against weak teams** that\nsit deep and defend. Split by venue and by opponent strength (the\nopponent's final season points, top vs bottom half within its\nleague-season).",
+      "source": "## Context: home advantage and opponent strength\n\nTwo confounds the band table ignores. **Home teams already win more** —\nand home teams also win more corners (the home side takes roughly\n55–60% of match corners on average), so part of the corner-share effect\nis venue. And **corners are easier to come by against weak teams** that\nsit deep and defend. Split by venue and by opponent strength (the\nopponent's final season points, top vs bottom half within its\nleague-season).",
       "metadata": {},
       "outputs": []
     },
     {
       "id": "091a559d-54c5-4fa5-992c-f8c9687e1431",
       "cell_type": "code",
-      "source": "// team-season points for opponent strength (all matches_full matches)\nlet mut tp: HashMap<(String, String, i64), i64> = HashMap::new();\nfor i in 0..mf.height() {\n    if s_hg[i] < 0 || s_ag[i] < 0 { continue; }\n    let lg = format!(\"{}|{}\", s_country[i], s_league[i]);\n    let ph = if s_hg[i] > s_ag[i] { 3 } else if s_hg[i] == s_ag[i] { 1 } else { 0 };\n    let pa = if s_ag[i] > s_hg[i] { 3 } else if s_hg[i] == s_ag[i] { 1 } else { 0 };\n    *tp.entry((lg.clone(), s_season[i].clone(), s_hid[i])).or_insert(0) += ph;\n    *tp.entry((lg.clone(), s_season[i].clone(), s_aid[i])).or_insert(0) += pa;\n}\nlet mut lgsn_teams: HashMap<(String, String), Vec<((String, String, i64), i64)>> = HashMap::new();\nfor (k, v) in &tp { lgsn_teams.entry((k.0.clone(), k.1.clone())).or_default().push((k.clone(), *v)); }\nlet mut strong: HashMap<(String, String, i64), bool> = HashMap::new();\nfor (_, mut teams) in lgsn_teams {\n    teams.sort_by(|a, b| b.1.cmp(&a.1));\n    let half = teams.len() / 2;\n    for (i, (k, _)) in teams.iter().enumerate() {\n        strong.insert(k.clone(), i < half);\n    }\n}\n\n// win% by corner-share band x opponent strength \u2014 EPL only\nlet mut res = vec![(0usize,0usize); 10]; // band(5) x strong(2)\nfor r in &epl {\n    let lg = format!(\"England|{}\", r.league);\n    let tot = r.hc + r.ac;\n    if tot <= 0.0 { continue; }\n    for (c, opp_id, gf, ga) in [(r.hc, r.aid, r.hg, r.ag), (r.ac, r.hid, r.ag, r.hg)] {\n        let share = 100.0 * c / tot;\n        let b = bands.iter().position(|&hi| share < hi).unwrap_or(5) - 1;\n        let is_strong = strong.get(&(lg.clone(), r.season.clone(), opp_id)).copied().unwrap_or(false);\n        let idx = b * 2 + if is_strong { 1 } else { 0 };\n        res[idx].1 += 1;\n        if gf > ga { res[idx].0 += 1; }\n    }\n}\nlet ctx_rows: Vec<Vec<String>> = (0..5).map(|b| vec![\n    blabels[b].to_string(),\n    format!(\"{} / {}\", res[b*2].1, res[b*2+1].1),\n    format!(\"{:.0}% / {:.0}%\",\n        100.0*res[b*2].0 as f64/res[b*2].1.max(1) as f64,\n        100.0*res[b*2+1].0 as f64/res[b*2+1].1.max(1) as f64),\n]).collect();\nmars_table(&[\"corner share\", \"n vs weak / strong\", \"win% vs weak / strong\"], &ctx_rows);\nprintln!(\"opponent strength = top-half finishers in same league-season (points)\");\n\n// home vs away: same bands applied to each side separately\nlet band_table_side = |matches: &[&MRow], home_side: bool| -> Vec<Vec<String>> {\n    let mut w = vec![0usize; 5]; let mut d = vec![0usize; 5]; let mut l = vec![0usize; 5];\n    for r in matches {\n        let tot = r.hc + r.ac;\n        if tot <= 0.0 { continue; }\n        let (c, gf, ga) = if home_side { (r.hc, r.hg, r.ag) } else { (r.ac, r.ag, r.hg) };\n        let share = 100.0 * c / tot;\n        let b = bands.iter().position(|&hi| share < hi).unwrap_or(5) - 1;\n        if gf > ga { w[b] += 1; } else if gf == ga { d[b] += 1; } else { l[b] += 1; }\n    }\n    (0..5).map(|b| {\n        let n = (w[b] + d[b] + l[b]) as f64;\n        vec![blabels[b].to_string(), (w[b]+d[b]+l[b]).to_string(),\n             format!(\"{:.1}%\", 100.0*w[b] as f64/n),\n             format!(\"{:.1}%\", 100.0*d[b] as f64/n),\n             format!(\"{:.1}%\", 100.0*l[b] as f64/n)]\n    }).collect()\n};\nlet home_b = band_table_side(&epl_refs, true);\nlet away_b = band_table_side(&epl_refs, false);\nlet ha_rows: Vec<Vec<String>> = (0..5).map(|b| vec![\n    blabels[b].to_string(),\n    home_b[b][2].clone(), home_b[b][4].clone(),\n    away_b[b][2].clone(), away_b[b][4].clone(),\n]).collect();\nmars_table(&[\"corner share\", \"home win% / loss%\", \"away win% / loss%\"], &ha_rows);\n\n// average home corner share per EPL season \u2014 venue baseline\nlet mut hshare_by_season: HashMap<String, (f64, usize)> = HashMap::new();\nfor r in &epl {\n    let tot = r.hc + r.ac;\n    if tot <= 0.0 { continue; }\n    let e = hshare_by_season.entry(r.season.clone()).or_insert((0.0, 0));\n    e.0 += 100.0 * r.hc / tot; e.1 += 1;\n}\nlet mut hs_rows: Vec<Vec<String>> = hshare_by_season.iter().map(|(s, (sum, n))| vec![\n    s.clone(), format!(\"{:.1}%\", sum / *n as f64), n.to_string(),\n]).collect();\nhs_rows.sort();\nmars_table(&[\"EPL season\", \"avg home corner share\", \"matches\"], &hs_rows);",
+      "source": "// team-season points for opponent strength (all matches_full matches)\nlet mut tp: HashMap<(String, String, i64), i64> = HashMap::new();\nfor i in 0..mf.height() {\n    if s_hg[i] < 0 || s_ag[i] < 0 { continue; }\n    let lg = format!(\"{}|{}\", s_country[i], s_league[i]);\n    let ph = if s_hg[i] > s_ag[i] { 3 } else if s_hg[i] == s_ag[i] { 1 } else { 0 };\n    let pa = if s_ag[i] > s_hg[i] { 3 } else if s_hg[i] == s_ag[i] { 1 } else { 0 };\n    *tp.entry((lg.clone(), s_season[i].clone(), s_hid[i])).or_insert(0) += ph;\n    *tp.entry((lg.clone(), s_season[i].clone(), s_aid[i])).or_insert(0) += pa;\n}\nlet mut lgsn_teams: HashMap<(String, String), Vec<((String, String, i64), i64)>> = HashMap::new();\nfor (k, v) in &tp { lgsn_teams.entry((k.0.clone(), k.1.clone())).or_default().push((k.clone(), *v)); }\nlet mut strong: HashMap<(String, String, i64), bool> = HashMap::new();\nfor (_, mut teams) in lgsn_teams {\n    teams.sort_by(|a, b| b.1.cmp(&a.1));\n    let half = teams.len() / 2;\n    for (i, (k, _)) in teams.iter().enumerate() {\n        strong.insert(k.clone(), i < half);\n    }\n}\n\n// win% by corner-share band x opponent strength — EPL only\nlet mut res = vec![(0usize,0usize); 10]; // band(5) x strong(2)\nfor r in &epl {\n    let lg = format!(\"England|{}\", r.league);\n    let tot = r.hc + r.ac;\n    if tot <= 0.0 { continue; }\n    for (c, opp_id, gf, ga) in [(r.hc, r.aid, r.hg, r.ag), (r.ac, r.hid, r.ag, r.hg)] {\n        let share = 100.0 * c / tot;\n        let b = bands.iter().position(|&hi| share < hi).unwrap_or(5) - 1;\n        let is_strong = strong.get(&(lg.clone(), r.season.clone(), opp_id)).copied().unwrap_or(false);\n        let idx = b * 2 + if is_strong { 1 } else { 0 };\n        res[idx].1 += 1;\n        if gf > ga { res[idx].0 += 1; }\n    }\n}\nlet ctx_rows: Vec<Vec<String>> = (0..5).map(|b| vec![\n    blabels[b].to_string(),\n    format!(\"{} / {}\", res[b*2].1, res[b*2+1].1),\n    format!(\"{:.0}% / {:.0}%\",\n        100.0*res[b*2].0 as f64/res[b*2].1.max(1) as f64,\n        100.0*res[b*2+1].0 as f64/res[b*2+1].1.max(1) as f64),\n]).collect();\nmars_table(&[\"corner share\", \"n vs weak / strong\", \"win% vs weak / strong\"], &ctx_rows);\n",
       "metadata": {},
-      "execution_count": 7,
+      "execution_count": 12,
       "outputs": [
         {
           "type": "text",
-          "text": "stat rows indexed: 374660\nmatches with corner data (both teams): 166028\nEPL matches with corners: 10032 | all leagues: 166028\nEPL (8496 matches): corr(home corner share, home win) = 0.050\nEPL: corr(home shot share,   home win) = 0.259\nEPL: corr(home possession,   home win) = 0.120\nALL (111164 matches): corr(corner share)=-0.012 corr(shot share)=0.195 corr(possession)=0.016\nEPL SOG-share subset (10032 matches): corr(shots on target share, home win) = 0.400\nEPL team-matches: wins 7536 | wins with <35%% corner share: 1664 (22.1%% of wins)\nEPL losses 7536 | losses with >65%% corner share: 1664 (22.1%% of losses)\nopponent strength = top-half finishers in same league-season (points)\n"
+          "text": "stat rows indexed: 374660\nmatches with corner data (both teams): 166028\nEPL matches with corners: 10032 | all leagues: 166028\nEPL (8496 matches): corr(home corner share, home win) = 0.050\nEPL: corr(home shot share,   home win) = 0.259\nEPL: corr(home possession,   home win) = 0.120\nALL (111164 matches): corr(corner share)=-0.012 corr(shot share)=0.195 corr(possession)=0.016\nEPL SOG-share subset (10032 matches): corr(shots on target share, home win) = 0.400\nEPL team-matches: wins 7536 | wins with <35%% corner share: 1664 (22.1%% of wins)\nEPL losses 7536 | losses with >65%% corner share: 1664 (22.1%% of losses)\n"
         },
         {
           "type": "table",
@@ -2653,77 +4724,77 @@
             [
               "English Championship",
               "14543",
-              "2000/01 \u2192 2026/27"
+              "2000/01 → 2026/27"
             ],
             [
               "English League Two",
               "14424",
-              "2000/01 \u2192 2026/27"
+              "2000/01 → 2026/27"
             ],
             [
               "English League One",
               "14374",
-              "2000/01 \u2192 2026/27"
+              "2000/01 → 2026/27"
             ],
             [
               "English Premier League",
               "10032",
-              "2000/01 \u2192 2026/27"
+              "2000/01 → 2026/27"
             ],
             [
               "Spanish La Liga",
               "8438",
-              "2004/05 \u2192 2026/27"
+              "2004/05 → 2026/27"
             ],
             [
               "Italian Serie A",
               "8086",
-              "2005/06 \u2192 2026/27"
+              "2005/06 → 2026/27"
             ],
             [
               "French Ligue 1",
               "7790",
-              "2005/06 \u2192 2026/27"
+              "2005/06 → 2026/27"
             ],
             [
               "German Bundesliga",
               "7750",
-              "2000/01 \u2192 2026/27"
+              "2000/01 → 2026/27"
             ],
             [
               "Spanish La Liga 2",
               "6527",
-              "2008/09 \u2192 2026/27"
+              "2008/09 → 2026/27"
             ],
             [
               "MLS",
               "6264",
-              "2012 \u2192 2026"
+              "2012 → 2026"
             ],
             [
               "Scottish Premiership",
               "5958",
-              "2000/01 \u2192 2026/27"
+              "2000/01 → 2026/27"
             ],
             [
               "French Ligue 2",
               "5347",
-              "2008/09 \u2192 2026/27"
+              "2008/09 → 2026/27"
             ],
             [
               "Italian Serie B",
               "5214",
-              "2008/09 \u2192 2026/27"
+              "2008/09 → 2026/27"
             ],
             [
               "Dutch Eredivisie",
               "4798",
-              "2008/09 \u2192 2026/27"
+              "2008/09 → 2026/27"
             ],
             [
               "German 2. Bundesliga",
               "4661",
-              "2000/01 \u2192 2026/27"
+              "2000/01 → 2026/27"
             ]
           ]
         },
@@ -2894,7 +4965,7 @@
         {
           "type": "table",
           "columns": [
-            "corner share % \u2014 all leagues",
+            "corner share % — all leagues",
             "n",
             "win%",
             "draw%",
@@ -2988,7 +5059,7 @@
         {
           "type": "table",
           "columns": [
-            "corners won \u2014 all leagues",
+            "corners won — all leagues",
             "n",
             "win%",
             "draw%",
@@ -3035,7 +5106,7 @@
         {
           "type": "table",
           "columns": [
-            "corner diff (home \u2212 away)",
+            "corner diff (home − away)",
             "matches",
             "home win%"
           ],
@@ -3130,7 +5201,7 @@
         {
           "type": "table",
           "columns": [
-            "corner diff \u2014 all leagues",
+            "corner diff — all leagues",
             "matches",
             "home win%"
           ],
@@ -3369,239 +5440,42 @@
             [
               "<35",
               "1917 / 3364",
-              "45% / 24%"
+              "46% / 24%"
             ],
             [
               "35-45",
-              "1385 / 1686",
+              "1393 / 1678",
               "49% / 27%"
             ],
             [
               "45-55",
-              "1678 / 1673",
+              "1672 / 1679",
               "49% / 27%"
             ],
             [
               "55-65",
-              "1625 / 1445",
+              "1626 / 1444",
               "48% / 27%"
             ],
             [
               ">65",
-              "3213 / 2076",
-              "51% / 32%"
-            ]
-          ]
-        },
-        {
-          "type": "table",
-          "columns": [
-            "corner share",
-            "home win% / loss%",
-            "away win% / loss%"
-          ],
-          "rows": [
-            [
-              "<35",
-              "42.1%",
-              "33.1%",
-              "25.4%",
-              "49.5%"
-            ],
-            [
-              "35-45",
-              "44.5%",
-              "30.9%",
-              "31.1%",
-              "43.9%"
-            ],
-            [
-              "45-55",
-              "44.7%",
-              "30.8%",
-              "31.0%",
-              "44.5%"
-            ],
-            [
-              "55-65",
-              "43.7%",
-              "31.2%",
-              "30.9%",
-              "44.5%"
-            ],
-            [
-              ">65",
-              "49.6%",
-              "25.4%",
-              "33.1%",
-              "42.1%"
-            ]
-          ]
-        },
-        {
-          "type": "table",
-          "columns": [
-            "EPL season",
-            "avg home corner share",
-            "matches"
-          ],
-          "rows": [
-            [
-              "2000/01",
-              "57.6%",
-              "380"
-            ],
-            [
-              "2001/02",
-              "29.4%",
-              "380"
-            ],
-            [
-              "2002/03",
-              "57.2%",
-              "380"
-            ],
-            [
-              "2003/04",
-              "56.1%",
-              "383"
-            ],
-            [
-              "2004/05",
-              "56.2%",
-              "380"
-            ],
-            [
-              "2005/06",
-              "56.2%",
-              "380"
-            ],
-            [
-              "2006/07",
-              "56.8%",
-              "380"
-            ],
-            [
-              "2007/08",
-              "56.8%",
-              "380"
-            ],
-            [
-              "2008/09",
-              "56.1%",
-              "380"
-            ],
-            [
-              "2009/10",
-              "55.2%",
-              "380"
-            ],
-            [
-              "2010/11",
-              "54.5%",
-              "379"
-            ],
-            [
-              "2011/12",
-              "57.1%",
-              "380"
-            ],
-            [
-              "2012/13",
-              "56.3%",
-              "380"
-            ],
-            [
-              "2013/14",
-              "56.7%",
-              "380"
-            ],
-            [
-              "2014/15",
-              "55.3%",
-              "380"
-            ],
-            [
-              "2015/16",
-              "53.4%",
-              "419"
-            ],
-            [
-              "2016/17",
-              "54.2%",
-              "380"
-            ],
-            [
-              "2017/18",
-              "55.9%",
-              "380"
-            ],
-            [
-              "2018/19",
-              "55.7%",
-              "380"
-            ],
-            [
-              "2019/20",
-              "53.4%",
-              "380"
-            ],
-            [
-              "2020/21",
-              "53.7%",
-              "380"
-            ],
-            [
-              "2021/22",
-              "53.3%",
-              "380"
-            ],
-            [
-              "2022/23",
-              "55.2%",
-              "380"
-            ],
-            [
-              "2023/24",
-              "56.3%",
-              "380"
-            ],
-            [
-              "2024/25",
-              "52.6%",
-              "380"
-            ],
-            [
-              "2025/26",
-              "54.0%",
-              "380"
-            ],
-            [
-              "2026/27",
-              "52.8%",
-              "110"
+              "3210 / 2079",
+              "51% / 33%"
             ]
           ]
         }
       ]
     },
     {
-      "id": "e7a82b35-2594-46a4-9b85-4e539d145a0b",
-      "cell_type": "markdown",
-      "source": "## The season-level view and the historical trend\n\nMatch-level noise is huge. Smooth it three ways: (1) correlate each\ntime's **season-average corner share** with final points; (2) track the\nyearly correlation between corner differential and home wins; (3) track\nthe average **total corners per match** \u2014 are modern games more or less\ncornered than the early 2000s?",
-      "metadata": {},
-      "outputs": []
-    },
-    {
-      "id": "e30573a5-7748-4ecf-b5ac-b564b3a7cb93",
+      "id": "4d498b59-bfb4-4b21-ae7e-744dc993d7ae",
       "cell_type": "code",
-      "source": "// (1) EPL team-season: avg corner share vs points\nlet mut ts: HashMap<(String, i64), (f64, usize)> = HashMap::new();\nfor r in &epl {\n    let tot = r.hc + r.ac;\n    if tot <= 0.0 { continue; }\n    for (tid, c) in [(r.hid, r.hc), (r.aid, r.ac)] {\n        let e = ts.entry((r.season.clone(), tid)).or_insert((0.0, 0));\n        e.0 += 100.0 * c / tot; e.1 += 1;\n    }\n}\nlet mut pts: HashMap<(String, i64), i64> = HashMap::new();\nfor r in &epl {\n    let ph = if r.hg > r.ag { 3 } else if r.hg == r.ag { 1 } else { 0 };\n    let pa = if r.ag > r.hg { 3 } else if r.hg == r.ag { 1 } else { 0 };\n    *pts.entry((r.season.clone(), r.hid)).or_insert(0) += ph;\n    *pts.entry((r.season.clone(), r.aid)).or_insert(0) += pa;\n}\nlet mut xs = Vec::new(); let mut ys = Vec::new();\nfor ((sn, tid), (sp, n)) in &ts {\n    if *n < 30 { continue; }\n    if let Some(p) = pts.get(&(sn.clone(), *tid)) {\n        xs.push(sp / *n as f64); ys.push(*p as f64);\n    }\n}\nprintln!(\"EPL team-seasons: {} | corr(avg corner share, season points) = {:.3}\",\n    xs.len(), pearson(&xs, &ys));\n\n// (2) yearly correlation: corner diff -> home win, EPL by season\nlet mut by_year: std::collections::BTreeMap<String, (Vec<f64>, Vec<f64>)> = std::collections::BTreeMap::new();\nfor r in &epl {\n    let e = by_year.entry(r.season.clone()).or_default();\n    e.0.push(r.hc - r.ac);\n    e.1.push(if r.hg > r.ag { 1.0 } else { 0.0 });\n}\n// (3) corners per match per season\nlet mut cpb: std::collections::BTreeMap<String, (f64, usize)> = std::collections::BTreeMap::new();\nfor r in &epl {\n    let e = cpb.entry(r.season.clone()).or_insert((0.0, 0));\n    e.0 += (r.hc + r.ac) / 2.0; e.1 += 1;\n}\nlet trend_rows: Vec<Vec<String>> = by_year.iter().map(|(sn, (x, y))| {\n    let cp = cpb.get(sn).map(|(s, n)| s / *n as f64).unwrap_or(f64::NAN);\n    vec![sn.clone(), format!(\"{:.3}\", pearson(x, y)), x.len().to_string(),\n         format!(\"{:.1}\", cp)]\n}).collect();\nmars_table(&[\"EPL season\", \"corr(corner diff, home win)\", \"matches\", \"avg corners/team\"], &trend_rows);",
+      "source": "println!(\"opponent strength = top-half finishers in same league-season (points)\");\n\n// home vs away: same bands applied to each side separately\nlet band_table_side = |matches: &[&MRow], home_side: bool| -> Vec<Vec<String>> {\n    let mut w = vec![0usize; 5]; let mut d = vec![0usize; 5]; let mut l = vec![0usize; 5];\n    for r in matches {\n        let tot = r.hc + r.ac;\n        if tot <= 0.0 { continue; }\n        let (c, gf, ga) = if home_side { (r.hc, r.hg, r.ag) } else { (r.ac, r.ag, r.hg) };\n        let share = 100.0 * c / tot;\n        let b = bands.iter().position(|&hi| share < hi).unwrap_or(5) - 1;\n        if gf > ga { w[b] += 1; } else if gf == ga { d[b] += 1; } else { l[b] += 1; }\n    }\n    (0..5).map(|b| {\n        let n = (w[b] + d[b] + l[b]) as f64;\n        vec![blabels[b].to_string(), (w[b]+d[b]+l[b]).to_string(),\n             format!(\"{:.1}%\", 100.0*w[b] as f64/n),\n             format!(\"{:.1}%\", 100.0*d[b] as f64/n),\n             format!(\"{:.1}%\", 100.0*l[b] as f64/n)]\n    }).collect()\n};\nlet home_b = band_table_side(&epl_refs, true);\nlet away_b = band_table_side(&epl_refs, false);\nlet ha_rows: Vec<Vec<String>> = (0..5).map(|b| vec![\n    blabels[b].to_string(),\n    home_b[b][2].clone(), home_b[b][4].clone(),\n    away_b[b][2].clone(), away_b[b][4].clone(),\n]).collect();\nmars_table(&[\"corner share\", \"home win% / loss%\", \"away win% / loss%\"], &ha_rows);\n",
       "metadata": {},
-      "execution_count": 8,
+      "execution_count": 13,
       "outputs": [
         {
           "type": "text",
-          "text": "stat rows indexed: 374660\nmatches with corner data (both teams): 166028\nEPL matches with corners: 10032 | all leagues: 166028\nEPL (8496 matches): corr(home corner share, home win) = 0.050\nEPL: corr(home shot share,   home win) = 0.259\nEPL: corr(home possession,   home win) = 0.120\nALL (111164 matches): corr(corner share)=-0.012 corr(shot share)=0.195 corr(possession)=0.016\nEPL SOG-share subset (10032 matches): corr(shots on target share, home win) = 0.400\nEPL team-matches: wins 7536 | wins with <35%% corner share: 1664 (22.1%% of wins)\nEPL losses 7536 | losses with >65%% corner share: 1664 (22.1%% of losses)\nopponent strength = top-half finishers in same league-season (points)\nEPL team-seasons: 521 | corr(avg corner share, season points) = 0.744\n"
+          "text": "stat rows indexed: 374660\nmatches with corner data (both teams): 166028\nEPL matches with corners: 10032 | all leagues: 166028\nEPL (8496 matches): corr(home corner share, home win) = 0.050\nEPL: corr(home shot share,   home win) = 0.259\nEPL: corr(home possession,   home win) = 0.120\nALL (111164 matches): corr(corner share)=-0.012 corr(shot share)=0.195 corr(possession)=0.016\nEPL SOG-share subset (10032 matches): corr(shots on target share, home win) = 0.400\nEPL team-matches: wins 7536 | wins with <35%% corner share: 1664 (22.1%% of wins)\nEPL losses 7536 | losses with >65%% corner share: 1664 (22.1%% of losses)\nopponent strength = top-half finishers in same league-season (points)\n"
         },
         {
           "type": "table",
@@ -3614,77 +5488,77 @@
             [
               "English Championship",
               "14543",
-              "2000/01 \u2192 2026/27"
+              "2000/01 → 2026/27"
             ],
             [
               "English League Two",
               "14424",
-              "2000/01 \u2192 2026/27"
+              "2000/01 → 2026/27"
             ],
             [
               "English League One",
               "14374",
-              "2000/01 \u2192 2026/27"
+              "2000/01 → 2026/27"
             ],
             [
               "English Premier League",
               "10032",
-              "2000/01 \u2192 2026/27"
+              "2000/01 → 2026/27"
             ],
             [
               "Spanish La Liga",
               "8438",
-              "2004/05 \u2192 2026/27"
+              "2004/05 → 2026/27"
             ],
             [
               "Italian Serie A",
               "8086",
-              "2005/06 \u2192 2026/27"
+              "2005/06 → 2026/27"
             ],
             [
               "French Ligue 1",
               "7790",
-              "2005/06 \u2192 2026/27"
+              "2005/06 → 2026/27"
             ],
             [
               "German Bundesliga",
               "7750",
-              "2000/01 \u2192 2026/27"
+              "2000/01 → 2026/27"
             ],
             [
               "Spanish La Liga 2",
               "6527",
-              "2008/09 \u2192 2026/27"
+              "2008/09 → 2026/27"
             ],
             [
               "MLS",
               "6264",
-              "2012 \u2192 2026"
+              "2012 → 2026"
             ],
             [
               "Scottish Premiership",
               "5958",
-              "2000/01 \u2192 2026/27"
+              "2000/01 → 2026/27"
             ],
             [
               "French Ligue 2",
               "5347",
-              "2008/09 \u2192 2026/27"
+              "2008/09 → 2026/27"
             ],
             [
               "Italian Serie B",
               "5214",
-              "2008/09 \u2192 2026/27"
+              "2008/09 → 2026/27"
             ],
             [
               "Dutch Eredivisie",
               "4798",
-              "2008/09 \u2192 2026/27"
+              "2008/09 → 2026/27"
             ],
             [
               "German 2. Bundesliga",
               "4661",
-              "2000/01 \u2192 2026/27"
+              "2000/01 → 2026/27"
             ]
           ]
         },
@@ -3855,7 +5729,7 @@
         {
           "type": "table",
           "columns": [
-            "corner share % \u2014 all leagues",
+            "corner share % — all leagues",
             "n",
             "win%",
             "draw%",
@@ -3949,7 +5823,7 @@
         {
           "type": "table",
           "columns": [
-            "corners won \u2014 all leagues",
+            "corners won — all leagues",
             "n",
             "win%",
             "draw%",
@@ -3996,7 +5870,7 @@
         {
           "type": "table",
           "columns": [
-            "corner diff (home \u2212 away)",
+            "corner diff (home − away)",
             "matches",
             "home win%"
           ],
@@ -4091,7 +5965,7 @@
         {
           "type": "table",
           "columns": [
-            "corner diff \u2014 all leagues",
+            "corner diff — all leagues",
             "matches",
             "home win%"
           ],
@@ -4329,12 +6203,821 @@
           "rows": [
             [
               "<35",
-              "1921 / 3360",
+              "1902 / 3379",
+              "46% / 24%"
+            ],
+            [
+              "35-45",
+              "1390 / 1681",
+              "49% / 27%"
+            ],
+            [
+              "45-55",
+              "1677 / 1674",
+              "49% / 27%"
+            ],
+            [
+              "55-65",
+              "1630 / 1440",
+              "48% / 27%"
+            ],
+            [
+              ">65",
+              "3219 / 2070",
+              "51% / 33%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "corner share",
+            "home win% / loss%",
+            "away win% / loss%"
+          ],
+          "rows": [
+            [
+              "<35",
+              "42.1%",
+              "33.1%",
+              "25.4%",
+              "49.5%"
+            ],
+            [
+              "35-45",
+              "44.5%",
+              "30.9%",
+              "31.1%",
+              "43.9%"
+            ],
+            [
+              "45-55",
+              "44.7%",
+              "30.8%",
+              "31.0%",
+              "44.5%"
+            ],
+            [
+              "55-65",
+              "43.7%",
+              "31.2%",
+              "30.9%",
+              "44.5%"
+            ],
+            [
+              ">65",
+              "49.6%",
+              "25.4%",
+              "33.1%",
+              "42.1%"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "55a245d1-1e41-493e-a301-8c80694b7502",
+      "cell_type": "code",
+      "source": "// average home corner share per EPL season — venue baseline\nlet mut hshare_by_season: HashMap<String, (f64, usize)> = HashMap::new();\nfor r in &epl {\n    let tot = r.hc + r.ac;\n    if tot <= 0.0 { continue; }\n    let e = hshare_by_season.entry(r.season.clone()).or_insert((0.0, 0));\n    e.0 += 100.0 * r.hc / tot; e.1 += 1;\n}\nlet mut hs_rows: Vec<Vec<String>> = hshare_by_season.iter().map(|(s, (sum, n))| vec![\n    s.clone(), format!(\"{:.1}%\", sum / *n as f64), n.to_string(),\n]).collect();\nhs_rows.sort();\nmars_table(&[\"EPL season\", \"avg home corner share\", \"matches\"], &hs_rows);\n",
+      "metadata": {},
+      "execution_count": 14,
+      "outputs": [
+        {
+          "type": "text",
+          "text": "stat rows indexed: 374660\nmatches with corner data (both teams): 166028\nEPL matches with corners: 10032 | all leagues: 166028\nEPL (8496 matches): corr(home corner share, home win) = 0.050\nEPL: corr(home shot share,   home win) = 0.259\nEPL: corr(home possession,   home win) = 0.120\nALL (111164 matches): corr(corner share)=-0.012 corr(shot share)=0.195 corr(possession)=0.016\nEPL SOG-share subset (10032 matches): corr(shots on target share, home win) = 0.400\nEPL team-matches: wins 7536 | wins with <35%% corner share: 1664 (22.1%% of wins)\nEPL losses 7536 | losses with >65%% corner share: 1664 (22.1%% of losses)\nopponent strength = top-half finishers in same league-season (points)\n"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "league",
+            "matches",
+            "season span"
+          ],
+          "rows": [
+            [
+              "English Championship",
+              "14543",
+              "2000/01 → 2026/27"
+            ],
+            [
+              "English League Two",
+              "14424",
+              "2000/01 → 2026/27"
+            ],
+            [
+              "English League One",
+              "14374",
+              "2000/01 → 2026/27"
+            ],
+            [
+              "English Premier League",
+              "10032",
+              "2000/01 → 2026/27"
+            ],
+            [
+              "Spanish La Liga",
+              "8438",
+              "2004/05 → 2026/27"
+            ],
+            [
+              "Italian Serie A",
+              "8086",
+              "2005/06 → 2026/27"
+            ],
+            [
+              "French Ligue 1",
+              "7790",
+              "2005/06 → 2026/27"
+            ],
+            [
+              "German Bundesliga",
+              "7750",
+              "2000/01 → 2026/27"
+            ],
+            [
+              "Spanish La Liga 2",
+              "6527",
+              "2008/09 → 2026/27"
+            ],
+            [
+              "MLS",
+              "6264",
+              "2012 → 2026"
+            ],
+            [
+              "Scottish Premiership",
+              "5958",
+              "2000/01 → 2026/27"
+            ],
+            [
+              "French Ligue 2",
+              "5347",
+              "2008/09 → 2026/27"
+            ],
+            [
+              "Italian Serie B",
+              "5214",
+              "2008/09 → 2026/27"
+            ],
+            [
+              "Dutch Eredivisie",
+              "4798",
+              "2008/09 → 2026/27"
+            ],
+            [
+              "German 2. Bundesliga",
+              "4661",
+              "2000/01 → 2026/27"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "EPL season",
+            "matches with corners"
+          ],
+          "rows": [
+            [
+              "2000/01",
+              "380"
+            ],
+            [
+              "2001/02",
+              "380"
+            ],
+            [
+              "2002/03",
+              "380"
+            ],
+            [
+              "2003/04",
+              "383"
+            ],
+            [
+              "2004/05",
+              "380"
+            ],
+            [
+              "2005/06",
+              "380"
+            ],
+            [
+              "2006/07",
+              "380"
+            ],
+            [
+              "2007/08",
+              "380"
+            ],
+            [
+              "2008/09",
+              "380"
+            ],
+            [
+              "2009/10",
+              "380"
+            ],
+            [
+              "2010/11",
+              "380"
+            ],
+            [
+              "2011/12",
+              "380"
+            ],
+            [
+              "2012/13",
+              "380"
+            ],
+            [
+              "2013/14",
+              "380"
+            ],
+            [
+              "2014/15",
+              "380"
+            ],
+            [
+              "2015/16",
+              "419"
+            ],
+            [
+              "2016/17",
+              "380"
+            ],
+            [
+              "2017/18",
+              "380"
+            ],
+            [
+              "2018/19",
+              "380"
+            ],
+            [
+              "2019/20",
+              "380"
+            ],
+            [
+              "2020/21",
+              "380"
+            ],
+            [
+              "2021/22",
+              "380"
+            ],
+            [
+              "2022/23",
+              "380"
+            ],
+            [
+              "2023/24",
+              "380"
+            ],
+            [
+              "2024/25",
+              "380"
+            ],
+            [
+              "2025/26",
+              "380"
+            ],
+            [
+              "2026/27",
+              "110"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "corner share %",
+            "n",
+            "win%",
+            "draw%",
+            "loss%"
+          ],
+          "rows": [
+            [
+              "<35",
+              "5281",
+              "31.5%",
+              "25.0%",
+              "43.5%"
+            ],
+            [
+              "35-45",
+              "3071",
+              "36.8%",
+              "24.8%",
+              "38.4%"
+            ],
+            [
+              "45-55",
+              "3351",
+              "37.8%",
+              "24.5%",
+              "37.7%"
+            ],
+            [
+              "55-65",
+              "3070",
+              "38.2%",
+              "24.9%",
+              "36.9%"
+            ],
+            [
+              ">65",
+              "5289",
+              "43.5%",
+              "25.0%",
+              "31.5%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "corner share % — all leagues",
+            "n",
+            "win%",
+            "draw%",
+            "loss%"
+          ],
+          "rows": [
+            [
+              "<35",
+              "77963",
+              "35.5%",
+              "26.3%",
+              "38.2%"
+            ],
+            [
+              "35-45",
+              "46418",
+              "36.8%",
+              "26.4%",
+              "36.8%"
+            ],
+            [
+              "45-55",
+              "48749",
+              "37.0%",
+              "26.0%",
+              "37.0%"
+            ],
+            [
+              "55-65",
+              "46435",
+              "36.8%",
+              "26.3%",
+              "36.8%"
+            ],
+            [
+              ">65",
+              "78059",
+              "38.2%",
+              "26.3%",
+              "35.5%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "corners won (EPL)",
+            "n",
+            "win%",
+            "draw%",
+            "loss%"
+          ],
+          "rows": [
+            [
+              "0-2",
+              "3462",
+              "32.2%",
+              "24.7%",
+              "43.2%"
+            ],
+            [
+              "3-4",
+              "5286",
+              "36.0%",
+              "24.8%",
+              "39.2%"
+            ],
+            [
+              "5-6",
+              "4982",
+              "38.0%",
+              "24.2%",
+              "37.8%"
+            ],
+            [
+              "7-9",
+              "4419",
+              "41.1%",
+              "25.1%",
+              "33.7%"
+            ],
+            [
+              "10+",
+              "1915",
+              "42.3%",
+              "26.6%",
+              "31.0%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "corners won — all leagues",
+            "n",
+            "win%",
+            "draw%",
+            "loss%"
+          ],
+          "rows": [
+            [
+              "0-2",
+              "88929",
+              "37.1%",
+              "23.6%",
+              "39.3%"
+            ],
+            [
+              "3-4",
+              "84318",
+              "37.3%",
+              "25.7%",
+              "37.0%"
+            ],
+            [
+              "5-6",
+              "76410",
+              "37.3%",
+              "26.1%",
+              "36.6%"
+            ],
+            [
+              "7-9",
+              "60351",
+              "37.4%",
+              "26.9%",
+              "35.7%"
+            ],
+            [
+              "10+",
+              "22048",
+              "36.1%",
+              "28.5%",
+              "35.4%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "corner diff (home − away)",
+            "matches",
+            "home win%"
+          ],
+          "rows": [
+            [
+              "-16 to -14",
+              "6",
+              "16.7%"
+            ],
+            [
+              "-14 to -12",
+              "22",
+              "36.4%"
+            ],
+            [
+              "-12 to -10",
+              "53",
+              "50.9%"
+            ],
+            [
+              "-10 to -8",
+              "159",
+              "49.7%"
+            ],
+            [
+              "-8 to -6",
+              "322",
+              "37.3%"
+            ],
+            [
+              "-6 to -4",
+              "589",
+              "40.9%"
+            ],
+            [
+              "-4 to -2",
+              "1010",
+              "45.0%"
+            ],
+            [
+              "-2 to +0",
+              "1438",
+              "43.1%"
+            ],
+            [
+              "+0 to +2",
+              "1810",
+              "44.3%"
+            ],
+            [
+              "+2 to +4",
+              "1649",
+              "46.1%"
+            ],
+            [
+              "+4 to +6",
+              "1272",
+              "50.2%"
+            ],
+            [
+              "+6 to +8",
+              "862",
+              "49.3%"
+            ],
+            [
+              "+8 to +10",
+              "461",
+              "49.9%"
+            ],
+            [
+              "+10 to +12",
+              "211",
+              "45.5%"
+            ],
+            [
+              "+12 to +14",
+              "116",
+              "38.8%"
+            ],
+            [
+              "+14 to +16",
+              "36",
+              "52.8%"
+            ],
+            [
+              "+16 to +18",
+              "9",
+              "55.6%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "corner diff — all leagues",
+            "matches",
+            "home win%"
+          ],
+          "rows": [
+            [
+              "-20 to -16",
+              "23",
+              "34.8%"
+            ],
+            [
+              "-16 to -12",
+              "228",
+              "44.3%"
+            ],
+            [
+              "-12 to -8",
+              "2115",
+              "46.6%"
+            ],
+            [
+              "-8 to -4",
+              "12634",
+              "45.3%"
+            ],
+            [
+              "-4 to +0",
+              "39147",
+              "45.7%"
+            ],
+            [
+              "+0 to +4",
+              "71312",
+              "45.6%"
+            ],
+            [
+              "+4 to +8",
+              "30686",
+              "43.2%"
+            ],
+            [
+              "+8 to +12",
+              "8330",
+              "40.8%"
+            ],
+            [
+              "+12 to +16",
+              "1389",
+              "38.9%"
+            ],
+            [
+              "+16 to +20",
+              "147",
+              "44.9%"
+            ],
+            [
+              "+20 to +24",
+              "13",
+              "46.2%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "team (EPL, all seasons)",
+            "wins <35% share",
+            "total wins",
+            "low-share win share"
+          ],
+          "rows": [
+            [
+              "QPR",
+              "11",
+              "22",
+              "50%"
+            ],
+            [
+              "Burnley",
+              "41",
+              "92",
+              "45%"
+            ],
+            [
+              "Derby",
+              "8",
+              "19",
+              "42%"
+            ],
+            [
+              "Nott'm Forest",
+              "21",
+              "50",
+              "42%"
+            ],
+            [
+              "Hull",
+              "18",
+              "44",
+              "41%"
+            ],
+            [
+              "Sunderland",
+              "53",
+              "143",
+              "37%"
+            ],
+            [
+              "Ipswich",
+              "13",
+              "36",
+              "36%"
+            ],
+            [
+              "Charlton",
+              "29",
+              "85",
+              "34%"
+            ],
+            [
+              "Watford",
+              "23",
+              "68",
+              "34%"
+            ],
+            [
+              "Stoke",
+              "39",
+              "116",
+              "34%"
+            ],
+            [
+              "Sheffield United",
+              "11",
+              "34",
+              "32%"
+            ],
+            [
+              "Blackburn",
+              "45",
+              "140",
+              "32%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "team (EPL, all seasons)",
+            "losses >65% share",
+            "total losses",
+            "high-share loss share"
+          ],
+          "rows": [
+            [
+              "Liverpool",
+              "91",
+              "204",
+              "45%"
+            ],
+            [
+              "Man City",
+              "92",
+              "240",
+              "38%"
+            ],
+            [
+              "Chelsea",
+              "78",
+              "210",
+              "37%"
+            ],
+            [
+              "Man United",
+              "73",
+              "205",
+              "36%"
+            ],
+            [
+              "Reading",
+              "19",
+              "59",
+              "32%"
+            ],
+            [
+              "Leeds",
+              "40",
+              "127",
+              "31%"
+            ],
+            [
+              "Arsenal",
+              "60",
+              "195",
+              "31%"
+            ],
+            [
+              "Tottenham",
+              "85",
+              "321",
+              "26%"
+            ],
+            [
+              "Ipswich",
+              "16",
+              "62",
+              "26%"
+            ],
+            [
+              "Everton",
+              "88",
+              "352",
+              "25%"
+            ],
+            [
+              "Aston Villa",
+              "83",
+              "335",
+              "25%"
+            ],
+            [
+              "Blackburn",
+              "40",
+              "168",
+              "24%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "corner share",
+            "n vs weak / strong",
+            "win% vs weak / strong"
+          ],
+          "rows": [
+            [
+              "<35",
+              "1919 / 3362",
               "45% / 24%"
             ],
             [
               "35-45",
-              "1389 / 1682",
+              "1395 / 1676",
               "49% / 27%"
             ],
             [
@@ -4349,7 +7032,968 @@
             ],
             [
               ">65",
-              "3208 / 2081",
+              "3204 / 2085",
+              "51% / 33%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "corner share",
+            "home win% / loss%",
+            "away win% / loss%"
+          ],
+          "rows": [
+            [
+              "<35",
+              "42.1%",
+              "33.1%",
+              "25.4%",
+              "49.5%"
+            ],
+            [
+              "35-45",
+              "44.5%",
+              "30.9%",
+              "31.1%",
+              "43.9%"
+            ],
+            [
+              "45-55",
+              "44.7%",
+              "30.8%",
+              "31.0%",
+              "44.5%"
+            ],
+            [
+              "55-65",
+              "43.7%",
+              "31.2%",
+              "30.9%",
+              "44.5%"
+            ],
+            [
+              ">65",
+              "49.6%",
+              "25.4%",
+              "33.1%",
+              "42.1%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "EPL season",
+            "avg home corner share",
+            "matches"
+          ],
+          "rows": [
+            [
+              "2000/01",
+              "57.6%",
+              "380"
+            ],
+            [
+              "2001/02",
+              "29.4%",
+              "380"
+            ],
+            [
+              "2002/03",
+              "57.2%",
+              "380"
+            ],
+            [
+              "2003/04",
+              "56.1%",
+              "383"
+            ],
+            [
+              "2004/05",
+              "56.2%",
+              "380"
+            ],
+            [
+              "2005/06",
+              "56.2%",
+              "380"
+            ],
+            [
+              "2006/07",
+              "56.8%",
+              "380"
+            ],
+            [
+              "2007/08",
+              "56.8%",
+              "380"
+            ],
+            [
+              "2008/09",
+              "56.1%",
+              "380"
+            ],
+            [
+              "2009/10",
+              "55.2%",
+              "380"
+            ],
+            [
+              "2010/11",
+              "54.5%",
+              "379"
+            ],
+            [
+              "2011/12",
+              "57.1%",
+              "380"
+            ],
+            [
+              "2012/13",
+              "56.3%",
+              "380"
+            ],
+            [
+              "2013/14",
+              "56.7%",
+              "380"
+            ],
+            [
+              "2014/15",
+              "55.3%",
+              "380"
+            ],
+            [
+              "2015/16",
+              "53.4%",
+              "419"
+            ],
+            [
+              "2016/17",
+              "54.2%",
+              "380"
+            ],
+            [
+              "2017/18",
+              "55.9%",
+              "380"
+            ],
+            [
+              "2018/19",
+              "55.7%",
+              "380"
+            ],
+            [
+              "2019/20",
+              "53.4%",
+              "380"
+            ],
+            [
+              "2020/21",
+              "53.7%",
+              "380"
+            ],
+            [
+              "2021/22",
+              "53.3%",
+              "380"
+            ],
+            [
+              "2022/23",
+              "55.2%",
+              "380"
+            ],
+            [
+              "2023/24",
+              "56.3%",
+              "380"
+            ],
+            [
+              "2024/25",
+              "52.6%",
+              "380"
+            ],
+            [
+              "2025/26",
+              "54.0%",
+              "380"
+            ],
+            [
+              "2026/27",
+              "52.8%",
+              "110"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "e7a82b35-2594-46a4-9b85-4e539d145a0b",
+      "cell_type": "markdown",
+      "source": "## The season-level view and the historical trend\n\nMatch-level noise is huge. Smooth it three ways: (1) correlate each\ntime's **season-average corner share** with final points; (2) track the\nyearly correlation between corner differential and home wins; (3) track\nthe average **total corners per match** — are modern games more or less\ncornered than the early 2000s?",
+      "metadata": {},
+      "outputs": []
+    },
+    {
+      "id": "e30573a5-7748-4ecf-b5ac-b564b3a7cb93",
+      "cell_type": "code",
+      "source": "// (1) EPL team-season: avg corner share vs points\nlet mut ts: HashMap<(String, i64), (f64, usize)> = HashMap::new();\nfor r in &epl {\n    let tot = r.hc + r.ac;\n    if tot <= 0.0 { continue; }\n    for (tid, c) in [(r.hid, r.hc), (r.aid, r.ac)] {\n        let e = ts.entry((r.season.clone(), tid)).or_insert((0.0, 0));\n        e.0 += 100.0 * c / tot; e.1 += 1;\n    }\n}\nlet mut pts: HashMap<(String, i64), i64> = HashMap::new();\nfor r in &epl {\n    let ph = if r.hg > r.ag { 3 } else if r.hg == r.ag { 1 } else { 0 };\n    let pa = if r.ag > r.hg { 3 } else if r.hg == r.ag { 1 } else { 0 };\n    *pts.entry((r.season.clone(), r.hid)).or_insert(0) += ph;\n    *pts.entry((r.season.clone(), r.aid)).or_insert(0) += pa;\n}\nlet mut xs = Vec::new(); let mut ys = Vec::new();\nfor ((sn, tid), (sp, n)) in &ts {\n    if *n < 30 { continue; }\n    if let Some(p) = pts.get(&(sn.clone(), *tid)) {\n        xs.push(sp / *n as f64); ys.push(*p as f64);\n    }\n}\nprintln!(\"EPL team-seasons: {} | corr(avg corner share, season points) = {:.3}\",\n    xs.len(), pearson(&xs, &ys));\n\n// (2) yearly correlation: corner diff -> home win, EPL by season\nlet mut by_year: std::collections::BTreeMap<String, (Vec<f64>, Vec<f64>)> = std::collections::BTreeMap::new();\nfor r in &epl {\n    let e = by_year.entry(r.season.clone()).or_default();\n    e.0.push(r.hc - r.ac);\n    e.1.push(if r.hg > r.ag { 1.0 } else { 0.0 });\n}\n// (3) corners per match per season\nlet mut cpb: std::collections::BTreeMap<String, (f64, usize)> = std::collections::BTreeMap::new();\nfor r in &epl {\n    let e = cpb.entry(r.season.clone()).or_insert((0.0, 0));\n    e.0 += (r.hc + r.ac) / 2.0; e.1 += 1;\n}\nlet trend_rows: Vec<Vec<String>> = by_year.iter().map(|(sn, (x, y))| {\n    let cp = cpb.get(sn).map(|(s, n)| s / *n as f64).unwrap_or(f64::NAN);\n    vec![sn.clone(), format!(\"{:.3}\", pearson(x, y)), x.len().to_string(),\n         format!(\"{:.1}\", cp)]\n}).collect();\nmars_table(&[\"EPL season\", \"corr(corner diff, home win)\", \"matches\", \"avg corners/team\"], &trend_rows);",
+      "metadata": {},
+      "execution_count": 15,
+      "outputs": [
+        {
+          "type": "text",
+          "text": "stat rows indexed: 374660\nmatches with corner data (both teams): 166028\nEPL matches with corners: 10032 | all leagues: 166028\nEPL (8496 matches): corr(home corner share, home win) = 0.050\nEPL: corr(home shot share,   home win) = 0.259\nEPL: corr(home possession,   home win) = 0.120\nALL (111164 matches): corr(corner share)=-0.012 corr(shot share)=0.195 corr(possession)=0.016\nEPL SOG-share subset (10032 matches): corr(shots on target share, home win) = 0.400\nEPL team-matches: wins 7536 | wins with <35%% corner share: 1664 (22.1%% of wins)\nEPL losses 7536 | losses with >65%% corner share: 1664 (22.1%% of losses)\nopponent strength = top-half finishers in same league-season (points)\nEPL team-seasons: 521 | corr(avg corner share, season points) = 0.744\n"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "league",
+            "matches",
+            "season span"
+          ],
+          "rows": [
+            [
+              "English Championship",
+              "14543",
+              "2000/01 → 2026/27"
+            ],
+            [
+              "English League Two",
+              "14424",
+              "2000/01 → 2026/27"
+            ],
+            [
+              "English League One",
+              "14374",
+              "2000/01 → 2026/27"
+            ],
+            [
+              "English Premier League",
+              "10032",
+              "2000/01 → 2026/27"
+            ],
+            [
+              "Spanish La Liga",
+              "8438",
+              "2004/05 → 2026/27"
+            ],
+            [
+              "Italian Serie A",
+              "8086",
+              "2005/06 → 2026/27"
+            ],
+            [
+              "French Ligue 1",
+              "7790",
+              "2005/06 → 2026/27"
+            ],
+            [
+              "German Bundesliga",
+              "7750",
+              "2000/01 → 2026/27"
+            ],
+            [
+              "Spanish La Liga 2",
+              "6527",
+              "2008/09 → 2026/27"
+            ],
+            [
+              "MLS",
+              "6264",
+              "2012 → 2026"
+            ],
+            [
+              "Scottish Premiership",
+              "5958",
+              "2000/01 → 2026/27"
+            ],
+            [
+              "French Ligue 2",
+              "5347",
+              "2008/09 → 2026/27"
+            ],
+            [
+              "Italian Serie B",
+              "5214",
+              "2008/09 → 2026/27"
+            ],
+            [
+              "Dutch Eredivisie",
+              "4798",
+              "2008/09 → 2026/27"
+            ],
+            [
+              "German 2. Bundesliga",
+              "4661",
+              "2000/01 → 2026/27"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "EPL season",
+            "matches with corners"
+          ],
+          "rows": [
+            [
+              "2000/01",
+              "380"
+            ],
+            [
+              "2001/02",
+              "380"
+            ],
+            [
+              "2002/03",
+              "380"
+            ],
+            [
+              "2003/04",
+              "383"
+            ],
+            [
+              "2004/05",
+              "380"
+            ],
+            [
+              "2005/06",
+              "380"
+            ],
+            [
+              "2006/07",
+              "380"
+            ],
+            [
+              "2007/08",
+              "380"
+            ],
+            [
+              "2008/09",
+              "380"
+            ],
+            [
+              "2009/10",
+              "380"
+            ],
+            [
+              "2010/11",
+              "380"
+            ],
+            [
+              "2011/12",
+              "380"
+            ],
+            [
+              "2012/13",
+              "380"
+            ],
+            [
+              "2013/14",
+              "380"
+            ],
+            [
+              "2014/15",
+              "380"
+            ],
+            [
+              "2015/16",
+              "419"
+            ],
+            [
+              "2016/17",
+              "380"
+            ],
+            [
+              "2017/18",
+              "380"
+            ],
+            [
+              "2018/19",
+              "380"
+            ],
+            [
+              "2019/20",
+              "380"
+            ],
+            [
+              "2020/21",
+              "380"
+            ],
+            [
+              "2021/22",
+              "380"
+            ],
+            [
+              "2022/23",
+              "380"
+            ],
+            [
+              "2023/24",
+              "380"
+            ],
+            [
+              "2024/25",
+              "380"
+            ],
+            [
+              "2025/26",
+              "380"
+            ],
+            [
+              "2026/27",
+              "110"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "corner share %",
+            "n",
+            "win%",
+            "draw%",
+            "loss%"
+          ],
+          "rows": [
+            [
+              "<35",
+              "5281",
+              "31.5%",
+              "25.0%",
+              "43.5%"
+            ],
+            [
+              "35-45",
+              "3071",
+              "36.8%",
+              "24.8%",
+              "38.4%"
+            ],
+            [
+              "45-55",
+              "3351",
+              "37.8%",
+              "24.5%",
+              "37.7%"
+            ],
+            [
+              "55-65",
+              "3070",
+              "38.2%",
+              "24.9%",
+              "36.9%"
+            ],
+            [
+              ">65",
+              "5289",
+              "43.5%",
+              "25.0%",
+              "31.5%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "corner share % — all leagues",
+            "n",
+            "win%",
+            "draw%",
+            "loss%"
+          ],
+          "rows": [
+            [
+              "<35",
+              "77963",
+              "35.5%",
+              "26.3%",
+              "38.2%"
+            ],
+            [
+              "35-45",
+              "46418",
+              "36.8%",
+              "26.4%",
+              "36.8%"
+            ],
+            [
+              "45-55",
+              "48749",
+              "37.0%",
+              "26.0%",
+              "37.0%"
+            ],
+            [
+              "55-65",
+              "46435",
+              "36.8%",
+              "26.3%",
+              "36.8%"
+            ],
+            [
+              ">65",
+              "78059",
+              "38.2%",
+              "26.3%",
+              "35.5%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "corners won (EPL)",
+            "n",
+            "win%",
+            "draw%",
+            "loss%"
+          ],
+          "rows": [
+            [
+              "0-2",
+              "3462",
+              "32.2%",
+              "24.7%",
+              "43.2%"
+            ],
+            [
+              "3-4",
+              "5286",
+              "36.0%",
+              "24.8%",
+              "39.2%"
+            ],
+            [
+              "5-6",
+              "4982",
+              "38.0%",
+              "24.2%",
+              "37.8%"
+            ],
+            [
+              "7-9",
+              "4419",
+              "41.1%",
+              "25.1%",
+              "33.7%"
+            ],
+            [
+              "10+",
+              "1915",
+              "42.3%",
+              "26.6%",
+              "31.0%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "corners won — all leagues",
+            "n",
+            "win%",
+            "draw%",
+            "loss%"
+          ],
+          "rows": [
+            [
+              "0-2",
+              "88929",
+              "37.1%",
+              "23.6%",
+              "39.3%"
+            ],
+            [
+              "3-4",
+              "84318",
+              "37.3%",
+              "25.7%",
+              "37.0%"
+            ],
+            [
+              "5-6",
+              "76410",
+              "37.3%",
+              "26.1%",
+              "36.6%"
+            ],
+            [
+              "7-9",
+              "60351",
+              "37.4%",
+              "26.9%",
+              "35.7%"
+            ],
+            [
+              "10+",
+              "22048",
+              "36.1%",
+              "28.5%",
+              "35.4%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "corner diff (home − away)",
+            "matches",
+            "home win%"
+          ],
+          "rows": [
+            [
+              "-16 to -14",
+              "6",
+              "16.7%"
+            ],
+            [
+              "-14 to -12",
+              "22",
+              "36.4%"
+            ],
+            [
+              "-12 to -10",
+              "53",
+              "50.9%"
+            ],
+            [
+              "-10 to -8",
+              "159",
+              "49.7%"
+            ],
+            [
+              "-8 to -6",
+              "322",
+              "37.3%"
+            ],
+            [
+              "-6 to -4",
+              "589",
+              "40.9%"
+            ],
+            [
+              "-4 to -2",
+              "1010",
+              "45.0%"
+            ],
+            [
+              "-2 to +0",
+              "1438",
+              "43.1%"
+            ],
+            [
+              "+0 to +2",
+              "1810",
+              "44.3%"
+            ],
+            [
+              "+2 to +4",
+              "1649",
+              "46.1%"
+            ],
+            [
+              "+4 to +6",
+              "1272",
+              "50.2%"
+            ],
+            [
+              "+6 to +8",
+              "862",
+              "49.3%"
+            ],
+            [
+              "+8 to +10",
+              "461",
+              "49.9%"
+            ],
+            [
+              "+10 to +12",
+              "211",
+              "45.5%"
+            ],
+            [
+              "+12 to +14",
+              "116",
+              "38.8%"
+            ],
+            [
+              "+14 to +16",
+              "36",
+              "52.8%"
+            ],
+            [
+              "+16 to +18",
+              "9",
+              "55.6%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "corner diff — all leagues",
+            "matches",
+            "home win%"
+          ],
+          "rows": [
+            [
+              "-20 to -16",
+              "23",
+              "34.8%"
+            ],
+            [
+              "-16 to -12",
+              "228",
+              "44.3%"
+            ],
+            [
+              "-12 to -8",
+              "2115",
+              "46.6%"
+            ],
+            [
+              "-8 to -4",
+              "12634",
+              "45.3%"
+            ],
+            [
+              "-4 to +0",
+              "39147",
+              "45.7%"
+            ],
+            [
+              "+0 to +4",
+              "71312",
+              "45.6%"
+            ],
+            [
+              "+4 to +8",
+              "30686",
+              "43.2%"
+            ],
+            [
+              "+8 to +12",
+              "8330",
+              "40.8%"
+            ],
+            [
+              "+12 to +16",
+              "1389",
+              "38.9%"
+            ],
+            [
+              "+16 to +20",
+              "147",
+              "44.9%"
+            ],
+            [
+              "+20 to +24",
+              "13",
+              "46.2%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "team (EPL, all seasons)",
+            "wins <35% share",
+            "total wins",
+            "low-share win share"
+          ],
+          "rows": [
+            [
+              "QPR",
+              "11",
+              "22",
+              "50%"
+            ],
+            [
+              "Burnley",
+              "41",
+              "92",
+              "45%"
+            ],
+            [
+              "Derby",
+              "8",
+              "19",
+              "42%"
+            ],
+            [
+              "Nott'm Forest",
+              "21",
+              "50",
+              "42%"
+            ],
+            [
+              "Hull",
+              "18",
+              "44",
+              "41%"
+            ],
+            [
+              "Sunderland",
+              "53",
+              "143",
+              "37%"
+            ],
+            [
+              "Ipswich",
+              "13",
+              "36",
+              "36%"
+            ],
+            [
+              "Charlton",
+              "29",
+              "85",
+              "34%"
+            ],
+            [
+              "Watford",
+              "23",
+              "68",
+              "34%"
+            ],
+            [
+              "Stoke",
+              "39",
+              "116",
+              "34%"
+            ],
+            [
+              "Sheffield United",
+              "11",
+              "34",
+              "32%"
+            ],
+            [
+              "Blackburn",
+              "45",
+              "140",
+              "32%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "team (EPL, all seasons)",
+            "losses >65% share",
+            "total losses",
+            "high-share loss share"
+          ],
+          "rows": [
+            [
+              "Liverpool",
+              "91",
+              "204",
+              "45%"
+            ],
+            [
+              "Man City",
+              "92",
+              "240",
+              "38%"
+            ],
+            [
+              "Chelsea",
+              "78",
+              "210",
+              "37%"
+            ],
+            [
+              "Man United",
+              "73",
+              "205",
+              "36%"
+            ],
+            [
+              "Reading",
+              "19",
+              "59",
+              "32%"
+            ],
+            [
+              "Leeds",
+              "40",
+              "127",
+              "31%"
+            ],
+            [
+              "Arsenal",
+              "60",
+              "195",
+              "31%"
+            ],
+            [
+              "Tottenham",
+              "85",
+              "321",
+              "26%"
+            ],
+            [
+              "Ipswich",
+              "16",
+              "62",
+              "26%"
+            ],
+            [
+              "Everton",
+              "88",
+              "352",
+              "25%"
+            ],
+            [
+              "Aston Villa",
+              "83",
+              "335",
+              "25%"
+            ],
+            [
+              "Blackburn",
+              "40",
+              "168",
+              "24%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "corner share",
+            "n vs weak / strong",
+            "win% vs weak / strong"
+          ],
+          "rows": [
+            [
+              "<35",
+              "1912 / 3369",
+              "46% / 24%"
+            ],
+            [
+              "35-45",
+              "1392 / 1679",
+              "49% / 27%"
+            ],
+            [
+              "45-55",
+              "1668 / 1683",
+              "49% / 27%"
+            ],
+            [
+              "55-65",
+              "1633 / 1437",
+              "48% / 27%"
+            ],
+            [
+              ">65",
+              "3213 / 2076",
               "51% / 32%"
             ]
           ]
@@ -4722,7 +8366,7 @@
     {
       "id": "4b484b48-12e5-4bcc-89cc-4e2277733730",
       "cell_type": "markdown",
-      "source": "## Findings\n\n**Do more corners help you win? Barely \u2014 and less than almost any other\nstat we track.**\n\n1. **The gradient is the weakest of the attacking stats.** In the\n   Premier League, win rate climbs from 31.5% with under 35% of the\n   match's corners to 43.5% above 65% \u2014 a 12-point spread. Possession\n   spans 27 points on the same matches; shot share roughly 25. Across\n   *all* covered leagues the corner-share curve nearly flatlines\n   (35.5% \u2192 38.2%), and the pooled correlation between home corner\n   share and home win is **\u22120.012 \u2014 effectively zero, even slightly\n   negative**.\n\n2. **Corner share is a worse match-level predictor than possession.**\n   Head-to-head on identical EPL matches: corner share \u03c1 = 0.050,\n   possession \u03c1 = 0.120, shot share \u03c1 = 0.259, shots-on-target share\n   \u03c1 = 0.400. Corners measure *who you are* far less well than they\n   measure *what happens today* \u2014 the opposite of the clich\u00e9.\n\n3. **But it is an excellent team-quality marker.** Correlating each\n   team's season-average corner share with its final points gives\n   \u03c1 = 0.744 across 521 EPL team-seasons \u2014 stronger than possession's\n   0.704. Corner-heavy teams are good teams; corner-dominant *matches*\n   are barely more likely to be won.\n\n4. **The extremes cut both ways \u2014 and the losers are famous.** 22.1%\n   of EPL wins came with under 35% corner share (QPR won half their\n   matches that way; Burnley 45%). And 22.1% of losses came with over\n   65% \u2014 led by **Liverpool (45% of their losses)**, Manchester City\n   (38%) and Chelsea (37%): the possession-dominant sides get countered.\n\n5. **Context helps but doesn't rescue it.** Against weak opponents\n   corner share is nearly irrelevant (45\u201351% win rate across all\n   bands); against strong ones it separates somewhat (24% \u2192 32%).\n   Away from home even a >65% corner share wins only 33.1% of the\n   time.\n\n6. **No dose-response at the top end.** The corner-differential table\n   is non-monotonic: +4 to +6 corners wins 50.2% of home matches, but\n   +12 to +14 wins just 38.8%. In the all-league table the biggest\n   differentials actually *underperform* (38.9% at +12 to +16 vs\n   45.7% at even). More corners \u2260 more wins, and at the extreme it can\n   mean sterile pressure.\n\n7. **Corner volume itself is slowly declining.** Average corners per\n   team fell from ~5.5 in the early 2000s to ~5.0 in 2025/26 \u2014 modern\n   games produce fewer, and the yearly correlation between corner\n   differential and home wins wanders around zero with no trend.\n\n**Data caveats:** no event-level corner data exists, so corner-to-goal\nconversion and set-piece scoring are untestable here. The 2001/02\nseason shows an anomalous 29.4% average home corner share (vs ~55%\nelsewhere) \u2014 likely a partial data gap in that season's corner\ncounts, which also explains its low 4.3 corners/team. Corner totals\ninclude both open-play pressure and dead-ball recycling; we cannot\nseparate them.\n\n**Verdict:** corners are football's second-most quoted attacking stat\nafter possession \u2014 and an even weaker predictor of the single match.\nThey tell you which team is *better* (\u03c1 = 0.74 at season level) but\nalmost nothing about which team will win *today* (\u03c1 \u2248 0.05).",
+      "source": "## Findings\n\n**Do more corners help you win? Barely — and less than almost any other\nstat we track.**\n\n1. **The gradient is the weakest of the attacking stats.** In the\n   Premier League, win rate climbs from 31.5% with under 35% of the\n   match's corners to 43.5% above 65% — a 12-point spread. Possession\n   spans 27 points on the same matches; shot share roughly 25. Across\n   *all* covered leagues the corner-share curve nearly flatlines\n   (35.5% → 38.2%), and the pooled correlation between home corner\n   share and home win is **−0.012 — effectively zero, even slightly\n   negative**.\n\n2. **Corner share is a worse match-level predictor than possession.**\n   Head-to-head on identical EPL matches: corner share ρ = 0.050,\n   possession ρ = 0.120, shot share ρ = 0.259, shots-on-target share\n   ρ = 0.400. Corners measure *who you are* far less well than they\n   measure *what happens today* — the opposite of the cliché.\n\n3. **But it is an excellent team-quality marker.** Correlating each\n   team's season-average corner share with its final points gives\n   ρ = 0.744 across 521 EPL team-seasons — stronger than possession's\n   0.704. Corner-heavy teams are good teams; corner-dominant *matches*\n   are barely more likely to be won.\n\n4. **The extremes cut both ways — and the losers are famous.** 22.1%\n   of EPL wins came with under 35% corner share (QPR won half their\n   matches that way; Burnley 45%). And 22.1% of losses came with over\n   65% — led by **Liverpool (45% of their losses)**, Manchester City\n   (38%) and Chelsea (37%): the possession-dominant sides get countered.\n\n5. **Context helps but doesn't rescue it.** Against weak opponents\n   corner share is nearly irrelevant (45–51% win rate across all\n   bands); against strong ones it separates somewhat (24% → 32%).\n   Away from home even a >65% corner share wins only 33.1% of the\n   time.\n\n6. **No dose-response at the top end.** The corner-differential table\n   is non-monotonic: +4 to +6 corners wins 50.2% of home matches, but\n   +12 to +14 wins just 38.8%. In the all-league table the biggest\n   differentials actually *underperform* (38.9% at +12 to +16 vs\n   45.7% at even). More corners ≠ more wins, and at the extreme it can\n   mean sterile pressure.\n\n7. **Corner volume itself is slowly declining.** Average corners per\n   team fell from ~5.5 in the early 2000s to ~5.0 in 2025/26 — modern\n   games produce fewer, and the yearly correlation between corner\n   differential and home wins wanders around zero with no trend.\n\n**Data caveats:** no event-level corner data exists, so corner-to-goal\nconversion and set-piece scoring are untestable here. The 2001/02\nseason shows an anomalous 29.4% average home corner share (vs ~55%\nelsewhere) — likely a partial data gap in that season's corner\ncounts, which also explains its low 4.3 corners/team. Corner totals\ninclude both open-play pressure and dead-ball recycling; we cannot\nseparate them.\n\n**Verdict:** corners are football's second-most quoted attacking stat\nafter possession — and an even weaker predictor of the single match.\nThey tell you which team is *better* (ρ = 0.74 at season level) but\nalmost nothing about which team will win *today* (ρ ≈ 0.05).",
       "metadata": {},
       "outputs": []
     }

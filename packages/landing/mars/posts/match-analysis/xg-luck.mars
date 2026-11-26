@@ -34,9 +34,155 @@
     {
       "id": "4f04857a-d490-4213-9232-51d177b32bd7",
       "cell_type": "code",
-      "source": "\n// (continued) build display rows from sorted teams vec\nlet hdr = [\"team\",\"apps\",\"goals\",\"xG\",\"G−xG/match\",\"\"].iter().map(|s|s.to_string()).collect::<Vec<_>>();\nlet mk = |slice: &Vec<usize>| -> Vec<Vec<String>> { slice.iter().map(|&i| {\n    let a = &teams[i];\n    vec![\n        tname.get(&a.tid).cloned().unwrap_or_default().chars().take(26).collect(),\n        a.apps.to_string(),\n        format!(\"{:.1}\", a.goals),\n        format!(\"{:.1}\", a.xg),\n        format!(\"{:+.2}\", (a.goals - a.xg) / a.apps as f64),\n        String::new(),\n    ]}).collect() };\nlet top: Vec<usize> = (0..teams.len().min(15)).collect();\nlet bot: Vec<usize> = (teams.len().saturating_sub(15)..teams.len()).rev().collect();\nprintln!(\"== luckiest (scored above xG) ==\");\nmars_table(&hdr, &mk(&top));\nprintln!(\"== unluckiest (scored below xG) ==\");\nmars_table(&hdr, &mk(&bot));\n",
+      "source": "// (continued) build display rows from sorted teams vec\nlet hdr = [\"team\",\"apps\",\"goals\",\"xG\",\"G−xG/match\",\"\"].iter().map(|s|s.to_string()).collect::<Vec<_>>();\nlet mk = |slice: &Vec<usize>| -> Vec<Vec<String>> { slice.iter().map(|&i| {\n    let a = &teams[i];\n    vec![\n        tname.get(&a.tid).cloned().unwrap_or_default().chars().take(26).collect(),\n        a.apps.to_string(),\n        format!(\"{:.1}\", a.goals),\n        format!(\"{:.1}\", a.xg),\n        format!(\"{:+.2}\", (a.goals - a.xg) / a.apps as f64),\n        String::new(),\n    ]}).collect() };\nlet top: Vec<usize> = (0..teams.len().min(15)).collect();\nlet bot: Vec<usize> = (teams.len().saturating_sub(15)..teams.len()).rev().collect();\nprintln!(\"== luckiest (scored above xG) ==\");\nmars_table(&hdr, &mk(&top));\n",
       "metadata": {},
       "execution_count": 2,
+      "outputs": [
+        {
+          "type": "text",
+          "text": "team-match xg rows: 7902\n== luckiest (scored above xG) ==\n"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "team",
+            "apps",
+            "goals",
+            "xG",
+            "G−xG/match",
+            ""
+          ],
+          "rows": [
+            [
+              "Barcelona WFC",
+              "30",
+              "137.0",
+              "105.8",
+              "+1.04",
+              ""
+            ],
+            [
+              "SC Delhi",
+              "23",
+              "47.0",
+              "32.4",
+              "+0.64",
+              ""
+            ],
+            [
+              "Barcelona",
+              "525",
+              "1390.0",
+              "1057.0",
+              "+0.63",
+              ""
+            ],
+            [
+              "Juventus W",
+              "27",
+              "65.0",
+              "48.9",
+              "+0.60",
+              ""
+            ],
+            [
+              "Roma",
+              "38",
+              "83.0",
+              "61.9",
+              "+0.55",
+              ""
+            ],
+            [
+              "Netherlands Women's",
+              "19",
+              "36.0",
+              "26.3",
+              "+0.51",
+              ""
+            ],
+            [
+              "Arsenal WFC",
+              "79",
+              "226.0",
+              "187.0",
+              "+0.49",
+              ""
+            ],
+            [
+              "Paris Saint-Germain",
+              "95",
+              "241.0",
+              "196.5",
+              "+0.47",
+              ""
+            ],
+            [
+              "Real Madrid CF W",
+              "30",
+              "74.0",
+              "60.9",
+              "+0.44",
+              ""
+            ],
+            [
+              "AS Roma W",
+              "26",
+              "74.0",
+              "62.8",
+              "+0.43",
+              ""
+            ],
+            [
+              "Manchester City WFC",
+              "80",
+              "218.0",
+              "184.1",
+              "+0.42",
+              ""
+            ],
+            [
+              "Real Madrid",
+              "71",
+              "162.0",
+              "132.0",
+              "+0.42",
+              ""
+            ],
+            [
+              "Napoli",
+              "42",
+              "90.0",
+              "72.3",
+              "+0.42",
+              ""
+            ],
+            [
+              "Jamshedpur",
+              "22",
+              "43.0",
+              "34.0",
+              "+0.41",
+              ""
+            ],
+            [
+              "Odisha",
+              "20",
+              "31.0",
+              "22.9",
+              "+0.41",
+              ""
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "287c58d6-6e74-469e-b0d1-30f3039bc4a1",
+      "cell_type": "code",
+      "source": "println!(\"== unluckiest (scored below xG) ==\");\nmars_table(&hdr, &mk(&bot));\n",
+      "metadata": {},
+      "execution_count": 3,
       "outputs": [
         {
           "type": "text",
@@ -313,9 +459,870 @@
     {
       "id": "758712d2-f545-4f54-a87f-77b16e6b09e4",
       "cell_type": "code",
-      "source": "\n// biggest single-match over/under performers\nlet mut diffs: Vec<(f64,i64,i64,String)> = rows.iter()\n    .map(|r| (r.goals - r.xg, r.tid, r.mid, r.league.clone())).collect();\ndiffs.sort_by(|a,b| b.0.partial_cmp(&a.0).unwrap());\n// need match scores for context: recompute goals text via match_ctx\nlet over_rows: Vec<Vec<String>> = diffs.iter().take(15).map(|(d,tid,mid,ln)| {\n    let (h,a,hs,as_,_) = match_ctx[mid];\n    let (gf, ga) = if *tid==h {(hs,as_)} else {(as_,hs)};\n    vec![\n        tname.get(tid).cloned().unwrap_or_default().chars().take(24).collect(),\n        ln.chars().take(20).collect(),\n        format!(\"{}–{}\", gf as i64, ga as i64),\n        format!(\"{:+.2}\", d),\n    ]}).collect();\nmars_table(&[\"team\",\"league\",\"score\",\"G−xG\"], &over_rows);\ndiffs.sort_by(|a,b| a.0.partial_cmp(&b.0).unwrap());\nlet under_rows: Vec<Vec<String>> = diffs.iter().take(15).map(|(d,tid,mid,ln)| {\n    let (h,a,hs,as_,_) = match_ctx[mid];\n    let (gf, ga) = if *tid==h {(hs,as_)} else {(as_,hs)};\n    vec![\n        tname.get(tid).cloned().unwrap_or_default().chars().take(24).collect(),\n        ln.chars().take(20).collect(),\n        format!(\"{}–{}\", gf as i64, ga as i64),\n        format!(\"{:+.2}\", d),\n    ]}).collect();\nmars_table(&[\"team\",\"league\",\"score\",\"G−xG\"], &under_rows);\n\n// distribution of per-team luck (G−xG per match)\nlet labels = [\"< −0.20\",\"−0.20..0\",\"0..+0.20\",\"> +0.20\"];\nlet mut buckets = [0usize;4];\nfor a in &teams {\n    let per = (a.goals - a.xg) / a.apps as f64;\n    let idx = if per < -0.20 {0} else if per < 0.0 {1} else if per <= 0.20 {2} else {3};\n    buckets[idx]+=1;\n}\nlet dist: Vec<Vec<String>> = buckets.iter().enumerate()\n    .map(|(i,c)| vec![labels[i].to_string(), c.to_string()]).collect();\nmars_table(&[\"G−xG per match\",\"teams (≥15 apps)\"], &dist);\n",
+      "source": "// biggest single-match over/under performers\nlet mut diffs: Vec<(f64,i64,i64,String)> = rows.iter()\n    .map(|r| (r.goals - r.xg, r.tid, r.mid, r.league.clone())).collect();\ndiffs.sort_by(|a,b| b.0.partial_cmp(&a.0).unwrap());\n// need match scores for context: recompute goals text via match_ctx\nlet over_rows: Vec<Vec<String>> = diffs.iter().take(15).map(|(d,tid,mid,ln)| {\n    let (h,a,hs,as_,_) = match_ctx[mid];\n    let (gf, ga) = if *tid==h {(hs,as_)} else {(as_,hs)};\n    vec![\n        tname.get(tid).cloned().unwrap_or_default().chars().take(24).collect(),\n        ln.chars().take(20).collect(),\n        format!(\"{}–{}\", gf as i64, ga as i64),\n        format!(\"{:+.2}\", d),\n    ]}).collect();\nmars_table(&[\"team\",\"league\",\"score\",\"G−xG\"], &over_rows);\n",
       "metadata": {},
-      "execution_count": 3,
+      "execution_count": 4,
+      "outputs": [
+        {
+          "type": "text",
+          "text": "team-match xg rows: 7902\n== luckiest (scored above xG) ==\n== unluckiest (scored below xG) ==\n"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "team",
+            "apps",
+            "goals",
+            "xG",
+            "G−xG/match",
+            ""
+          ],
+          "rows": [
+            [
+              "Barcelona WFC",
+              "30",
+              "137.0",
+              "105.8",
+              "+1.04",
+              ""
+            ],
+            [
+              "SC Delhi",
+              "23",
+              "47.0",
+              "32.4",
+              "+0.64",
+              ""
+            ],
+            [
+              "Barcelona",
+              "525",
+              "1390.0",
+              "1057.0",
+              "+0.63",
+              ""
+            ],
+            [
+              "Juventus W",
+              "27",
+              "65.0",
+              "48.9",
+              "+0.60",
+              ""
+            ],
+            [
+              "Roma",
+              "38",
+              "83.0",
+              "61.9",
+              "+0.55",
+              ""
+            ],
+            [
+              "Netherlands Women's",
+              "19",
+              "36.0",
+              "26.3",
+              "+0.51",
+              ""
+            ],
+            [
+              "Arsenal WFC",
+              "79",
+              "226.0",
+              "187.0",
+              "+0.49",
+              ""
+            ],
+            [
+              "Paris Saint-Germain",
+              "95",
+              "241.0",
+              "196.5",
+              "+0.47",
+              ""
+            ],
+            [
+              "Real Madrid CF W",
+              "30",
+              "74.0",
+              "60.9",
+              "+0.44",
+              ""
+            ],
+            [
+              "AS Roma W",
+              "26",
+              "74.0",
+              "62.8",
+              "+0.43",
+              ""
+            ],
+            [
+              "Manchester City WFC",
+              "80",
+              "218.0",
+              "184.1",
+              "+0.42",
+              ""
+            ],
+            [
+              "Real Madrid",
+              "71",
+              "162.0",
+              "132.0",
+              "+0.42",
+              ""
+            ],
+            [
+              "Napoli",
+              "42",
+              "90.0",
+              "72.3",
+              "+0.42",
+              ""
+            ],
+            [
+              "Jamshedpur",
+              "22",
+              "43.0",
+              "34.0",
+              "+0.41",
+              ""
+            ],
+            [
+              "Odisha",
+              "20",
+              "31.0",
+              "22.9",
+              "+0.41",
+              ""
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "team",
+            "apps",
+            "goals",
+            "xG",
+            "G−xG/match",
+            ""
+          ],
+          "rows": [
+            [
+              "Croatia",
+              "21",
+              "32.0",
+              "43.4",
+              "-0.54",
+              ""
+            ],
+            [
+              "France Women's",
+              "19",
+              "44.0",
+              "53.7",
+              "-0.51",
+              ""
+            ],
+            [
+              "Argentina",
+              "22",
+              "38.0",
+              "48.5",
+              "-0.48",
+              ""
+            ],
+            [
+              "Brazil",
+              "25",
+              "52.0",
+              "63.4",
+              "-0.46",
+              ""
+            ],
+            [
+              "Uruguay",
+              "15",
+              "21.0",
+              "26.4",
+              "-0.36",
+              ""
+            ],
+            [
+              "Spain",
+              "21",
+              "44.0",
+              "51.5",
+              "-0.36",
+              ""
+            ],
+            [
+              "Washington Spirit",
+              "31",
+              "29.0",
+              "39.7",
+              "-0.35",
+              ""
+            ],
+            [
+              "Sweden Women's",
+              "23",
+              "45.0",
+              "52.8",
+              "-0.34",
+              ""
+            ],
+            [
+              "Switzerland",
+              "18",
+              "26.0",
+              "32.0",
+              "-0.33",
+              ""
+            ],
+            [
+              "Denmark",
+              "17",
+              "18.0",
+              "23.6",
+              "-0.33",
+              ""
+            ],
+            [
+              "Orlando Pride",
+              "30",
+              "37.0",
+              "46.6",
+              "-0.32",
+              ""
+            ],
+            [
+              "Germany",
+              "18",
+              "29.0",
+              "34.1",
+              "-0.28",
+              ""
+            ],
+            [
+              "Udinese",
+              "38",
+              "35.0",
+              "45.7",
+              "-0.28",
+              ""
+            ],
+            [
+              "Houston Dash",
+              "27",
+              "23.0",
+              "30.3",
+              "-0.27",
+              ""
+            ],
+            [
+              "Portugal",
+              "18",
+              "30.0",
+              "34.7",
+              "-0.26",
+              ""
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "team",
+            "league",
+            "score",
+            "G−xG"
+          ],
+          "rows": [
+            [
+              "United States Women's",
+              "Women's World Cup",
+              "13–0",
+              "+7.05"
+            ],
+            [
+              "Hoffenheim W",
+              "Frauen Bundesliga",
+              "9–0",
+              "+5.84"
+            ],
+            [
+              "Arsenal WFC",
+              "FA Women's Super Lea",
+              "11–1",
+              "+5.24"
+            ],
+            [
+              "Real Madrid",
+              "Spanish La Liga",
+              "7–1",
+              "+5.08"
+            ],
+            [
+              "Barcelona WFC",
+              "Liga F",
+              "8–0",
+              "+4.95"
+            ],
+            [
+              "Real Madrid",
+              "Spanish La Liga",
+              "10–2",
+              "+4.86"
+            ],
+            [
+              "Real Madrid CF W",
+              "Liga F",
+              "7–1",
+              "+4.54"
+            ],
+            [
+              "Odisha",
+              "Indian Super league",
+              "6–4",
+              "+4.47"
+            ],
+            [
+              "Levante UD Femenino",
+              "Liga F",
+              "7–0",
+              "+4.43"
+            ],
+            [
+              "Barcelona",
+              "Spanish La Liga",
+              "8–0",
+              "+4.38"
+            ],
+            [
+              "Arsenal WFC",
+              "FA Women's Super Lea",
+              "7–0",
+              "+4.32"
+            ],
+            [
+              "Barcelona WFC",
+              "Liga F",
+              "8–0",
+              "+4.27"
+            ],
+            [
+              "Manchester City WFC",
+              "FA Women's Super Lea",
+              "8–1",
+              "+4.25"
+            ],
+            [
+              "Costa Adeje Tenerife",
+              "Liga F",
+              "5–0",
+              "+4.25"
+            ],
+            [
+              "Spain",
+              "FIFA World Cup",
+              "7–0",
+              "+4.24"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "a2db5428-67f7-45b1-8482-003fbed10816",
+      "cell_type": "code",
+      "source": "diffs.sort_by(|a,b| a.0.partial_cmp(&b.0).unwrap());\nlet under_rows: Vec<Vec<String>> = diffs.iter().take(15).map(|(d,tid,mid,ln)| {\n    let (h,a,hs,as_,_) = match_ctx[mid];\n    let (gf, ga) = if *tid==h {(hs,as_)} else {(as_,hs)};\n    vec![\n        tname.get(tid).cloned().unwrap_or_default().chars().take(24).collect(),\n        ln.chars().take(20).collect(),\n        format!(\"{}–{}\", gf as i64, ga as i64),\n        format!(\"{:+.2}\", d),\n    ]}).collect();\nmars_table(&[\"team\",\"league\",\"score\",\"G−xG\"], &under_rows);\n",
+      "metadata": {},
+      "execution_count": 5,
+      "outputs": [
+        {
+          "type": "text",
+          "text": "team-match xg rows: 7902\n== luckiest (scored above xG) ==\n== unluckiest (scored below xG) ==\n"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "team",
+            "apps",
+            "goals",
+            "xG",
+            "G−xG/match",
+            ""
+          ],
+          "rows": [
+            [
+              "Barcelona WFC",
+              "30",
+              "137.0",
+              "105.8",
+              "+1.04",
+              ""
+            ],
+            [
+              "SC Delhi",
+              "23",
+              "47.0",
+              "32.4",
+              "+0.64",
+              ""
+            ],
+            [
+              "Barcelona",
+              "525",
+              "1390.0",
+              "1057.0",
+              "+0.63",
+              ""
+            ],
+            [
+              "Juventus W",
+              "27",
+              "65.0",
+              "48.9",
+              "+0.60",
+              ""
+            ],
+            [
+              "Roma",
+              "38",
+              "83.0",
+              "61.9",
+              "+0.55",
+              ""
+            ],
+            [
+              "Netherlands Women's",
+              "19",
+              "36.0",
+              "26.3",
+              "+0.51",
+              ""
+            ],
+            [
+              "Arsenal WFC",
+              "79",
+              "226.0",
+              "187.0",
+              "+0.49",
+              ""
+            ],
+            [
+              "Paris Saint-Germain",
+              "95",
+              "241.0",
+              "196.5",
+              "+0.47",
+              ""
+            ],
+            [
+              "Real Madrid CF W",
+              "30",
+              "74.0",
+              "60.9",
+              "+0.44",
+              ""
+            ],
+            [
+              "AS Roma W",
+              "26",
+              "74.0",
+              "62.8",
+              "+0.43",
+              ""
+            ],
+            [
+              "Manchester City WFC",
+              "80",
+              "218.0",
+              "184.1",
+              "+0.42",
+              ""
+            ],
+            [
+              "Real Madrid",
+              "71",
+              "162.0",
+              "132.0",
+              "+0.42",
+              ""
+            ],
+            [
+              "Napoli",
+              "42",
+              "90.0",
+              "72.3",
+              "+0.42",
+              ""
+            ],
+            [
+              "Jamshedpur",
+              "22",
+              "43.0",
+              "34.0",
+              "+0.41",
+              ""
+            ],
+            [
+              "Odisha",
+              "20",
+              "31.0",
+              "22.9",
+              "+0.41",
+              ""
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "team",
+            "apps",
+            "goals",
+            "xG",
+            "G−xG/match",
+            ""
+          ],
+          "rows": [
+            [
+              "Croatia",
+              "21",
+              "32.0",
+              "43.4",
+              "-0.54",
+              ""
+            ],
+            [
+              "France Women's",
+              "19",
+              "44.0",
+              "53.7",
+              "-0.51",
+              ""
+            ],
+            [
+              "Argentina",
+              "22",
+              "38.0",
+              "48.5",
+              "-0.48",
+              ""
+            ],
+            [
+              "Brazil",
+              "25",
+              "52.0",
+              "63.4",
+              "-0.46",
+              ""
+            ],
+            [
+              "Uruguay",
+              "15",
+              "21.0",
+              "26.4",
+              "-0.36",
+              ""
+            ],
+            [
+              "Spain",
+              "21",
+              "44.0",
+              "51.5",
+              "-0.36",
+              ""
+            ],
+            [
+              "Washington Spirit",
+              "31",
+              "29.0",
+              "39.7",
+              "-0.35",
+              ""
+            ],
+            [
+              "Sweden Women's",
+              "23",
+              "45.0",
+              "52.8",
+              "-0.34",
+              ""
+            ],
+            [
+              "Switzerland",
+              "18",
+              "26.0",
+              "32.0",
+              "-0.33",
+              ""
+            ],
+            [
+              "Denmark",
+              "17",
+              "18.0",
+              "23.6",
+              "-0.33",
+              ""
+            ],
+            [
+              "Orlando Pride",
+              "30",
+              "37.0",
+              "46.6",
+              "-0.32",
+              ""
+            ],
+            [
+              "Germany",
+              "18",
+              "29.0",
+              "34.1",
+              "-0.28",
+              ""
+            ],
+            [
+              "Udinese",
+              "38",
+              "35.0",
+              "45.7",
+              "-0.28",
+              ""
+            ],
+            [
+              "Houston Dash",
+              "27",
+              "23.0",
+              "30.3",
+              "-0.27",
+              ""
+            ],
+            [
+              "Portugal",
+              "18",
+              "30.0",
+              "34.7",
+              "-0.26",
+              ""
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "team",
+            "league",
+            "score",
+            "G−xG"
+          ],
+          "rows": [
+            [
+              "United States Women's",
+              "Women's World Cup",
+              "13–0",
+              "+7.05"
+            ],
+            [
+              "Hoffenheim W",
+              "Frauen Bundesliga",
+              "9–0",
+              "+5.84"
+            ],
+            [
+              "Arsenal WFC",
+              "FA Women's Super Lea",
+              "11–1",
+              "+5.24"
+            ],
+            [
+              "Real Madrid",
+              "Spanish La Liga",
+              "7–1",
+              "+5.08"
+            ],
+            [
+              "Barcelona WFC",
+              "Liga F",
+              "8–0",
+              "+4.95"
+            ],
+            [
+              "Real Madrid",
+              "Spanish La Liga",
+              "10–2",
+              "+4.86"
+            ],
+            [
+              "Real Madrid CF W",
+              "Liga F",
+              "7–1",
+              "+4.54"
+            ],
+            [
+              "Odisha",
+              "Indian Super league",
+              "6–4",
+              "+4.47"
+            ],
+            [
+              "Levante UD Femenino",
+              "Liga F",
+              "7–0",
+              "+4.43"
+            ],
+            [
+              "Barcelona",
+              "Spanish La Liga",
+              "8–0",
+              "+4.38"
+            ],
+            [
+              "Arsenal WFC",
+              "FA Women's Super Lea",
+              "7–0",
+              "+4.32"
+            ],
+            [
+              "Barcelona WFC",
+              "Liga F",
+              "8–0",
+              "+4.27"
+            ],
+            [
+              "Manchester City WFC",
+              "FA Women's Super Lea",
+              "8–1",
+              "+4.25"
+            ],
+            [
+              "Costa Adeje Tenerife",
+              "Liga F",
+              "5–0",
+              "+4.25"
+            ],
+            [
+              "Spain",
+              "FIFA World Cup",
+              "7–0",
+              "+4.24"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "team",
+            "league",
+            "score",
+            "G−xG"
+          ],
+          "rows": [
+            [
+              "Australia Women's",
+              "Women's World Cup",
+              "0–0",
+              "-9.78"
+            ],
+            [
+              "France Women's",
+              "Women's World Cup",
+              "0–0",
+              "-9.50"
+            ],
+            [
+              "Congo DR",
+              "African Cup of Natio",
+              "1–1",
+              "-7.63"
+            ],
+            [
+              "Egypt",
+              "African Cup of Natio",
+              "1–1",
+              "-7.42"
+            ],
+            [
+              "Congo DR",
+              "African Cup of Natio",
+              "0–0",
+              "-7.17"
+            ],
+            [
+              "United States Women's",
+              "Women's World Cup",
+              "0–0",
+              "-6.82"
+            ],
+            [
+              "France Women's",
+              "UEFA Women's Euro",
+              "1–1",
+              "-6.41"
+            ],
+            [
+              "Bayern Munich",
+              "Champions League",
+              "1–1",
+              "-6.40"
+            ],
+            [
+              "Sweden Women's",
+              "Women's World Cup",
+              "0–0",
+              "-5.99"
+            ],
+            [
+              "Spain",
+              "UEFA Euro",
+              "1–1",
+              "-5.93"
+            ],
+            [
+              "South Africa",
+              "African Cup of Natio",
+              "0–0",
+              "-5.75"
+            ],
+            [
+              "Germany Women's",
+              "UEFA Women's Euro",
+              "1–1",
+              "-5.63"
+            ],
+            [
+              "Real Madrid",
+              "Champions League",
+              "1–1",
+              "-5.50"
+            ],
+            [
+              "Cape Verde Islands",
+              "African Cup of Natio",
+              "0–0",
+              "-5.43"
+            ],
+            [
+              "England Women's",
+              "UEFA Women's Euro",
+              "2–2",
+              "-5.40"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "658e82ae-8ed0-46a1-9f47-b2c6246eb9a1",
+      "cell_type": "code",
+      "source": "// distribution of per-team luck (G−xG per match)\nlet labels = [\"< −0.20\",\"−0.20..0\",\"0..+0.20\",\"> +0.20\"];\nlet mut buckets = [0usize;4];\nfor a in &teams {\n    let per = (a.goals - a.xg) / a.apps as f64;\n    let idx = if per < -0.20 {0} else if per < 0.0 {1} else if per <= 0.20 {2} else {3};\n    buckets[idx]+=1;\n}\nlet dist: Vec<Vec<String>> = buckets.iter().enumerate()\n    .map(|(i,c)| vec![labels[i].to_string(), c.to_string()]).collect();\nmars_table(&[\"G−xG per match\",\"teams (≥15 apps)\"], &dist);\n",
+      "metadata": {},
+      "execution_count": 6,
       "outputs": [
         {
           "type": "text",

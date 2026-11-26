@@ -410,9 +410,524 @@
     {
       "id": "a45cd3f7-bdda-4624-86a1-e98bc3b1ab37",
       "cell_type": "code",
-      "source": "\n// counterfactual detail: every season, who had the best attack / best defence, and who won\nlet mut cf_rows: Vec<Vec<String>> = Vec::new();\nfor sname in &complete_seasons {\n    let ts: Vec<&TeamSeason> = team_seasons.iter().filter(|t| &t.season == sname).collect();\n    if ts.is_empty() { continue; }\n    let best_att = ts.iter().min_by_key(|t| t.gf_rank).unwrap();\n    let best_def = ts.iter().min_by_key(|t| t.ga_rank).unwrap();\n    let champ = ts.iter().find(|t| t.is_champ).unwrap();\n    let att_mark = if best_att.team == champ.team { \"= champion\" } else { \"\" };\n    let def_mark = if best_def.team == champ.team { \"= champion\" } else { \"\" };\n    cf_rows.push(vec![\n        sname.clone(), champ.team.clone(),\n        format!(\"{} (pos {}){}\", best_att.team, best_att.pos, att_mark),\n        format!(\"{} (pos {}){}\", best_def.team, best_def.pos, def_mark),\n    ]);\n}\nmars_table(&[\"season\", \"champion\", \"best attack\", \"best defence\"], &cf_rows);\n\n// how often did the best attack / best defence miss out entirely (finish outside top 4)?\nlet mut att_miss4 = 0; let mut def_miss4 = 0; let n_seas = cf_rows.len();\nfor sname in &complete_seasons {\n    let ts: Vec<&TeamSeason> = team_seasons.iter().filter(|t| &t.season == sname).collect();\n    if ts.is_empty() { continue; }\n    let best_att = ts.iter().min_by_key(|t| t.gf_rank).unwrap();\n    let best_def = ts.iter().min_by_key(|t| t.ga_rank).unwrap();\n    if best_att.pos > 4 { att_miss4 += 1; }\n    if best_def.pos > 4 { def_miss4 += 1; }\n}\nprintln!(\"best attack finished outside top-4: {}/{} seasons\", att_miss4, n_seas);\nprintln!(\"best defence finished outside top-4: {}/{} seasons\", def_miss4, n_seas);\n\n// consistency: champion clean sheets vs league-best, and heavy defeats (3+ conceded in a game)\nlet mut cs_rows: Vec<Vec<String>> = Vec::new();\nfor c in champs.iter().take(0) { let _ = c; }\nlet mut champ_cs_total = 0i64; let mut champ_games = 0i64; let mut champ_heavy = 0i64;\nlet mut league_cs_best = 0i64;\nfor sname in &complete_seasons {\n    let st = standings(sname);\n    let champ_name = &st[0].team;\n    let games = team_games.get(&(sname.clone(), champ_name.clone())).cloned().unwrap_or_default();\n    let cs = games.iter().filter(|g| g.ga == 0).count() as i64;\n    let heavy = games.iter().filter(|g| g.ga >= 3).count() as i64;\n    champ_cs_total += cs; champ_games += games.len() as i64; champ_heavy += heavy;\n    // league-best clean sheets this season\n    let mut best_cs = 0i64;\n    for ((s, t), gs) in &team_games {\n        if s == sname {\n            let c = gs.iter().filter(|g| g.ga == 0).count() as i64;\n            if c > best_cs { best_cs = c; }\n        }\n    }\n    if best_cs > league_cs_best { league_cs_best = best_cs; }\n    cs_rows.push(vec![sname.clone(), champ_name.clone(), cs.to_string(), games.len().to_string(), heavy.to_string()]);\n}\nprintln!(\"champions' clean sheets: {} in {} games ({:.1}%)\", champ_cs_total, champ_games, 100.0 * champ_cs_total as f64 / champ_games as f64);\nprintln!(\"champions conceded 3+ in a match: {} times total\", champ_heavy);\nmars_table(&[\"season\", \"champion\", \"clean sheets\", \"games\", \"games conceding 3+\"], &cs_rows.iter().rev().take(10).cloned().collect::<Vec<_>>());\n",
+      "source": "// counterfactual detail: every season, who had the best attack / best defence, and who won\nlet mut cf_rows: Vec<Vec<String>> = Vec::new();\nfor sname in &complete_seasons {\n    let ts: Vec<&TeamSeason> = team_seasons.iter().filter(|t| &t.season == sname).collect();\n    if ts.is_empty() { continue; }\n    let best_att = ts.iter().min_by_key(|t| t.gf_rank).unwrap();\n    let best_def = ts.iter().min_by_key(|t| t.ga_rank).unwrap();\n    let champ = ts.iter().find(|t| t.is_champ).unwrap();\n    let att_mark = if best_att.team == champ.team { \"= champion\" } else { \"\" };\n    let def_mark = if best_def.team == champ.team { \"= champion\" } else { \"\" };\n    cf_rows.push(vec![\n        sname.clone(), champ.team.clone(),\n        format!(\"{} (pos {}){}\", best_att.team, best_att.pos, att_mark),\n        format!(\"{} (pos {}){}\", best_def.team, best_def.pos, def_mark),\n    ]);\n}\nmars_table(&[\"season\", \"champion\", \"best attack\", \"best defence\"], &cf_rows);\n",
       "metadata": {},
       "execution_count": 4,
+      "outputs": [
+        {
+          "type": "text",
+          "text": "English Premier League matches: 13126\nfinished matches: 12814 (312 duplicate fixtures dropped) | team-season entries: 684\ncomplete seasons: 33 (1993/94 -> 2025/26)\nteam-seasons: 664 | seasons: 33\nweakest defence to win: 1996/97 Man United — GA rank 7, 44 goals conceded\nweakest attack to win: 2008/09 Man United — GF rank 4, 68 goals scored\nbest defence: 2000/01 Man United — GA rank 1\nbest attack: 1994/95 Blackburn — GF rank 1\nchampion avg rank_sum: 3.8 vs random expectation 21.1\nchampions finishing top-4 in BOTH attack and defence: 30/33\nchampions top-2 in BOTH: 20/33\nchampions top-3 in defence: 26/33\nchampions top-3 in attack: 32/33\n"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "era",
+            "seasons",
+            "rho attack",
+            "rho defence",
+            "rho balance",
+            "best-GF won",
+            "best-GA won"
+          ],
+          "rows": [
+            [
+              "1990s",
+              "7",
+              "0.82",
+              "0.77",
+              "0.92",
+              "5/7",
+              "0/7"
+            ],
+            [
+              "2000s",
+              "10",
+              "0.85",
+              "0.87",
+              "0.94",
+              "6/10",
+              "6/10"
+            ],
+            [
+              "2010s",
+              "10",
+              "0.86",
+              "0.85",
+              "0.94",
+              "6/10",
+              "4/10"
+            ],
+            [
+              "2020s",
+              "6",
+              "0.88",
+              "0.81",
+              "0.94",
+              "5/6",
+              "3/6"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "season",
+            "champion",
+            "attack rank (gf)",
+            "defence rank (ga)",
+            "rank sum"
+          ],
+          "rows": [
+            [
+              "1993/94",
+              "Man United",
+              "2 (80)",
+              "3 (38)",
+              "5"
+            ],
+            [
+              "1994/95",
+              "Blackburn",
+              "1 (80)",
+              "4 (39)",
+              "5"
+            ],
+            [
+              "1995/96",
+              "Man United",
+              "1 (73)",
+              "4 (35)",
+              "5"
+            ],
+            [
+              "1996/97",
+              "Man United",
+              "1 (76)",
+              "7 (44)",
+              "8"
+            ],
+            [
+              "1997/98",
+              "Arsenal",
+              "3 (68)",
+              "2 (33)",
+              "5"
+            ],
+            [
+              "1998/99",
+              "Man United",
+              "1 (80)",
+              "4 (37)",
+              "5"
+            ],
+            [
+              "1999/00",
+              "Man United",
+              "1 (97)",
+              "6 (45)",
+              "7"
+            ],
+            [
+              "2000/01",
+              "Man United",
+              "1 (79)",
+              "1 (31)",
+              "2"
+            ],
+            [
+              "2001/02",
+              "Arsenal",
+              "2 (79)",
+              "2 (36)",
+              "4"
+            ],
+            [
+              "2002/03",
+              "Man United",
+              "2 (74)",
+              "1 (34)",
+              "3"
+            ],
+            [
+              "2003/04",
+              "Arsenal",
+              "1 (73)",
+              "1 (26)",
+              "2"
+            ],
+            [
+              "2004/05",
+              "Chelsea",
+              "2 (72)",
+              "1 (15)",
+              "3"
+            ],
+            [
+              "2005/06",
+              "Chelsea",
+              "1 (72)",
+              "1 (22)",
+              "2"
+            ],
+            [
+              "2006/07",
+              "Man United",
+              "1 (83)",
+              "3 (27)",
+              "4"
+            ],
+            [
+              "2007/08",
+              "Man United",
+              "1 (80)",
+              "1 (22)",
+              "2"
+            ],
+            [
+              "2008/09",
+              "Man United",
+              "4 (68)",
+              "2 (24)",
+              "6"
+            ],
+            [
+              "2009/10",
+              "Chelsea",
+              "1 (103)",
+              "2 (32)",
+              "3"
+            ],
+            [
+              "2010/11",
+              "Man United",
+              "1 (78)",
+              "3 (37)",
+              "4"
+            ],
+            [
+              "2011/12",
+              "Man City",
+              "1 (93)",
+              "1 (29)",
+              "2"
+            ],
+            [
+              "2012/13",
+              "Man United",
+              "1 (86)",
+              "6 (43)",
+              "7"
+            ],
+            [
+              "2013/14",
+              "Man City",
+              "1 (102)",
+              "2 (37)",
+              "3"
+            ],
+            [
+              "2014/15",
+              "Chelsea",
+              "2 (73)",
+              "1 (32)",
+              "3"
+            ],
+            [
+              "2015/16",
+              "Leicester",
+              "3 (68)",
+              "4 (36)",
+              "7"
+            ],
+            [
+              "2016/17",
+              "Chelsea",
+              "2 (85)",
+              "3 (33)",
+              "5"
+            ],
+            [
+              "2017/18",
+              "Man City",
+              "1 (106)",
+              "1 (27)",
+              "2"
+            ],
+            [
+              "2018/19",
+              "Man City",
+              "1 (95)",
+              "2 (23)",
+              "3"
+            ],
+            [
+              "2019/20",
+              "Liverpool",
+              "2 (85)",
+              "1 (33)",
+              "3"
+            ],
+            [
+              "2020/21",
+              "Man City",
+              "1 (83)",
+              "1 (32)",
+              "2"
+            ],
+            [
+              "2021/22",
+              "Man City",
+              "1 (99)",
+              "2 (26)",
+              "3"
+            ],
+            [
+              "2022/23",
+              "Man City",
+              "1 (94)",
+              "1 (33)",
+              "2"
+            ],
+            [
+              "2023/24",
+              "Man City",
+              "1 (96)",
+              "2 (34)",
+              "3"
+            ],
+            [
+              "2024/25",
+              "Liverpool",
+              "1 (86)",
+              "2 (41)",
+              "3"
+            ],
+            [
+              "2025/26",
+              "Arsenal",
+              "2 (71)",
+              "1 (27)",
+              "3"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "season",
+            "champion",
+            "best attack",
+            "best defence"
+          ],
+          "rows": [
+            [
+              "1993/94",
+              "Man United",
+              "Newcastle (pos 3)",
+              "Arsenal (pos 4)"
+            ],
+            [
+              "1994/95",
+              "Blackburn",
+              "Blackburn (pos 1)= champion",
+              "Man United (pos 2)"
+            ],
+            [
+              "1995/96",
+              "Man United",
+              "Man United (pos 1)= champion",
+              "Arsenal (pos 5)"
+            ],
+            [
+              "1996/97",
+              "Man United",
+              "Man United (pos 1)= champion",
+              "Arsenal (pos 3)"
+            ],
+            [
+              "1997/98",
+              "Arsenal",
+              "Man United (pos 2)",
+              "Man United (pos 2)"
+            ],
+            [
+              "1998/99",
+              "Man United",
+              "Man United (pos 1)= champion",
+              "Arsenal (pos 2)"
+            ],
+            [
+              "1999/00",
+              "Man United",
+              "Man United (pos 1)= champion",
+              "Liverpool (pos 4)"
+            ],
+            [
+              "2000/01",
+              "Man United",
+              "Man United (pos 1)= champion",
+              "Man United (pos 1)= champion"
+            ],
+            [
+              "2001/02",
+              "Arsenal",
+              "Man United (pos 3)",
+              "Liverpool (pos 2)"
+            ],
+            [
+              "2002/03",
+              "Man United",
+              "Arsenal (pos 2)",
+              "Man United (pos 1)= champion"
+            ],
+            [
+              "2003/04",
+              "Arsenal",
+              "Arsenal (pos 1)= champion",
+              "Arsenal (pos 1)= champion"
+            ],
+            [
+              "2004/05",
+              "Chelsea",
+              "Arsenal (pos 2)",
+              "Chelsea (pos 1)= champion"
+            ],
+            [
+              "2005/06",
+              "Chelsea",
+              "Chelsea (pos 1)= champion",
+              "Chelsea (pos 1)= champion"
+            ],
+            [
+              "2006/07",
+              "Man United",
+              "Man United (pos 1)= champion",
+              "Chelsea (pos 2)"
+            ],
+            [
+              "2007/08",
+              "Man United",
+              "Man United (pos 1)= champion",
+              "Man United (pos 1)= champion"
+            ],
+            [
+              "2008/09",
+              "Man United",
+              "Liverpool (pos 2)",
+              "Chelsea (pos 3)"
+            ],
+            [
+              "2009/10",
+              "Chelsea",
+              "Chelsea (pos 1)= champion",
+              "Man United (pos 2)"
+            ],
+            [
+              "2010/11",
+              "Man United",
+              "Man United (pos 1)= champion",
+              "Chelsea (pos 2)"
+            ],
+            [
+              "2011/12",
+              "Man City",
+              "Man City (pos 1)= champion",
+              "Man City (pos 1)= champion"
+            ],
+            [
+              "2012/13",
+              "Man United",
+              "Man United (pos 1)= champion",
+              "Man City (pos 2)"
+            ],
+            [
+              "2013/14",
+              "Man City",
+              "Man City (pos 1)= champion",
+              "Chelsea (pos 3)"
+            ],
+            [
+              "2014/15",
+              "Chelsea",
+              "Man City (pos 2)",
+              "Chelsea (pos 1)= champion"
+            ],
+            [
+              "2015/16",
+              "Leicester",
+              "Man City (pos 4)",
+              "Man United (pos 5)"
+            ],
+            [
+              "2016/17",
+              "Chelsea",
+              "Tottenham (pos 2)",
+              "Tottenham (pos 2)"
+            ],
+            [
+              "2017/18",
+              "Man City",
+              "Man City (pos 1)= champion",
+              "Man City (pos 1)= champion"
+            ],
+            [
+              "2018/19",
+              "Man City",
+              "Man City (pos 1)= champion",
+              "Liverpool (pos 2)"
+            ],
+            [
+              "2019/20",
+              "Liverpool",
+              "Man City (pos 2)",
+              "Liverpool (pos 1)= champion"
+            ],
+            [
+              "2020/21",
+              "Man City",
+              "Man City (pos 1)= champion",
+              "Man City (pos 1)= champion"
+            ],
+            [
+              "2021/22",
+              "Man City",
+              "Man City (pos 1)= champion",
+              "Liverpool (pos 2)"
+            ],
+            [
+              "2022/23",
+              "Man City",
+              "Man City (pos 1)= champion",
+              "Man City (pos 1)= champion"
+            ],
+            [
+              "2023/24",
+              "Man City",
+              "Man City (pos 1)= champion",
+              "Arsenal (pos 2)"
+            ],
+            [
+              "2024/25",
+              "Liverpool",
+              "Liverpool (pos 1)= champion",
+              "Arsenal (pos 2)"
+            ],
+            [
+              "2025/26",
+              "Arsenal",
+              "Man City (pos 2)",
+              "Arsenal (pos 1)= champion"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "73d275bd-f53f-4a50-972a-923f38a1315d",
+      "cell_type": "code",
+      "source": "// how often did the best attack / best defence miss out entirely (finish outside top 4)?\nlet mut att_miss4 = 0; let mut def_miss4 = 0; let n_seas = cf_rows.len();\nfor sname in &complete_seasons {\n    let ts: Vec<&TeamSeason> = team_seasons.iter().filter(|t| &t.season == sname).collect();\n    if ts.is_empty() { continue; }\n    let best_att = ts.iter().min_by_key(|t| t.gf_rank).unwrap();\n    let best_def = ts.iter().min_by_key(|t| t.ga_rank).unwrap();\n    if best_att.pos > 4 { att_miss4 += 1; }\n    if best_def.pos > 4 { def_miss4 += 1; }\n}\nprintln!(\"best attack finished outside top-4: {}/{} seasons\", att_miss4, n_seas);\nprintln!(\"best defence finished outside top-4: {}/{} seasons\", def_miss4, n_seas);\n\n// consistency: champion clean sheets vs league-best, and heavy defeats (3+ conceded in a game)\nlet mut cs_rows: Vec<Vec<String>> = Vec::new();\nfor c in champs.iter().take(0) { let _ = c; }\nlet mut champ_cs_total = 0i64; let mut champ_games = 0i64; let mut champ_heavy = 0i64;\nlet mut league_cs_best = 0i64;\nfor sname in &complete_seasons {\n    let st = standings(sname);\n    let champ_name = &st[0].team;\n    let games = team_games.get(&(sname.clone(), champ_name.clone())).cloned().unwrap_or_default();\n    let cs = games.iter().filter(|g| g.ga == 0).count() as i64;\n    let heavy = games.iter().filter(|g| g.ga >= 3).count() as i64;\n    champ_cs_total += cs; champ_games += games.len() as i64; champ_heavy += heavy;\n    // league-best clean sheets this season\n    let mut best_cs = 0i64;\n    for ((s, t), gs) in &team_games {\n        if s == sname {\n            let c = gs.iter().filter(|g| g.ga == 0).count() as i64;\n            if c > best_cs { best_cs = c; }\n        }\n    }\n    if best_cs > league_cs_best { league_cs_best = best_cs; }\n    cs_rows.push(vec![sname.clone(), champ_name.clone(), cs.to_string(), games.len().to_string(), heavy.to_string()]);\n}\nprintln!(\"champions' clean sheets: {} in {} games ({:.1}%)\", champ_cs_total, champ_games, 100.0 * champ_cs_total as f64 / champ_games as f64);\nprintln!(\"champions conceded 3+ in a match: {} times total\", champ_heavy);\nmars_table(&[\"season\", \"champion\", \"clean sheets\", \"games\", \"games conceding 3+\"], &cs_rows.iter().rev().take(10).cloned().collect::<Vec<_>>());\n",
+      "metadata": {},
+      "execution_count": 5,
       "outputs": [
         {
           "type": "text",
@@ -1014,9 +1529,614 @@
     {
       "id": "7ad48858-a26c-4e3d-a0e9-1362866febbd",
       "cell_type": "code",
-      "source": "\nuse plotters::prelude::*;\n\n// chart 1: rho_attack vs rho_defence per season\nlet n_s = seas_stats.len();\nlet rho_min = seas_stats.iter().map(|s| s.1.min(s.2)).fold(1.0f64, f64::min) - 0.1;\nlet rho_max = seas_stats.iter().map(|s| s.1.max(s.2)).fold(-1.0f64, f64::max) + 0.1;\nlet x_labels: Vec<String> = seas_stats.iter().map(|s| s.0[..4].to_string()).collect();\nlet rho_att: Vec<f64> = seas_stats.iter().map(|s| s.1).collect();\nlet rho_def: Vec<f64> = seas_stats.iter().map(|s| s.2).collect();\n\nlet fig1 = plotters::evcxr::evcxr_figure((820, 420), |root| {\n    root.fill(&WHITE)?;\n    let mut chart = ChartBuilder::on(&root)\n        .caption(\"Rank-vs-position correlation by season (Spearman rho)\", (\"sans-serif\", 18))\n        .margin(15)\n        .x_label_area_size(35)\n        .y_label_area_size(45)\n        .build_cartesian_2d(0.0..(n_s as f64 - 1.0), rho_min..rho_max)?;\n    chart.configure_mesh()\n        .x_labels(6)\n        .x_label_formatter(&|x: &f64| {\n            let i = (*x).round() as usize;\n            if i < x_labels.len() { x_labels[i].clone() } else { String::new() }\n        })\n        .draw()?;\n    chart.draw_series(LineSeries::new(\n        (0..n_s).map(|i| (i as f64, rho_att[i])), &RED,\n    ))?;\n    chart.draw_series(LineSeries::new(\n        (0..n_s).map(|i| (i as f64, rho_def[i])), &BLUE,\n    ))?;\n    chart.draw_series((0..n_s).map(|i| Circle::new((i as f64, rho_att[i]), 3, RED.filled())))?;\n    chart.draw_series((0..n_s).map(|i| Circle::new((i as f64, rho_def[i]), 3, BLUE.filled())))?;\n    Ok(())\n});\nfig1.evcxr_display();\nprintln!(\"red = attack rank vs position | blue = defence rank vs position\");\n\n// chart 2: champion attack-rank vs defence-rank scatter, coloured by era\nlet era_color = |e: &str| -> RGBColor {\n    match e {\n        \"1990s\" => BLUE,\n        \"2000s\" => GREEN,\n        \"2010s\" => CYAN,\n        \"2020s\" => RED,\n        _ => BLACK,\n    }\n};\nlet max_rank = champs.iter().map(|c| c.gf_rank.max(c.ga_rank)).max().unwrap_or(22) as f64;\nlet fig2 = plotters::evcxr::evcxr_figure((560, 560), |root| {\n    root.fill(&WHITE)?;\n    // y axis reversed: rank 1 (best defence) at top\n    let mut chart = ChartBuilder::on(&root)\n        .caption(\"Every Premier League champion: attack rank vs defence rank\", (\"sans-serif\", 16))\n        .margin(15)\n        .x_label_area_size(40)\n        .y_label_area_size(40)\n        .build_cartesian_2d(0.5..(max_rank + 0.5), (max_rank + 0.5)..0.5)?;\n    chart.configure_mesh()\n        .x_desc(\"attack rank (1 = most goals)\")\n        .y_desc(\"defence rank (1 = fewest conceded)\")\n        .draw()?;\n    chart.draw_series(champs.iter().map(|c| {\n        Circle::new((c.gf_rank as f64, c.ga_rank as f64), 4, era_color(era_of(&c.season)).filled())\n    }))?;\n    Ok(())\n});\nfig2.evcxr_display();\n",
+      "source": "use plotters::prelude::*;\n\n// chart 1: rho_attack vs rho_defence per season\nlet n_s = seas_stats.len();\nlet rho_min = seas_stats.iter().map(|s| s.1.min(s.2)).fold(1.0f64, f64::min) - 0.1;\nlet rho_max = seas_stats.iter().map(|s| s.1.max(s.2)).fold(-1.0f64, f64::max) + 0.1;\nlet x_labels: Vec<String> = seas_stats.iter().map(|s| s.0[..4].to_string()).collect();\nlet rho_att: Vec<f64> = seas_stats.iter().map(|s| s.1).collect();\nlet rho_def: Vec<f64> = seas_stats.iter().map(|s| s.2).collect();\n\nlet fig1 = plotters::evcxr::evcxr_figure((820, 420), |root| {\n    root.fill(&WHITE)?;\n    let mut chart = ChartBuilder::on(&root)\n        .caption(\"Rank-vs-position correlation by season (Spearman rho)\", (\"sans-serif\", 18))\n        .margin(15)\n        .x_label_area_size(35)\n        .y_label_area_size(45)\n        .build_cartesian_2d(0.0..(n_s as f64 - 1.0), rho_min..rho_max)?;\n    chart.configure_mesh()\n        .x_labels(6)\n        .x_label_formatter(&|x: &f64| {\n            let i = (*x).round() as usize;\n            if i < x_labels.len() { x_labels[i].clone() } else { String::new() }\n        })\n        .draw()?;\n    chart.draw_series(LineSeries::new(\n        (0..n_s).map(|i| (i as f64, rho_att[i])), &RED,\n    ))?;\n    chart.draw_series(LineSeries::new(\n        (0..n_s).map(|i| (i as f64, rho_def[i])), &BLUE,\n    ))?;\n    chart.draw_series((0..n_s).map(|i| Circle::new((i as f64, rho_att[i]), 3, RED.filled())))?;\n    chart.draw_series((0..n_s).map(|i| Circle::new((i as f64, rho_def[i]), 3, BLUE.filled())))?;\n    Ok(())\n});\nfig1.evcxr_display();\n",
       "metadata": {},
-      "execution_count": 5,
+      "execution_count": 6,
+      "outputs": [
+        {
+          "type": "text",
+          "text": "English Premier League matches: 13126\nfinished matches: 12814 (312 duplicate fixtures dropped) | team-season entries: 684\ncomplete seasons: 33 (1993/94 -> 2025/26)\nteam-seasons: 664 | seasons: 33\nweakest defence to win: 1996/97 Man United — GA rank 7, 44 goals conceded\nweakest attack to win: 2008/09 Man United — GF rank 4, 68 goals scored\nbest defence: 2000/01 Man United — GA rank 1\nbest attack: 1994/95 Blackburn — GF rank 1\nchampion avg rank_sum: 3.8 vs random expectation 21.1\nchampions finishing top-4 in BOTH attack and defence: 30/33\nchampions top-2 in BOTH: 20/33\nchampions top-3 in defence: 26/33\nchampions top-3 in attack: 32/33\nbest attack finished outside top-4: 0/33 seasons\nbest defence finished outside top-4: 2/33 seasons\nchampions' clean sheets: 554 in 1262 games (43.9%)\nchampions conceded 3+ in a match: 78 times total\n"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "era",
+            "seasons",
+            "rho attack",
+            "rho defence",
+            "rho balance",
+            "best-GF won",
+            "best-GA won"
+          ],
+          "rows": [
+            [
+              "1990s",
+              "7",
+              "0.82",
+              "0.77",
+              "0.92",
+              "5/7",
+              "0/7"
+            ],
+            [
+              "2000s",
+              "10",
+              "0.85",
+              "0.87",
+              "0.94",
+              "6/10",
+              "6/10"
+            ],
+            [
+              "2010s",
+              "10",
+              "0.86",
+              "0.85",
+              "0.94",
+              "6/10",
+              "4/10"
+            ],
+            [
+              "2020s",
+              "6",
+              "0.88",
+              "0.81",
+              "0.94",
+              "5/6",
+              "3/6"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "season",
+            "champion",
+            "attack rank (gf)",
+            "defence rank (ga)",
+            "rank sum"
+          ],
+          "rows": [
+            [
+              "1993/94",
+              "Man United",
+              "2 (80)",
+              "3 (38)",
+              "5"
+            ],
+            [
+              "1994/95",
+              "Blackburn",
+              "1 (80)",
+              "4 (39)",
+              "5"
+            ],
+            [
+              "1995/96",
+              "Man United",
+              "1 (73)",
+              "4 (35)",
+              "5"
+            ],
+            [
+              "1996/97",
+              "Man United",
+              "1 (76)",
+              "7 (44)",
+              "8"
+            ],
+            [
+              "1997/98",
+              "Arsenal",
+              "3 (68)",
+              "2 (33)",
+              "5"
+            ],
+            [
+              "1998/99",
+              "Man United",
+              "1 (80)",
+              "4 (37)",
+              "5"
+            ],
+            [
+              "1999/00",
+              "Man United",
+              "1 (97)",
+              "6 (45)",
+              "7"
+            ],
+            [
+              "2000/01",
+              "Man United",
+              "1 (79)",
+              "1 (31)",
+              "2"
+            ],
+            [
+              "2001/02",
+              "Arsenal",
+              "2 (79)",
+              "2 (36)",
+              "4"
+            ],
+            [
+              "2002/03",
+              "Man United",
+              "2 (74)",
+              "1 (34)",
+              "3"
+            ],
+            [
+              "2003/04",
+              "Arsenal",
+              "1 (73)",
+              "1 (26)",
+              "2"
+            ],
+            [
+              "2004/05",
+              "Chelsea",
+              "2 (72)",
+              "1 (15)",
+              "3"
+            ],
+            [
+              "2005/06",
+              "Chelsea",
+              "1 (72)",
+              "1 (22)",
+              "2"
+            ],
+            [
+              "2006/07",
+              "Man United",
+              "1 (83)",
+              "3 (27)",
+              "4"
+            ],
+            [
+              "2007/08",
+              "Man United",
+              "1 (80)",
+              "1 (22)",
+              "2"
+            ],
+            [
+              "2008/09",
+              "Man United",
+              "4 (68)",
+              "2 (24)",
+              "6"
+            ],
+            [
+              "2009/10",
+              "Chelsea",
+              "1 (103)",
+              "2 (32)",
+              "3"
+            ],
+            [
+              "2010/11",
+              "Man United",
+              "1 (78)",
+              "3 (37)",
+              "4"
+            ],
+            [
+              "2011/12",
+              "Man City",
+              "1 (93)",
+              "1 (29)",
+              "2"
+            ],
+            [
+              "2012/13",
+              "Man United",
+              "1 (86)",
+              "6 (43)",
+              "7"
+            ],
+            [
+              "2013/14",
+              "Man City",
+              "1 (102)",
+              "2 (37)",
+              "3"
+            ],
+            [
+              "2014/15",
+              "Chelsea",
+              "2 (73)",
+              "1 (32)",
+              "3"
+            ],
+            [
+              "2015/16",
+              "Leicester",
+              "3 (68)",
+              "4 (36)",
+              "7"
+            ],
+            [
+              "2016/17",
+              "Chelsea",
+              "2 (85)",
+              "3 (33)",
+              "5"
+            ],
+            [
+              "2017/18",
+              "Man City",
+              "1 (106)",
+              "1 (27)",
+              "2"
+            ],
+            [
+              "2018/19",
+              "Man City",
+              "1 (95)",
+              "2 (23)",
+              "3"
+            ],
+            [
+              "2019/20",
+              "Liverpool",
+              "2 (85)",
+              "1 (33)",
+              "3"
+            ],
+            [
+              "2020/21",
+              "Man City",
+              "1 (83)",
+              "1 (32)",
+              "2"
+            ],
+            [
+              "2021/22",
+              "Man City",
+              "1 (99)",
+              "2 (26)",
+              "3"
+            ],
+            [
+              "2022/23",
+              "Man City",
+              "1 (94)",
+              "1 (33)",
+              "2"
+            ],
+            [
+              "2023/24",
+              "Man City",
+              "1 (96)",
+              "2 (34)",
+              "3"
+            ],
+            [
+              "2024/25",
+              "Liverpool",
+              "1 (86)",
+              "2 (41)",
+              "3"
+            ],
+            [
+              "2025/26",
+              "Arsenal",
+              "2 (71)",
+              "1 (27)",
+              "3"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "season",
+            "champion",
+            "best attack",
+            "best defence"
+          ],
+          "rows": [
+            [
+              "1993/94",
+              "Man United",
+              "Newcastle (pos 3)",
+              "Arsenal (pos 4)"
+            ],
+            [
+              "1994/95",
+              "Blackburn",
+              "Blackburn (pos 1)= champion",
+              "Man United (pos 2)"
+            ],
+            [
+              "1995/96",
+              "Man United",
+              "Man United (pos 1)= champion",
+              "Arsenal (pos 5)"
+            ],
+            [
+              "1996/97",
+              "Man United",
+              "Man United (pos 1)= champion",
+              "Arsenal (pos 3)"
+            ],
+            [
+              "1997/98",
+              "Arsenal",
+              "Man United (pos 2)",
+              "Man United (pos 2)"
+            ],
+            [
+              "1998/99",
+              "Man United",
+              "Man United (pos 1)= champion",
+              "Arsenal (pos 2)"
+            ],
+            [
+              "1999/00",
+              "Man United",
+              "Man United (pos 1)= champion",
+              "Liverpool (pos 4)"
+            ],
+            [
+              "2000/01",
+              "Man United",
+              "Man United (pos 1)= champion",
+              "Man United (pos 1)= champion"
+            ],
+            [
+              "2001/02",
+              "Arsenal",
+              "Man United (pos 3)",
+              "Liverpool (pos 2)"
+            ],
+            [
+              "2002/03",
+              "Man United",
+              "Arsenal (pos 2)",
+              "Man United (pos 1)= champion"
+            ],
+            [
+              "2003/04",
+              "Arsenal",
+              "Arsenal (pos 1)= champion",
+              "Arsenal (pos 1)= champion"
+            ],
+            [
+              "2004/05",
+              "Chelsea",
+              "Arsenal (pos 2)",
+              "Chelsea (pos 1)= champion"
+            ],
+            [
+              "2005/06",
+              "Chelsea",
+              "Chelsea (pos 1)= champion",
+              "Chelsea (pos 1)= champion"
+            ],
+            [
+              "2006/07",
+              "Man United",
+              "Man United (pos 1)= champion",
+              "Chelsea (pos 2)"
+            ],
+            [
+              "2007/08",
+              "Man United",
+              "Man United (pos 1)= champion",
+              "Man United (pos 1)= champion"
+            ],
+            [
+              "2008/09",
+              "Man United",
+              "Liverpool (pos 2)",
+              "Chelsea (pos 3)"
+            ],
+            [
+              "2009/10",
+              "Chelsea",
+              "Chelsea (pos 1)= champion",
+              "Man United (pos 2)"
+            ],
+            [
+              "2010/11",
+              "Man United",
+              "Man United (pos 1)= champion",
+              "Chelsea (pos 2)"
+            ],
+            [
+              "2011/12",
+              "Man City",
+              "Man City (pos 1)= champion",
+              "Man City (pos 1)= champion"
+            ],
+            [
+              "2012/13",
+              "Man United",
+              "Man United (pos 1)= champion",
+              "Man City (pos 2)"
+            ],
+            [
+              "2013/14",
+              "Man City",
+              "Man City (pos 1)= champion",
+              "Chelsea (pos 3)"
+            ],
+            [
+              "2014/15",
+              "Chelsea",
+              "Man City (pos 2)",
+              "Chelsea (pos 1)= champion"
+            ],
+            [
+              "2015/16",
+              "Leicester",
+              "Man City (pos 4)",
+              "Man United (pos 5)"
+            ],
+            [
+              "2016/17",
+              "Chelsea",
+              "Tottenham (pos 2)",
+              "Tottenham (pos 2)"
+            ],
+            [
+              "2017/18",
+              "Man City",
+              "Man City (pos 1)= champion",
+              "Man City (pos 1)= champion"
+            ],
+            [
+              "2018/19",
+              "Man City",
+              "Man City (pos 1)= champion",
+              "Liverpool (pos 2)"
+            ],
+            [
+              "2019/20",
+              "Liverpool",
+              "Man City (pos 2)",
+              "Liverpool (pos 1)= champion"
+            ],
+            [
+              "2020/21",
+              "Man City",
+              "Man City (pos 1)= champion",
+              "Man City (pos 1)= champion"
+            ],
+            [
+              "2021/22",
+              "Man City",
+              "Man City (pos 1)= champion",
+              "Liverpool (pos 2)"
+            ],
+            [
+              "2022/23",
+              "Man City",
+              "Man City (pos 1)= champion",
+              "Man City (pos 1)= champion"
+            ],
+            [
+              "2023/24",
+              "Man City",
+              "Man City (pos 1)= champion",
+              "Arsenal (pos 2)"
+            ],
+            [
+              "2024/25",
+              "Liverpool",
+              "Liverpool (pos 1)= champion",
+              "Arsenal (pos 2)"
+            ],
+            [
+              "2025/26",
+              "Arsenal",
+              "Man City (pos 2)",
+              "Arsenal (pos 1)= champion"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "season",
+            "champion",
+            "clean sheets",
+            "games",
+            "games conceding 3+"
+          ],
+          "rows": [
+            [
+              "2025/26",
+              "Arsenal",
+              "19",
+              "38",
+              "1"
+            ],
+            [
+              "2024/25",
+              "Liverpool",
+              "14",
+              "38",
+              "5"
+            ],
+            [
+              "2023/24",
+              "Man City",
+              "13",
+              "38",
+              "2"
+            ],
+            [
+              "2022/23",
+              "Man City",
+              "13",
+              "38",
+              "2"
+            ],
+            [
+              "2021/22",
+              "Man City",
+              "21",
+              "38",
+              "2"
+            ],
+            [
+              "2020/21",
+              "Man City",
+              "19",
+              "38",
+              "3"
+            ],
+            [
+              "2019/20",
+              "Liverpool",
+              "15",
+              "38",
+              "3"
+            ],
+            [
+              "2018/19",
+              "Man City",
+              "20",
+              "38",
+              "1"
+            ],
+            [
+              "2017/18",
+              "Man City",
+              "18",
+              "38",
+              "2"
+            ],
+            [
+              "2016/17",
+              "Chelsea",
+              "16",
+              "38",
+              "2"
+            ]
+          ]
+        },
+        {
+          "type": "mime_bundle",
+          "data": {
+            "image/svg+xml": "<svg width=\"820\" height=\"420\" viewBox=\"0 0 820 420\" xmlns=\"http://www.w3.org/2000/svg\">\n<rect x=\"0\" y=\"0\" width=\"820\" height=\"420\" opacity=\"1\" fill=\"#FFFFFF\" stroke=\"none\"/>\n<text x=\"410\" y=\"20\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"14.516129032258064\" opacity=\"1\" fill=\"#000000\">\nRank-vs-position correlation by season (Spearman rho)\n</text>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"369\" x2=\"60\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"83\" y1=\"369\" x2=\"83\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"106\" y1=\"369\" x2=\"106\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"129\" y1=\"369\" x2=\"129\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"153\" y1=\"369\" x2=\"153\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"176\" y1=\"369\" x2=\"176\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"199\" y1=\"369\" x2=\"199\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"222\" y1=\"369\" x2=\"222\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"246\" y1=\"369\" x2=\"246\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"269\" y1=\"369\" x2=\"269\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"292\" y1=\"369\" x2=\"292\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"315\" y1=\"369\" x2=\"315\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"339\" y1=\"369\" x2=\"339\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"362\" y1=\"369\" x2=\"362\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"385\" y1=\"369\" x2=\"385\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"408\" y1=\"369\" x2=\"408\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"432\" y1=\"369\" x2=\"432\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"455\" y1=\"369\" x2=\"455\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"478\" y1=\"369\" x2=\"478\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"501\" y1=\"369\" x2=\"501\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"525\" y1=\"369\" x2=\"525\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"548\" y1=\"369\" x2=\"548\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"571\" y1=\"369\" x2=\"571\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"594\" y1=\"369\" x2=\"594\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"618\" y1=\"369\" x2=\"618\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"641\" y1=\"369\" x2=\"641\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"664\" y1=\"369\" x2=\"664\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"687\" y1=\"369\" x2=\"687\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"711\" y1=\"369\" x2=\"711\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"734\" y1=\"369\" x2=\"734\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"757\" y1=\"369\" x2=\"757\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"780\" y1=\"369\" x2=\"780\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"804\" y1=\"369\" x2=\"804\" y2=\"39\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"369\" x2=\"804\" y2=\"369\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"366\" x2=\"804\" y2=\"366\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"363\" x2=\"804\" y2=\"363\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"360\" x2=\"804\" y2=\"360\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"356\" x2=\"804\" y2=\"356\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"353\" x2=\"804\" y2=\"353\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"350\" x2=\"804\" y2=\"350\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"347\" x2=\"804\" y2=\"347\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"344\" x2=\"804\" y2=\"344\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"340\" x2=\"804\" y2=\"340\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"337\" x2=\"804\" y2=\"337\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"334\" x2=\"804\" y2=\"334\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"331\" x2=\"804\" y2=\"331\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"327\" x2=\"804\" y2=\"327\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"324\" x2=\"804\" y2=\"324\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"321\" x2=\"804\" y2=\"321\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"318\" x2=\"804\" y2=\"318\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"315\" x2=\"804\" y2=\"315\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"311\" x2=\"804\" y2=\"311\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"308\" x2=\"804\" y2=\"308\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"305\" x2=\"804\" y2=\"305\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"302\" x2=\"804\" y2=\"302\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"298\" x2=\"804\" y2=\"298\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"295\" x2=\"804\" y2=\"295\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"292\" x2=\"804\" y2=\"292\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"289\" x2=\"804\" y2=\"289\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"286\" x2=\"804\" y2=\"286\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"282\" x2=\"804\" y2=\"282\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"279\" x2=\"804\" y2=\"279\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"276\" x2=\"804\" y2=\"276\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"273\" x2=\"804\" y2=\"273\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"269\" x2=\"804\" y2=\"269\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"266\" x2=\"804\" y2=\"266\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"263\" x2=\"804\" y2=\"263\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"260\" x2=\"804\" y2=\"260\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"257\" x2=\"804\" y2=\"257\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"253\" x2=\"804\" y2=\"253\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"250\" x2=\"804\" y2=\"250\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"247\" x2=\"804\" y2=\"247\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"244\" x2=\"804\" y2=\"244\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"240\" x2=\"804\" y2=\"240\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"237\" x2=\"804\" y2=\"237\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"234\" x2=\"804\" y2=\"234\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"231\" x2=\"804\" y2=\"231\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"228\" x2=\"804\" y2=\"228\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"224\" x2=\"804\" y2=\"224\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"221\" x2=\"804\" y2=\"221\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"218\" x2=\"804\" y2=\"218\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"215\" x2=\"804\" y2=\"215\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"211\" x2=\"804\" y2=\"211\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"208\" x2=\"804\" y2=\"208\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"205\" x2=\"804\" y2=\"205\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"202\" x2=\"804\" y2=\"202\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"199\" x2=\"804\" y2=\"199\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"195\" x2=\"804\" y2=\"195\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"192\" x2=\"804\" y2=\"192\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"189\" x2=\"804\" y2=\"189\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"186\" x2=\"804\" y2=\"186\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"182\" x2=\"804\" y2=\"182\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"179\" x2=\"804\" y2=\"179\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"176\" x2=\"804\" y2=\"176\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"173\" x2=\"804\" y2=\"173\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"170\" x2=\"804\" y2=\"170\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"166\" x2=\"804\" y2=\"166\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"163\" x2=\"804\" y2=\"163\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"160\" x2=\"804\" y2=\"160\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"157\" x2=\"804\" y2=\"157\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"153\" x2=\"804\" y2=\"153\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"150\" x2=\"804\" y2=\"150\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"147\" x2=\"804\" y2=\"147\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"144\" x2=\"804\" y2=\"144\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"141\" x2=\"804\" y2=\"141\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"137\" x2=\"804\" y2=\"137\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"134\" x2=\"804\" y2=\"134\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"131\" x2=\"804\" y2=\"131\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"128\" x2=\"804\" y2=\"128\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"124\" x2=\"804\" y2=\"124\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"121\" x2=\"804\" y2=\"121\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"118\" x2=\"804\" y2=\"118\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"115\" x2=\"804\" y2=\"115\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"112\" x2=\"804\" y2=\"112\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"108\" x2=\"804\" y2=\"108\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"105\" x2=\"804\" y2=\"105\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"102\" x2=\"804\" y2=\"102\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"99\" x2=\"804\" y2=\"99\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"95\" x2=\"804\" y2=\"95\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"92\" x2=\"804\" y2=\"92\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"89\" x2=\"804\" y2=\"89\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"86\" x2=\"804\" y2=\"86\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"83\" x2=\"804\" y2=\"83\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"79\" x2=\"804\" y2=\"79\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"76\" x2=\"804\" y2=\"76\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"73\" x2=\"804\" y2=\"73\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"70\" x2=\"804\" y2=\"70\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"66\" x2=\"804\" y2=\"66\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"63\" x2=\"804\" y2=\"63\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"60\" x2=\"804\" y2=\"60\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"57\" x2=\"804\" y2=\"57\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"54\" x2=\"804\" y2=\"54\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"50\" x2=\"804\" y2=\"50\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"47\" x2=\"804\" y2=\"47\"/>\n<line opacity=\"0.1\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"44\" x2=\"804\" y2=\"44\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"369\" x2=\"60\" y2=\"39\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"292\" y1=\"369\" x2=\"292\" y2=\"39\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"525\" y1=\"369\" x2=\"525\" y2=\"39\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"757\" y1=\"369\" x2=\"757\" y2=\"39\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"363\" x2=\"804\" y2=\"363\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"331\" x2=\"804\" y2=\"331\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"298\" x2=\"804\" y2=\"298\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"266\" x2=\"804\" y2=\"266\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"234\" x2=\"804\" y2=\"234\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"202\" x2=\"804\" y2=\"202\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"170\" x2=\"804\" y2=\"170\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"137\" x2=\"804\" y2=\"137\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"105\" x2=\"804\" y2=\"105\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"73\" x2=\"804\" y2=\"73\"/>\n<line opacity=\"0.2\" stroke=\"#000000\" stroke-width=\"1\" x1=\"60\" y1=\"41\" x2=\"804\" y2=\"41\"/>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"59,39 59,369 \"/>\n<text x=\"50\" y=\"363\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n0.55\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"54,363 59,363 \"/>\n<text x=\"50\" y=\"331\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n0.6\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"54,331 59,331 \"/>\n<text x=\"50\" y=\"298\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n0.65\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"54,298 59,298 \"/>\n<text x=\"50\" y=\"266\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n0.7\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"54,266 59,266 \"/>\n<text x=\"50\" y=\"234\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n0.75\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"54,234 59,234 \"/>\n<text x=\"50\" y=\"202\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n0.8\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"54,202 59,202 \"/>\n<text x=\"50\" y=\"170\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n0.85\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"54,170 59,170 \"/>\n<text x=\"50\" y=\"137\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n0.9\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"54,137 59,137 \"/>\n<text x=\"50\" y=\"105\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n0.95\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"54,105 59,105 \"/>\n<text x=\"50\" y=\"73\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n1.0\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"54,73 59,73 \"/>\n<text x=\"50\" y=\"41\" dy=\"0.5ex\" text-anchor=\"end\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n1.05\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"54,41 59,41 \"/>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"60,370 804,370 \"/>\n<text x=\"60\" y=\"380\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n1993\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"60,370 60,375 \"/>\n<text x=\"292\" y=\"380\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n2003\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"292,370 292,375 \"/>\n<text x=\"525\" y=\"380\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n2013\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"525,370 525,375 \"/>\n<text x=\"757\" y=\"380\" dy=\"0.76em\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"9.67741935483871\" opacity=\"1\" fill=\"#000000\">\n2023\n</text>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#000000\" stroke-width=\"1\" points=\"757,370 757,375 \"/>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#FF0000\" stroke-width=\"1\" points=\"60,212 83,157 106,174 129,213 153,156 176,174 199,215 222,149 246,131 269,151 292,250 315,224 339,125 362,107 385,177 408,190 432,201 455,234 478,199 501,174 525,135 548,119 571,186 594,122 618,164 641,133 664,163 687,104 711,143 734,188 757,127 780,161 804,177 \"/>\n<polyline fill=\"none\" opacity=\"1\" stroke=\"#0000FF\" stroke-width=\"1\" points=\"60,207 83,305 106,160 129,295 153,213 176,211 199,169 222,131 246,235 269,211 292,122 315,161 339,159 362,196 385,131 408,116 432,128 455,158 478,145 501,163 525,140 548,211 571,167 594,182 618,242 641,133 664,148 687,208 711,198 734,150 757,213 780,158 804,238 \"/>\n<circle cx=\"60\" cy=\"212\" r=\"3\" opacity=\"1\" fill=\"#FF0000\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"83\" cy=\"157\" r=\"3\" opacity=\"1\" fill=\"#FF0000\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"106\" cy=\"174\" r=\"3\" opacity=\"1\" fill=\"#FF0000\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"129\" cy=\"213\" r=\"3\" opacity=\"1\" fill=\"#FF0000\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"153\" cy=\"156\" r=\"3\" opacity=\"1\" fill=\"#FF0000\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"176\" cy=\"174\" r=\"3\" opacity=\"1\" fill=\"#FF0000\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"199\" cy=\"215\" r=\"3\" opacity=\"1\" fill=\"#FF0000\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"222\" cy=\"149\" r=\"3\" opacity=\"1\" fill=\"#FF0000\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"246\" cy=\"131\" r=\"3\" opacity=\"1\" fill=\"#FF0000\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"269\" cy=\"151\" r=\"3\" opacity=\"1\" fill=\"#FF0000\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"292\" cy=\"250\" r=\"3\" opacity=\"1\" fill=\"#FF0000\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"315\" cy=\"224\" r=\"3\" opacity=\"1\" fill=\"#FF0000\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"339\" cy=\"125\" r=\"3\" opacity=\"1\" fill=\"#FF0000\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"362\" cy=\"107\" r=\"3\" opacity=\"1\" fill=\"#FF0000\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"385\" cy=\"177\" r=\"3\" opacity=\"1\" fill=\"#FF0000\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"408\" cy=\"190\" r=\"3\" opacity=\"1\" fill=\"#FF0000\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"432\" cy=\"201\" r=\"3\" opacity=\"1\" fill=\"#FF0000\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"455\" cy=\"234\" r=\"3\" opacity=\"1\" fill=\"#FF0000\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"478\" cy=\"199\" r=\"3\" opacity=\"1\" fill=\"#FF0000\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"501\" cy=\"174\" r=\"3\" opacity=\"1\" fill=\"#FF0000\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"525\" cy=\"135\" r=\"3\" opacity=\"1\" fill=\"#FF0000\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"548\" cy=\"119\" r=\"3\" opacity=\"1\" fill=\"#FF0000\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"571\" cy=\"186\" r=\"3\" opacity=\"1\" fill=\"#FF0000\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"594\" cy=\"122\" r=\"3\" opacity=\"1\" fill=\"#FF0000\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"618\" cy=\"164\" r=\"3\" opacity=\"1\" fill=\"#FF0000\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"641\" cy=\"133\" r=\"3\" opacity=\"1\" fill=\"#FF0000\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"664\" cy=\"163\" r=\"3\" opacity=\"1\" fill=\"#FF0000\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"687\" cy=\"104\" r=\"3\" opacity=\"1\" fill=\"#FF0000\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"711\" cy=\"143\" r=\"3\" opacity=\"1\" fill=\"#FF0000\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"734\" cy=\"188\" r=\"3\" opacity=\"1\" fill=\"#FF0000\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"757\" cy=\"127\" r=\"3\" opacity=\"1\" fill=\"#FF0000\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"780\" cy=\"161\" r=\"3\" opacity=\"1\" fill=\"#FF0000\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"804\" cy=\"177\" r=\"3\" opacity=\"1\" fill=\"#FF0000\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"60\" cy=\"207\" r=\"3\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"83\" cy=\"305\" r=\"3\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"106\" cy=\"160\" r=\"3\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"129\" cy=\"295\" r=\"3\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"153\" cy=\"213\" r=\"3\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"176\" cy=\"211\" r=\"3\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"199\" cy=\"169\" r=\"3\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"222\" cy=\"131\" r=\"3\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"246\" cy=\"235\" r=\"3\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"269\" cy=\"211\" r=\"3\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"292\" cy=\"122\" r=\"3\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"315\" cy=\"161\" r=\"3\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"339\" cy=\"159\" r=\"3\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"362\" cy=\"196\" r=\"3\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"385\" cy=\"131\" r=\"3\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"408\" cy=\"116\" r=\"3\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"432\" cy=\"128\" r=\"3\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"455\" cy=\"158\" r=\"3\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"478\" cy=\"145\" r=\"3\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"501\" cy=\"163\" r=\"3\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"525\" cy=\"140\" r=\"3\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"548\" cy=\"211\" r=\"3\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"571\" cy=\"167\" r=\"3\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"594\" cy=\"182\" r=\"3\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"618\" cy=\"242\" r=\"3\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"641\" cy=\"133\" r=\"3\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"664\" cy=\"148\" r=\"3\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"687\" cy=\"208\" r=\"3\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"711\" cy=\"198\" r=\"3\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"734\" cy=\"150\" r=\"3\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"757\" cy=\"213\" r=\"3\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"780\" cy=\"158\" r=\"3\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\" stroke-width=\"1\"/>\n<circle cx=\"804\" cy=\"238\" r=\"3\" opacity=\"1\" fill=\"#0000FF\" stroke=\"none\" stroke-width=\"1\"/>\n</svg>",
+            "text/plain": "Figure (SVG)"
+          },
+          "metadata": {}
+        }
+      ]
+    },
+    {
+      "id": "4efd8cb0-0d0e-435c-8bb5-cfbb60e926b2",
+      "cell_type": "code",
+      "source": "println!(\"red = attack rank vs position | blue = defence rank vs position\");\n\n// chart 2: champion attack-rank vs defence-rank scatter, coloured by era\nlet era_color = |e: &str| -> RGBColor {\n    match e {\n        \"1990s\" => BLUE,\n        \"2000s\" => GREEN,\n        \"2010s\" => CYAN,\n        \"2020s\" => RED,\n        _ => BLACK,\n    }\n};\nlet max_rank = champs.iter().map(|c| c.gf_rank.max(c.ga_rank)).max().unwrap_or(22) as f64;\nlet fig2 = plotters::evcxr::evcxr_figure((560, 560), |root| {\n    root.fill(&WHITE)?;\n    // y axis reversed: rank 1 (best defence) at top\n    let mut chart = ChartBuilder::on(&root)\n        .caption(\"Every Premier League champion: attack rank vs defence rank\", (\"sans-serif\", 16))\n        .margin(15)\n        .x_label_area_size(40)\n        .y_label_area_size(40)\n        .build_cartesian_2d(0.5..(max_rank + 0.5), (max_rank + 0.5)..0.5)?;\n    chart.configure_mesh()\n        .x_desc(\"attack rank (1 = most goals)\")\n        .y_desc(\"defence rank (1 = fewest conceded)\")\n        .draw()?;\n    chart.draw_series(champs.iter().map(|c| {\n        Circle::new((c.gf_rank as f64, c.ga_rank as f64), 4, era_color(era_of(&c.season)).filled())\n    }))?;\n    Ok(())\n});\nfig2.evcxr_display();\n",
+      "metadata": {},
+      "execution_count": 7,
       "outputs": [
         {
           "type": "text",
@@ -1627,7 +2747,9 @@
     {
       "id": "055f64d1-5c47-4b83-b765-03cdc10fbaa2",
       "cell_type": "markdown",
-      "source": "## What the data says\n\nThe cliché does not survive 33 seasons of Premier League football — if\nanything, it points the wrong way.\n\n**1. Attack predicts position slightly better than defence — and the gap\nis growing.** Mean within-season Spearman ρ between metric rank and\nfinal position: attack 0.82 (1990s) → 0.88 (2020s); defence 0.77 →\n0.87 → 0.81. In the 2020s the defensive signal is the *weakest* it has\never been.\n\n**2. The best attack always delivers; the best defence sometimes\ndoesn't.** The league's top scorer finished outside the top 4 in\n**0 of 33 seasons**. The league's best defence did it twice — most\nspectacularly Manchester United 2015/16, best defence in the league and\nfifth place.\n\n**3. For the title specifically, attack wins more often.** The best\nattack lifted the trophy in 22/33 seasons (67%); the best defence in\nonly 13/33 (39%). In the 1990s the best defence won *zero* titles —\nArsenal's great back lines kept finishing behind United's attacks.\n\n**4. But champions are defined by balance, not either/or.** The average\nchampion's combined attack+defence rank sum is **3.8** against a random\nexpectation of 21.1. 30 of 33 champions finished top-4 in *both*\ndimensions; 20 of 33 were top-2 in both. The balance metric correlates\nwith position at ρ ≈ 0.92–0.94 every era — stronger than either\ncomponent alone.\n\n**5. The title-winners' profiles.** 32 of 33 champions were top-3\nattacks; only 26 of 33 were top-3 defences. The weakest defence ever\nto win: Manchester United 1996/97 (GA rank 7, 44 conceded). The\nweakest attack: Manchester United 2008/09 (GF rank 4 — still 68 goals).\nModern champions keep elite clean sheets too — Arsenal 2025/26 kept 19,\nCity 2021/22 kept 21 — but they were also top-2 attacks.\n\n**Verdict.** \"Defence wins titles\" is not supported: titles go to\n*balanced* teams, and when forced to pick a single predictor, attacking\noutput is marginally stronger for both position and the trophy in the\nmodern era. Caveats: goal ranks proxy underlying quality (xG is not\navailable for EPL history here), correlations are not causation, and\nUnited's 13 titles flatten every average — the pattern holds within\nthe City/Liverpool/Arsenal era too.\n\n*Source: 12,814 deduplicated EPL results, 1993/94 → 2025/26.*"
+      "source": "## What the data says\n\nThe cliché does not survive 33 seasons of Premier League football — if\nanything, it points the wrong way.\n\n**1. Attack predicts position slightly better than defence — and the gap\nis growing.** Mean within-season Spearman ρ between metric rank and\nfinal position: attack 0.82 (1990s) → 0.88 (2020s); defence 0.77 →\n0.87 → 0.81. In the 2020s the defensive signal is the *weakest* it has\never been.\n\n**2. The best attack always delivers; the best defence sometimes\ndoesn't.** The league's top scorer finished outside the top 4 in\n**0 of 33 seasons**. The league's best defence did it twice — most\nspectacularly Manchester United 2015/16, best defence in the league and\nfifth place.\n\n**3. For the title specifically, attack wins more often.** The best\nattack lifted the trophy in 22/33 seasons (67%); the best defence in\nonly 13/33 (39%). In the 1990s the best defence won *zero* titles —\nArsenal's great back lines kept finishing behind United's attacks.\n\n**4. But champions are defined by balance, not either/or.** The average\nchampion's combined attack+defence rank sum is **3.8** against a random\nexpectation of 21.1. 30 of 33 champions finished top-4 in *both*\ndimensions; 20 of 33 were top-2 in both. The balance metric correlates\nwith position at ρ ≈ 0.92–0.94 every era — stronger than either\ncomponent alone.\n\n**5. The title-winners' profiles.** 32 of 33 champions were top-3\nattacks; only 26 of 33 were top-3 defences. The weakest defence ever\nto win: Manchester United 1996/97 (GA rank 7, 44 conceded). The\nweakest attack: Manchester United 2008/09 (GF rank 4 — still 68 goals).\nModern champions keep elite clean sheets too — Arsenal 2025/26 kept 19,\nCity 2021/22 kept 21 — but they were also top-2 attacks.\n\n**Verdict.** \"Defence wins titles\" is not supported: titles go to\n*balanced* teams, and when forced to pick a single predictor, attacking\noutput is marginally stronger for both position and the trophy in the\nmodern era. Caveats: goal ranks proxy underlying quality (xG is not\navailable for EPL history here), correlations are not causation, and\nUnited's 13 titles flatten every average — the pattern holds within\nthe City/Liverpool/Arsenal era too.\n\n*Source: 12,814 deduplicated EPL results, 1993/94 → 2025/26.*",
+      "metadata": {},
+      "outputs": []
     }
   ]
 }

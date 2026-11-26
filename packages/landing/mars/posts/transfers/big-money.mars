@@ -92,9 +92,168 @@
     {
       "id": "68aafc73-e0ab-4c38-93bd-d516c12a2f21",
       "cell_type": "code",
-      "source": "\n// biggest busts and best hits among >=20m deals\nlet mut big: Vec<&Deal> = deals.iter().filter(|d| d.fee >= 20_000_000.0).collect();\nbig.sort_by(|a,b| (a.after_ga90 - a.before_ga90).partial_cmp(&(b.after_ga90 - b.before_ga90)).unwrap());\nlet bust_rows: Vec<Vec<String>> = big.iter().take(15).map(|d| vec![\n    pname.get(&d.pid).cloned().unwrap_or_default().chars().take(24).collect(),\n    eur(d.fee),\n    format!(\"{} → {}\", tname.get(&d.from).cloned().unwrap_or_default().chars().take(18).collect::<String>(),\n                            tname.get(&d.to).cloned().unwrap_or_default().chars().take(18).collect::<String>()),\n    format!(\"{:.2} → {:.2}\", d.before_ga90, d.after_ga90),\n]).collect();\nmars_table(&[\"player\",\"fee\",\"move\",\"G+A/90 before→after\"], &bust_rows);\n\nbig.sort_by(|a,b| (b.after_ga90 - b.before_ga90).partial_cmp(&(a.after_ga90 - a.before_ga90)).unwrap());\nlet hit_rows: Vec<Vec<String>> = big.iter().take(15).map(|d| vec![\n    pname.get(&d.pid).cloned().unwrap_or_default().chars().take(24).collect(),\n    eur(d.fee),\n    format!(\"{} → {}\", tname.get(&d.from).cloned().unwrap_or_default().chars().take(18).collect::<String>(),\n                            tname.get(&d.to).cloned().unwrap_or_default().chars().take(18).collect::<String>()),\n    format!(\"{:.2} → {:.2}\", d.before_ga90, d.after_ga90),\n]).collect();\nmars_table(&[\"player\",\"fee\",\"move\",\"G+A/90 before→after\"], &hit_rows);\n",
+      "source": "// biggest busts and best hits among >=20m deals\nlet mut big: Vec<&Deal> = deals.iter().filter(|d| d.fee >= 20_000_000.0).collect();\nbig.sort_by(|a,b| (a.after_ga90 - a.before_ga90).partial_cmp(&(b.after_ga90 - b.before_ga90)).unwrap());\nlet bust_rows: Vec<Vec<String>> = big.iter().take(15).map(|d| vec![\n    pname.get(&d.pid).cloned().unwrap_or_default().chars().take(24).collect(),\n    eur(d.fee),\n    format!(\"{} → {}\", tname.get(&d.from).cloned().unwrap_or_default().chars().take(18).collect::<String>(),\n                            tname.get(&d.to).cloned().unwrap_or_default().chars().take(18).collect::<String>()),\n    format!(\"{:.2} → {:.2}\", d.before_ga90, d.after_ga90),\n]).collect();\nmars_table(&[\"player\",\"fee\",\"move\",\"G+A/90 before→after\"], &bust_rows);\n",
       "metadata": {},
       "execution_count": 3,
+      "outputs": [
+        {
+          "type": "text",
+          "text": "players with match stats: 11701\nbig-money deals with before+after data: 189\n"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "fee band",
+            "deals",
+            "med G+A/90 before",
+            "after",
+            "% improved",
+            "Δ median"
+          ],
+          "rows": [
+            [
+              "€10–25m",
+              "96",
+              "0.06",
+              "0.09",
+              "34%",
+              "+0.02"
+            ],
+            [
+              "€25–50m",
+              "53",
+              "0.11",
+              "0.00",
+              "28%",
+              "-0.11"
+            ],
+            [
+              "€50–100m",
+              "29",
+              "0.31",
+              "0.18",
+              "38%",
+              "-0.13"
+            ],
+            [
+              "€100m+",
+              "11",
+              "0.48",
+              "0.20",
+              "18%",
+              "-0.28"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "player",
+            "fee",
+            "move",
+            "G+A/90 before→after"
+          ],
+          "rows": [
+            [
+              "Gonçalo Matias Ramos",
+              "€65.0m",
+              "Benfica → Paris Saint-Germai",
+              "0.88 → 0.00"
+            ],
+            [
+              "Romelu Lukaku Menama",
+              "€113.0m",
+              "Inter Milan → Chelsea",
+              "0.81 → 0.00"
+            ],
+            [
+              "Aleksandar Mitrović",
+              "€52.6m",
+              "Fulham → Al Hilal",
+              "0.72 → 0.00"
+            ],
+            [
+              "Kevin Gameiro",
+              "€32.0m",
+              "Sevilla → Atlético Madrid",
+              "0.67 → 0.00"
+            ],
+            [
+              "Harry Kane",
+              "€95.0m",
+              "Tottenham Hotspur → Bayern Munich",
+              "1.12 → 0.47"
+            ],
+            [
+              "Youssef En-Nesyri",
+              "€20.0m",
+              "Leganes → Sevilla",
+              "0.55 → 0.00"
+            ],
+            [
+              "Wissam Ben Yedder",
+              "€40.0m",
+              "Sevilla → AS Monaco",
+              "0.50 → 0.00"
+            ],
+            [
+              "Antoine Griezmann",
+              "€22.0m",
+              "Barcelona → Atlético Madrid",
+              "0.47 → 0.00"
+            ],
+            [
+              "Robert Lewandowski",
+              "€45.0m",
+              "Bayern Munich → Barcelona",
+              "1.12 → 0.65"
+            ],
+            [
+              "Michy Batshuayi Tunga",
+              "€39.0m",
+              "Marseille → Chelsea",
+              "0.69 → 0.25"
+            ],
+            [
+              "Kylian Mbappé Lottin",
+              "€180.0m",
+              "AS Monaco → Paris Saint-Germai",
+              "0.79 → 0.36"
+            ],
+            [
+              "Moisés Isaac Caicedo Cor",
+              "€116.0m",
+              "Brighton & Hove Al → Chelsea",
+              "0.40 → 0.00"
+            ],
+            [
+              "Sergej Milinković-Savić",
+              "€40.0m",
+              "Lazio → Al Hilal",
+              "0.40 → 0.00"
+            ],
+            [
+              "Paul Pogba",
+              "€105.0m",
+              "Juventus → Manchester United",
+              "0.53 → 0.14"
+            ],
+            [
+              "Ousmane Dembélé",
+              "€35.0m",
+              "Stade Rennais → Borussia Dortmund",
+              "0.80 → 0.43"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "a3a8a41c-70d1-40bf-a876-9af53fa5b888",
+      "cell_type": "code",
+      "source": "big.sort_by(|a,b| (b.after_ga90 - b.before_ga90).partial_cmp(&(a.after_ga90 - a.before_ga90)).unwrap());\nlet hit_rows: Vec<Vec<String>> = big.iter().take(15).map(|d| vec![\n    pname.get(&d.pid).cloned().unwrap_or_default().chars().take(24).collect(),\n    eur(d.fee),\n    format!(\"{} → {}\", tname.get(&d.from).cloned().unwrap_or_default().chars().take(18).collect::<String>(),\n                            tname.get(&d.to).cloned().unwrap_or_default().chars().take(18).collect::<String>()),\n    format!(\"{:.2} → {:.2}\", d.before_ga90, d.after_ga90),\n]).collect();\nmars_table(&[\"player\",\"fee\",\"move\",\"G+A/90 before→after\"], &hit_rows);\n",
+      "metadata": {},
+      "execution_count": 4,
       "outputs": [
         {
           "type": "text",
@@ -354,7 +513,7 @@
       "cell_type": "code",
       "source": "\n// does the fee predict the outcome? bucket all measured deals by fee\nlet idx: Vec<usize> = { let mut v: Vec<usize> = (0..deals.len()).collect();\n    v.sort_by(|&a,&b| deals[a].fee.partial_cmp(&deals[b].fee).unwrap()); v };\nlet n = idx.len();\nlet quart_rows: Vec<Vec<String>> = (0..4).map(|q| {\n    let slice = &idx[q*n/4..(q+1)*n/4];\n    let med_fee = { let mut v:Vec<f64>=slice.iter().map(|&i|deals[i].fee).collect(); v.sort_by(|a,b|a.partial_cmp(b).unwrap()); v[v.len()/2] };\n    let med_b: f64 = { let mut v:Vec<f64>=slice.iter().map(|&i|deals[i].before_ga90).collect(); v.sort_by(|a,b|a.partial_cmp(b).unwrap()); v[v.len()/2] };\n    let med_a: f64 = { let mut v:Vec<f64>=slice.iter().map(|&i|deals[i].after_ga90).collect(); v.sort_by(|a,b|a.partial_cmp(b).unwrap()); v[v.len()/2] };\n    let imp = slice.iter().filter(|&&i| deals[i].after_ga90 > deals[i].before_ga90).count();\n    vec![format!(\"Q{}\",q+1), slice.len().to_string(), eur(med_fee),\n        format!(\"{:.2}\",med_b), format!(\"{:.2}\",med_a),\n        format!(\"{:.0}%\",100.0*imp as f64/slice.len() as f64),\n        format!(\"{:+.2}\", med_a-med_b)]\n}).collect();\nmars_table(&[\"fee quartile\",\"deals\",\"med fee\",\"med before\",\"med after\",\"% improved\",\"Δ\"], &quart_rows);\n",
       "metadata": {},
-      "execution_count": 4,
+      "execution_count": 5,
       "outputs": [
         {
           "type": "text",

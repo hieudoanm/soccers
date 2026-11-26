@@ -119,7 +119,6 @@ cross-border transfers: 5519
 ```
 
 ```rust
-
 // region-level corridors
 let mut by_rr: HashMap<(&str,&str),(usize,f64)> = HashMap::new();
 let mut by_cc: HashMap<(String,String),(usize,f64)> = HashMap::new();
@@ -135,18 +134,6 @@ let rrows: Vec<Vec<String>> = rrs.iter().take(15).map(|&((a,b),n,f)| {
     vec![format!("{} → {}", a, b), n.to_string(), eur(f)]
 }).collect();
 mars_table(&["corridor","transfers","fees paid"], &rrows);
-
-// top country pairs
-let mut ccs: Vec<((String,String),usize,f64)> = by_cc.into_iter().map(|(k,v)|(k,v.0,v.1)).collect();
-ccs.sort_by_key(|x| std::cmp::Reverse(x.1));
-let crows: Vec<Vec<String>> = ccs.iter().take(15).map(|(k,n,f)| {
-    vec![format!("{} → {}", k.0, k.1), n.to_string(), eur(*f)]
-}).collect();
-mars_table(&["country pair","transfers","fees paid"], &crows);
-```
-
-```text
-cross-border transfers: 5519
 ```
 
 | corridor                      | transfers | fees paid |
@@ -166,6 +153,16 @@ cross-border transfers: 5519
 | Other → South America         | 14        | €13.0m    |
 | South America → North America | 13        | €28.7m    |
 | Other → North America         | 10        | €18.5m    |
+
+```rust
+// top country pairs
+let mut ccs: Vec<((String,String),usize,f64)> = by_cc.into_iter().map(|(k,v)|(k,v.0,v.1)).collect();
+ccs.sort_by_key(|x| std::cmp::Reverse(x.1));
+let crows: Vec<Vec<String>> = ccs.iter().take(15).map(|(k,n,f)| {
+    vec![format!("{} → {}", k.0, k.1), n.to_string(), eur(*f)]
+}).collect();
+mars_table(&["country pair","transfers","fees paid"], &crows);
+```
 
 | country pair      | transfers | fees paid |
 | ----------------- | --------- | --------- |
@@ -186,7 +183,6 @@ cross-border transfers: 5519
 | France → Germany  | 73        | €503.5m   |
 
 ```rust
-
 // net fee balance per country: fees received (in) minus fees paid (out)
 let mut bal: HashMap<String,(usize,usize,f64,f64)> = HashMap::new(); // c -> (sold_n, bought_n, sold_fee, bought_fee)
 for f in &flows {
@@ -203,51 +199,7 @@ let recv: Vec<Vec<String>> = bv.iter().take(12).map(|(c,sn,bn,sf,bf)| {
     vec![c.clone(), bn.to_string(), sn.to_string(), eur(*bf), eur(*sf), eur(bf-sf)]
 }).collect();
 mars_table(&["country","bought","sold","spent","earned","net spend"], &recv);
-let send: Vec<Vec<String>> = bv.iter().rev().take(12).map(|(c,sn,bn,sf,bf)| {
-    vec![c.clone(), bn.to_string(), sn.to_string(), eur(*bf), eur(*sf), eur(bf-sf)]
-}).collect();
-mars_table(&["country","bought","sold","spent","earned","net spend"], &send);
 ```
-
-```text
-cross-border transfers: 5519
-```
-
-| corridor                      | transfers | fees paid |
-| ----------------------------- | --------- | --------- |
-| Europe → Europe               | 4702      | €20.95bn  |
-| South America → Europe        | 185       | €752.8m   |
-| Europe → South America        | 157       | €111.8m   |
-| Europe → Other                | 110       | €116.5m   |
-| Europe → North America        | 77        | €146.4m   |
-| Other → Europe                | 76        | €140.8m   |
-| North America → Europe        | 59        | €128.6m   |
-| Asia → Europe                 | 30        | €19.4m    |
-| Europe → Asia                 | 20        | €9.1m     |
-| North America → South America | 19        | €21.9m    |
-| South America → Other         | 18        | €26.9m    |
-| South America → South America | 17        | €11.1m    |
-| Other → South America         | 14        | €13.0m    |
-| South America → North America | 13        | €28.7m    |
-| Other → North America         | 10        | €18.5m    |
-
-| country pair      | transfers | fees paid |
-| ----------------- | --------- | --------- |
-| Spain → England   | 216       | €1.77bn   |
-| England → Spain   | 215       | €1.02bn   |
-| France → England  | 176       | €1.42bn   |
-| Italy → England   | 142       | €1.39bn   |
-| England → Italy   | 139       | €671.8m   |
-| England → France  | 133       | €313.8m   |
-| Germany → England | 127       | €2.07bn   |
-| France → Italy    | 127       | €431.2m   |
-| Italy → Spain     | 125       | €455.2m   |
-| Spain → Italy     | 124       | €724.0m   |
-| France → Spain    | 113       | €531.1m   |
-| Italy → France    | 99        | €505.6m   |
-| England → Germany | 97        | €547.8m   |
-| Spain → France    | 84        | €267.6m   |
-| France → Germany  | 73        | €503.5m   |
 
 | country     | bought | sold | spent   | earned  | net spend |
 | ----------- | ------ | ---- | ------- | ------- | --------- |
@@ -263,6 +215,13 @@ cross-border transfers: 5519
 | Italy       | 693    | 637  | €2.87bn | €3.06bn | €-191.5m  |
 | Denmark     | 57     | 71   | €43.8m  | €172.6m | €-128.9m  |
 | Scotland    | 95     | 97   | €84.3m  | €187.9m | €-103.7m  |
+
+```rust
+let send: Vec<Vec<String>> = bv.iter().rev().take(12).map(|(c,sn,bn,sf,bf)| {
+    vec![c.clone(), bn.to_string(), sn.to_string(), eur(*bf), eur(*sf), eur(bf-sf)]
+}).collect();
+mars_table(&["country","bought","sold","spent","earned","net spend"], &send);
+```
 
 | country     | bought | sold | spent   | earned  | net spend |
 | ----------- | ------ | ---- | ------- | ------- | --------- |

@@ -141,16 +141,12 @@ conv.sort_by(|a,b| (b.g/b.sot).partial_cmp(&(a.g/a.sot)).unwrap());
 mars_table(&hdr, &conv.iter().take(20).map(|p| row_of(p)).collect::<Vec<_>>());
 ```
 
-```text
-players with >=30 SoT and >=15 apps: 207
-```
-
 | player                     | pos | apps | G   | A   | SoT  | conv G/SoT | G+A/90 |
 | -------------------------- | --- | ---- | --- | --- | ---- | ---------- | ------ |
 | Nikita Parris              | FWD | 55   | 28  | 7   | 60   | 0.467      | 0.73   |
 | Sergio Leonel Agüero del C | FWD | 45   | 31  | 3   | 69   | 0.449      | 0.88   |
-| Zlatan Ibrahimović         | FWD | 57   | 50  | 20  | 115  | 0.435      | 1.35   |
 | Ellen White                | FWD | 55   | 30  | 8   | 69   | 0.435      | 0.80   |
+| Zlatan Ibrahimović         | FWD | 57   | 50  | 20  | 115  | 0.435      | 1.35   |
 | Rubén Castro Martín        | FWD | 47   | 26  | 5   | 60   | 0.433      | 0.74   |
 | Samuel Eto''o Fils         | FWD | 80   | 66  | 16  | 153  | 0.431      | 1.13   |
 | Kylian Mbappé Lottin       | FWD | 89   | 64  | 22  | 150  | 0.427      | 1.07   |
@@ -182,33 +178,6 @@ eff.sort_by(|a,b| {
 mars_table(&hdr, &eff.iter().take(20).map(|p| row_of(p)).collect::<Vec<_>>());
 ```
 
-```text
-players with >=30 SoT and >=15 apps: 207
-```
-
-| player                     | pos | apps | G   | A   | SoT  | conv G/SoT | G+A/90 |
-| -------------------------- | --- | ---- | --- | --- | ---- | ---------- | ------ |
-| Nikita Parris              | FWD | 55   | 28  | 7   | 60   | 0.467      | 0.73   |
-| Sergio Leonel Agüero del C | FWD | 45   | 31  | 3   | 69   | 0.449      | 0.88   |
-| Zlatan Ibrahimović         | FWD | 57   | 50  | 20  | 115  | 0.435      | 1.35   |
-| Ellen White                | FWD | 55   | 30  | 8   | 69   | 0.435      | 0.80   |
-| Rubén Castro Martín        | FWD | 47   | 26  | 5   | 60   | 0.433      | 0.74   |
-| Samuel Eto''o Fils         | FWD | 80   | 66  | 16  | 153  | 0.431      | 1.13   |
-| Kylian Mbappé Lottin       | FWD | 89   | 64  | 22  | 150  | 0.427      | 1.07   |
-| Gonzalo Gerardo Higuaín    | FWD | 50   | 38  | 3   | 90   | 0.422      | 0.88   |
-| Samantha May Kerr          | FWD | 53   | 40  | 11  | 95   | 0.421      | 1.07   |
-| Caroline Graham Hansen     | MID | 42   | 26  | 20  | 62   | 0.419      | 1.21   |
-| Luis Alberto Suárez Díaz   | FWD | 204  | 140 | 64  | 335  | 0.418      | 1.06   |
-| Karim Benzema              | FWD | 56   | 35  | 9   | 85   | 0.412      | 0.90   |
-| Alessia Russo              | FWD | 46   | 25  | 10  | 61   | 0.410      | 0.87   |
-| Vivianne Miedema           | FWD | 81   | 61  | 24  | 150  | 0.407      | 1.13   |
-| Harry Kane                 | FWD | 67   | 43  | 4   | 108  | 0.398      | 0.74   |
-| Georgia Stanway            | MID | 101  | 31  | 10  | 78   | 0.397      | 0.44   |
-| Lauren James               | FWD | 50   | 26  | 5   | 66   | 0.394      | 0.74   |
-| Bethany Mead               | FWD | 95   | 29  | 34  | 74   | 0.392      | 0.76   |
-| Neymar da Silva Santos Jun | FWD | 158  | 89  | 50  | 229  | 0.389      | 0.96   |
-| Lionel Andrés Messi Cuccit | FWD | 603  | 508 | 220 | 1327 | 0.383      | 1.35   |
-
 | player                     | pos | apps | G   | A   | SoT  | conv G/SoT | G+A/90 |
 | -------------------------- | --- | ---- | --- | --- | ---- | ---------- | ------ |
 | Khadija Monifa Shaw        | FWD | 24   | 21  | 4   | 45   | 0.467      | 1.44   |
@@ -233,12 +202,36 @@ players with >=30 SoT and >=15 apps: 207
 | Karim Benzema              | FWD | 56   | 35  | 9   | 85   | 0.412      | 0.90   |
 
 ```rust
-
 // volume leaders: most shots on target
 let mut vol: Vec<&P> = players.iter().collect();
 vol.sort_by(|a,b| b.sot.partial_cmp(&a.sot).unwrap());
 mars_table(&hdr, &vol.iter().take(20).map(|p| row_of(p)).collect::<Vec<_>>());
+```
 
+| player                     | pos | apps | G   | A   | SoT  | conv G/SoT | G+A/90 |
+| -------------------------- | --- | ---- | --- | --- | ---- | ---------- | ------ |
+| Lionel Andrés Messi Cuccit | FWD | 603  | 508 | 220 | 1327 | 0.383      | 1.35   |
+| Luis Alberto Suárez Díaz   | FWD | 204  | 140 | 64  | 335  | 0.418      | 1.06   |
+| Neymar da Silva Santos Jun | FWD | 158  | 89  | 50  | 229  | 0.389      | 0.96   |
+| Thierry Henry              | FWD | 105  | 63  | 19  | 199  | 0.317      | 0.90   |
+| Cristiano Ronaldo dos Sant | FWD | 76   | 59  | 14  | 181  | 0.326      | 1.07   |
+| Pedro Eliezer Rodríguez Le | FWD | 216  | 56  | 34  | 156  | 0.359      | 0.48   |
+| Samuel Eto''o Fils         | FWD | 80   | 66  | 16  | 153  | 0.431      | 1.13   |
+| Vivianne Miedema           | FWD | 81   | 61  | 24  | 150  | 0.407      | 1.13   |
+| Kylian Mbappé Lottin       | FWD | 89   | 64  | 22  | 150  | 0.427      | 1.07   |
+| Andrés Iniesta Luján       | MID | 360  | 25  | 59  | 139  | 0.180      | 0.26   |
+| Antoine Griezmann          | FWD | 145  | 49  | 23  | 132  | 0.371      | 0.58   |
+| Xavier Hernández Creus     | MID | 266  | 36  | 68  | 116  | 0.310      | 0.43   |
+| Alexis Alejandro Sánchez S | FWD | 112  | 42  | 18  | 115  | 0.365      | 0.62   |
+| Zlatan Ibrahimović         | FWD | 57   | 50  | 20  | 115  | 0.435      | 1.35   |
+| Harry Kane                 | FWD | 67   | 43  | 4   | 108  | 0.398      | 0.74   |
+| David Villa Sánchez        | FWD | 79   | 33  | 9   | 100  | 0.330      | 0.62   |
+| Ronaldo de Assis Moreira   | FWD | 59   | 33  | 20  | 99   | 0.333      | 0.99   |
+| Chloe Kelly                | FWD | 85   | 31  | 19  | 97   | 0.320      | 0.66   |
+| Philippe Coutinho Correia  | MID | 94   | 20  | 16  | 97   | 0.206      | 0.44   |
+| Samantha May Kerr          | FWD | 53   | 40  | 11  | 95   | 0.421      | 1.07   |
+
+```rust
 // position-level averages for context
 let mut pos_stats: HashMap<&str,(i64,f64,f64,f64)> = HashMap::new();
 for p in &players {
@@ -255,79 +248,6 @@ let prows: Vec<Vec<String>> = ["FWD","MID","DEF","GK","UNK"].iter().filter_map(|
 }).collect();
 mars_table(&["pos group","players","total SoT","avg conv","total G+A"], &prows);
 ```
-
-```text
-players with >=30 SoT and >=15 apps: 207
-```
-
-| player                     | pos | apps | G   | A   | SoT  | conv G/SoT | G+A/90 |
-| -------------------------- | --- | ---- | --- | --- | ---- | ---------- | ------ |
-| Nikita Parris              | FWD | 55   | 28  | 7   | 60   | 0.467      | 0.73   |
-| Sergio Leonel Agüero del C | FWD | 45   | 31  | 3   | 69   | 0.449      | 0.88   |
-| Ellen White                | FWD | 55   | 30  | 8   | 69   | 0.435      | 0.80   |
-| Zlatan Ibrahimović         | FWD | 57   | 50  | 20  | 115  | 0.435      | 1.35   |
-| Rubén Castro Martín        | FWD | 47   | 26  | 5   | 60   | 0.433      | 0.74   |
-| Samuel Eto''o Fils         | FWD | 80   | 66  | 16  | 153  | 0.431      | 1.13   |
-| Kylian Mbappé Lottin       | FWD | 89   | 64  | 22  | 150  | 0.427      | 1.07   |
-| Gonzalo Gerardo Higuaín    | FWD | 50   | 38  | 3   | 90   | 0.422      | 0.88   |
-| Samantha May Kerr          | FWD | 53   | 40  | 11  | 95   | 0.421      | 1.07   |
-| Caroline Graham Hansen     | MID | 42   | 26  | 20  | 62   | 0.419      | 1.21   |
-| Luis Alberto Suárez Díaz   | FWD | 204  | 140 | 64  | 335  | 0.418      | 1.06   |
-| Karim Benzema              | FWD | 56   | 35  | 9   | 85   | 0.412      | 0.90   |
-| Alessia Russo              | FWD | 46   | 25  | 10  | 61   | 0.410      | 0.87   |
-| Vivianne Miedema           | FWD | 81   | 61  | 24  | 150  | 0.407      | 1.13   |
-| Harry Kane                 | FWD | 67   | 43  | 4   | 108  | 0.398      | 0.74   |
-| Georgia Stanway            | MID | 101  | 31  | 10  | 78   | 0.397      | 0.44   |
-| Lauren James               | FWD | 50   | 26  | 5   | 66   | 0.394      | 0.74   |
-| Bethany Mead               | FWD | 95   | 29  | 34  | 74   | 0.392      | 0.76   |
-| Neymar da Silva Santos Jun | FWD | 158  | 89  | 50  | 229  | 0.389      | 0.96   |
-| Lionel Andrés Messi Cuccit | FWD | 603  | 508 | 220 | 1327 | 0.383      | 1.35   |
-
-| player                     | pos | apps | G   | A   | SoT  | conv G/SoT | G+A/90 |
-| -------------------------- | --- | ---- | --- | --- | ---- | ---------- | ------ |
-| Khadija Monifa Shaw        | FWD | 24   | 21  | 4   | 45   | 0.467      | 1.44   |
-| Lionel Andrés Messi Cuccit | FWD | 603  | 508 | 220 | 1327 | 0.383      | 1.35   |
-| Zlatan Ibrahimović         | FWD | 57   | 50  | 20  | 115  | 0.435      | 1.35   |
-| Caroline Graham Hansen     | MID | 42   | 26  | 20  | 62   | 0.419      | 1.21   |
-| Ewa Pajor                  | MID | 23   | 19  | 5   | 41   | 0.463      | 1.16   |
-| Vivianne Miedema           | FWD | 81   | 61  | 24  | 150  | 0.407      | 1.13   |
-| Samuel Eto''o Fils         | FWD | 80   | 66  | 16  | 153  | 0.431      | 1.13   |
-| Cristiano Ronaldo dos Sant | FWD | 76   | 59  | 14  | 181  | 0.326      | 1.07   |
-| Samantha May Kerr          | FWD | 53   | 40  | 11  | 95   | 0.421      | 1.07   |
-| Kylian Mbappé Lottin       | FWD | 89   | 64  | 22  | 150  | 0.427      | 1.07   |
-| Luis Alberto Suárez Díaz   | FWD | 204  | 140 | 64  | 335  | 0.418      | 1.06   |
-| Victor Okoh Boniface       | FWD | 23   | 14  | 8   | 36   | 0.389      | 1.06   |
-| Gareth Frank Bale          | FWD | 44   | 25  | 13  | 51   | 0.490      | 1.03   |
-| Alexandra Popp             | FWD | 33   | 19  | 8   | 37   | 0.514      | 1.00   |
-| Ronaldo de Assis Moreira   | FWD | 59   | 33  | 20  | 99   | 0.333      | 0.99   |
-| Bartholomew Owogbalor Ogbe | FWD | 22   | 18  | 1   | 32   | 0.562      | 0.97   |
-| Neymar da Silva Santos Jun | FWD | 158  | 89  | 50  | 229  | 0.389      | 0.96   |
-| Sophia Olivia Wilson       | FWD | 22   | 13  | 5   | 47   | 0.277      | 0.91   |
-| Thierry Henry              | FWD | 105  | 63  | 19  | 199  | 0.317      | 0.90   |
-| Karim Benzema              | FWD | 56   | 35  | 9   | 85   | 0.412      | 0.90   |
-
-| player                     | pos | apps | G   | A   | SoT  | conv G/SoT | G+A/90 |
-| -------------------------- | --- | ---- | --- | --- | ---- | ---------- | ------ |
-| Lionel Andrés Messi Cuccit | FWD | 603  | 508 | 220 | 1327 | 0.383      | 1.35   |
-| Luis Alberto Suárez Díaz   | FWD | 204  | 140 | 64  | 335  | 0.418      | 1.06   |
-| Neymar da Silva Santos Jun | FWD | 158  | 89  | 50  | 229  | 0.389      | 0.96   |
-| Thierry Henry              | FWD | 105  | 63  | 19  | 199  | 0.317      | 0.90   |
-| Cristiano Ronaldo dos Sant | FWD | 76   | 59  | 14  | 181  | 0.326      | 1.07   |
-| Pedro Eliezer Rodríguez Le | FWD | 216  | 56  | 34  | 156  | 0.359      | 0.48   |
-| Samuel Eto''o Fils         | FWD | 80   | 66  | 16  | 153  | 0.431      | 1.13   |
-| Kylian Mbappé Lottin       | FWD | 89   | 64  | 22  | 150  | 0.427      | 1.07   |
-| Vivianne Miedema           | FWD | 81   | 61  | 24  | 150  | 0.407      | 1.13   |
-| Andrés Iniesta Luján       | MID | 360  | 25  | 59  | 139  | 0.180      | 0.26   |
-| Antoine Griezmann          | FWD | 145  | 49  | 23  | 132  | 0.371      | 0.58   |
-| Xavier Hernández Creus     | MID | 266  | 36  | 68  | 116  | 0.310      | 0.43   |
-| Zlatan Ibrahimović         | FWD | 57   | 50  | 20  | 115  | 0.435      | 1.35   |
-| Alexis Alejandro Sánchez S | FWD | 112  | 42  | 18  | 115  | 0.365      | 0.62   |
-| Harry Kane                 | FWD | 67   | 43  | 4   | 108  | 0.398      | 0.74   |
-| David Villa Sánchez        | FWD | 79   | 33  | 9   | 100  | 0.330      | 0.62   |
-| Ronaldo de Assis Moreira   | FWD | 59   | 33  | 20  | 99   | 0.333      | 0.99   |
-| Philippe Coutinho Correia  | MID | 94   | 20  | 16  | 97   | 0.206      | 0.44   |
-| Chloe Kelly                | FWD | 85   | 31  | 19  | 97   | 0.320      | 0.66   |
-| Samantha May Kerr          | FWD | 53   | 40  | 11  | 95   | 0.421      | 1.07   |
 
 | pos group | players | total SoT | avg conv | total G+A |
 | --------- | ------- | --------- | -------- | --------- |

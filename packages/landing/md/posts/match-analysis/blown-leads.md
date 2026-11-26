@@ -8,6 +8,8 @@ order: 39
 tags: ['football', 'analysis', 'blown-leads', 'standings', 'comebbacks']
 ---
 
+# Biggest blown leads: when does a commanding lead become a choke?
+
 ## Biggest blown leads: when does a commanding lead become a choke?
 
 Every football season produces a team that looks unbeatable in November — and a
@@ -323,22 +325,22 @@ champions who held >=8 and won anyway: 622
 | English League Two       | 2017/18   | Luton               | +11      | P2        | Accrington (+5)         |
 | English League Two       | 2009/10   | Rochdale            | +11      | P3        | Notts County (+10)      |
 | Liga MX                  | 2020/2021 | Club Leon           | +11      | P2        | Cruz Azul (+9)          |
-| MLS                      | 2024      | Inter Miami         | +11      | P2        | Los Angeles Galaxy (+2) |
 | English Premier League   | 1997/98   | Man United          | +11      | P2        | Arsenal (+1)            |
 | Scottish League Two      | 2003/04   | Stirling            | +11      | P2        | Stranraer (+2)          |
+| MLS                      | 2024      | Inter Miami         | +11      | P2        | Los Angeles Galaxy (+2) |
 | Spanish La Liga 2        | 2024/25   | Racing Santander    | +11      | P5        | Levante (+2)            |
-| Ekstraklasa              | 2015/2016 | Piast Gliwice       | +11      | P2        | Legia (+4)              |
 | Spanish La Liga 2        | 2019/20   | Cadiz               | +11      | P2        | Huesca (+1)             |
+| Ekstraklasa              | 2015/2016 | Piast Gliwice       | +11      | P2        | Legia (+4)              |
 | Liga MX                  | 2012/2013 | Club Tijuana        | +11      | P3        | Club America (+12)      |
-| Liga MX                  | 2021/2022 | Club America        | +11      | P4        | Atlas (+1)              |
 | Turkish Süper Lig        | 2018/19   | Buyuksehyr          | +11      | P2        | Galatasaray (+2)        |
+| Liga MX                  | 2021/2022 | Club America        | +11      | P4        | Atlas (+1)              |
 | French Ligue 1           | 2001/02   | Lens                | +11      | P2        | Lyon (+2)               |
 | Scottish Championship    | 2009/10   | Dundee              | +11      | P2        | Inverness C (+12)       |
 | English League One       | 2021/22   | Rotherham           | +10      | P2        | Wigan (+2)              |
 | Scottish Premiership     | 2025/26   | Hearts              | +10      | P2        | Celtic (+2)             |
 | English Championship     | 1995/96   | Derby               | +10      | P2        | Sunderland (+4)         |
-| Spanish La Liga 2        | 1993/94   | La Coruna           | +10      | P2        | Barcelona (+3)          |
 | Portuguese Liga Portugal | 1993/94   | La Coruna           | +10      | P2        | Barcelona (+3)          |
+| Spanish La Liga 2        | 1993/94   | La Coruna           | +10      | P2        | Barcelona (+3)          |
 
 ## How rare is the choke?
 
@@ -347,7 +349,6 @@ its peak: do 8-point leads survive more often than 20-point ones? And per
 league, who blunders most?
 
 ```rust
-
 let mut groups: HashMap<(String, String), Vec<usize>> = HashMap::new();
 for &i in &valid {
     groups.entry((format!("{}|{}", s_country[i], s_league[i]), s_season[i].clone())).or_default().push(i);
@@ -392,62 +393,11 @@ let brows: Vec<Vec<String>> = (0..6).map(|b| vec![
     format!("{:.0}%", 100.0*buckets[b].1 as f64/buckets[b].2.max(1) as f64),
 ]).collect();
 mars_table(&["peak lead (pts)","held on","blown","instances","blown %"], &brows);
-
-let mut lg_rows: Vec<Vec<String>> = by_league.iter().filter(|(_,a)| a.0 >= 5).map(|(l,a)| vec![
-    l.split('|').nth(1).unwrap_or("").to_string(), a.0.to_string(), a.1.to_string(),
-    a.2.to_string(), a.3.to_string(),
-]).collect();
-lg_rows.sort_by(|a,b| b[3].parse::<i64>().unwrap().cmp(&a[3].parse::<i64>().unwrap()));
-mars_table(&["league","seasons","had 8+ leader","blown leads","blown by 12+"], &lg_rows);
 ```
 
 ```text
-completed matches after dedup: 311832 (1190 dupes dropped)
-league-seasons total: 1031
-league-seasons analysed (>=40 matches): 1004
-seasons where someone led by >=8 at some point: 711
-blown-lead instances (non-champion held >=8): 143
-champions who held >=8 and won anyway: 622
 total league-seasons analysed: 1004
 ```
-
-| league                   | season    | team                | max lead | final pos | champion (margin)       |
-| ------------------------ | --------- | ------------------- | -------- | --------- | ----------------------- |
-| English League Two       | 2000/01   | Chesterfield        | +16      | P2        | Brighton (+3)           |
-| Serie A                  | 2023      | Botafogo RJ         | +16      | P5        | Palmeiras (+2)          |
-| English League One       | 2007/08   | Leeds               | +15      | P2        | Swansea (+1)            |
-| English League Two       | 2002/03   | Hartlepool          | +15      | P2        | Rushden & D (+2)        |
-| Allsvenskan              | 2026      | Sirius              | +14      | P2        | Hammarby (+0)           |
-| Super League             | 2026      | Chengdu Rongcheng   | +14      | P3        | Beijing Guoan (+2)      |
-| English League Two       | 2024/25   | Walsall             | +13      | P4        | Doncaster (+4)          |
-| Scottish Premiership     | 2011/12   | Rangers             | +12      | P2        | Celtic (+10)            |
-| Belgian Pro League       | 2024/25   | Genk                | +12      | P3        | St. Gilloise (+1)       |
-| English Premier League   | 1995/96   | Newcastle           | +12      | P2        | Man United (+4)         |
-| Liga Profesional         | 2025      | Rosario Central     | +12      | P2        | Boca Juniors (+0)       |
-| Scottish League Two      | 2016/17   | Forfar              | +12      | P2        | Arbroath (+2)           |
-| Turkish Süper Lig        | 2003/04   | Besiktas            | +12      | P3        | Fenerbahce (+7)         |
-| Scottish League One      | 2003/04   | Morton              | +12      | P4        | Airdrie Utd (+8)        |
-| J1 League                | 2018      | Sanfrecce Hiroshima | +12      | P2        | Kawasaki Frontale (+12) |
-| Champions League         | 2005/2006 | Liverpool           | +12      | P3        | Barcelona (+3)          |
-| English League Two       | 2017/18   | Luton               | +11      | P2        | Accrington (+5)         |
-| English League Two       | 2009/10   | Rochdale            | +11      | P3        | Notts County (+10)      |
-| Liga MX                  | 2020/2021 | Club Leon           | +11      | P2        | Cruz Azul (+9)          |
-| MLS                      | 2024      | Inter Miami         | +11      | P2        | Los Angeles Galaxy (+2) |
-| English Premier League   | 1997/98   | Man United          | +11      | P2        | Arsenal (+1)            |
-| Scottish League Two      | 2003/04   | Stirling            | +11      | P2        | Stranraer (+2)          |
-| Spanish La Liga 2        | 2024/25   | Racing Santander    | +11      | P5        | Levante (+2)            |
-| Spanish La Liga 2        | 2019/20   | Cadiz               | +11      | P2        | Huesca (+1)             |
-| Ekstraklasa              | 2015/2016 | Piast Gliwice       | +11      | P2        | Legia (+4)              |
-| Liga MX                  | 2012/2013 | Club Tijuana        | +11      | P3        | Club America (+12)      |
-| Turkish Süper Lig        | 2018/19   | Buyuksehyr          | +11      | P2        | Galatasaray (+2)        |
-| Liga MX                  | 2021/2022 | Club America        | +11      | P4        | Atlas (+1)              |
-| French Ligue 1           | 2001/02   | Lens                | +11      | P2        | Lyon (+2)               |
-| Scottish Championship    | 2009/10   | Dundee              | +11      | P2        | Inverness C (+12)       |
-| English League One       | 2021/22   | Rotherham           | +10      | P2        | Wigan (+2)              |
-| Scottish Premiership     | 2025/26   | Hearts              | +10      | P2        | Celtic (+2)             |
-| English Championship     | 1995/96   | Derby               | +10      | P2        | Sunderland (+4)         |
-| Spanish La Liga 2        | 1993/94   | La Coruna           | +10      | P2        | Barcelona (+3)          |
-| Portuguese Liga Portugal | 1993/94   | La Coruna           | +10      | P2        | Barcelona (+3)          |
 
 | peak lead (pts) | held on | blown | instances | blown % |
 | --------------- | ------- | ----- | --------- | ------- |
@@ -458,49 +408,58 @@ total league-seasons analysed: 1004
 | 30-49           | 6       | 0     | 6         | 0%      |
 | 50+             | 0       | 0     | 0         | 0%      |
 
+```rust
+let mut lg_rows: Vec<Vec<String>> = by_league.iter().filter(|(_,a)| a.0 >= 5).map(|(l,a)| vec![
+    l.split('|').nth(1).unwrap_or("").to_string(), a.0.to_string(), a.1.to_string(),
+    a.2.to_string(), a.3.to_string(),
+]).collect();
+lg_rows.sort_by(|a,b| b[3].parse::<i64>().unwrap().cmp(&a[3].parse::<i64>().unwrap()));
+mars_table(&["league","seasons","had 8+ leader","blown leads","blown by 12+"], &lg_rows);
+```
+
 | league                      | seasons | had 8+ leader | blown leads | blown by 12+ |
 | --------------------------- | ------- | ------------- | ----------- | ------------ |
 | Scottish League Two         | 30      | 26            | 12          | 1            |
 | English League Two          | 34      | 26            | 11          | 3            |
-| English League One          | 34      | 28            | 8           | 1            |
 | English Championship        | 34      | 27            | 8           | 0            |
+| English League One          | 34      | 28            | 8           | 1            |
 | Spanish La Liga 2           | 34      | 20            | 7           | 0            |
-| English Premier League      | 34      | 29            | 7           | 1            |
 | Turkish Süper Lig           | 33      | 24            | 7           | 1            |
-| Scottish Championship       | 34      | 29            | 6           | 0            |
-| Liga MX                     | 15      | 11            | 6           | 0            |
+| English Premier League      | 34      | 29            | 7           | 1            |
 | Scottish Premiership        | 33      | 31            | 6           | 1            |
-| J1 League                   | 15      | 8             | 5           | 1            |
+| Liga MX                     | 15      | 11            | 6           | 0            |
+| Scottish Championship       | 34      | 29            | 6           | 0            |
 | Portuguese Liga Portugal    | 34      | 27            | 5           | 0            |
-| Belgian Pro League          | 32      | 22            | 4           | 1            |
+| J1 League                   | 15      | 8             | 5           | 1            |
 | Scottish League One         | 30      | 27            | 4           | 1            |
+| Belgian Pro League          | 32      | 22            | 4           | 1            |
 | French Ligue 1              | 34      | 26            | 4           | 0            |
+| French Ligue 2              | 31      | 21            | 3           | 0            |
+| German 2. Bundesliga        | 34      | 20            | 3           | 0            |
 | Italian Serie B             | 30      | 17            | 3           | 0            |
 | Dutch Eredivisie            | 34      | 29            | 3           | 0            |
+| MLS                         | 15      | 9             | 3           | 0            |
 | German Bundesliga           | 34      | 26            | 3           | 0            |
 | Veikkausliiga               | 15      | 9             | 3           | 0            |
-| French Ligue 2              | 31      | 21            | 3           | 0            |
-| MLS                         | 15      | 9             | 3           | 0            |
-| German 2. Bundesliga        | 34      | 20            | 3           | 0            |
-| Allsvenskan                 | 15      | 10            | 2           | 1            |
-| Serie A                     | 15      | 12            | 2           | 1            |
-| Ekstraklasa                 | 15      | 7             | 2           | 0            |
-| Eliteserien                 | 15      | 13            | 2           | 0            |
-| Spanish La Liga             | 34      | 26            | 2           | 0            |
-| Liga Profesional            | 14      | 6             | 2           | 1            |
-| Super League                | 13      | 10            | 2           | 1            |
 | Bundesliga                  | 15      | 11            | 2           | 0            |
-| Champions League            | 26      | 6             | 1           | 1            |
-| Greek Super League          | 28      | 21            | 1           | 0            |
+| Super League                | 13      | 10            | 2           | 1            |
+| Allsvenskan                 | 15      | 10            | 2           | 1            |
+| Spanish La Liga             | 34      | 26            | 2           | 0            |
+| Eliteserien                 | 15      | 13            | 2           | 0            |
+| Serie A                     | 15      | 12            | 2           | 1            |
+| Liga Profesional            | 14      | 6             | 2           | 1            |
+| Ekstraklasa                 | 15      | 7             | 2           | 0            |
 | Italian Serie A             | 34      | 27            | 1           | 0            |
-| Premier League              | 14      | 11            | 1           | 0            |
-| Superliga                   | 15      | 8             | 1           | 0            |
 | Premier Division            | 15      | 13            | 1           | 0            |
-| UEFA Conference League      | 6       | 1             | 0           | 0            |
-| UEFA Europa League          | 18      | 4             | 0           | 0            |
-| Copa De La Liga Profesional | 5       | 0             | 0           | 0            |
-| Super League                | 15      | 15            | 0           | 0            |
+| Premier League              | 14      | 11            | 1           | 0            |
+| Champions League            | 26      | 6             | 1           | 1            |
+| Superliga                   | 15      | 8             | 1           | 0            |
+| Greek Super League          | 28      | 21            | 1           | 0            |
 | Superliga                   | 15      | 12            | 0           | 0            |
+| UEFA Europa League          | 18      | 4             | 0           | 0            |
+| UEFA Conference League      | 6       | 1             | 0           | 0            |
+| Super League                | 15      | 15            | 0           | 0            |
+| Copa De La Liga Profesional | 5       | 0             | 0           | 0            |
 
 ## Findings
 

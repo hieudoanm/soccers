@@ -11,6 +11,8 @@ order: 46
 tags: ['football', 'analysis', 'substitutions', 'mars', 'sqlite']
 ---
 
+# Super-subs: what happens when the bench comes on
+
 ## Super-subs: what happens when the bench comes on
 
 24,726 substitutions across the StatsBomb competitions — but what do the players
@@ -165,8 +167,6 @@ println!("subs: {} apps, {:.1}% involved, {:.2} G+A/90 | starters: {} apps, {:.1
 ```
 
 ```text
-sub events: 24726
-starter appearances with stats: 87095
 sub appearances matched to stats: 24726
 subs: 24521 apps, 8.2% involved, 0.18 G+A/90 | starters: 87095 apps, 15.1% involved, 0.21 G+A/90
 ```
@@ -200,20 +200,8 @@ println!("players with >=3 sub apps: {}", v.iter().filter(|x| x.1>=3).count());
 ```
 
 ```text
-sub events: 24726
-starter appearances with stats: 87095
-sub appearances matched to stats: 24726
-subs: 24521 apps, 8.2% involved, 0.18 G+A/90 | starters: 87095 apps, 15.1% involved, 0.21 G+A/90
 players with >=3 sub apps: 2811
 ```
-
-| entry    | apps  | goal+assist % | goals | assists | shots | G+A per 90 |
-| -------- | ----- | ------------- | ----- | ------- | ----- | ---------- |
-| <=60'    | 5483  | 13.0%         | 501   | 297     | 4410  | 0.24       |
-| 61-70'   | 6400  | 9.9%          | 429   | 248     | 3760  | 0.19       |
-| 71-80'   | 6986  | 6.8%          | 320   | 181     | 2612  | 0.15       |
-| 81+'     | 5652  | 3.1%          | 122   | 54      | 993   | 0.08       |
-| STARTERS | 87095 | 15.1%         | 9809  | 6454    | -     | 0.21       |
 
 | player                          | sub apps | goals | assists | G+A/90 as sub |
 | ------------------------------- | -------- | ----- | ------- | ------------- |

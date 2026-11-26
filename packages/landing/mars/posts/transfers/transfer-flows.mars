@@ -34,9 +34,107 @@
     {
       "id": "d6fa335b-6285-426e-a3e2-45f6d9f8a0a8",
       "cell_type": "code",
-      "source": "\n// region-level corridors\nlet mut by_rr: HashMap<(&str,&str),(usize,f64)> = HashMap::new();\nlet mut by_cc: HashMap<(String,String),(usize,f64)> = HashMap::new();\nfor f in &flows {\n    let rr = (region(&f.from_c), region(&f.to_c));\n    let e = by_rr.entry(rr).or_default(); e.0 += f.n; e.1 += f.fee;\n    let cc = (f.from_c.clone(), f.to_c.clone());\n    let e2 = by_cc.entry(cc).or_default(); e2.0 += f.n; e2.1 += f.fee;\n}\nlet mut rrs: Vec<((&str,&str),usize,f64)> = by_rr.into_iter().map(|(k,v)|(k,v.0,v.1)).collect();\nrrs.sort_by_key(|x| std::cmp::Reverse(x.1));\nlet rrows: Vec<Vec<String>> = rrs.iter().take(15).map(|&((a,b),n,f)| {\n    vec![format!(\"{} → {}\", a, b), n.to_string(), eur(f)]\n}).collect();\nmars_table(&[\"corridor\",\"transfers\",\"fees paid\"], &rrows);\n\n// top country pairs\nlet mut ccs: Vec<((String,String),usize,f64)> = by_cc.into_iter().map(|(k,v)|(k,v.0,v.1)).collect();\nccs.sort_by_key(|x| std::cmp::Reverse(x.1));\nlet crows: Vec<Vec<String>> = ccs.iter().take(15).map(|(k,n,f)| {\n    vec![format!(\"{} → {}\", k.0, k.1), n.to_string(), eur(*f)]\n}).collect();\nmars_table(&[\"country pair\",\"transfers\",\"fees paid\"], &crows);\n",
+      "source": "// region-level corridors\nlet mut by_rr: HashMap<(&str,&str),(usize,f64)> = HashMap::new();\nlet mut by_cc: HashMap<(String,String),(usize,f64)> = HashMap::new();\nfor f in &flows {\n    let rr = (region(&f.from_c), region(&f.to_c));\n    let e = by_rr.entry(rr).or_default(); e.0 += f.n; e.1 += f.fee;\n    let cc = (f.from_c.clone(), f.to_c.clone());\n    let e2 = by_cc.entry(cc).or_default(); e2.0 += f.n; e2.1 += f.fee;\n}\nlet mut rrs: Vec<((&str,&str),usize,f64)> = by_rr.into_iter().map(|(k,v)|(k,v.0,v.1)).collect();\nrrs.sort_by_key(|x| std::cmp::Reverse(x.1));\nlet rrows: Vec<Vec<String>> = rrs.iter().take(15).map(|&((a,b),n,f)| {\n    vec![format!(\"{} → {}\", a, b), n.to_string(), eur(f)]\n}).collect();\nmars_table(&[\"corridor\",\"transfers\",\"fees paid\"], &rrows);\n",
       "metadata": {},
       "execution_count": 2,
+      "outputs": [
+        {
+          "type": "text",
+          "text": "cross-border transfers: 5519\n"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "corridor",
+            "transfers",
+            "fees paid"
+          ],
+          "rows": [
+            [
+              "Europe → Europe",
+              "4702",
+              "€20.95bn"
+            ],
+            [
+              "South America → Europe",
+              "185",
+              "€752.8m"
+            ],
+            [
+              "Europe → South America",
+              "157",
+              "€111.8m"
+            ],
+            [
+              "Europe → Other",
+              "110",
+              "€116.5m"
+            ],
+            [
+              "Europe → North America",
+              "77",
+              "€146.4m"
+            ],
+            [
+              "Other → Europe",
+              "76",
+              "€140.8m"
+            ],
+            [
+              "North America → Europe",
+              "59",
+              "€128.6m"
+            ],
+            [
+              "Asia → Europe",
+              "30",
+              "€19.4m"
+            ],
+            [
+              "Europe → Asia",
+              "20",
+              "€9.1m"
+            ],
+            [
+              "North America → South America",
+              "19",
+              "€21.9m"
+            ],
+            [
+              "South America → Other",
+              "18",
+              "€26.9m"
+            ],
+            [
+              "South America → South America",
+              "17",
+              "€11.1m"
+            ],
+            [
+              "Other → South America",
+              "14",
+              "€13.0m"
+            ],
+            [
+              "South America → North America",
+              "13",
+              "€28.7m"
+            ],
+            [
+              "Other → North America",
+              "10",
+              "€18.5m"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "82be3d94-6f76-40ce-93cf-a32dd154d83f",
+      "cell_type": "code",
+      "source": "// top country pairs\nlet mut ccs: Vec<((String,String),usize,f64)> = by_cc.into_iter().map(|(k,v)|(k,v.0,v.1)).collect();\nccs.sort_by_key(|x| std::cmp::Reverse(x.1));\nlet crows: Vec<Vec<String>> = ccs.iter().take(15).map(|(k,n,f)| {\n    vec![format!(\"{} → {}\", k.0, k.1), n.to_string(), eur(*f)]\n}).collect();\nmars_table(&[\"country pair\",\"transfers\",\"fees paid\"], &crows);\n",
+      "metadata": {},
+      "execution_count": 3,
       "outputs": [
         {
           "type": "text",
@@ -217,9 +315,301 @@
     {
       "id": "b31b40da-d72b-406e-9006-97d5b633c3b5",
       "cell_type": "code",
-      "source": "\n// net fee balance per country: fees received (in) minus fees paid (out)\nlet mut bal: HashMap<String,(usize,usize,f64,f64)> = HashMap::new(); // c -> (sold_n, bought_n, sold_fee, bought_fee)\nfor f in &flows {\n    let e = bal.entry(f.from_c.clone()).or_default();\n    e.0 += 1; e.2 += f.fee;\n    let e2 = bal.entry(f.to_c.clone()).or_default();\n    e2.1 += 1; e2.3 += f.fee;\n}\nlet mut bv: Vec<(String,usize,usize,f64,f64)> = bal.into_iter()\n    .map(|(c,(sn,bn,sf,bf))| (c,sn,bn,sf,bf)).collect();\nbv.sort_by(|a,b| (b.3-b.4).partial_cmp(&(a.3-a.4)).unwrap());\n// biggest net RECEIVERS (importers by fee)\nlet recv: Vec<Vec<String>> = bv.iter().take(12).map(|(c,sn,bn,sf,bf)| {\n    vec![c.clone(), bn.to_string(), sn.to_string(), eur(*bf), eur(*sf), eur(bf-sf)]\n}).collect();\nmars_table(&[\"country\",\"bought\",\"sold\",\"spent\",\"earned\",\"net spend\"], &recv);\nlet send: Vec<Vec<String>> = bv.iter().rev().take(12).map(|(c,sn,bn,sf,bf)| {\n    vec![c.clone(), bn.to_string(), sn.to_string(), eur(*bf), eur(*sf), eur(bf-sf)]\n}).collect();\nmars_table(&[\"country\",\"bought\",\"sold\",\"spent\",\"earned\",\"net spend\"], &send);\n",
+      "source": "// net fee balance per country: fees received (in) minus fees paid (out)\nlet mut bal: HashMap<String,(usize,usize,f64,f64)> = HashMap::new(); // c -> (sold_n, bought_n, sold_fee, bought_fee)\nfor f in &flows {\n    let e = bal.entry(f.from_c.clone()).or_default();\n    e.0 += 1; e.2 += f.fee;\n    let e2 = bal.entry(f.to_c.clone()).or_default();\n    e2.1 += 1; e2.3 += f.fee;\n}\nlet mut bv: Vec<(String,usize,usize,f64,f64)> = bal.into_iter()\n    .map(|(c,(sn,bn,sf,bf))| (c,sn,bn,sf,bf)).collect();\nbv.sort_by(|a,b| (b.3-b.4).partial_cmp(&(a.3-a.4)).unwrap());\n// biggest net RECEIVERS (importers by fee)\nlet recv: Vec<Vec<String>> = bv.iter().take(12).map(|(c,sn,bn,sf,bf)| {\n    vec![c.clone(), bn.to_string(), sn.to_string(), eur(*bf), eur(*sf), eur(bf-sf)]\n}).collect();\nmars_table(&[\"country\",\"bought\",\"sold\",\"spent\",\"earned\",\"net spend\"], &recv);\n",
       "metadata": {},
-      "execution_count": 3,
+      "execution_count": 4,
+      "outputs": [
+        {
+          "type": "text",
+          "text": "cross-border transfers: 5519\n"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "corridor",
+            "transfers",
+            "fees paid"
+          ],
+          "rows": [
+            [
+              "Europe → Europe",
+              "4702",
+              "€20.95bn"
+            ],
+            [
+              "South America → Europe",
+              "185",
+              "€752.8m"
+            ],
+            [
+              "Europe → South America",
+              "157",
+              "€111.8m"
+            ],
+            [
+              "Europe → Other",
+              "110",
+              "€116.5m"
+            ],
+            [
+              "Europe → North America",
+              "77",
+              "€146.4m"
+            ],
+            [
+              "Other → Europe",
+              "76",
+              "€140.8m"
+            ],
+            [
+              "North America → Europe",
+              "59",
+              "€128.6m"
+            ],
+            [
+              "Asia → Europe",
+              "30",
+              "€19.4m"
+            ],
+            [
+              "Europe → Asia",
+              "20",
+              "€9.1m"
+            ],
+            [
+              "North America → South America",
+              "19",
+              "€21.9m"
+            ],
+            [
+              "South America → Other",
+              "18",
+              "€26.9m"
+            ],
+            [
+              "South America → South America",
+              "17",
+              "€11.1m"
+            ],
+            [
+              "Other → South America",
+              "14",
+              "€13.0m"
+            ],
+            [
+              "South America → North America",
+              "13",
+              "€28.7m"
+            ],
+            [
+              "Other → North America",
+              "10",
+              "€18.5m"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "country pair",
+            "transfers",
+            "fees paid"
+          ],
+          "rows": [
+            [
+              "Spain → England",
+              "216",
+              "€1.77bn"
+            ],
+            [
+              "England → Spain",
+              "215",
+              "€1.02bn"
+            ],
+            [
+              "France → England",
+              "176",
+              "€1.42bn"
+            ],
+            [
+              "Italy → England",
+              "142",
+              "€1.39bn"
+            ],
+            [
+              "England → Italy",
+              "139",
+              "€671.8m"
+            ],
+            [
+              "England → France",
+              "133",
+              "€313.8m"
+            ],
+            [
+              "Germany → England",
+              "127",
+              "€2.07bn"
+            ],
+            [
+              "France → Italy",
+              "127",
+              "€431.2m"
+            ],
+            [
+              "Italy → Spain",
+              "125",
+              "€455.2m"
+            ],
+            [
+              "Spain → Italy",
+              "124",
+              "€724.0m"
+            ],
+            [
+              "France → Spain",
+              "113",
+              "€531.1m"
+            ],
+            [
+              "Italy → France",
+              "99",
+              "€505.6m"
+            ],
+            [
+              "England → Germany",
+              "97",
+              "€547.8m"
+            ],
+            [
+              "Spain → France",
+              "84",
+              "€267.6m"
+            ],
+            [
+              "France → Germany",
+              "73",
+              "€503.5m"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "country",
+            "bought",
+            "sold",
+            "spent",
+            "earned",
+            "net spend"
+          ],
+          "rows": [
+            [
+              "Germany",
+              "438",
+              "456",
+              "€2.28bn",
+              "€3.44bn",
+              "€-1162.9m"
+            ],
+            [
+              "France",
+              "657",
+              "812",
+              "€2.28bn",
+              "€3.33bn",
+              "€-1046.6m"
+            ],
+            [
+              "Portugal",
+              "204",
+              "231",
+              "€283.9m",
+              "€1.21bn",
+              "€-925.4m"
+            ],
+            [
+              "Argentina",
+              "87",
+              "115",
+              "€74.3m",
+              "€483.5m",
+              "€-409.2m"
+            ],
+            [
+              "Austria",
+              "56",
+              "82",
+              "€58.3m",
+              "€447.9m",
+              "€-389.6m"
+            ],
+            [
+              "Netherlands",
+              "131",
+              "145",
+              "€168.0m",
+              "€545.6m",
+              "€-377.6m"
+            ],
+            [
+              "Belgium",
+              "191",
+              "216",
+              "€183.6m",
+              "€556.6m",
+              "€-372.9m"
+            ],
+            [
+              "Monaco",
+              "111",
+              "117",
+              "€686.4m",
+              "€1.05bn",
+              "€-367.9m"
+            ],
+            [
+              "Brazil",
+              "122",
+              "118",
+              "€84.1m",
+              "€336.0m",
+              "€-251.9m"
+            ],
+            [
+              "Italy",
+              "693",
+              "637",
+              "€2.87bn",
+              "€3.06bn",
+              "€-191.5m"
+            ],
+            [
+              "Denmark",
+              "57",
+              "71",
+              "€43.8m",
+              "€172.6m",
+              "€-128.9m"
+            ],
+            [
+              "Scotland",
+              "95",
+              "97",
+              "€84.3m",
+              "€187.9m",
+              "€-103.7m"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "87116c5d-942c-46b0-91c2-7b10fb47f3dd",
+      "cell_type": "code",
+      "source": "let send: Vec<Vec<String>> = bv.iter().rev().take(12).map(|(c,sn,bn,sf,bf)| {\n    vec![c.clone(), bn.to_string(), sn.to_string(), eur(*bf), eur(*sf), eur(bf-sf)]\n}).collect();\nmars_table(&[\"country\",\"bought\",\"sold\",\"spent\",\"earned\",\"net spend\"], &send);\n",
+      "metadata": {},
+      "execution_count": 5,
       "outputs": [
         {
           "type": "text",

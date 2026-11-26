@@ -137,7 +137,6 @@ team-match xg rows: 7902
 ```
 
 ```rust
-
 // (continued) build display rows from sorted teams vec
 let hdr = ["team","apps","goals","xG","G−xG/match",""].iter().map(|s|s.to_string()).collect::<Vec<_>>();
 let mk = |slice: &Vec<usize>| -> Vec<Vec<String>> { slice.iter().map(|&i| {
@@ -154,14 +153,10 @@ let top: Vec<usize> = (0..teams.len().min(15)).collect();
 let bot: Vec<usize> = (teams.len().saturating_sub(15)..teams.len()).rev().collect();
 println!("== luckiest (scored above xG) ==");
 mars_table(&hdr, &mk(&top));
-println!("== unluckiest (scored below xG) ==");
-mars_table(&hdr, &mk(&bot));
 ```
 
 ```text
-team-match xg rows: 7902
 == luckiest (scored above xG) ==
-== unluckiest (scored below xG) ==
 ```
 
 | team                | apps | goals  | xG     | G−xG/match |     |
@@ -181,6 +176,15 @@ team-match xg rows: 7902
 | Napoli              | 42   | 90.0   | 72.3   | +0.42      |     |
 | Jamshedpur          | 22   | 43.0   | 34.0   | +0.41      |     |
 | Odisha              | 20   | 31.0   | 22.9   | +0.41      |     |
+
+```rust
+println!("== unluckiest (scored below xG) ==");
+mars_table(&hdr, &mk(&bot));
+```
+
+```text
+== unluckiest (scored below xG) ==
+```
 
 | team              | apps | goals | xG   | G−xG/match |     |
 | ----------------- | ---- | ----- | ---- | ---------- | --- |
@@ -201,7 +205,6 @@ team-match xg rows: 7902
 | Portugal          | 18   | 30.0  | 34.7 | -0.26      |     |
 
 ```rust
-
 // biggest single-match over/under performers
 let mut diffs: Vec<(f64,i64,i64,String)> = rows.iter()
     .map(|r| (r.goals - r.xg, r.tid, r.mid, r.league.clone())).collect();
@@ -217,72 +220,7 @@ let over_rows: Vec<Vec<String>> = diffs.iter().take(15).map(|(d,tid,mid,ln)| {
         format!("{:+.2}", d),
     ]}).collect();
 mars_table(&["team","league","score","G−xG"], &over_rows);
-diffs.sort_by(|a,b| a.0.partial_cmp(&b.0).unwrap());
-let under_rows: Vec<Vec<String>> = diffs.iter().take(15).map(|(d,tid,mid,ln)| {
-    let (h,a,hs,as_,_) = match_ctx[mid];
-    let (gf, ga) = if *tid==h {(hs,as_)} else {(as_,hs)};
-    vec![
-        tname.get(tid).cloned().unwrap_or_default().chars().take(24).collect(),
-        ln.chars().take(20).collect(),
-        format!("{}–{}", gf as i64, ga as i64),
-        format!("{:+.2}", d),
-    ]}).collect();
-mars_table(&["team","league","score","G−xG"], &under_rows);
-
-// distribution of per-team luck (G−xG per match)
-let labels = ["< −0.20","−0.20..0","0..+0.20","> +0.20"];
-let mut buckets = [0usize;4];
-for a in &teams {
-    let per = (a.goals - a.xg) / a.apps as f64;
-    let idx = if per < -0.20 {0} else if per < 0.0 {1} else if per <= 0.20 {2} else {3};
-    buckets[idx]+=1;
-}
-let dist: Vec<Vec<String>> = buckets.iter().enumerate()
-    .map(|(i,c)| vec![labels[i].to_string(), c.to_string()]).collect();
-mars_table(&["G−xG per match","teams (≥15 apps)"], &dist);
 ```
-
-```text
-team-match xg rows: 7902
-== luckiest (scored above xG) ==
-== unluckiest (scored below xG) ==
-```
-
-| team                | apps | goals  | xG     | G−xG/match |     |
-| ------------------- | ---- | ------ | ------ | ---------- | --- |
-| Barcelona WFC       | 30   | 137.0  | 105.8  | +1.04      |     |
-| SC Delhi            | 23   | 47.0   | 32.4   | +0.64      |     |
-| Barcelona           | 525  | 1390.0 | 1057.0 | +0.63      |     |
-| Juventus W          | 27   | 65.0   | 48.9   | +0.60      |     |
-| Roma                | 38   | 83.0   | 61.9   | +0.55      |     |
-| Netherlands Women's | 19   | 36.0   | 26.3   | +0.51      |     |
-| Arsenal WFC         | 79   | 226.0  | 187.0  | +0.49      |     |
-| Paris Saint-Germain | 95   | 241.0  | 196.5  | +0.47      |     |
-| Real Madrid CF W    | 30   | 74.0   | 60.9   | +0.44      |     |
-| AS Roma W           | 26   | 74.0   | 62.8   | +0.43      |     |
-| Manchester City WFC | 80   | 218.0  | 184.1  | +0.42      |     |
-| Real Madrid         | 71   | 162.0  | 132.0  | +0.42      |     |
-| Napoli              | 42   | 90.0   | 72.3   | +0.42      |     |
-| Jamshedpur          | 22   | 43.0   | 34.0   | +0.41      |     |
-| Odisha              | 20   | 31.0   | 22.9   | +0.41      |     |
-
-| team              | apps | goals | xG   | G−xG/match |     |
-| ----------------- | ---- | ----- | ---- | ---------- | --- |
-| Croatia           | 21   | 32.0  | 43.4 | -0.54      |     |
-| France Women's    | 19   | 44.0  | 53.7 | -0.51      |     |
-| Argentina         | 22   | 38.0  | 48.5 | -0.48      |     |
-| Brazil            | 25   | 52.0  | 63.4 | -0.46      |     |
-| Uruguay           | 15   | 21.0  | 26.4 | -0.36      |     |
-| Spain             | 21   | 44.0  | 51.5 | -0.36      |     |
-| Washington Spirit | 31   | 29.0  | 39.7 | -0.35      |     |
-| Sweden Women's    | 23   | 45.0  | 52.8 | -0.34      |     |
-| Switzerland       | 18   | 26.0  | 32.0 | -0.33      |     |
-| Denmark           | 17   | 18.0  | 23.6 | -0.33      |     |
-| Orlando Pride     | 30   | 37.0  | 46.6 | -0.32      |     |
-| Germany           | 18   | 29.0  | 34.1 | -0.28      |     |
-| Udinese           | 38   | 35.0  | 45.7 | -0.28      |     |
-| Houston Dash      | 27   | 23.0  | 30.3 | -0.27      |     |
-| Portugal          | 18   | 30.0  | 34.7 | -0.26      |     |
 
 | team                  | league               | score | G−xG  |
 | --------------------- | -------------------- | ----- | ----- |
@@ -302,6 +240,20 @@ team-match xg rows: 7902
 | Costa Adeje Tenerife  | Liga F               | 5–0   | +4.25 |
 | Spain                 | FIFA World Cup       | 7–0   | +4.24 |
 
+```rust
+diffs.sort_by(|a,b| a.0.partial_cmp(&b.0).unwrap());
+let under_rows: Vec<Vec<String>> = diffs.iter().take(15).map(|(d,tid,mid,ln)| {
+    let (h,a,hs,as_,_) = match_ctx[mid];
+    let (gf, ga) = if *tid==h {(hs,as_)} else {(as_,hs)};
+    vec![
+        tname.get(tid).cloned().unwrap_or_default().chars().take(24).collect(),
+        ln.chars().take(20).collect(),
+        format!("{}–{}", gf as i64, ga as i64),
+        format!("{:+.2}", d),
+    ]}).collect();
+mars_table(&["team","league","score","G−xG"], &under_rows);
+```
+
 | team                  | league               | score | G−xG  |
 | --------------------- | -------------------- | ----- | ----- |
 | Australia Women's     | Women's World Cup    | 0–0   | -9.78 |
@@ -319,6 +271,20 @@ team-match xg rows: 7902
 | Real Madrid           | Champions League     | 1–1   | -5.50 |
 | Cape Verde Islands    | African Cup of Natio | 0–0   | -5.43 |
 | England Women's       | UEFA Women's Euro    | 2–2   | -5.40 |
+
+```rust
+// distribution of per-team luck (G−xG per match)
+let labels = ["< −0.20","−0.20..0","0..+0.20","> +0.20"];
+let mut buckets = [0usize;4];
+for a in &teams {
+    let per = (a.goals - a.xg) / a.apps as f64;
+    let idx = if per < -0.20 {0} else if per < 0.0 {1} else if per <= 0.20 {2} else {3};
+    buckets[idx]+=1;
+}
+let dist: Vec<Vec<String>> = buckets.iter().enumerate()
+    .map(|(i,c)| vec![labels[i].to_string(), c.to_string()]).collect();
+mars_table(&["G−xG per match","teams (≥15 apps)"], &dist);
+```
 
 | G−xG per match | teams (≥15 apps) |
 | -------------- | ---------------- |

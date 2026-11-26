@@ -11,6 +11,8 @@ order: 45
 tags: ['football', 'analysis', 'transfers', 'transfermarkt', 'mars', 'sqlite']
 ---
 
+# Deadline day: football's most expensive 24 hours
+
 ## Deadline day: football's most expensive 24 hours
 
 Every summer and winter, European football compresses a month of dealing into
@@ -90,7 +92,6 @@ transfers with parseable date: 19436
 | 12    | 358       |
 
 ```rust
-
 // Daily profile around the two windows, aggregated across all years
 let mut by_md: HashMap<(u32, u32), usize> = HashMap::new();
 for &(y, m, dd, _) in &rows {
@@ -105,43 +106,7 @@ let drows: Vec<Vec<String>> = keys.iter().map(|&(m, dd)| {
     vec![format!("{:02}-{:02}", m, dd), by_md[&(m, dd)].to_string()]
 }).collect();
 mars_table(&["month-day", "transfers (all years)"], &drows);
-
-// deadline-window share per year: Aug 30-Sep 2 and Jan 30-Feb 2
-// window membership: (m==8 && dd>=30) || (m==9 && dd<=2) || (m==1 && dd>=30) || (m==2 && dd<=2)
-let in_window = |m: u32, dd: u32| (m == 8 && dd >= 30) || (m == 9 && dd <= 2) || (m == 1 && dd >= 30) || (m == 2 && dd <= 2);
-let mut by_year: HashMap<i32, (usize, usize)> = HashMap::new();
-for &(y, m, dd, _) in &rows {
-    let e = by_year.entry(y).or_default();
-    e.0 += 1;
-    if in_window(m, dd) { e.1 += 1; }
-}
-let mut years: Vec<i32> = by_year.keys().cloned().collect();
-years.sort();
-let yrows: Vec<Vec<String>> = years.iter().filter(|&&y| y >= 2005 && by_year[&y].0 >= 200).map(|&y| {
-    let (tot, win) = by_year[&y];
-    vec![y.to_string(), tot.to_string(), win.to_string(), format!("{:.1}%", 100.0 * win as f64 / tot as f64)]
-}).collect();
-mars_table(&["year", "transfers", "in deadline window", "share %"], &yrows);
 ```
-
-```text
-transfers with parseable date: 19436
-```
-
-| month | transfers |
-| ----- | --------- |
-| 1     | 3355      |
-| 2     | 700       |
-| 3     | 98        |
-| 4     | 70        |
-| 5     | 299       |
-| 6     | 3376      |
-| 7     | 6818      |
-| 8     | 3033      |
-| 9     | 974       |
-| 10    | 236       |
-| 11    | 119       |
-| 12    | 358       |
 
 | month-day | transfers (all years) |
 | --------- | --------------------- |
@@ -189,6 +154,25 @@ transfers with parseable date: 19436
 | 09-08     | 36                    |
 | 09-09     | 22                    |
 | 09-10     | 21                    |
+
+```rust
+// deadline-window share per year: Aug 30-Sep 2 and Jan 30-Feb 2
+// window membership: (m==8 && dd>=30) || (m==9 && dd<=2) || (m==1 && dd>=30) || (m==2 && dd<=2)
+let in_window = |m: u32, dd: u32| (m == 8 && dd >= 30) || (m == 9 && dd <= 2) || (m == 1 && dd >= 30) || (m == 2 && dd <= 2);
+let mut by_year: HashMap<i32, (usize, usize)> = HashMap::new();
+for &(y, m, dd, _) in &rows {
+    let e = by_year.entry(y).or_default();
+    e.0 += 1;
+    if in_window(m, dd) { e.1 += 1; }
+}
+let mut years: Vec<i32> = by_year.keys().cloned().collect();
+years.sort();
+let yrows: Vec<Vec<String>> = years.iter().filter(|&&y| y >= 2005 && by_year[&y].0 >= 200).map(|&y| {
+    let (tot, win) = by_year[&y];
+    vec![y.to_string(), tot.to_string(), win.to_string(), format!("{:.1}%", 100.0 * win as f64 / tot as f64)]
+}).collect();
+mars_table(&["year", "transfers", "in deadline window", "share %"], &yrows);
+```
 
 | year | transfers | in deadline window | share % |
 | ---- | --------- | ------------------ | ------- |
@@ -245,92 +229,9 @@ mars_table(&["month-day", "transfers (all years)"], &trows);
 ```
 
 ```text
-transfers with parseable date: 19436
 2010+ transfers: 18837 | in window: 2159 (11.5%) | with fee: 5243
 median fee — window: €4M over 651 moves | other days: €4M over 4592 moves
 ```
-
-| month | transfers |
-| ----- | --------- |
-| 1     | 3355      |
-| 2     | 700       |
-| 3     | 98        |
-| 4     | 70        |
-| 5     | 299       |
-| 6     | 3376      |
-| 7     | 6818      |
-| 8     | 3033      |
-| 9     | 974       |
-| 10    | 236       |
-| 11    | 119       |
-| 12    | 358       |
-
-| month-day | transfers (all years) |
-| --------- | --------------------- |
-| 01-20     | 58                    |
-| 01-21     | 60                    |
-| 01-22     | 59                    |
-| 01-23     | 86                    |
-| 01-24     | 81                    |
-| 01-25     | 84                    |
-| 01-26     | 97                    |
-| 01-27     | 88                    |
-| 01-28     | 96                    |
-| 01-29     | 138                   |
-| 01-30     | 203                   |
-| 01-31     | 449                   |
-| 02-01     | 240                   |
-| 02-02     | 103                   |
-| 02-03     | 60                    |
-| 02-04     | 15                    |
-| 02-05     | 17                    |
-| 02-06     | 26                    |
-| 02-07     | 16                    |
-| 02-08     | 18                    |
-| 02-09     | 23                    |
-| 02-10     | 16                    |
-| 08-20     | 64                    |
-| 08-21     | 67                    |
-| 08-22     | 57                    |
-| 08-23     | 75                    |
-| 08-24     | 53                    |
-| 08-25     | 69                    |
-| 08-26     | 91                    |
-| 08-27     | 75                    |
-| 08-28     | 91                    |
-| 08-29     | 113                   |
-| 08-30     | 225                   |
-| 08-31     | 463                   |
-| 09-01     | 370                   |
-| 09-02     | 136                   |
-| 09-03     | 23                    |
-| 09-04     | 39                    |
-| 09-05     | 21                    |
-| 09-06     | 30                    |
-| 09-07     | 21                    |
-| 09-08     | 36                    |
-| 09-09     | 22                    |
-| 09-10     | 21                    |
-
-| year | transfers | in deadline window | share % |
-| ---- | --------- | ------------------ | ------- |
-| 2010 | 285       | 15                 | 5.3%    |
-| 2011 | 377       | 27                 | 7.2%    |
-| 2012 | 473       | 37                 | 7.8%    |
-| 2013 | 603       | 62                 | 10.3%   |
-| 2014 | 762       | 71                 | 9.3%    |
-| 2015 | 990       | 88                 | 8.9%    |
-| 2016 | 1106      | 110                | 9.9%    |
-| 2017 | 1274      | 120                | 9.4%    |
-| 2018 | 1368      | 111                | 8.1%    |
-| 2019 | 1537      | 162                | 10.5%   |
-| 2020 | 1474      | 227                | 15.4%   |
-| 2021 | 1431      | 208                | 14.5%   |
-| 2022 | 1684      | 203                | 12.1%   |
-| 2023 | 1713      | 228                | 13.3%   |
-| 2024 | 1543      | 219                | 14.2%   |
-| 2025 | 1504      | 179                | 11.9%   |
-| 2026 | 709       | 92                 | 13.0%   |
 
 | month-day | transfers (all years) |
 | --------- | --------------------- |

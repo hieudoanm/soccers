@@ -14,14 +14,14 @@
     {
       "id": "07e135ad-57d0-421c-93ac-6bd403942e37",
       "cell_type": "markdown",
-      "source": "## Does possession actually help you win?\n\nThe clich\u00e9: *control the ball, control the game, win the match.* This\nnotebook tests it on every match in the dataset where ESPN\nmatch-level statistics exist \u2014 possession, shots, shots on target,\ncorners and fouls \u2014 enriched into `match_team_stat` by\n`import-espn-stats.ts`.\n\n**Data caveat up front:** possession coverage is concentrated in the\nESPN era (~2001 onward) and is deepest in Europe's big leagues. The\nPremier League is the primary lens; all other covered leagues are used\nas a robustness check. `possession = 0` rows are treated as missing \u2014\nESPN emits zeros for untracked stats, and no team legitimately records\n0% possession.",
+      "source": "## Does possession actually help you win?\n\nThe cliché: *control the ball, control the game, win the match.* This\nnotebook tests it on every match in the dataset where ESPN\nmatch-level statistics exist — possession, shots, shots on target,\ncorners and fouls — enriched into `match_team_stat` by\n`import-espn-stats.ts`.\n\n**Data caveat up front:** possession coverage is concentrated in the\nESPN era (~2001 onward) and is deepest in Europe's big leagues. The\nPremier League is the primary lens; all other covered leagues are used\nas a robustness check. `possession = 0` rows are treated as missing —\nESPN emits zeros for untracked stats, and no team legitimately records\n0% possession.",
       "metadata": {},
       "outputs": []
     },
     {
       "id": "8a3e4fdb-4123-42bf-aac0-b0ca95d8ece8",
       "cell_type": "code",
-      "source": "\nuse polars::prelude::*;\nuse std::collections::HashMap;\n\nlet mf = LazyCsvReader::new(\"data/matches_full.csv\")\n    .finish().expect(\"matches_full.csv\")\n    .collect().expect(\"collect matches\");\nlet st = LazyCsvReader::new(\"data/match_team_stat.csv\")\n    .finish().expect(\"match_team_stat.csv\")\n    .collect().expect(\"collect stats\");\n\nfn col_str(df: &DataFrame, name: &str) -> Vec<String> {\n    df.column(name).unwrap().str().unwrap().iter()\n        .map(|o| o.unwrap_or(\"\").to_string()).collect()\n}\nfn col_i64(df: &DataFrame, name: &str) -> Vec<i64> {\n    let c = df.column(name).unwrap().clone();\n    let c = if c.dtype() == &DataType::Null { c.cast(&DataType::Int64).unwrap() } else { c };\n    c.i64().unwrap().iter().map(|o| o.unwrap_or(-1)).collect()\n}\nfn col_f64(df: &DataFrame, name: &str) -> Vec<f64> {\n    let c = df.column(name).unwrap().clone();\n    let c = if c.dtype() == &DataType::Null { c.cast(&DataType::Float64).unwrap() } else { c };\n    match c.dtype() {\n        DataType::Float64 => c.f64().unwrap().iter().map(|o| o.unwrap_or(f64::NAN)).collect(),\n        DataType::Int64 => c.i64().unwrap().iter().map(|o| o.map(|v| v as f64).unwrap_or(f64::NAN)).collect(),\n        DataType::String => c.str().unwrap().iter()\n            .map(|o| o.and_then(|s| s.parse::<f64>().ok()).unwrap_or(f64::NAN)).collect(),\n        _ => panic!(\"unexpected dtype for {name}: {:?}\", c.dtype()),\n    }\n}\n\n#[derive(Clone, Copy, Default)]\nstruct TStat {\n    poss: f64, shots: f64, sog: f64, corners: f64, fouls: f64, xg: f64,\n}\n\n// (match_id, team_id) -> team stat line\nlet mut stat_map: HashMap<(i64, i64), TStat> = HashMap::new();\n{\n    let n = st.height();\n    let mid = col_i64(&st, \"match_id\");\n    let tid = col_i64(&st, \"team_id\");\n    let poss = col_f64(&st, \"possession\");\n    let shots = col_f64(&st, \"shots\");\n    let sog = col_f64(&st, \"shots_on_target\");\n    let cor = col_f64(&st, \"corners\");\n    let fou = col_f64(&st, \"fouls\");\n    let xg = col_f64(&st, \"expected_goals\");\n    for i in 0..n {\n        stat_map.insert((mid[i], tid[i]), TStat {\n            poss: poss[i], shots: shots[i], sog: sog[i],\n            corners: cor[i], fouls: fou[i], xg: xg[i],\n        });\n    }\n}\nprintln!(\"stat rows indexed: {}\", stat_map.len());\n\nlet s_id = col_i64(&mf, \"id\");\nlet s_hid = col_i64(&mf, \"hid\");\nlet s_aid = col_i64(&mf, \"aid\");\nlet s_hg = col_i64(&mf, \"hg\");\nlet s_ag = col_i64(&mf, \"ag\");\nlet s_country = col_str(&mf, \"country\");\nlet s_league = col_str(&mf, \"league\");\nlet s_season = col_str(&mf, \"season\");\nlet s_date = col_str(&mf, \"date\");\nlet s_home = col_str(&mf, \"home\");\nlet s_away = col_str(&mf, \"away\");\n\n#[derive(Clone)]\nstruct MRow {\n    league: String, season: String, date: String,\n    home: String, away: String, hid: i64, aid: i64,\n    hg: i64, ag: i64,\n    hp: f64, ap: f64, hs: f64, as_: f64, hc: f64, ac: f64,\n    hhf: f64, ahf: f64, hxg: f64, axg: f64,\n}\n\nlet mut rows: Vec<MRow> = Vec::new();\nlet mut n_both = 0usize;\nfor i in 0..mf.height() {\n    if s_hg[i] < 0 || s_ag[i] < 0 { continue; }\n    let h = stat_map.get(&(s_id[i], s_hid[i]));\n    let a = stat_map.get(&(s_id[i], s_aid[i]));\n    let (Some(hs_), Some(as_)) = (h, a) else { continue; };\n    // valid possession only: 0 and >100 are ESPN missing-data markers\n    if !(hs_.poss > 0.0 && hs_.poss < 100.0 && as_.poss > 0.0 && as_.poss < 100.0) { continue; }\n    n_both += 1;\n    rows.push(MRow {\n        league: s_league[i].clone(), season: s_season[i].clone(),\n        date: s_date[i][..10].to_string(),\n        home: s_home[i].clone(), away: s_away[i].clone(),\n        hid: s_hid[i], aid: s_aid[i], hg: s_hg[i], ag: s_ag[i],\n        hp: hs_.poss, ap: as_.poss,\n        hs: hs_.shots, as_: as_.shots,\n        hc: hs_.corners, ac: as_.corners,\n        hhf: hs_.fouls, ahf: as_.fouls,\n        hxg: hs_.xg, axg: as_.xg,\n    });\n}\nrows.sort_by(|a, b| a.date.cmp(&b.date));\nprintln!(\"matches with valid possession (both teams): {}\", n_both);\n\n// league coverage\nlet mut by_league: std::collections::BTreeMap<String, (usize, String, String)> = std::collections::BTreeMap::new();\nfor r in &rows {\n    let e = by_league.entry(r.league.clone()).or_insert((0, r.season.clone(), r.season.clone()));\n    e.0 += 1;\n    if r.season < e.1 { e.1 = r.season.clone(); }\n    if r.season > e.2 { e.2 = r.season.clone(); }\n}\nlet mut lg_rows: Vec<Vec<String>> = by_league.iter().map(|(l, (n, s0, s1))| vec![\n    l.clone(), n.to_string(), format!(\"{s0} \u2192 {s1}\"),\n]).collect();\nlg_rows.sort_by(|a, b| b[1].parse::<usize>().unwrap().cmp(&a[1].parse::<usize>().unwrap()));\nlg_rows.truncate(15);\nlet hdr = [\"league\", \"matches\", \"season span\"];\nmars_table(&hdr, &lg_rows);\n\nlet epl: Vec<&MRow> = rows.iter().filter(|r| r.league == \"English Premier League\").collect();\nprintln!(\"EPL matches with possession: {} | all leagues: {}\", epl.len(), rows.len());\n",
+      "source": "\nuse polars::prelude::*;\nuse std::collections::HashMap;\n\nlet mf = LazyCsvReader::new(\"data/matches_full.csv\")\n    .finish().expect(\"matches_full.csv\")\n    .collect().expect(\"collect matches\");\nlet st = LazyCsvReader::new(\"data/match_team_stat.csv\")\n    .finish().expect(\"match_team_stat.csv\")\n    .collect().expect(\"collect stats\");\n\nfn col_str(df: &DataFrame, name: &str) -> Vec<String> {\n    df.column(name).unwrap().str().unwrap().iter()\n        .map(|o| o.unwrap_or(\"\").to_string()).collect()\n}\nfn col_i64(df: &DataFrame, name: &str) -> Vec<i64> {\n    let c = df.column(name).unwrap().clone();\n    let c = if c.dtype() == &DataType::Null { c.cast(&DataType::Int64).unwrap() } else { c };\n    c.i64().unwrap().iter().map(|o| o.unwrap_or(-1)).collect()\n}\nfn col_f64(df: &DataFrame, name: &str) -> Vec<f64> {\n    let c = df.column(name).unwrap().clone();\n    let c = if c.dtype() == &DataType::Null { c.cast(&DataType::Float64).unwrap() } else { c };\n    match c.dtype() {\n        DataType::Float64 => c.f64().unwrap().iter().map(|o| o.unwrap_or(f64::NAN)).collect(),\n        DataType::Int64 => c.i64().unwrap().iter().map(|o| o.map(|v| v as f64).unwrap_or(f64::NAN)).collect(),\n        DataType::String => c.str().unwrap().iter()\n            .map(|o| o.and_then(|s| s.parse::<f64>().ok()).unwrap_or(f64::NAN)).collect(),\n        _ => panic!(\"unexpected dtype for {name}: {:?}\", c.dtype()),\n    }\n}\n\n#[derive(Clone, Copy, Default)]\nstruct TStat {\n    poss: f64, shots: f64, sog: f64, corners: f64, fouls: f64, xg: f64,\n}\n\n// (match_id, team_id) -> team stat line\nlet mut stat_map: HashMap<(i64, i64), TStat> = HashMap::new();\n{\n    let n = st.height();\n    let mid = col_i64(&st, \"match_id\");\n    let tid = col_i64(&st, \"team_id\");\n    let poss = col_f64(&st, \"possession\");\n    let shots = col_f64(&st, \"shots\");\n    let sog = col_f64(&st, \"shots_on_target\");\n    let cor = col_f64(&st, \"corners\");\n    let fou = col_f64(&st, \"fouls\");\n    let xg = col_f64(&st, \"expected_goals\");\n    for i in 0..n {\n        stat_map.insert((mid[i], tid[i]), TStat {\n            poss: poss[i], shots: shots[i], sog: sog[i],\n            corners: cor[i], fouls: fou[i], xg: xg[i],\n        });\n    }\n}\nprintln!(\"stat rows indexed: {}\", stat_map.len());\n\nlet s_id = col_i64(&mf, \"id\");\nlet s_hid = col_i64(&mf, \"hid\");\nlet s_aid = col_i64(&mf, \"aid\");\nlet s_hg = col_i64(&mf, \"hg\");\nlet s_ag = col_i64(&mf, \"ag\");\nlet s_country = col_str(&mf, \"country\");\nlet s_league = col_str(&mf, \"league\");\nlet s_season = col_str(&mf, \"season\");\nlet s_date = col_str(&mf, \"date\");\nlet s_home = col_str(&mf, \"home\");\nlet s_away = col_str(&mf, \"away\");\n\n#[derive(Clone)]\nstruct MRow {\n    league: String, season: String, date: String,\n    home: String, away: String, hid: i64, aid: i64,\n    hg: i64, ag: i64,\n    hp: f64, ap: f64, hs: f64, as_: f64, hc: f64, ac: f64,\n    hhf: f64, ahf: f64, hxg: f64, axg: f64,\n}\n\nlet mut rows: Vec<MRow> = Vec::new();\nlet mut n_both = 0usize;\nfor i in 0..mf.height() {\n    if s_hg[i] < 0 || s_ag[i] < 0 { continue; }\n    let h = stat_map.get(&(s_id[i], s_hid[i]));\n    let a = stat_map.get(&(s_id[i], s_aid[i]));\n    let (Some(hs_), Some(as_)) = (h, a) else { continue; };\n    // valid possession only: 0 and >100 are ESPN missing-data markers\n    if !(hs_.poss > 0.0 && hs_.poss < 100.0 && as_.poss > 0.0 && as_.poss < 100.0) { continue; }\n    n_both += 1;\n    rows.push(MRow {\n        league: s_league[i].clone(), season: s_season[i].clone(),\n        date: s_date[i][..10].to_string(),\n        home: s_home[i].clone(), away: s_away[i].clone(),\n        hid: s_hid[i], aid: s_aid[i], hg: s_hg[i], ag: s_ag[i],\n        hp: hs_.poss, ap: as_.poss,\n        hs: hs_.shots, as_: as_.shots,\n        hc: hs_.corners, ac: as_.corners,\n        hhf: hs_.fouls, ahf: as_.fouls,\n        hxg: hs_.xg, axg: as_.xg,\n    });\n}\nrows.sort_by(|a, b| a.date.cmp(&b.date));\nprintln!(\"matches with valid possession (both teams): {}\", n_both);\n\n// league coverage\nlet mut by_league: std::collections::BTreeMap<String, (usize, String, String)> = std::collections::BTreeMap::new();\nfor r in &rows {\n    let e = by_league.entry(r.league.clone()).or_insert((0, r.season.clone(), r.season.clone()));\n    e.0 += 1;\n    if r.season < e.1 { e.1 = r.season.clone(); }\n    if r.season > e.2 { e.2 = r.season.clone(); }\n}\nlet mut lg_rows: Vec<Vec<String>> = by_league.iter().map(|(l, (n, s0, s1))| vec![\n    l.clone(), n.to_string(), format!(\"{s0} → {s1}\"),\n]).collect();\nlg_rows.sort_by(|a, b| b[1].parse::<usize>().unwrap().cmp(&a[1].parse::<usize>().unwrap()));\nlg_rows.truncate(15);\nlet hdr = [\"league\", \"matches\", \"season span\"];\nmars_table(&hdr, &lg_rows);\n\nlet epl: Vec<&MRow> = rows.iter().filter(|r| r.league == \"English Premier League\").collect();\nprintln!(\"EPL matches with possession: {} | all leagues: {}\", epl.len(), rows.len());\n",
       "metadata": {},
       "execution_count": 1,
       "outputs": [
@@ -40,77 +40,77 @@
             [
               "English Championship",
               "12005",
-              "2003/04 \u2192 2026/27"
+              "2003/04 → 2026/27"
             ],
             [
               "English League One",
               "10707",
-              "2006/07 \u2192 2026/27"
+              "2006/07 → 2026/27"
             ],
             [
               "English League Two",
               "9879",
-              "2006/07 \u2192 2026/27"
+              "2006/07 → 2026/27"
             ],
             [
               "English Premier League",
               "8486",
-              "2001/02 \u2192 2026/27"
+              "2001/02 → 2026/27"
             ],
             [
               "Spanish La Liga",
               "7247",
-              "2004/05 \u2192 2026/27"
+              "2004/05 → 2026/27"
             ],
             [
               "Italian Serie A",
               "7241",
-              "2006/07 \u2192 2026/27"
+              "2006/07 → 2026/27"
             ],
             [
               "French Ligue 1",
               "6465",
-              "2006/07 \u2192 2026/27"
+              "2006/07 → 2026/27"
             ],
             [
               "MLS",
               "6260",
-              "2012 \u2192 2026"
+              "2012 → 2026"
             ],
             [
               "German Bundesliga",
               "4639",
-              "2005/06 \u2192 2026/27"
+              "2005/06 → 2026/27"
             ],
             [
               "Liga MX",
               "4542",
-              "2012/2013 \u2192 2026/2027"
+              "2012/2013 → 2026/2027"
             ],
             [
               "Scottish Premiership",
               "4316",
-              "2006/07 \u2192 2026/27"
+              "2006/07 → 2026/27"
             ],
             [
               "Serie A",
               "3946",
-              "2014 \u2192 2026"
+              "2014 → 2026"
             ],
             [
               "German 2. Bundesliga",
               "3246",
-              "2008/09 \u2192 2026/27"
+              "2008/09 → 2026/27"
             ],
             [
               "Dutch Eredivisie",
               "2993",
-              "2008/09 \u2192 2026/27"
+              "2008/09 → 2026/27"
             ],
             [
               "Portuguese Liga Portugal",
               "2794",
-              "2008/09 \u2192 2026/27"
+              "2008/09 → 2026/27"
             ]
           ]
         }
@@ -119,7 +119,7 @@
     {
       "id": "131aa369-d124-4aa4-b6ab-43bb9bcda758",
       "cell_type": "markdown",
-      "source": "## Coverage\n\nPossession exists only where ESPN tracks it \u2014 effectively the 2000s\nonward, and patchier outside the major leagues. The Premier League has\nnear-complete coverage from 2001/02; lower-profile leagues have\nsporadic seasons. Everything below is computed only on matches where\n**both** teams have a valid possession figure.",
+      "source": "## Coverage\n\nPossession exists only where ESPN tracks it — effectively the 2000s\nonward, and patchier outside the major leagues. The Premier League has\nnear-complete coverage from 2001/02; lower-profile leagues have\nsporadic seasons. Everything below is computed only on matches where\n**both** teams have a valid possession figure.",
       "metadata": {},
       "outputs": []
     },
@@ -145,77 +145,77 @@
             [
               "English Championship",
               "12005",
-              "2003/04 \u2192 2026/27"
+              "2003/04 → 2026/27"
             ],
             [
               "English League One",
               "10707",
-              "2006/07 \u2192 2026/27"
+              "2006/07 → 2026/27"
             ],
             [
               "English League Two",
               "9879",
-              "2006/07 \u2192 2026/27"
+              "2006/07 → 2026/27"
             ],
             [
               "English Premier League",
               "8486",
-              "2001/02 \u2192 2026/27"
+              "2001/02 → 2026/27"
             ],
             [
               "Spanish La Liga",
               "7247",
-              "2004/05 \u2192 2026/27"
+              "2004/05 → 2026/27"
             ],
             [
               "Italian Serie A",
               "7241",
-              "2006/07 \u2192 2026/27"
+              "2006/07 → 2026/27"
             ],
             [
               "French Ligue 1",
               "6465",
-              "2006/07 \u2192 2026/27"
+              "2006/07 → 2026/27"
             ],
             [
               "MLS",
               "6260",
-              "2012 \u2192 2026"
+              "2012 → 2026"
             ],
             [
               "German Bundesliga",
               "4639",
-              "2005/06 \u2192 2026/27"
+              "2005/06 → 2026/27"
             ],
             [
               "Liga MX",
               "4542",
-              "2012/2013 \u2192 2026/2027"
+              "2012/2013 → 2026/2027"
             ],
             [
               "Scottish Premiership",
               "4316",
-              "2006/07 \u2192 2026/27"
+              "2006/07 → 2026/27"
             ],
             [
               "Serie A",
               "3946",
-              "2014 \u2192 2026"
+              "2014 → 2026"
             ],
             [
               "German 2. Bundesliga",
               "3246",
-              "2008/09 \u2192 2026/27"
+              "2008/09 → 2026/27"
             ],
             [
               "Dutch Eredivisie",
               "2993",
-              "2008/09 \u2192 2026/27"
+              "2008/09 → 2026/27"
             ],
             [
               "Portuguese Liga Portugal",
               "2794",
-              "2008/09 \u2192 2026/27"
+              "2008/09 → 2026/27"
             ]
           ]
         },
@@ -337,14 +337,14 @@
     {
       "id": "8bf31f2c-8e95-44d8-a071-7dbbe73e5a5e",
       "cell_type": "markdown",
-      "source": "## The band test: does more possession mean more wins?\n\nEach match contributes two observations \u2014 one per team \u2014 with that\nt team's possession and its result (win/draw/loss). Bands are the\nteam's own possession share.",
+      "source": "## The band test: does more possession mean more wins?\n\nEach match contributes two observations — one per team — with that\nt team's possession and its result (win/draw/loss). Bands are the\nteam's own possession share.",
       "metadata": {},
       "outputs": []
     },
     {
       "id": "e56a36d2-3bcd-4b81-a1cf-bd375b5b62d8",
       "cell_type": "code",
-      "source": "\n// possession bands -> W/D/L, pooled team-perspective\nlet bands = [0.0, 35.0, 40.0, 45.0, 50.0, 55.0, 60.0, 65.0, 70.0, 100.0];\nlet blabels = [\"<35\", \"35-40\", \"40-45\", \"45-50\", \"50-55\", \"55-60\", \"60-65\", \"65-70\", \">70\"];\n\nlet band_table = |matches: &[&MRow]| -> Vec<Vec<String>> {\n    let mut w = vec![0usize; 9]; let mut d = vec![0usize; 9]; let mut l = vec![0usize; 9];\n    for r in matches {\n        for (p, gf, ga) in [(r.hp, r.hg, r.ag), (r.ap, r.ag, r.hg)] {\n            let b = bands.iter().position(|&hi| p < hi).unwrap_or(9) - 1;\n            if gf > ga { w[b] += 1; } else if gf == ga { d[b] += 1; } else { l[b] += 1; }\n        }\n    }\n    (0..9).map(|b| {\n        let n = (w[b] + d[b] + l[b]) as f64;\n        vec![blabels[b].to_string(), (w[b]+d[b]+l[b]).to_string(),\n             format!(\"{:.1}%\", 100.0*w[b] as f64/n),\n             format!(\"{:.1}%\", 100.0*d[b] as f64/n),\n             format!(\"{:.1}%\", 100.0*l[b] as f64/n)]\n    }).collect()\n};\n\nlet epl_bands = band_table(&epl);\nmars_table(&[\"possession\", \"n\", \"win%\", \"draw%\", \"loss%\"], &epl_bands);\n\nlet all_refs: Vec<&MRow> = rows.iter().collect();\nlet all_bands = band_table(&all_refs);\nmars_table(&[\"possession (all leagues)\", \"n\", \"win%\", \"draw%\", \"loss%\"], &all_bands);\n",
+      "source": "// possession bands -> W/D/L, pooled team-perspective\nlet bands = [0.0, 35.0, 40.0, 45.0, 50.0, 55.0, 60.0, 65.0, 70.0, 100.0];\nlet blabels = [\"<35\", \"35-40\", \"40-45\", \"45-50\", \"50-55\", \"55-60\", \"60-65\", \"65-70\", \">70\"];\n\nlet band_table = |matches: &[&MRow]| -> Vec<Vec<String>> {\n    let mut w = vec![0usize; 9]; let mut d = vec![0usize; 9]; let mut l = vec![0usize; 9];\n    for r in matches {\n        for (p, gf, ga) in [(r.hp, r.hg, r.ag), (r.ap, r.ag, r.hg)] {\n            let b = bands.iter().position(|&hi| p < hi).unwrap_or(9) - 1;\n            if gf > ga { w[b] += 1; } else if gf == ga { d[b] += 1; } else { l[b] += 1; }\n        }\n    }\n    (0..9).map(|b| {\n        let n = (w[b] + d[b] + l[b]) as f64;\n        vec![blabels[b].to_string(), (w[b]+d[b]+l[b]).to_string(),\n             format!(\"{:.1}%\", 100.0*w[b] as f64/n),\n             format!(\"{:.1}%\", 100.0*d[b] as f64/n),\n             format!(\"{:.1}%\", 100.0*l[b] as f64/n)]\n    }).collect()\n};\n\nlet epl_bands = band_table(&epl);\nmars_table(&[\"possession\", \"n\", \"win%\", \"draw%\", \"loss%\"], &epl_bands);\n",
       "metadata": {},
       "execution_count": 3,
       "outputs": [
@@ -363,77 +363,363 @@
             [
               "English Championship",
               "12005",
-              "2003/04 \u2192 2026/27"
+              "2003/04 → 2026/27"
             ],
             [
               "English League One",
               "10707",
-              "2006/07 \u2192 2026/27"
+              "2006/07 → 2026/27"
             ],
             [
               "English League Two",
               "9879",
-              "2006/07 \u2192 2026/27"
+              "2006/07 → 2026/27"
             ],
             [
               "English Premier League",
               "8486",
-              "2001/02 \u2192 2026/27"
+              "2001/02 → 2026/27"
             ],
             [
               "Spanish La Liga",
               "7247",
-              "2004/05 \u2192 2026/27"
+              "2004/05 → 2026/27"
             ],
             [
               "Italian Serie A",
               "7241",
-              "2006/07 \u2192 2026/27"
+              "2006/07 → 2026/27"
             ],
             [
               "French Ligue 1",
               "6465",
-              "2006/07 \u2192 2026/27"
+              "2006/07 → 2026/27"
             ],
             [
               "MLS",
               "6260",
-              "2012 \u2192 2026"
+              "2012 → 2026"
             ],
             [
               "German Bundesliga",
               "4639",
-              "2005/06 \u2192 2026/27"
+              "2005/06 → 2026/27"
             ],
             [
               "Liga MX",
               "4542",
-              "2012/2013 \u2192 2026/2027"
+              "2012/2013 → 2026/2027"
             ],
             [
               "Scottish Premiership",
               "4316",
-              "2006/07 \u2192 2026/27"
+              "2006/07 → 2026/27"
             ],
             [
               "Serie A",
               "3946",
-              "2014 \u2192 2026"
+              "2014 → 2026"
             ],
             [
               "German 2. Bundesliga",
               "3246",
-              "2008/09 \u2192 2026/27"
+              "2008/09 → 2026/27"
             ],
             [
               "Dutch Eredivisie",
               "2993",
-              "2008/09 \u2192 2026/27"
+              "2008/09 → 2026/27"
             ],
             [
               "Portuguese Liga Portugal",
               "2794",
-              "2008/09 \u2192 2026/27"
+              "2008/09 → 2026/27"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "EPL season",
+            "matches with possession"
+          ],
+          "rows": [
+            [
+              "2001/02",
+              "1"
+            ],
+            [
+              "2002/03",
+              "378"
+            ],
+            [
+              "2003/04",
+              "381"
+            ],
+            [
+              "2004/05",
+              "380"
+            ],
+            [
+              "2005/06",
+              "380"
+            ],
+            [
+              "2006/07",
+              "380"
+            ],
+            [
+              "2007/08",
+              "380"
+            ],
+            [
+              "2008/09",
+              "380"
+            ],
+            [
+              "2009/10",
+              "379"
+            ],
+            [
+              "2010/11",
+              "379"
+            ],
+            [
+              "2011/12",
+              "207"
+            ],
+            [
+              "2012/13",
+              "338"
+            ],
+            [
+              "2013/14",
+              "344"
+            ],
+            [
+              "2014/15",
+              "380"
+            ],
+            [
+              "2015/16",
+              "417"
+            ],
+            [
+              "2016/17",
+              "4"
+            ],
+            [
+              "2017/18",
+              "380"
+            ],
+            [
+              "2018/19",
+              "378"
+            ],
+            [
+              "2019/20",
+              "376"
+            ],
+            [
+              "2020/21",
+              "372"
+            ],
+            [
+              "2021/22",
+              "351"
+            ],
+            [
+              "2022/23",
+              "293"
+            ],
+            [
+              "2023/24",
+              "370"
+            ],
+            [
+              "2024/25",
+              "368"
+            ],
+            [
+              "2025/26",
+              "380"
+            ],
+            [
+              "2026/27",
+              "110"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "possession",
+            "n",
+            "win%",
+            "draw%",
+            "loss%"
+          ],
+          "rows": [
+            [
+              "<35",
+              "1429",
+              "26.6%",
+              "24.5%",
+              "48.9%"
+            ],
+            [
+              "35-40",
+              "1436",
+              "29.4%",
+              "24.1%",
+              "46.5%"
+            ],
+            [
+              "40-45",
+              "2296",
+              "31.7%",
+              "26.1%",
+              "42.2%"
+            ],
+            [
+              "45-50",
+              "3149",
+              "34.8%",
+              "25.6%",
+              "39.5%"
+            ],
+            [
+              "50-55",
+              "3245",
+              "38.5%",
+              "26.0%",
+              "35.5%"
+            ],
+            [
+              "55-60",
+              "2441",
+              "42.2%",
+              "26.1%",
+              "31.7%"
+            ],
+            [
+              "60-65",
+              "1505",
+              "47.0%",
+              "24.1%",
+              "28.9%"
+            ],
+            [
+              "65-70",
+              "881",
+              "45.5%",
+              "25.2%",
+              "29.3%"
+            ],
+            [
+              ">70",
+              "590",
+              "54.1%",
+              "23.2%",
+              "22.7%"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "3be7d75e-9dac-4f2e-a359-ff65ad80d36b",
+      "cell_type": "code",
+      "source": "let all_refs: Vec<&MRow> = rows.iter().collect();\nlet all_bands = band_table(&all_refs);\nmars_table(&[\"possession (all leagues)\", \"n\", \"win%\", \"draw%\", \"loss%\"], &all_bands);\n",
+      "metadata": {},
+      "execution_count": 4,
+      "outputs": [
+        {
+          "type": "text",
+          "text": "stat rows indexed: 374660\nmatches with valid possession (both teams): 111836\nEPL matches with possession: 8486 | all leagues: 111836\n"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "league",
+            "matches",
+            "season span"
+          ],
+          "rows": [
+            [
+              "English Championship",
+              "12005",
+              "2003/04 → 2026/27"
+            ],
+            [
+              "English League One",
+              "10707",
+              "2006/07 → 2026/27"
+            ],
+            [
+              "English League Two",
+              "9879",
+              "2006/07 → 2026/27"
+            ],
+            [
+              "English Premier League",
+              "8486",
+              "2001/02 → 2026/27"
+            ],
+            [
+              "Spanish La Liga",
+              "7247",
+              "2004/05 → 2026/27"
+            ],
+            [
+              "Italian Serie A",
+              "7241",
+              "2006/07 → 2026/27"
+            ],
+            [
+              "French Ligue 1",
+              "6465",
+              "2006/07 → 2026/27"
+            ],
+            [
+              "MLS",
+              "6260",
+              "2012 → 2026"
+            ],
+            [
+              "German Bundesliga",
+              "4639",
+              "2005/06 → 2026/27"
+            ],
+            [
+              "Liga MX",
+              "4542",
+              "2012/2013 → 2026/2027"
+            ],
+            [
+              "Scottish Premiership",
+              "4316",
+              "2006/07 → 2026/27"
+            ],
+            [
+              "Serie A",
+              "3946",
+              "2014 → 2026"
+            ],
+            [
+              "German 2. Bundesliga",
+              "3246",
+              "2008/09 → 2026/27"
+            ],
+            [
+              "Dutch Eredivisie",
+              "2993",
+              "2008/09 → 2026/27"
+            ],
+            [
+              "Portuguese Liga Portugal",
+              "2794",
+              "2008/09 → 2026/27"
             ]
           ]
         },
@@ -705,16 +991,16 @@
     {
       "id": "b3ead333-d13d-4585-ad84-ae7d65a81123",
       "cell_type": "markdown",
-      "source": "## Is the relationship linear \u2014 or are there diminishing returns?\n\nBin matches by **possession differential** (home minus away) and look\nat the home win rate. If possession truly drives results, the curve\nshould keep climbing; a flattening top end would mean the last few\npercentage points of possession are worth little.",
+      "source": "## Is the relationship linear — or are there diminishing returns?\n\nBin matches by **possession differential** (home minus away) and look\nat the home win rate. If possession truly drives results, the curve\nshould keep climbing; a flattening top end would mean the last few\npercentage points of possession are worth little.",
       "metadata": {},
       "outputs": []
     },
     {
       "id": "22cfbd66-7744-4e64-8c91-88f1481ec720",
       "cell_type": "code",
-      "source": "\n// home win% by possession differential (5-point bins)\nlet mut bins: Vec<(i64, usize, usize)> = Vec::new(); // (bin centre low, home wins, total)\nfor k in -7i64..=7 {\n    let lo = k as f64 * 5.0;\n    let hi = lo + 5.0;\n    let (mut hw, mut n) = (0usize, 0usize);\n    for r in &epl {\n        let d = r.hp - r.ap;\n        if d >= lo && d < hi {\n            n += 1;\n            if r.hg > r.ag { hw += 1; }\n        }\n    }\n    bins.push((k, hw, n));\n}\nlet d_rows: Vec<Vec<String>> = bins.iter().map(|(k, hw, n)| vec![\n    format!(\"{:+.0} to {:+.0}\", *k as f64 * 5.0, *k as f64 * 5.0 + 5.0),\n    n.to_string(),\n    format!(\"{:.1}%\", if *n > 0 { 100.0 * *hw as f64 / *n as f64 } else { 0.0 }),\n]).collect();\nmars_table(&[\"possession diff (home \u2212 away)\", \"matches\", \"home win%\"], &d_rows);\n\n// same for all leagues\nlet mut bins2: Vec<(i64, usize, usize)> = Vec::new();\nfor k in -7i64..=7 {\n    let lo = k as f64 * 5.0;\n    let hi = lo + 5.0;\n    let (mut hw, mut n) = (0usize, 0usize);\n    for r in &rows {\n        let d = r.hp - r.ap;\n        if d >= lo && d < hi {\n            n += 1;\n            if r.hg > r.ag { hw += 1; }\n        }\n    }\n    bins2.push((k, hw, n));\n}\nlet d_rows2: Vec<Vec<String>> = bins2.iter().map(|(k, hw, n)| vec![\n    format!(\"{:+.0} to {:+.0}\", *k as f64 * 5.0, *k as f64 * 5.0 + 5.0),\n    n.to_string(),\n    format!(\"{:.1}%\", if *n > 0 { 100.0 * *hw as f64 / *n as f64 } else { 0.0 }),\n]).collect();\nmars_table(&[\"possession diff \u2014 all leagues\", \"matches\", \"home win%\"], &d_rows2);\n",
+      "source": "// home win% by possession differential (5-point bins)\nlet mut bins: Vec<(i64, usize, usize)> = Vec::new(); // (bin centre low, home wins, total)\nfor k in -7i64..=7 {\n    let lo = k as f64 * 5.0;\n    let hi = lo + 5.0;\n    let (mut hw, mut n) = (0usize, 0usize);\n    for r in &epl {\n        let d = r.hp - r.ap;\n        if d >= lo && d < hi {\n            n += 1;\n            if r.hg > r.ag { hw += 1; }\n        }\n    }\n    bins.push((k, hw, n));\n}\nlet d_rows: Vec<Vec<String>> = bins.iter().map(|(k, hw, n)| vec![\n    format!(\"{:+.0} to {:+.0}\", *k as f64 * 5.0, *k as f64 * 5.0 + 5.0),\n    n.to_string(),\n    format!(\"{:.1}%\", if *n > 0 { 100.0 * *hw as f64 / *n as f64 } else { 0.0 }),\n]).collect();\nmars_table(&[\"possession diff (home − away)\", \"matches\", \"home win%\"], &d_rows);\n",
       "metadata": {},
-      "execution_count": 4,
+      "execution_count": 5,
       "outputs": [
         {
           "type": "text",
@@ -731,77 +1017,77 @@
             [
               "English Championship",
               "12005",
-              "2003/04 \u2192 2026/27"
+              "2003/04 → 2026/27"
             ],
             [
               "English League One",
               "10707",
-              "2006/07 \u2192 2026/27"
+              "2006/07 → 2026/27"
             ],
             [
               "English League Two",
               "9879",
-              "2006/07 \u2192 2026/27"
+              "2006/07 → 2026/27"
             ],
             [
               "English Premier League",
               "8486",
-              "2001/02 \u2192 2026/27"
+              "2001/02 → 2026/27"
             ],
             [
               "Spanish La Liga",
               "7247",
-              "2004/05 \u2192 2026/27"
+              "2004/05 → 2026/27"
             ],
             [
               "Italian Serie A",
               "7241",
-              "2006/07 \u2192 2026/27"
+              "2006/07 → 2026/27"
             ],
             [
               "French Ligue 1",
               "6465",
-              "2006/07 \u2192 2026/27"
+              "2006/07 → 2026/27"
             ],
             [
               "MLS",
               "6260",
-              "2012 \u2192 2026"
+              "2012 → 2026"
             ],
             [
               "German Bundesliga",
               "4639",
-              "2005/06 \u2192 2026/27"
+              "2005/06 → 2026/27"
             ],
             [
               "Liga MX",
               "4542",
-              "2012/2013 \u2192 2026/2027"
+              "2012/2013 → 2026/2027"
             ],
             [
               "Scottish Premiership",
               "4316",
-              "2006/07 \u2192 2026/27"
+              "2006/07 → 2026/27"
             ],
             [
               "Serie A",
               "3946",
-              "2014 \u2192 2026"
+              "2014 → 2026"
             ],
             [
               "German 2. Bundesliga",
               "3246",
-              "2008/09 \u2192 2026/27"
+              "2008/09 → 2026/27"
             ],
             [
               "Dutch Eredivisie",
               "2993",
-              "2008/09 \u2192 2026/27"
+              "2008/09 → 2026/27"
             ],
             [
               "Portuguese Liga Portugal",
               "2794",
-              "2008/09 \u2192 2026/27"
+              "2008/09 → 2026/27"
             ]
           ]
         },
@@ -1071,7 +1357,453 @@
         {
           "type": "table",
           "columns": [
-            "possession diff (home \u2212 away)",
+            "possession diff (home − away)",
+            "matches",
+            "home win%"
+          ],
+          "rows": [
+            [
+              "-35 to -30",
+              "196",
+              "33.2%"
+            ],
+            [
+              "-30 to -25",
+              "280",
+              "37.9%"
+            ],
+            [
+              "-25 to -20",
+              "335",
+              "35.5%"
+            ],
+            [
+              "-20 to -15",
+              "479",
+              "37.2%"
+            ],
+            [
+              "-15 to -10",
+              "535",
+              "45.8%"
+            ],
+            [
+              "-10 to -5",
+              "733",
+              "39.4%"
+            ],
+            [
+              "-5 to +0",
+              "762",
+              "43.8%"
+            ],
+            [
+              "+0 to +5",
+              "899",
+              "44.4%"
+            ],
+            [
+              "+5 to +10",
+              "778",
+              "45.8%"
+            ],
+            [
+              "+10 to +15",
+              "796",
+              "49.9%"
+            ],
+            [
+              "+15 to +20",
+              "565",
+              "48.8%"
+            ],
+            [
+              "+20 to +25",
+              "475",
+              "55.4%"
+            ],
+            [
+              "+25 to +30",
+              "389",
+              "52.2%"
+            ],
+            [
+              "+30 to +35",
+              "311",
+              "47.9%"
+            ],
+            [
+              "+35 to +40",
+              "223",
+              "52.9%"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "580d813c-9db3-4729-a7ca-432aa98f61ad",
+      "cell_type": "code",
+      "source": "// same for all leagues\nlet mut bins2: Vec<(i64, usize, usize)> = Vec::new();\nfor k in -7i64..=7 {\n    let lo = k as f64 * 5.0;\n    let hi = lo + 5.0;\n    let (mut hw, mut n) = (0usize, 0usize);\n    for r in &rows {\n        let d = r.hp - r.ap;\n        if d >= lo && d < hi {\n            n += 1;\n            if r.hg > r.ag { hw += 1; }\n        }\n    }\n    bins2.push((k, hw, n));\n}\nlet d_rows2: Vec<Vec<String>> = bins2.iter().map(|(k, hw, n)| vec![\n    format!(\"{:+.0} to {:+.0}\", *k as f64 * 5.0, *k as f64 * 5.0 + 5.0),\n    n.to_string(),\n    format!(\"{:.1}%\", if *n > 0 { 100.0 * *hw as f64 / *n as f64 } else { 0.0 }),\n]).collect();\nmars_table(&[\"possession diff — all leagues\", \"matches\", \"home win%\"], &d_rows2);\n",
+      "metadata": {},
+      "execution_count": 6,
+      "outputs": [
+        {
+          "type": "text",
+          "text": "stat rows indexed: 374660\nmatches with valid possession (both teams): 111836\nEPL matches with possession: 8486 | all leagues: 111836\n"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "league",
+            "matches",
+            "season span"
+          ],
+          "rows": [
+            [
+              "English Championship",
+              "12005",
+              "2003/04 → 2026/27"
+            ],
+            [
+              "English League One",
+              "10707",
+              "2006/07 → 2026/27"
+            ],
+            [
+              "English League Two",
+              "9879",
+              "2006/07 → 2026/27"
+            ],
+            [
+              "English Premier League",
+              "8486",
+              "2001/02 → 2026/27"
+            ],
+            [
+              "Spanish La Liga",
+              "7247",
+              "2004/05 → 2026/27"
+            ],
+            [
+              "Italian Serie A",
+              "7241",
+              "2006/07 → 2026/27"
+            ],
+            [
+              "French Ligue 1",
+              "6465",
+              "2006/07 → 2026/27"
+            ],
+            [
+              "MLS",
+              "6260",
+              "2012 → 2026"
+            ],
+            [
+              "German Bundesliga",
+              "4639",
+              "2005/06 → 2026/27"
+            ],
+            [
+              "Liga MX",
+              "4542",
+              "2012/2013 → 2026/2027"
+            ],
+            [
+              "Scottish Premiership",
+              "4316",
+              "2006/07 → 2026/27"
+            ],
+            [
+              "Serie A",
+              "3946",
+              "2014 → 2026"
+            ],
+            [
+              "German 2. Bundesliga",
+              "3246",
+              "2008/09 → 2026/27"
+            ],
+            [
+              "Dutch Eredivisie",
+              "2993",
+              "2008/09 → 2026/27"
+            ],
+            [
+              "Portuguese Liga Portugal",
+              "2794",
+              "2008/09 → 2026/27"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "EPL season",
+            "matches with possession"
+          ],
+          "rows": [
+            [
+              "2001/02",
+              "1"
+            ],
+            [
+              "2002/03",
+              "378"
+            ],
+            [
+              "2003/04",
+              "381"
+            ],
+            [
+              "2004/05",
+              "380"
+            ],
+            [
+              "2005/06",
+              "380"
+            ],
+            [
+              "2006/07",
+              "380"
+            ],
+            [
+              "2007/08",
+              "380"
+            ],
+            [
+              "2008/09",
+              "380"
+            ],
+            [
+              "2009/10",
+              "379"
+            ],
+            [
+              "2010/11",
+              "379"
+            ],
+            [
+              "2011/12",
+              "207"
+            ],
+            [
+              "2012/13",
+              "338"
+            ],
+            [
+              "2013/14",
+              "344"
+            ],
+            [
+              "2014/15",
+              "380"
+            ],
+            [
+              "2015/16",
+              "417"
+            ],
+            [
+              "2016/17",
+              "4"
+            ],
+            [
+              "2017/18",
+              "380"
+            ],
+            [
+              "2018/19",
+              "378"
+            ],
+            [
+              "2019/20",
+              "376"
+            ],
+            [
+              "2020/21",
+              "372"
+            ],
+            [
+              "2021/22",
+              "351"
+            ],
+            [
+              "2022/23",
+              "293"
+            ],
+            [
+              "2023/24",
+              "370"
+            ],
+            [
+              "2024/25",
+              "368"
+            ],
+            [
+              "2025/26",
+              "380"
+            ],
+            [
+              "2026/27",
+              "110"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "possession",
+            "n",
+            "win%",
+            "draw%",
+            "loss%"
+          ],
+          "rows": [
+            [
+              "<35",
+              "1429",
+              "26.6%",
+              "24.5%",
+              "48.9%"
+            ],
+            [
+              "35-40",
+              "1436",
+              "29.4%",
+              "24.1%",
+              "46.5%"
+            ],
+            [
+              "40-45",
+              "2296",
+              "31.7%",
+              "26.1%",
+              "42.2%"
+            ],
+            [
+              "45-50",
+              "3149",
+              "34.8%",
+              "25.6%",
+              "39.5%"
+            ],
+            [
+              "50-55",
+              "3245",
+              "38.5%",
+              "26.0%",
+              "35.5%"
+            ],
+            [
+              "55-60",
+              "2441",
+              "42.2%",
+              "26.1%",
+              "31.7%"
+            ],
+            [
+              "60-65",
+              "1505",
+              "47.0%",
+              "24.1%",
+              "28.9%"
+            ],
+            [
+              "65-70",
+              "881",
+              "45.5%",
+              "25.2%",
+              "29.3%"
+            ],
+            [
+              ">70",
+              "590",
+              "54.1%",
+              "23.2%",
+              "22.7%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "possession (all leagues)",
+            "n",
+            "win%",
+            "draw%",
+            "loss%"
+          ],
+          "rows": [
+            [
+              "<35",
+              "14158",
+              "31.7%",
+              "25.8%",
+              "42.5%"
+            ],
+            [
+              "35-40",
+              "18028",
+              "35.9%",
+              "26.1%",
+              "38.0%"
+            ],
+            [
+              "40-45",
+              "30971",
+              "35.8%",
+              "25.8%",
+              "38.4%"
+            ],
+            [
+              "45-50",
+              "45664",
+              "35.6%",
+              "26.0%",
+              "38.3%"
+            ],
+            [
+              "50-55",
+              "48544",
+              "37.6%",
+              "26.6%",
+              "35.8%"
+            ],
+            [
+              "55-60",
+              "32774",
+              "38.5%",
+              "25.9%",
+              "35.6%"
+            ],
+            [
+              "60-65",
+              "18873",
+              "38.4%",
+              "26.0%",
+              "35.6%"
+            ],
+            [
+              "65-70",
+              "9659",
+              "39.8%",
+              "26.2%",
+              "34.0%"
+            ],
+            [
+              ">70",
+              "5001",
+              "48.0%",
+              "24.8%",
+              "27.2%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "possession diff (home − away)",
             "matches",
             "home win%"
           ],
@@ -1156,7 +1888,7 @@
         {
           "type": "table",
           "columns": [
-            "possession diff \u2014 all leagues",
+            "possession diff — all leagues",
             "matches",
             "home win%"
           ],
@@ -1250,9 +1982,9 @@
     {
       "id": "cdbf77b0-521c-4fca-8b41-e341dd438a0e",
       "cell_type": "code",
-      "source": "\n// team-perspective: wins with <40% possession, losses with >60%\nstruct Tally { low_w: usize, tot_w: usize, high_l: usize, tot_l: usize }\nlet mut tally: HashMap<(String, String, String), Tally> = HashMap::new(); // (league, season, team) -> tally\nfor r in &rows {\n    for (p, team, gf, ga) in [(r.hp, &r.home, r.hg, r.ag), (r.ap, &r.away, r.ag, r.hg)] {\n        let key = (r.league.clone(), r.season.clone(), team.clone());\n        let t = tally.entry(key).or_insert(Tally { low_w: 0, tot_w: 0, high_l: 0, tot_l: 0 });\n        if gf > ga {\n            t.tot_w += 1;\n            if p < 40.0 { t.low_w += 1; }\n        } else if gf < ga {\n            t.tot_l += 1;\n            if p > 60.0 { t.high_l += 1; }\n        }\n    }\n}\n\n// EPL: how often does a team win with <40% or lose with >60%?\nlet mut epl_low_w = 0usize; let mut epl_w = 0usize;\nlet mut epl_high_l = 0usize; let mut epl_l = 0usize;\nfor ((lg, _, _), t) in &tally {\n    if lg != \"English Premier League\" { continue; }\n    epl_low_w += t.low_w; epl_w += t.tot_w;\n    epl_high_l += t.high_l; epl_l += t.tot_l;\n}\nprintln!(\"EPL team-matches: wins {} | wins with <40%% poss: {} ({:.1}%% of wins)\",\n    epl_w, epl_low_w, 100.0 * epl_low_w as f64 / epl_w.max(1) as f64);\nprintln!(\"EPL losses {} | losses with >60%% poss: {} ({:.1}%% of losses)\",\n    epl_l, epl_high_l, 100.0 * epl_high_l as f64 / epl_l.max(1) as f64);\n\n// aggregate per team across all EPL seasons\nlet mut team_tot: HashMap<String, (usize, usize, usize, usize)> = HashMap::new(); // team -> (low_w, tot_w, high_l, tot_l)\nfor ((lg, _, tm), t) in &tally {\n    if lg != \"English Premier League\" { continue; }\n    let e = team_tot.entry(tm.clone()).or_insert((0, 0, 0, 0));\n    e.0 += t.low_w; e.1 += t.tot_w; e.2 += t.high_l; e.3 += t.tot_l;\n}\nlet mut cand: Vec<(&String, &(usize, usize, usize, usize))> = team_tot.iter()\n    .filter(|(_, t)| t.0 >= 8)\n    .collect();\ncand.sort_by(|a, b| {\n    let ra = (a.1).0 as f64 / (a.1).1.max(1) as f64;\n    let rb = (b.1).0 as f64 / (b.1).1.max(1) as f64;\n    rb.partial_cmp(&ra).unwrap()\n});\nlet top_rows: Vec<Vec<String>> = cand.iter().take(12).map(|(tm, t)| vec![\n    (*tm).clone(), t.0.to_string(), t.1.to_string(),\n    format!(\"{:.0}%\", 100.0 * t.0 as f64 / t.1.max(1) as f64),\n]).collect();\nmars_table(&[\"team (EPL, all seasons)\", \"wins <40% poss\", \"total wins\", \"low-poss win share\"], &top_rows);\n\n// and the opposite: teams that lose most despite >60% possession\nlet mut cand_l: Vec<(&String, &(usize, usize, usize, usize))> = team_tot.iter()\n    .filter(|(_, t)| t.2 >= 8)\n    .collect();\ncand_l.sort_by(|a, b| {\n    let ra = (a.1).2 as f64 / (a.1).3.max(1) as f64;\n    let rb = (b.1).2 as f64 / (b.1).3.max(1) as f64;\n    rb.partial_cmp(&ra).unwrap()\n});\nlet top_l: Vec<Vec<String>> = cand_l.iter().take(12).map(|(tm, t)| vec![\n    (*tm).clone(), t.2.to_string(), t.3.to_string(),\n    format!(\"{:.0}%\", 100.0 * t.2 as f64 / t.3.max(1) as f64),\n]).collect();\nmars_table(&[\"team (EPL, all seasons)\", \"losses >60% poss\", \"total losses\", \"high-poss loss share\"], &top_l);\n",
+      "source": "// team-perspective: wins with <40% possession, losses with >60%\nstruct Tally { low_w: usize, tot_w: usize, high_l: usize, tot_l: usize }\nlet mut tally: HashMap<(String, String, String), Tally> = HashMap::new(); // (league, season, team) -> tally\nfor r in &rows {\n    for (p, team, gf, ga) in [(r.hp, &r.home, r.hg, r.ag), (r.ap, &r.away, r.ag, r.hg)] {\n        let key = (r.league.clone(), r.season.clone(), team.clone());\n        let t = tally.entry(key).or_insert(Tally { low_w: 0, tot_w: 0, high_l: 0, tot_l: 0 });\n        if gf > ga {\n            t.tot_w += 1;\n            if p < 40.0 { t.low_w += 1; }\n        } else if gf < ga {\n            t.tot_l += 1;\n            if p > 60.0 { t.high_l += 1; }\n        }\n    }\n}\n\n// EPL: how often does a team win with <40% or lose with >60%?\nlet mut epl_low_w = 0usize; let mut epl_w = 0usize;\nlet mut epl_high_l = 0usize; let mut epl_l = 0usize;\nfor ((lg, _, _), t) in &tally {\n    if lg != \"English Premier League\" { continue; }\n    epl_low_w += t.low_w; epl_w += t.tot_w;\n    epl_high_l += t.high_l; epl_l += t.tot_l;\n}\nprintln!(\"EPL team-matches: wins {} | wins with <40%% poss: {} ({:.1}%% of wins)\",\n    epl_w, epl_low_w, 100.0 * epl_low_w as f64 / epl_w.max(1) as f64);\nprintln!(\"EPL losses {} | losses with >60%% poss: {} ({:.1}%% of losses)\",\n    epl_l, epl_high_l, 100.0 * epl_high_l as f64 / epl_l.max(1) as f64);\n\n// aggregate per team across all EPL seasons\nlet mut team_tot: HashMap<String, (usize, usize, usize, usize)> = HashMap::new(); // team -> (low_w, tot_w, high_l, tot_l)\nfor ((lg, _, tm), t) in &tally {\n    if lg != \"English Premier League\" { continue; }\n    let e = team_tot.entry(tm.clone()).or_insert((0, 0, 0, 0));\n    e.0 += t.low_w; e.1 += t.tot_w; e.2 += t.high_l; e.3 += t.tot_l;\n}\nlet mut cand: Vec<(&String, &(usize, usize, usize, usize))> = team_tot.iter()\n    .filter(|(_, t)| t.0 >= 8)\n    .collect();\ncand.sort_by(|a, b| {\n    let ra = (a.1).0 as f64 / (a.1).1.max(1) as f64;\n    let rb = (b.1).0 as f64 / (b.1).1.max(1) as f64;\n    rb.partial_cmp(&ra).unwrap()\n});\nlet top_rows: Vec<Vec<String>> = cand.iter().take(12).map(|(tm, t)| vec![\n    (*tm).clone(), t.0.to_string(), t.1.to_string(),\n    format!(\"{:.0}%\", 100.0 * t.0 as f64 / t.1.max(1) as f64),\n]).collect();\nmars_table(&[\"team (EPL, all seasons)\", \"wins <40% poss\", \"total wins\", \"low-poss win share\"], &top_rows);\n",
       "metadata": {},
-      "execution_count": 5,
+      "execution_count": 7,
       "outputs": [
         {
           "type": "text",
@@ -1269,77 +2001,77 @@
             [
               "English Championship",
               "12005",
-              "2003/04 \u2192 2026/27"
+              "2003/04 → 2026/27"
             ],
             [
               "English League One",
               "10707",
-              "2006/07 \u2192 2026/27"
+              "2006/07 → 2026/27"
             ],
             [
               "English League Two",
               "9879",
-              "2006/07 \u2192 2026/27"
+              "2006/07 → 2026/27"
             ],
             [
               "English Premier League",
               "8486",
-              "2001/02 \u2192 2026/27"
+              "2001/02 → 2026/27"
             ],
             [
               "Spanish La Liga",
               "7247",
-              "2004/05 \u2192 2026/27"
+              "2004/05 → 2026/27"
             ],
             [
               "Italian Serie A",
               "7241",
-              "2006/07 \u2192 2026/27"
+              "2006/07 → 2026/27"
             ],
             [
               "French Ligue 1",
               "6465",
-              "2006/07 \u2192 2026/27"
+              "2006/07 → 2026/27"
             ],
             [
               "MLS",
               "6260",
-              "2012 \u2192 2026"
+              "2012 → 2026"
             ],
             [
               "German Bundesliga",
               "4639",
-              "2005/06 \u2192 2026/27"
+              "2005/06 → 2026/27"
             ],
             [
               "Liga MX",
               "4542",
-              "2012/2013 \u2192 2026/2027"
+              "2012/2013 → 2026/2027"
             ],
             [
               "Scottish Premiership",
               "4316",
-              "2006/07 \u2192 2026/27"
+              "2006/07 → 2026/27"
             ],
             [
               "Serie A",
               "3946",
-              "2014 \u2192 2026"
+              "2014 → 2026"
             ],
             [
               "German 2. Bundesliga",
               "3246",
-              "2008/09 \u2192 2026/27"
+              "2008/09 → 2026/27"
             ],
             [
               "Dutch Eredivisie",
               "2993",
-              "2008/09 \u2192 2026/27"
+              "2008/09 → 2026/27"
             ],
             [
               "Portuguese Liga Portugal",
               "2794",
-              "2008/09 \u2192 2026/27"
+              "2008/09 → 2026/27"
             ]
           ]
         },
@@ -1609,7 +2341,7 @@
         {
           "type": "table",
           "columns": [
-            "possession diff (home \u2212 away)",
+            "possession diff (home − away)",
             "matches",
             "home win%"
           ],
@@ -1694,7 +2426,621 @@
         {
           "type": "table",
           "columns": [
-            "possession diff \u2014 all leagues",
+            "possession diff — all leagues",
+            "matches",
+            "home win%"
+          ],
+          "rows": [
+            [
+              "-35 to -30",
+              "2274",
+              "41.1%"
+            ],
+            [
+              "-30 to -25",
+              "3155",
+              "44.8%"
+            ],
+            [
+              "-25 to -20",
+              "4158",
+              "45.5%"
+            ],
+            [
+              "-20 to -15",
+              "6062",
+              "45.4%"
+            ],
+            [
+              "-15 to -10",
+              "7137",
+              "45.9%"
+            ],
+            [
+              "-10 to -5",
+              "10221",
+              "42.7%"
+            ],
+            [
+              "-5 to +0",
+              "11045",
+              "43.9%"
+            ],
+            [
+              "+0 to +5",
+              "14423",
+              "43.6%"
+            ],
+            [
+              "+5 to +10",
+              "11157",
+              "45.0%"
+            ],
+            [
+              "+10 to +15",
+              "10891",
+              "45.1%"
+            ],
+            [
+              "+15 to +20",
+              "7864",
+              "44.0%"
+            ],
+            [
+              "+20 to +25",
+              "6607",
+              "45.0%"
+            ],
+            [
+              "+25 to +30",
+              "4633",
+              "43.0%"
+            ],
+            [
+              "+30 to +35",
+              "3629",
+              "45.1%"
+            ],
+            [
+              "+35 to +40",
+              "2213",
+              "43.8%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "team (EPL, all seasons)",
+            "wins <40% poss",
+            "total wins",
+            "low-poss win share"
+          ],
+          "rows": [
+            [
+              "Nott'm Forest",
+              "29",
+              "46",
+              "63%"
+            ],
+            [
+              "Cardiff",
+              "9",
+              "17",
+              "53%"
+            ],
+            [
+              "Burnley",
+              "34",
+              "81",
+              "42%"
+            ],
+            [
+              "Hull",
+              "14",
+              "36",
+              "39%"
+            ],
+            [
+              "Crystal Palace",
+              "53",
+              "150",
+              "35%"
+            ],
+            [
+              "Sheffield United",
+              "12",
+              "34",
+              "35%"
+            ],
+            [
+              "Stoke",
+              "31",
+              "98",
+              "32%"
+            ],
+            [
+              "West Brom",
+              "30",
+              "96",
+              "31%"
+            ],
+            [
+              "Brentford",
+              "17",
+              "63",
+              "27%"
+            ],
+            [
+              "Bournemouth",
+              "26",
+              "100",
+              "26%"
+            ],
+            [
+              "Wolves",
+              "29",
+              "118",
+              "25%"
+            ],
+            [
+              "Watford",
+              "14",
+              "57",
+              "25%"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "0bfe1350-c436-494a-8711-5f6fb5e8b17e",
+      "cell_type": "code",
+      "source": "// and the opposite: teams that lose most despite >60% possession\nlet mut cand_l: Vec<(&String, &(usize, usize, usize, usize))> = team_tot.iter()\n    .filter(|(_, t)| t.2 >= 8)\n    .collect();\ncand_l.sort_by(|a, b| {\n    let ra = (a.1).2 as f64 / (a.1).3.max(1) as f64;\n    let rb = (b.1).2 as f64 / (b.1).3.max(1) as f64;\n    rb.partial_cmp(&ra).unwrap()\n});\nlet top_l: Vec<Vec<String>> = cand_l.iter().take(12).map(|(tm, t)| vec![\n    (*tm).clone(), t.2.to_string(), t.3.to_string(),\n    format!(\"{:.0}%\", 100.0 * t.2 as f64 / t.3.max(1) as f64),\n]).collect();\nmars_table(&[\"team (EPL, all seasons)\", \"losses >60% poss\", \"total losses\", \"high-poss loss share\"], &top_l);\n",
+      "metadata": {},
+      "execution_count": 8,
+      "outputs": [
+        {
+          "type": "text",
+          "text": "stat rows indexed: 374660\nmatches with valid possession (both teams): 111836\nEPL matches with possession: 8486 | all leagues: 111836\nEPL team-matches: wins 6334 | wins with <40%% poss: 802 (12.7%% of wins)\nEPL losses 6334 | losses with >60%% poss: 802 (12.7%% of losses)\n"
+        },
+        {
+          "type": "table",
+          "columns": [
+            "league",
+            "matches",
+            "season span"
+          ],
+          "rows": [
+            [
+              "English Championship",
+              "12005",
+              "2003/04 → 2026/27"
+            ],
+            [
+              "English League One",
+              "10707",
+              "2006/07 → 2026/27"
+            ],
+            [
+              "English League Two",
+              "9879",
+              "2006/07 → 2026/27"
+            ],
+            [
+              "English Premier League",
+              "8486",
+              "2001/02 → 2026/27"
+            ],
+            [
+              "Spanish La Liga",
+              "7247",
+              "2004/05 → 2026/27"
+            ],
+            [
+              "Italian Serie A",
+              "7241",
+              "2006/07 → 2026/27"
+            ],
+            [
+              "French Ligue 1",
+              "6465",
+              "2006/07 → 2026/27"
+            ],
+            [
+              "MLS",
+              "6260",
+              "2012 → 2026"
+            ],
+            [
+              "German Bundesliga",
+              "4639",
+              "2005/06 → 2026/27"
+            ],
+            [
+              "Liga MX",
+              "4542",
+              "2012/2013 → 2026/2027"
+            ],
+            [
+              "Scottish Premiership",
+              "4316",
+              "2006/07 → 2026/27"
+            ],
+            [
+              "Serie A",
+              "3946",
+              "2014 → 2026"
+            ],
+            [
+              "German 2. Bundesliga",
+              "3246",
+              "2008/09 → 2026/27"
+            ],
+            [
+              "Dutch Eredivisie",
+              "2993",
+              "2008/09 → 2026/27"
+            ],
+            [
+              "Portuguese Liga Portugal",
+              "2794",
+              "2008/09 → 2026/27"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "EPL season",
+            "matches with possession"
+          ],
+          "rows": [
+            [
+              "2001/02",
+              "1"
+            ],
+            [
+              "2002/03",
+              "378"
+            ],
+            [
+              "2003/04",
+              "381"
+            ],
+            [
+              "2004/05",
+              "380"
+            ],
+            [
+              "2005/06",
+              "380"
+            ],
+            [
+              "2006/07",
+              "380"
+            ],
+            [
+              "2007/08",
+              "380"
+            ],
+            [
+              "2008/09",
+              "380"
+            ],
+            [
+              "2009/10",
+              "379"
+            ],
+            [
+              "2010/11",
+              "379"
+            ],
+            [
+              "2011/12",
+              "207"
+            ],
+            [
+              "2012/13",
+              "338"
+            ],
+            [
+              "2013/14",
+              "344"
+            ],
+            [
+              "2014/15",
+              "380"
+            ],
+            [
+              "2015/16",
+              "417"
+            ],
+            [
+              "2016/17",
+              "4"
+            ],
+            [
+              "2017/18",
+              "380"
+            ],
+            [
+              "2018/19",
+              "378"
+            ],
+            [
+              "2019/20",
+              "376"
+            ],
+            [
+              "2020/21",
+              "372"
+            ],
+            [
+              "2021/22",
+              "351"
+            ],
+            [
+              "2022/23",
+              "293"
+            ],
+            [
+              "2023/24",
+              "370"
+            ],
+            [
+              "2024/25",
+              "368"
+            ],
+            [
+              "2025/26",
+              "380"
+            ],
+            [
+              "2026/27",
+              "110"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "possession",
+            "n",
+            "win%",
+            "draw%",
+            "loss%"
+          ],
+          "rows": [
+            [
+              "<35",
+              "1429",
+              "26.6%",
+              "24.5%",
+              "48.9%"
+            ],
+            [
+              "35-40",
+              "1436",
+              "29.4%",
+              "24.1%",
+              "46.5%"
+            ],
+            [
+              "40-45",
+              "2296",
+              "31.7%",
+              "26.1%",
+              "42.2%"
+            ],
+            [
+              "45-50",
+              "3149",
+              "34.8%",
+              "25.6%",
+              "39.5%"
+            ],
+            [
+              "50-55",
+              "3245",
+              "38.5%",
+              "26.0%",
+              "35.5%"
+            ],
+            [
+              "55-60",
+              "2441",
+              "42.2%",
+              "26.1%",
+              "31.7%"
+            ],
+            [
+              "60-65",
+              "1505",
+              "47.0%",
+              "24.1%",
+              "28.9%"
+            ],
+            [
+              "65-70",
+              "881",
+              "45.5%",
+              "25.2%",
+              "29.3%"
+            ],
+            [
+              ">70",
+              "590",
+              "54.1%",
+              "23.2%",
+              "22.7%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "possession (all leagues)",
+            "n",
+            "win%",
+            "draw%",
+            "loss%"
+          ],
+          "rows": [
+            [
+              "<35",
+              "14158",
+              "31.7%",
+              "25.8%",
+              "42.5%"
+            ],
+            [
+              "35-40",
+              "18028",
+              "35.9%",
+              "26.1%",
+              "38.0%"
+            ],
+            [
+              "40-45",
+              "30971",
+              "35.8%",
+              "25.8%",
+              "38.4%"
+            ],
+            [
+              "45-50",
+              "45664",
+              "35.6%",
+              "26.0%",
+              "38.3%"
+            ],
+            [
+              "50-55",
+              "48544",
+              "37.6%",
+              "26.6%",
+              "35.8%"
+            ],
+            [
+              "55-60",
+              "32774",
+              "38.5%",
+              "25.9%",
+              "35.6%"
+            ],
+            [
+              "60-65",
+              "18873",
+              "38.4%",
+              "26.0%",
+              "35.6%"
+            ],
+            [
+              "65-70",
+              "9659",
+              "39.8%",
+              "26.2%",
+              "34.0%"
+            ],
+            [
+              ">70",
+              "5001",
+              "48.0%",
+              "24.8%",
+              "27.2%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "possession diff (home − away)",
+            "matches",
+            "home win%"
+          ],
+          "rows": [
+            [
+              "-35 to -30",
+              "196",
+              "33.2%"
+            ],
+            [
+              "-30 to -25",
+              "280",
+              "37.9%"
+            ],
+            [
+              "-25 to -20",
+              "335",
+              "35.5%"
+            ],
+            [
+              "-20 to -15",
+              "479",
+              "37.2%"
+            ],
+            [
+              "-15 to -10",
+              "535",
+              "45.8%"
+            ],
+            [
+              "-10 to -5",
+              "733",
+              "39.4%"
+            ],
+            [
+              "-5 to +0",
+              "762",
+              "43.8%"
+            ],
+            [
+              "+0 to +5",
+              "899",
+              "44.4%"
+            ],
+            [
+              "+5 to +10",
+              "778",
+              "45.8%"
+            ],
+            [
+              "+10 to +15",
+              "796",
+              "49.9%"
+            ],
+            [
+              "+15 to +20",
+              "565",
+              "48.8%"
+            ],
+            [
+              "+20 to +25",
+              "475",
+              "55.4%"
+            ],
+            [
+              "+25 to +30",
+              "389",
+              "52.2%"
+            ],
+            [
+              "+30 to +35",
+              "311",
+              "47.9%"
+            ],
+            [
+              "+35 to +40",
+              "223",
+              "52.9%"
+            ]
+          ]
+        },
+        {
+          "type": "table",
+          "columns": [
+            "possession diff — all leagues",
             "matches",
             "home win%"
           ],
@@ -1947,16 +3293,16 @@
     {
       "id": "ffde4a5b-bb80-4048-aa52-ab7e67e9891c",
       "cell_type": "markdown",
-      "source": "## Is possession just a proxy for something better?\n\nPossession correlates with shots, which correlate with xG, which\ncorrelates with goals. The question that matters: **holding shots and\nxG constant, does possession add anything?** A cheaper version of that\ntest \u2014 compare how well each metric's *share* predicts the win.",
+      "source": "## Is possession just a proxy for something better?\n\nPossession correlates with shots, which correlate with xG, which\ncorrelates with goals. The question that matters: **holding shots and\nxG constant, does possession add anything?** A cheaper version of that\ntest — compare how well each metric's *share* predicts the win.",
       "metadata": {},
       "outputs": []
     },
     {
       "id": "ed10d560-02ab-40ca-974a-f6e72209e411",
       "cell_type": "code",
-      "source": "\n// Pearson correlation between a metric share and home win (1/0)\nfn pearson(xs: &[f64], ys: &[f64]) -> f64 {\n    let n = xs.len() as f64;\n    if n < 3.0 { return f64::NAN; }\n    let mx = xs.iter().sum::<f64>() / n;\n    let my = ys.iter().sum::<f64>() / n;\n    let mut sxy = 0.0; let mut sxx = 0.0; let mut syy = 0.0;\n    for i in 0..xs.len() {\n        let dx = xs[i] - mx; let dy = ys[i] - my;\n        sxy += dx * dy; sxx += dx * dx; syy += dy * dy;\n    }\n    if sxx <= 0.0 || syy <= 0.0 { return f64::NAN; }\n    sxy / (sxx.sqrt() * syy.sqrt())\n}\n\n// shot-share bands vs possession bands (team perspective, all leagues w/ shots)\nlet sbands = [0.0, 35.0, 45.0, 55.0, 65.0, 100.0];\nlet slabels = [\"<35\", \"35-45\", \"45-55\", \"55-65\", \">65\"];\nlet mut sw = vec![0usize; 5]; let mut sd = vec![0usize; 5]; let mut sl = vec![0usize; 5];\nlet mut n_shot = 0usize;\nfor r in &rows {\n    for (p, s, gf, ga) in [(r.hp, r.hs, r.hg, r.ag), (r.ap, r.as_, r.ag, r.hg)] {\n        if s.is_nan() || s <= 0.0 { continue; }\n        let opp = if gf == ga && r.hg == r.ag { f64::NAN } else { f64::NAN };\n        let _ = opp;\n        // opponent shots needed for share \u2014 approximate with raw shots band instead\n        n_shot += 1;\n        let b = sbands.iter().position(|&hi| s < hi).unwrap_or(5) - 1;\n        if gf > ga { sw[b] += 1; } else if gf == ga { sd[b] += 1; } else { sl[b] += 1; }\n    }\n}\n// NOTE: raw shot counts aren't comparable across matches; use share instead\n// recompute properly with opponent shots\nsw.iter_mut().for_each(|x| *x = 0); sd.iter_mut().for_each(|x| *x = 0); sl.iter_mut().for_each(|x| *x = 0);\nlet mut n_share = 0usize;\nfor r in &rows {\n    let tot = r.hs + r.as_;\n    if tot.is_nan() || tot <= 0.0 { continue; }\n    for (s, gf, ga) in [(r.hs, r.hg, r.ag), (r.as_, r.ag, r.hg)] {\n        if s.is_nan() { continue; }\n        let share = 100.0 * s / tot;\n        n_share += 1;\n        let b = sbands.iter().position(|&hi| share < hi).unwrap_or(5) - 1;\n        if gf > ga { sw[b] += 1; } else if gf == ga { sd[b] += 1; } else { sl[b] += 1; }\n    }\n}\nlet shot_rows: Vec<Vec<String>> = (0..5).map(|b| {\n    let n = (sw[b] + sd[b] + sl[b]) as f64;\n    vec![slabels[b].to_string(), (sw[b]+sd[b]+sl[b]).to_string(),\n         format!(\"{:.1}%\", 100.0*sw[b] as f64/n),\n         format!(\"{:.1}%\", 100.0*sd[b] as f64/n),\n         format!(\"{:.1}%\", 100.0*sl[b] as f64/n)]\n}).collect();\nmars_table(&[\"shot share %\", \"n\", \"win%\", \"draw%\", \"loss%\"], &shot_rows);\nprintln!(\"team-observations with shots: {}\", n_share);\n\n// correlation of shares with home win \u2014 EPL and all leagues\nlet mut xs_p = Vec::new(); let mut xs_s = Vec::new(); let mut xs_x = Vec::new(); let mut ys = Vec::new();\nlet mut xs_p_e = Vec::new(); let mut xs_s_e = Vec::new(); let mut ys_e = Vec::new();\nfor r in &epl {\n    let tot_s = r.hs + r.as_;\n    if tot_s.is_nan() || tot_s <= 0.0 { continue; }\n    let hw = if r.hg > r.ag { 1.0 } else { 0.0 };\n    xs_p_e.push(r.hp); xs_s_e.push(100.0 * r.hs / tot_s); ys_e.push(hw);\n    if !r.hxg.is_nan() && !r.axg.is_nan() && r.hxg + r.axg > 0.0 {\n        xs_p.push(r.hp); xs_s.push(100.0 * r.hs / tot_s);\n        xs_x.push(100.0 * r.hxg / (r.hxg + r.axg)); ys.push(hw);\n    }\n}\nprintln!(\"EPL: corr(home possession, home win) = {:.3}\", pearson(&xs_p_e, &ys_e));\nprintln!(\"EPL: corr(home shot share,   home win) = {:.3}\", pearson(&xs_s_e, &ys_e));\nprintln!(\"EPL xG subset ({} matches): corr(poss)={:.3} corr(shots)={:.3} corr(xG)={:.3}\",\n    ys.len(), pearson(&xs_p, &ys), pearson(&xs_s, &ys), pearson(&xs_x, &ys));\n",
+      "source": "\n// Pearson correlation between a metric share and home win (1/0)\nfn pearson(xs: &[f64], ys: &[f64]) -> f64 {\n    let n = xs.len() as f64;\n    if n < 3.0 { return f64::NAN; }\n    let mx = xs.iter().sum::<f64>() / n;\n    let my = ys.iter().sum::<f64>() / n;\n    let mut sxy = 0.0; let mut sxx = 0.0; let mut syy = 0.0;\n    for i in 0..xs.len() {\n        let dx = xs[i] - mx; let dy = ys[i] - my;\n        sxy += dx * dy; sxx += dx * dx; syy += dy * dy;\n    }\n    if sxx <= 0.0 || syy <= 0.0 { return f64::NAN; }\n    sxy / (sxx.sqrt() * syy.sqrt())\n}\n\n// shot-share bands vs possession bands (team perspective, all leagues w/ shots)\nlet sbands = [0.0, 35.0, 45.0, 55.0, 65.0, 100.0];\nlet slabels = [\"<35\", \"35-45\", \"45-55\", \"55-65\", \">65\"];\nlet mut sw = vec![0usize; 5]; let mut sd = vec![0usize; 5]; let mut sl = vec![0usize; 5];\nlet mut n_shot = 0usize;\nfor r in &rows {\n    for (p, s, gf, ga) in [(r.hp, r.hs, r.hg, r.ag), (r.ap, r.as_, r.ag, r.hg)] {\n        if s.is_nan() || s <= 0.0 { continue; }\n        let opp = if gf == ga && r.hg == r.ag { f64::NAN } else { f64::NAN };\n        let _ = opp;\n        // opponent shots needed for share — approximate with raw shots band instead\n        n_shot += 1;\n        let b = sbands.iter().position(|&hi| s < hi).unwrap_or(5) - 1;\n        if gf > ga { sw[b] += 1; } else if gf == ga { sd[b] += 1; } else { sl[b] += 1; }\n    }\n}\n// NOTE: raw shot counts aren't comparable across matches; use share instead\n// recompute properly with opponent shots\nsw.iter_mut().for_each(|x| *x = 0); sd.iter_mut().for_each(|x| *x = 0); sl.iter_mut().for_each(|x| *x = 0);\nlet mut n_share = 0usize;\nfor r in &rows {\n    let tot = r.hs + r.as_;\n    if tot.is_nan() || tot <= 0.0 { continue; }\n    for (s, gf, ga) in [(r.hs, r.hg, r.ag), (r.as_, r.ag, r.hg)] {\n        if s.is_nan() { continue; }\n        let share = 100.0 * s / tot;\n        n_share += 1;\n        let b = sbands.iter().position(|&hi| share < hi).unwrap_or(5) - 1;\n        if gf > ga { sw[b] += 1; } else if gf == ga { sd[b] += 1; } else { sl[b] += 1; }\n    }\n}\nlet shot_rows: Vec<Vec<String>> = (0..5).map(|b| {\n    let n = (sw[b] + sd[b] + sl[b]) as f64;\n    vec![slabels[b].to_string(), (sw[b]+sd[b]+sl[b]).to_string(),\n         format!(\"{:.1}%\", 100.0*sw[b] as f64/n),\n         format!(\"{:.1}%\", 100.0*sd[b] as f64/n),\n         format!(\"{:.1}%\", 100.0*sl[b] as f64/n)]\n}).collect();\nmars_table(&[\"shot share %\", \"n\", \"win%\", \"draw%\", \"loss%\"], &shot_rows);\nprintln!(\"team-observations with shots: {}\", n_share);\n\n// correlation of shares with home win — EPL and all leagues\nlet mut xs_p = Vec::new(); let mut xs_s = Vec::new(); let mut xs_x = Vec::new(); let mut ys = Vec::new();\nlet mut xs_p_e = Vec::new(); let mut xs_s_e = Vec::new(); let mut ys_e = Vec::new();\nfor r in &epl {\n    let tot_s = r.hs + r.as_;\n    if tot_s.is_nan() || tot_s <= 0.0 { continue; }\n    let hw = if r.hg > r.ag { 1.0 } else { 0.0 };\n    xs_p_e.push(r.hp); xs_s_e.push(100.0 * r.hs / tot_s); ys_e.push(hw);\n    if !r.hxg.is_nan() && !r.axg.is_nan() && r.hxg + r.axg > 0.0 {\n        xs_p.push(r.hp); xs_s.push(100.0 * r.hs / tot_s);\n        xs_x.push(100.0 * r.hxg / (r.hxg + r.axg)); ys.push(hw);\n    }\n}\nprintln!(\"EPL: corr(home possession, home win) = {:.3}\", pearson(&xs_p_e, &ys_e));\nprintln!(\"EPL: corr(home shot share,   home win) = {:.3}\", pearson(&xs_s_e, &ys_e));\nprintln!(\"EPL xG subset ({} matches): corr(poss)={:.3} corr(shots)={:.3} corr(xG)={:.3}\",\n    ys.len(), pearson(&xs_p, &ys), pearson(&xs_s, &ys), pearson(&xs_x, &ys));\n",
       "metadata": {},
-      "execution_count": 6,
+      "execution_count": 9,
       "outputs": [
         {
           "type": "text",
@@ -1973,77 +3319,77 @@
             [
               "English Championship",
               "12005",
-              "2003/04 \u2192 2026/27"
+              "2003/04 → 2026/27"
             ],
             [
               "English League One",
               "10707",
-              "2006/07 \u2192 2026/27"
+              "2006/07 → 2026/27"
             ],
             [
               "English League Two",
               "9879",
-              "2006/07 \u2192 2026/27"
+              "2006/07 → 2026/27"
             ],
             [
               "English Premier League",
               "8486",
-              "2001/02 \u2192 2026/27"
+              "2001/02 → 2026/27"
             ],
             [
               "Spanish La Liga",
               "7247",
-              "2004/05 \u2192 2026/27"
+              "2004/05 → 2026/27"
             ],
             [
               "Italian Serie A",
               "7241",
-              "2006/07 \u2192 2026/27"
+              "2006/07 → 2026/27"
             ],
             [
               "French Ligue 1",
               "6465",
-              "2006/07 \u2192 2026/27"
+              "2006/07 → 2026/27"
             ],
             [
               "MLS",
               "6260",
-              "2012 \u2192 2026"
+              "2012 → 2026"
             ],
             [
               "German Bundesliga",
               "4639",
-              "2005/06 \u2192 2026/27"
+              "2005/06 → 2026/27"
             ],
             [
               "Liga MX",
               "4542",
-              "2012/2013 \u2192 2026/2027"
+              "2012/2013 → 2026/2027"
             ],
             [
               "Scottish Premiership",
               "4316",
-              "2006/07 \u2192 2026/27"
+              "2006/07 → 2026/27"
             ],
             [
               "Serie A",
               "3946",
-              "2014 \u2192 2026"
+              "2014 → 2026"
             ],
             [
               "German 2. Bundesliga",
               "3246",
-              "2008/09 \u2192 2026/27"
+              "2008/09 → 2026/27"
             ],
             [
               "Dutch Eredivisie",
               "2993",
-              "2008/09 \u2192 2026/27"
+              "2008/09 → 2026/27"
             ],
             [
               "Portuguese Liga Portugal",
               "2794",
-              "2008/09 \u2192 2026/27"
+              "2008/09 → 2026/27"
             ]
           ]
         },
@@ -2313,7 +3659,7 @@
         {
           "type": "table",
           "columns": [
-            "possession diff (home \u2212 away)",
+            "possession diff (home − away)",
             "matches",
             "home win%"
           ],
@@ -2398,7 +3744,7 @@
         {
           "type": "table",
           "columns": [
-            "possession diff \u2014 all leagues",
+            "possession diff — all leagues",
             "matches",
             "home win%"
           ],
@@ -2698,16 +4044,16 @@
     {
       "id": "d09a4974-4a9e-4fcd-92f3-11bdfa4adc19",
       "cell_type": "markdown",
-      "source": "## Context: home advantage and opponent strength\n\nTwo confounds the band table ignores. **Home teams already win more**,\nso a home-side possession edge may partly be venue, not control.\nAnd **possession is easier against weak teams** \u2014 a side that pins a\nrelegation candidate will post inflated numbers. Split by venue and by\nopponent strength (the opponent's final season points, top vs bottom\nhalf within its league-season).",
+      "source": "## Context: home advantage and opponent strength\n\nTwo confounds the band table ignores. **Home teams already win more**,\nso a home-side possession edge may partly be venue, not control.\nAnd **possession is easier against weak teams** — a side that pins a\nrelegation candidate will post inflated numbers. Split by venue and by\nopponent strength (the opponent's final season points, top vs bottom\nhalf within its league-season).",
       "metadata": {},
       "outputs": []
     },
     {
       "id": "ed2173b3-b362-4ab1-9b79-b775b72b666f",
       "cell_type": "code",
-      "source": "\n// team-season points for opponent strength (all matches_full matches)\nlet mut tp: HashMap<(String, String, i64), (i64, i64)> = HashMap::new(); // (lg,season,tid) -> (pts, gf-ga rank later)\nfor i in 0..mf.height() {\n    if s_hg[i] < 0 || s_ag[i] < 0 { continue; }\n    let lg = format!(\"{}|{}\", s_country[i], s_league[i]);\n    let key_h = (lg.clone(), s_season[i].clone(), s_hid[i]);\n    let key_a = (lg.clone(), s_season[i].clone(), s_aid[i]);\n    let ph = if s_hg[i] > s_ag[i] { 3 } else if s_hg[i] == s_ag[i] { 1 } else { 0 };\n    let pa = if s_ag[i] > s_hg[i] { 3 } else if s_hg[i] == s_ag[i] { 1 } else { 0 };\n    tp.entry(key_h).or_insert((0, 0)).0 += ph;\n    tp.entry(key_a).or_insert((0, 0)).0 += pa;\n}\n// rank teams within league-season by points -> top half = strong\nlet mut lgsn_teams: HashMap<(String, String), Vec<((String, String, i64), i64)>> = HashMap::new();\nfor (k, v) in &tp { lgsn_teams.entry((k.0.clone(), k.1.clone())).or_default().push((k.clone(), v.0)); }\nlet mut strong: HashMap<(String, String, i64), bool> = HashMap::new();\nfor ((lg, sn), mut teams) in lgsn_teams {\n    teams.sort_by(|a, b| b.1.cmp(&a.1));\n    let half = teams.len() / 2;\n    for (i, (k, _)) in teams.iter().enumerate() {\n        strong.insert(k.clone(), i < half);\n    }\n    let _ = (lg, sn);\n}\n\n// win% by possession band x opponent strength \u2014 EPL only\nlet epl_rows: Vec<&MRow> = epl.iter().cloned().collect();\nlet mut res = vec![(0usize,0usize); 18]; // band(9) x strong(2) -> (wins,total)\nfor r in &epl_rows {\n    let lg = format!(\"England|{}\", r.league);\n    for (p, opp_id, gf, ga) in [(r.hp, r.aid, r.hg, r.ag), (r.ap, r.hid, r.ag, r.hg)] {\n        let b = bands.iter().position(|&hi| p < hi).unwrap_or(9) - 1;\n        let is_strong = strong.get(&(lg.clone(), r.season.clone(), opp_id)).copied().unwrap_or(false);\n        let idx = b * 2 + if is_strong { 1 } else { 0 };\n        res[idx].1 += 1;\n        if gf > ga { res[idx].0 += 1; }\n    }\n}\nlet ctx_rows: Vec<Vec<String>> = (0..9).map(|b| vec![\n    blabels[b].to_string(),\n    format!(\"{} / {}\", res[b*2].1, res[b*2+1].1),\n    format!(\"{:.0}% / {:.0}%\",\n        100.0*res[b*2].0 as f64/res[b*2].1.max(1) as f64,\n        100.0*res[b*2+1].0 as f64/res[b*2+1].1.max(1) as f64),\n]).collect();\nmars_table(&[\"possession\", \"n vs weak / strong\", \"win% vs weak / strong\"], &ctx_rows);\nprintln!(\"opponent strength = top-half finishers in same league-season (points)\");\n",
+      "source": "\n// team-season points for opponent strength (all matches_full matches)\nlet mut tp: HashMap<(String, String, i64), (i64, i64)> = HashMap::new(); // (lg,season,tid) -> (pts, gf-ga rank later)\nfor i in 0..mf.height() {\n    if s_hg[i] < 0 || s_ag[i] < 0 { continue; }\n    let lg = format!(\"{}|{}\", s_country[i], s_league[i]);\n    let key_h = (lg.clone(), s_season[i].clone(), s_hid[i]);\n    let key_a = (lg.clone(), s_season[i].clone(), s_aid[i]);\n    let ph = if s_hg[i] > s_ag[i] { 3 } else if s_hg[i] == s_ag[i] { 1 } else { 0 };\n    let pa = if s_ag[i] > s_hg[i] { 3 } else if s_hg[i] == s_ag[i] { 1 } else { 0 };\n    tp.entry(key_h).or_insert((0, 0)).0 += ph;\n    tp.entry(key_a).or_insert((0, 0)).0 += pa;\n}\n// rank teams within league-season by points -> top half = strong\nlet mut lgsn_teams: HashMap<(String, String), Vec<((String, String, i64), i64)>> = HashMap::new();\nfor (k, v) in &tp { lgsn_teams.entry((k.0.clone(), k.1.clone())).or_default().push((k.clone(), v.0)); }\nlet mut strong: HashMap<(String, String, i64), bool> = HashMap::new();\nfor ((lg, sn), mut teams) in lgsn_teams {\n    teams.sort_by(|a, b| b.1.cmp(&a.1));\n    let half = teams.len() / 2;\n    for (i, (k, _)) in teams.iter().enumerate() {\n        strong.insert(k.clone(), i < half);\n    }\n    let _ = (lg, sn);\n}\n\n// win% by possession band x opponent strength — EPL only\nlet epl_rows: Vec<&MRow> = epl.iter().cloned().collect();\nlet mut res = vec![(0usize,0usize); 18]; // band(9) x strong(2) -> (wins,total)\nfor r in &epl_rows {\n    let lg = format!(\"England|{}\", r.league);\n    for (p, opp_id, gf, ga) in [(r.hp, r.aid, r.hg, r.ag), (r.ap, r.hid, r.ag, r.hg)] {\n        let b = bands.iter().position(|&hi| p < hi).unwrap_or(9) - 1;\n        let is_strong = strong.get(&(lg.clone(), r.season.clone(), opp_id)).copied().unwrap_or(false);\n        let idx = b * 2 + if is_strong { 1 } else { 0 };\n        res[idx].1 += 1;\n        if gf > ga { res[idx].0 += 1; }\n    }\n}\nlet ctx_rows: Vec<Vec<String>> = (0..9).map(|b| vec![\n    blabels[b].to_string(),\n    format!(\"{} / {}\", res[b*2].1, res[b*2+1].1),\n    format!(\"{:.0}% / {:.0}%\",\n        100.0*res[b*2].0 as f64/res[b*2].1.max(1) as f64,\n        100.0*res[b*2+1].0 as f64/res[b*2+1].1.max(1) as f64),\n]).collect();\nmars_table(&[\"possession\", \"n vs weak / strong\", \"win% vs weak / strong\"], &ctx_rows);\nprintln!(\"opponent strength = top-half finishers in same league-season (points)\");\n",
       "metadata": {},
-      "execution_count": 7,
+      "execution_count": 10,
       "outputs": [
         {
           "type": "text",
@@ -2724,77 +4070,77 @@
             [
               "English Championship",
               "12005",
-              "2003/04 \u2192 2026/27"
+              "2003/04 → 2026/27"
             ],
             [
               "English League One",
               "10707",
-              "2006/07 \u2192 2026/27"
+              "2006/07 → 2026/27"
             ],
             [
               "English League Two",
               "9879",
-              "2006/07 \u2192 2026/27"
+              "2006/07 → 2026/27"
             ],
             [
               "English Premier League",
               "8486",
-              "2001/02 \u2192 2026/27"
+              "2001/02 → 2026/27"
             ],
             [
               "Spanish La Liga",
               "7247",
-              "2004/05 \u2192 2026/27"
+              "2004/05 → 2026/27"
             ],
             [
               "Italian Serie A",
               "7241",
-              "2006/07 \u2192 2026/27"
+              "2006/07 → 2026/27"
             ],
             [
               "French Ligue 1",
               "6465",
-              "2006/07 \u2192 2026/27"
+              "2006/07 → 2026/27"
             ],
             [
               "MLS",
               "6260",
-              "2012 \u2192 2026"
+              "2012 → 2026"
             ],
             [
               "German Bundesliga",
               "4639",
-              "2005/06 \u2192 2026/27"
+              "2005/06 → 2026/27"
             ],
             [
               "Liga MX",
               "4542",
-              "2012/2013 \u2192 2026/2027"
+              "2012/2013 → 2026/2027"
             ],
             [
               "Scottish Premiership",
               "4316",
-              "2006/07 \u2192 2026/27"
+              "2006/07 → 2026/27"
             ],
             [
               "Serie A",
               "3946",
-              "2014 \u2192 2026"
+              "2014 → 2026"
             ],
             [
               "German 2. Bundesliga",
               "3246",
-              "2008/09 \u2192 2026/27"
+              "2008/09 → 2026/27"
             ],
             [
               "Dutch Eredivisie",
               "2993",
-              "2008/09 \u2192 2026/27"
+              "2008/09 → 2026/27"
             ],
             [
               "Portuguese Liga Portugal",
               "2794",
-              "2008/09 \u2192 2026/27"
+              "2008/09 → 2026/27"
             ]
           ]
         },
@@ -3064,7 +4410,7 @@
         {
           "type": "table",
           "columns": [
-            "possession diff (home \u2212 away)",
+            "possession diff (home − away)",
             "matches",
             "home win%"
           ],
@@ -3149,7 +4495,7 @@
         {
           "type": "table",
           "columns": [
-            "possession diff \u2014 all leagues",
+            "possession diff — all leagues",
             "matches",
             "home win%"
           ],
@@ -3454,48 +4800,48 @@
           "rows": [
             [
               "<35",
-              "261 / 1168",
+              "265 / 1164",
               "46% / 22%"
             ],
             [
               "35-40",
-              "403 / 1033",
+              "406 / 1030",
               "48% / 22%"
             ],
             [
               "40-45",
-              "855 / 1441",
+              "849 / 1447",
               "48% / 22%"
             ],
             [
               "45-50",
               "1401 / 1748",
-              "45% / 27%"
+              "46% / 26%"
             ],
             [
               "50-55",
-              "1776 / 1469",
+              "1760 / 1485",
               "45% / 30%"
             ],
             [
               "55-60",
-              "1537 / 904",
-              "48% / 33%"
+              "1546 / 895",
+              "47% / 33%"
             ],
             [
               "60-65",
-              "995 / 510",
-              "53% / 34%"
+              "1007 / 498",
+              "53% / 35%"
             ],
             [
               "65-70",
-              "627 / 254",
+              "631 / 250",
               "50% / 34%"
             ],
             [
               ">70",
-              "457 / 133",
-              "58% / 40%"
+              "460 / 130",
+              "58% / 39%"
             ]
           ]
         }
@@ -3513,7 +4859,7 @@
       "cell_type": "code",
       "source": "\n// band table for HOME team's possession only, and AWAY team's only\nlet band_table_side = |matches: &[&MRow], home_side: bool| -> Vec<Vec<String>> {\n    let mut w = vec![0usize; 9]; let mut d = vec![0usize; 9]; let mut l = vec![0usize; 9];\n    for r in matches {\n        let (p, gf, ga) = if home_side { (r.hp, r.hg, r.ag) } else { (r.ap, r.ag, r.hg) };\n        let b = bands.iter().position(|&hi| p < hi).unwrap_or(9) - 1;\n        if gf > ga { w[b] += 1; } else if gf == ga { d[b] += 1; } else { l[b] += 1; }\n    }\n    (0..9).map(|b| {\n        let n = (w[b] + d[b] + l[b]) as f64;\n        vec![blabels[b].to_string(), (w[b]+d[b]+l[b]).to_string(),\n             format!(\"{:.1}%\", 100.0*w[b] as f64/n),\n             format!(\"{:.1}%\", 100.0*d[b] as f64/n),\n             format!(\"{:.1}%\", 100.0*l[b] as f64/n)]\n    }).collect()\n};\nlet epl_refs: Vec<&MRow> = epl.iter().cloned().collect();\nlet home_b = band_table_side(&epl_refs, true);\nlet away_b = band_table_side(&epl_refs, false);\n// merge into one table: band | home win% | away win%\nlet ha_rows: Vec<Vec<String>> = (0..9).map(|b| vec![\n    blabels[b].to_string(),\n    home_b[b][2].clone(), home_b[b][4].clone(),\n    away_b[b][2].clone(), away_b[b][4].clone(),\n]).collect();\nmars_table(&[\"possession\", \"home win% / loss%\", \"away win% / loss%\"], &ha_rows);\n",
       "metadata": {},
-      "execution_count": 8,
+      "execution_count": 11,
       "outputs": [
         {
           "type": "text",
@@ -3530,77 +4876,77 @@
             [
               "English Championship",
               "12005",
-              "2003/04 \u2192 2026/27"
+              "2003/04 → 2026/27"
             ],
             [
               "English League One",
               "10707",
-              "2006/07 \u2192 2026/27"
+              "2006/07 → 2026/27"
             ],
             [
               "English League Two",
               "9879",
-              "2006/07 \u2192 2026/27"
+              "2006/07 → 2026/27"
             ],
             [
               "English Premier League",
               "8486",
-              "2001/02 \u2192 2026/27"
+              "2001/02 → 2026/27"
             ],
             [
               "Spanish La Liga",
               "7247",
-              "2004/05 \u2192 2026/27"
+              "2004/05 → 2026/27"
             ],
             [
               "Italian Serie A",
               "7241",
-              "2006/07 \u2192 2026/27"
+              "2006/07 → 2026/27"
             ],
             [
               "French Ligue 1",
               "6465",
-              "2006/07 \u2192 2026/27"
+              "2006/07 → 2026/27"
             ],
             [
               "MLS",
               "6260",
-              "2012 \u2192 2026"
+              "2012 → 2026"
             ],
             [
               "German Bundesliga",
               "4639",
-              "2005/06 \u2192 2026/27"
+              "2005/06 → 2026/27"
             ],
             [
               "Liga MX",
               "4542",
-              "2012/2013 \u2192 2026/2027"
+              "2012/2013 → 2026/2027"
             ],
             [
               "Scottish Premiership",
               "4316",
-              "2006/07 \u2192 2026/27"
+              "2006/07 → 2026/27"
             ],
             [
               "Serie A",
               "3946",
-              "2014 \u2192 2026"
+              "2014 → 2026"
             ],
             [
               "German 2. Bundesliga",
               "3246",
-              "2008/09 \u2192 2026/27"
+              "2008/09 → 2026/27"
             ],
             [
               "Dutch Eredivisie",
               "2993",
-              "2008/09 \u2192 2026/27"
+              "2008/09 → 2026/27"
             ],
             [
               "Portuguese Liga Portugal",
               "2794",
-              "2008/09 \u2192 2026/27"
+              "2008/09 → 2026/27"
             ]
           ]
         },
@@ -3870,7 +5216,7 @@
         {
           "type": "table",
           "columns": [
-            "possession diff (home \u2212 away)",
+            "possession diff (home − away)",
             "matches",
             "home win%"
           ],
@@ -3955,7 +5301,7 @@
         {
           "type": "table",
           "columns": [
-            "possession diff \u2014 all leagues",
+            "possession diff — all leagues",
             "matches",
             "home win%"
           ],
@@ -4260,47 +5606,47 @@
           "rows": [
             [
               "<35",
-              "264 / 1165",
+              "270 / 1159",
               "46% / 22%"
             ],
             [
               "35-40",
               "404 / 1032",
-              "48% / 22%"
+              "49% / 22%"
             ],
             [
               "40-45",
-              "846 / 1450",
+              "854 / 1442",
               "48% / 22%"
             ],
             [
               "45-50",
               "1400 / 1749",
-              "46% / 26%"
+              "45% / 26%"
             ],
             [
               "50-55",
-              "1760 / 1485",
-              "45% / 31%"
+              "1768 / 1477",
+              "45% / 30%"
             ],
             [
               "55-60",
-              "1544 / 897",
+              "1539 / 902",
               "48% / 33%"
             ],
             [
               "60-65",
-              "1006 / 499",
+              "1000 / 505",
               "53% / 35%"
             ],
             [
               "65-70",
-              "628 / 253",
-              "50% / 34%"
+              "630 / 251",
+              "50% / 33%"
             ],
             [
               ">70",
-              "460 / 130",
+              "459 / 131",
               "58% / 39%"
             ]
           ]
@@ -4383,7 +5729,7 @@
     {
       "id": "9a15250d-9a20-4b92-8668-ee7a6fbe2cd3",
       "cell_type": "markdown",
-      "source": "## The season-level view and the historical trend\n\nMatch-level noise is huge \u2014 one deflected shot swings a game. Smooth\nit twice: (1) correlate each team's **season-average possession** with\nits final points across all EPL team-seasons; (2) track the yearly\ncorrelation between possession differential and home wins to see\nwhether possession has become more or less decisive over time.",
+      "source": "## The season-level view and the historical trend\n\nMatch-level noise is huge — one deflected shot swings a game. Smooth\nit twice: (1) correlate each team's **season-average possession** with\nits final points across all EPL team-seasons; (2) track the yearly\ncorrelation between possession differential and home wins to see\nwhether possession has become more or less decisive over time.",
       "metadata": {},
       "outputs": []
     },
@@ -4392,7 +5738,7 @@
       "cell_type": "code",
       "source": "\n// (1) EPL team-season: avg possession vs points\nlet mut ts: HashMap<(String, i64), (f64, f64, usize)> = HashMap::new(); // (season,tid) -> (sum poss, sum opp poss? just poss,n)\nfor r in &epl {\n    for (tid, p) in [(r.hid, r.hp), (r.aid, r.ap)] {\n        let e = ts.entry((r.season.clone(), tid)).or_insert((0.0, 0.0, 0));\n        e.0 += p; e.2 += 1;\n    }\n}\n// points per team-season\nlet mut pts: HashMap<(String, i64), i64> = HashMap::new();\nfor r in &epl {\n    let ph = if r.hg > r.ag { 3 } else if r.hg == r.ag { 1 } else { 0 };\n    let pa = if r.ag > r.hg { 3 } else if r.hg == r.ag { 1 } else { 0 };\n    *pts.entry((r.season.clone(), r.hid)).or_insert(0) += ph;\n    *pts.entry((r.season.clone(), r.aid)).or_insert(0) += pa;\n}\nlet mut xs = Vec::new(); let mut ys = Vec::new();\nfor ((sn, tid), (sp, _, n)) in &ts {\n    if *n < 30 { continue; }\n    if let Some(p) = pts.get(&(sn.clone(), *tid)) {\n        xs.push(sp / *n as f64); ys.push(*p as f64);\n    }\n}\nprintln!(\"EPL team-seasons: {} | corr(avg possession, season points) = {:.3}\",\n    xs.len(), pearson(&xs, &ys));\n\n// (2) yearly correlation: possession diff -> home win, EPL by season\nlet mut by_year: std::collections::BTreeMap<String, (Vec<f64>, Vec<f64>)> = std::collections::BTreeMap::new();\nfor r in &epl {\n    let e = by_year.entry(r.season.clone()).or_default();\n    e.0.push(r.hp - r.ap);\n    e.1.push(if r.hg > r.ag { 1.0 } else { 0.0 });\n}\nlet trend_rows: Vec<Vec<String>> = by_year.iter().map(|(sn, (x, y))| vec![\n    sn.clone(), format!(\"{:.3}\", pearson(x, y)), x.len().to_string(),\n]).collect();\nmars_table(&[\"EPL season\", \"corr(poss diff, home win)\", \"matches\"], &trend_rows);\n",
       "metadata": {},
-      "execution_count": 9,
+      "execution_count": 12,
       "outputs": [
         {
           "type": "text",
@@ -4409,77 +5755,77 @@
             [
               "English Championship",
               "12005",
-              "2003/04 \u2192 2026/27"
+              "2003/04 → 2026/27"
             ],
             [
               "English League One",
               "10707",
-              "2006/07 \u2192 2026/27"
+              "2006/07 → 2026/27"
             ],
             [
               "English League Two",
               "9879",
-              "2006/07 \u2192 2026/27"
+              "2006/07 → 2026/27"
             ],
             [
               "English Premier League",
               "8486",
-              "2001/02 \u2192 2026/27"
+              "2001/02 → 2026/27"
             ],
             [
               "Spanish La Liga",
               "7247",
-              "2004/05 \u2192 2026/27"
+              "2004/05 → 2026/27"
             ],
             [
               "Italian Serie A",
               "7241",
-              "2006/07 \u2192 2026/27"
+              "2006/07 → 2026/27"
             ],
             [
               "French Ligue 1",
               "6465",
-              "2006/07 \u2192 2026/27"
+              "2006/07 → 2026/27"
             ],
             [
               "MLS",
               "6260",
-              "2012 \u2192 2026"
+              "2012 → 2026"
             ],
             [
               "German Bundesliga",
               "4639",
-              "2005/06 \u2192 2026/27"
+              "2005/06 → 2026/27"
             ],
             [
               "Liga MX",
               "4542",
-              "2012/2013 \u2192 2026/2027"
+              "2012/2013 → 2026/2027"
             ],
             [
               "Scottish Premiership",
               "4316",
-              "2006/07 \u2192 2026/27"
+              "2006/07 → 2026/27"
             ],
             [
               "Serie A",
               "3946",
-              "2014 \u2192 2026"
+              "2014 → 2026"
             ],
             [
               "German 2. Bundesliga",
               "3246",
-              "2008/09 \u2192 2026/27"
+              "2008/09 → 2026/27"
             ],
             [
               "Dutch Eredivisie",
               "2993",
-              "2008/09 \u2192 2026/27"
+              "2008/09 → 2026/27"
             ],
             [
               "Portuguese Liga Portugal",
               "2794",
-              "2008/09 \u2192 2026/27"
+              "2008/09 → 2026/27"
             ]
           ]
         },
@@ -4749,7 +6095,7 @@
         {
           "type": "table",
           "columns": [
-            "possession diff (home \u2212 away)",
+            "possession diff (home − away)",
             "matches",
             "home win%"
           ],
@@ -4834,7 +6180,7 @@
         {
           "type": "table",
           "columns": [
-            "possession diff \u2014 all leagues",
+            "possession diff — all leagues",
             "matches",
             "home win%"
           ],
@@ -5139,48 +6485,48 @@
           "rows": [
             [
               "<35",
-              "259 / 1170",
+              "265 / 1164",
               "46% / 22%"
             ],
             [
               "35-40",
-              "402 / 1034",
-              "49% / 22%"
+              "406 / 1030",
+              "48% / 22%"
             ],
             [
               "40-45",
-              "840 / 1456",
+              "849 / 1447",
               "48% / 22%"
             ],
             [
               "45-50",
-              "1403 / 1746",
+              "1401 / 1748",
               "46% / 26%"
             ],
             [
               "50-55",
-              "1761 / 1484",
-              "45% / 30%"
+              "1763 / 1482",
+              "45% / 31%"
             ],
             [
               "55-60",
-              "1551 / 890",
-              "47% / 33%"
+              "1546 / 895",
+              "48% / 33%"
             ],
             [
               "60-65",
-              "1008 / 497",
-              "53% / 35%"
+              "999 / 506",
+              "53% / 34%"
             ],
             [
               "65-70",
-              "629 / 252",
+              "627 / 254",
               "50% / 35%"
             ],
             [
               ">70",
-              "459 / 131",
-              "58% / 39%"
+              "457 / 133",
+              "58% / 40%"
             ]
           ]
         },
@@ -5402,7 +6748,7 @@
     {
       "id": "84dd15ef-5e39-487c-b9e9-c120828aebf7",
       "cell_type": "markdown",
-      "source": "## Findings\n\n**Does possession help you win? Yes \u2014 but much less than the clich\u00e9\nsuggests, and mostly by proxy.**\n\n1. **The relationship is real but modest.** In the Premier League, a\n   team's win rate climbs from 26.6% with under 35% possession to\n   54.1% above 70% \u2014 a near-doubling, but a >70% possessor still drops\n   points nearly a quarter of the time. Across all covered leagues the\n   curve is flatter still (31.7% \u2192 48.0%).\n\n2. **Possession is a team-quality marker more than a match-winner.**\n   Correlating each team's *season-average* possession with its final\n   points gives \u03c1 = 0.704 across 431 EPL team-seasons \u2014 possession tells\n   you who's good. But within a single match, possession correlates\n   with winning at only \u03c1 = 0.119, while **shot share correlates at\n   0.258** \u2014 shots predict victory more than twice as well. On the\n   small xG-covered subset, xG share reaches 0.438.\n\n3. **The extremes cut both ways.** 12.7% of EPL wins were earned with\n   under 40% possession; the same share of losses came with over 60%.\n   Nottingham Forest won 63% of their matches despite low possession;\n   Chelsea lost 43% of theirs *while dominating the ball*.\n\n4. **Context matters.** Possession is nearly worthless against weak\n   opponents (win rate ~45-58% across all bands \u2014 anyone can have the\n   ball vs a bad team) but separates winners from losers against strong\n   ones (22% \u2192 40%). Away from home, even >70% possession wins only\n   47.3% of the time versus 58.7% at home.\n\n5. **No historical trend.** The yearly correlation between possession\n   differential and home wins fluctuates between ~0.02 and ~0.28 with\n   no directional movement \u2014 possession has not become more (or less)\n   decisive across two decades.\n\n**Verdict:** possession is football's most quoted stat and one of its\nweakest match-level predictors. It measures *who you are* far better\nthan *what will happen today* \u2014 and when it comes to predicting a\nsingle result, shots and xG do the job at roughly 2\u20134\u00d7 the strength.",
+      "source": "## Findings\n\n**Does possession help you win? Yes — but much less than the cliché\nsuggests, and mostly by proxy.**\n\n1. **The relationship is real but modest.** In the Premier League, a\n   team's win rate climbs from 26.6% with under 35% possession to\n   54.1% above 70% — a near-doubling, but a >70% possessor still drops\n   points nearly a quarter of the time. Across all covered leagues the\n   curve is flatter still (31.7% → 48.0%).\n\n2. **Possession is a team-quality marker more than a match-winner.**\n   Correlating each team's *season-average* possession with its final\n   points gives ρ = 0.704 across 431 EPL team-seasons — possession tells\n   you who's good. But within a single match, possession correlates\n   with winning at only ρ = 0.119, while **shot share correlates at\n   0.258** — shots predict victory more than twice as well. On the\n   small xG-covered subset, xG share reaches 0.438.\n\n3. **The extremes cut both ways.** 12.7% of EPL wins were earned with\n   under 40% possession; the same share of losses came with over 60%.\n   Nottingham Forest won 63% of their matches despite low possession;\n   Chelsea lost 43% of theirs *while dominating the ball*.\n\n4. **Context matters.** Possession is nearly worthless against weak\n   opponents (win rate ~45-58% across all bands — anyone can have the\n   ball vs a bad team) but separates winners from losers against strong\n   ones (22% → 40%). Away from home, even >70% possession wins only\n   47.3% of the time versus 58.7% at home.\n\n5. **No historical trend.** The yearly correlation between possession\n   differential and home wins fluctuates between ~0.02 and ~0.28 with\n   no directional movement — possession has not become more (or less)\n   decisive across two decades.\n\n**Verdict:** possession is football's most quoted stat and one of its\nweakest match-level predictors. It measures *who you are* far better\nthan *what will happen today* — and when it comes to predicting a\nsingle result, shots and xG do the job at roughly 2–4× the strength.",
       "metadata": {},
       "outputs": []
     }
