@@ -27,3 +27,19 @@ export const getSeries = (): Series[] => {
     }))
     .filter((series) => series.posts.length > 0);
 };
+
+export const getSeriesBySlug = (slug: string): Series | undefined =>
+  getSeries().find((series) => series.slug === slug);
+
+// Within a series, `order` is the intended reading sequence; fall back to
+// newest-first for posts without one.
+export const seriesReadingOrder = (posts: Post[]): Post[] =>
+  [...posts].sort((a, b) => {
+    if (a.order !== undefined && b.order !== undefined) {
+      return a.order - b.order;
+    }
+    if (a.order !== undefined) return -1;
+    if (b.order !== undefined) return 1;
+    if (a.date && b.date) return b.date.localeCompare(a.date);
+    return a.title.localeCompare(b.title);
+  });

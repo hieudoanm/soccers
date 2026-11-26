@@ -4,8 +4,9 @@ import { notFound } from 'next/navigation';
 import Markdown from '@/components/shared/Markdown';
 import { formatPostDate } from '@/lib/format';
 import { getPost, getPosts } from '@/lib/blog';
+import { getSeriesBySlug, seriesReadingOrder } from '@/lib/series';
 import { seriesTitle } from '@/lib/series-meta';
-import { siteName, siteUrl } from '@/lib/site';
+import { repositoryUrl, siteName, siteUrl } from '@/lib/site';
 
 export const dynamicParams = false;
 
@@ -70,6 +71,15 @@ const BlogPostPage = async ({ params }: BlogPostPageProps) => {
       ? posts[currentIndex + 1]
       : undefined;
 
+  const series = post.series ? getSeriesBySlug(post.series) : undefined;
+  const seriesPosts = series ? seriesReadingOrder(series.posts) : [];
+  const seriesIndex = seriesPosts.findIndex((p) => p.slug === slug);
+  const nextInSeries =
+    seriesIndex >= 0 ? seriesPosts[seriesIndex + 1] : undefined;
+  const notebookUrl = post.notebook
+    ? `${repositoryUrl}/blob/master/packages/landing/${post.notebook}`
+    : undefined;
+
   return (
     <main className="mx-auto w-full max-w-3xl px-5 py-16">
       <nav className="text-base-content/60 mb-8 flex items-center gap-3 text-xs">
@@ -82,6 +92,8 @@ const BlogPostPage = async ({ params }: BlogPostPageProps) => {
             <time dateTime={post.date}>{formatPostDate(post.date)}</time>
           </>
         ) : null}
+        <span aria-hidden="true">·</span>
+        <span>{post.readingTime} min read</span>
         {post.author ? (
           <>
             <span aria-hidden="true">·</span>
@@ -92,7 +104,7 @@ const BlogPostPage = async ({ params }: BlogPostPageProps) => {
           <>
             <span aria-hidden="true">·</span>
             <Link
-              href={`/blog/series#${post.series}`}
+              href={`/blog/series/${post.series}`}
               className="hover:text-primary">
               {seriesTitle(post.series)}
             </Link>
@@ -119,6 +131,57 @@ const BlogPostPage = async ({ params }: BlogPostPageProps) => {
       <article className="mt-8">
         <Markdown content={post.content} />
       </article>
+
+      {notebookUrl ? (
+        <aside className="border-base-300 bg-base-200/50 mt-10 rounded-xl border p-4">
+          <p className="text-base-content/70 text-sm">
+            <span className="text-base-content font-medium">
+              Reproduce this analysis
+            </span>{' '}
+            — the numbers come from a{' '}
+            <a
+              href={notebookUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="text-primary hover:underline">
+              Mars notebook
+            </a>{' '}
+            (<code className="text-xs">{post.notebook}</code>) run against the
+            soccers dataset.
+          </p>
+        </aside>
+      ) : null}
+
+      {series && seriesIndex >= 0 ? (
+        <div className="border-base-300 mt-6 rounded-xl border p-4">
+          <div className="flex items-baseline justify-between gap-3">
+            <Link
+              href={`/blog/series/${series.slug}`}
+              className="text-primary text-sm font-medium hover:underline">
+              {series.title}
+            </Link>
+            <span className="text-base-content/50 text-xs">
+              {seriesIndex + 1} of {seriesPosts.length}
+            </span>
+          </div>
+          {nextInSeries ? (
+            <Link
+              href={`/blog/${nextInSeries.slug}`}
+              className="group mt-2 block">
+              <span className="text-base-content/50 text-xs">
+                Next in series
+              </span>
+              <span className="text-base-content group-hover:text-primary font-medium">
+                {nextInSeries.title} →
+              </span>
+            </Link>
+          ) : (
+            <p className="text-base-content/50 mt-2 text-xs">
+              Last post in this series — browse the full series for more.
+            </p>
+          )}
+        </div>
+      ) : null}
 
       <nav className="border-base-content/10 mt-12 flex items-center justify-between gap-4 border-t pt-6">
         <div className="flex-1">

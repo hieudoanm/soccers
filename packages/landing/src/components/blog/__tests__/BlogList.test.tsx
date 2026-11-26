@@ -3,15 +3,17 @@ import userEvent from '@testing-library/user-event';
 import BlogList from '../BlogList';
 import type { Post } from '@/lib/blog';
 
-const makePost = (slug: string, order: number): Post => ({
+const makePost = (slug: string, order: number, tags = ['football']): Post => ({
   slug,
   title: `Post ${slug}`,
   description: `Description for ${slug}`,
   author: 'hieudoan',
   date: '2026-11-25',
   order,
-  tags: ['football'],
+  tags,
   content: '# body',
+  wordCount: 400,
+  readingTime: 2,
 });
 
 describe('BlogList', () => {
@@ -25,6 +27,30 @@ describe('BlogList', () => {
     const link = screen.getByRole('link', { name: /Post hello/ });
     expect(link).toHaveAttribute('href', '/blog/hello');
     expect(screen.getByText('football')).toBeInTheDocument();
+    expect(screen.getByText(/2 min read/)).toBeInTheDocument();
+  });
+
+  it('filters posts by tag', async () => {
+    const user = userEvent.setup();
+    render(
+      <BlogList
+        posts={[
+          makePost('one', 1, ['possession']),
+          makePost('two', 2, ['corners']),
+        ]}
+      />
+    );
+    expect(screen.getByRole('link', { name: /Post one/ })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Post two/ })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'possession' }));
+    expect(screen.getByRole('link', { name: /Post one/ })).toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: /Post two/ })
+    ).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'All' }));
+    expect(screen.getByRole('link', { name: /Post two/ })).toBeInTheDocument();
   });
 
   it('paginates after 10 posts', async () => {
@@ -52,6 +78,8 @@ describe('BlogList', () => {
             title: 'Minimal post',
             tags: [],
             content: '# Minimal post',
+            wordCount: 3,
+            readingTime: 1,
           },
         ]}
       />
@@ -60,7 +88,8 @@ describe('BlogList', () => {
     expect(
       screen.getByRole('link', { name: /Minimal post/ })
     ).toBeInTheDocument();
-    expect(screen.queryByText(/·/)).not.toBeInTheDocument();
+    expect(screen.getByText(/1 min read/)).toBeInTheDocument();
+    expect(screen.queryByText('hieudoan')).not.toBeInTheDocument();
     expect(screen.queryByText('football')).not.toBeInTheDocument();
   });
 });

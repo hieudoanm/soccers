@@ -1,5 +1,5 @@
 import { getPost, getPosts } from '@/lib/blog';
-import { getSeries } from '@/lib/series';
+import { getSeries, getSeriesBySlug, seriesReadingOrder } from '@/lib/series';
 
 describe('getPosts', () => {
   it('returns the markdown posts sorted by date, latest first', () => {
@@ -41,12 +41,27 @@ describe('getSeries', () => {
     expect(series[4].posts.length).toBe(1);
     expect(series.every((s) => s.posts.length > 0)).toBe(true);
   });
+
+  it('resolves a series by slug and orders posts for reading', () => {
+    const series = getSeriesBySlug('match-analysis');
+    expect(series?.title).toBe('Match Analysis');
+    const ordered = series ? seriesReadingOrder(series.posts) : [];
+    const orders = ordered.map((p) => p.order ?? Number.MAX_SAFE_INTEGER);
+    expect(orders).toEqual([...orders].sort((a, b) => a - b));
+  });
 });
 
 describe('getPost', () => {
   it('finds a post by slug', () => {
     const post = getPost('xg-luck');
     expect(post?.title).toContain('xG luck index');
+  });
+
+  it('computes reading time and links the analysis notebook', () => {
+    const post = getPost('corners');
+    expect(post?.wordCount).toBeGreaterThan(0);
+    expect(post?.readingTime).toBeGreaterThanOrEqual(1);
+    expect(post?.notebook).toBe('mars/posts/match-analysis/corners.mars');
   });
 
   it('rejects invalid slugs', () => {

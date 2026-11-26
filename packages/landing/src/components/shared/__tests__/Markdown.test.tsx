@@ -26,4 +26,19 @@ describe('Markdown', () => {
       'https://example.com'
     );
   });
+
+  it('renders key-finding blockquotes as callouts', () => {
+    const { container } = render(
+      <Markdown
+        content={
+          '> **Key finding:** corners barely predict winning.\n>\n> More detail here.\n\n> A regular quote.'
+        }
+      />
+    );
+
+    const asides = container.querySelectorAll('aside');
+    expect(asides).toHaveLength(1);
+    expect(asides[0]).toHaveTextContent('corners barely predict winning');
+    expect(container.querySelectorAll('blockquote')).toHaveLength(1);
+  });
 });

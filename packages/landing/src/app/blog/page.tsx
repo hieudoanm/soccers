@@ -36,6 +36,10 @@ export default function BlogPage() {
         </p>
         <p className="text-base-content/50 mt-1 text-sm">
           {posts.length} {posts.length === 1 ? 'post' : 'posts'} ·{' '}
+          <Link href="/blog/search" className="hover:text-primary">
+            Search
+          </Link>{' '}
+          ·{' '}
           <Link href="/blog/series" className="hover:text-primary">
             Browse series →
           </Link>

@@ -11,6 +11,9 @@ export type Post = {
   order?: number;
   tags: string[];
   content: string;
+  wordCount: number;
+  readingTime: number;
+  notebook?: string;
 };
 
 export type SearchResult = {
@@ -137,6 +140,26 @@ const parseTags = (value: string | undefined): string[] => {
   );
 };
 
+const wordCountOf = (body: string): number =>
+  body
+    .replace(/```[\s\S]*?```/g, ' ')
+    .split(/\s+/)
+    .filter((word) => /[\p{L}\p{N}]/u.test(word)).length;
+
+const READING_WPM = 200;
+
+const notebookPathFor = (series: string | undefined, slug: string) => {
+  const candidates = series
+    ? [path.join('mars', 'posts', series, `${slug}.mars`)]
+    : [path.join('mars', 'posts', `${slug}.mars`)];
+  for (const rel of candidates) {
+    if (fs.existsSync(path.join(process.cwd(), rel))) {
+      return rel.split(path.sep).join('/');
+    }
+  }
+  return undefined;
+};
+
 const readPost = (filePath: string): Post => {
   const fileName = path.basename(filePath);
   const slug = fileName.replace(/\.md$/i, '');
@@ -155,6 +178,7 @@ const readPost = (filePath: string): Post => {
       .join(' ');
 
   const order = data.order !== undefined ? Number(data.order) : undefined;
+  const wordCount = wordCountOf(body);
 
   return {
     slug,
@@ -166,6 +190,9 @@ const readPost = (filePath: string): Post => {
     order: Number.isNaN(order as number) ? undefined : order,
     tags: parseTags(data.tags),
     content: body,
+    wordCount,
+    readingTime: Math.max(1, Math.ceil(wordCount / READING_WPM)),
+    notebook: notebookPathFor(series, slug),
   };
 };
 

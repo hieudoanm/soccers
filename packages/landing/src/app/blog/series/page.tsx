@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { formatPostDate } from '@/lib/format';
-import { getSeries } from '@/lib/series';
+import { getSeries, seriesReadingOrder } from '@/lib/series';
 import { siteName, siteUrl } from '@/lib/site';
 
 export const metadata: Metadata = {
@@ -48,15 +48,24 @@ export default function SeriesPage() {
             className="border-base-300 bg-base-100 scroll-mt-20 rounded-2xl border p-6">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <h2 className="text-base-content text-xl font-semibold">
-                {s.title}
+                <Link
+                  href={`/blog/series/${s.slug}`}
+                  className="hover:text-primary">
+                  {s.title}
+                </Link>
               </h2>
               <span className="text-base-content/50 text-xs">
-                {s.posts.length} {s.posts.length === 1 ? 'post' : 'posts'}
+                {s.posts.length} {s.posts.length === 1 ? 'post' : 'posts'} ·{' '}
+                <Link
+                  href={`/blog/series/${s.slug}`}
+                  className="text-primary hover:underline">
+                  View series →
+                </Link>
               </span>
             </div>
             <p className="text-base-content/60 mt-1 text-sm">{s.description}</p>
             <ul className="mt-4 grid gap-2 sm:grid-cols-2">
-              {s.posts.map((post) => (
+              {seriesReadingOrder(s.posts).map((post) => (
                 <li key={post.slug}>
                   <Link
                     href={`/blog/${post.slug}`}
