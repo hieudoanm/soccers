@@ -58,9 +58,16 @@ const NAV_LINKS = [
   { label: 'Tournaments', href: '/touraments/' },
 ];
 
+const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem('soccers-theme');if(!t){t=window.matchMedia('(prefers-color-scheme: dark)').matches?'soccers-dark':'soccers';}document.documentElement.setAttribute('data-theme',t);}catch(e){}})();`;
+
 const RootLayout: FC<{ children: ReactNode }> = ({ children }) => (
-  <html lang="en" data-theme="soccers" className={inter.className}>
+  <html
+    lang="en"
+    data-theme="soccers"
+    suppressHydrationWarning
+    className={inter.className}>
     <body className="bg-base-100 text-base-content flex min-h-screen flex-col">
+      <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       <Navbar
         name={siteName}
         logoSrc={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/logo.svg`}

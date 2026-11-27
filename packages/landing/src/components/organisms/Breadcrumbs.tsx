@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import type { FC } from 'react';
 
 export interface YearOption {
@@ -30,9 +31,11 @@ export const Breadcrumbs: FC<{ crumbs: Crumb[] }> = ({ crumbs }) => (
             ))}
           </select>
         ) : crumb.href ? (
-          <a href={crumb.href} className="hover:text-primary transition-colors">
+          <Link
+            href={crumb.href}
+            className="hover:text-primary transition-colors">
             {crumb.label}
-          </a>
+          </Link>
         ) : (
           <span className="text-base-content">{crumb.label}</span>
         )}

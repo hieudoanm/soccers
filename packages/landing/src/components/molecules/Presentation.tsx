@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { downloadLineupPng } from '@/lib/canvas';
 import {
   addShareHistory,
@@ -100,7 +101,7 @@ export const Presentation: FC<PresentationProps> = ({ squad, pitchRef }) => {
           <ul className="flex flex-col gap-1">
             {history.map((entry) => (
               <li key={entry.id}>
-                <a
+                <Link
                   href={entry.url}
                   aria-label={`Reopen ${entry.name}`}
                   className="btn btn-ghost btn-xs w-full justify-between">
@@ -108,7 +109,7 @@ export const Presentation: FC<PresentationProps> = ({ squad, pitchRef }) => {
                   <span className="text-base-content/50">
                     {entry.mode === 'lineup' ? 'Lineup' : 'Full squad'}
                   </span>
-                </a>
+                </Link>
               </li>
             ))}
           </ul>

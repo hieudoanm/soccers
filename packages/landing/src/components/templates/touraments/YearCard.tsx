@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import type { FC } from 'react';
 
 export interface YearInfo {
@@ -12,7 +13,7 @@ export const YearCard: FC<{ info: YearInfo; href: string }> = ({
   info,
   href,
 }) => (
-  <a
+  <Link
     href={href}
     className={`block rounded-xl border p-4 text-center transition-all duration-200 ${
       info.available
@@ -36,5 +37,5 @@ export const YearCard: FC<{ info: YearInfo; href: string }> = ({
     {!info.champion && info.available && (
       <div className="text-base-content/60 mt-1.5 text-xs italic">Upcoming</div>
     )}
-  </a>
+  </Link>
 );

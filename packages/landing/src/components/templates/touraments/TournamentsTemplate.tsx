@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import type { FC } from 'react';
 
 import { Breadcrumbs } from '@/components/organisms/Breadcrumbs';
@@ -163,7 +164,7 @@ const SectionGrid: FC<{ title: string; items: TournamentDef[] }> = ({
     </h3>
     <div className="mx-auto grid max-w-2xl grid-cols-1 gap-4 md:grid-cols-2">
       {items.map((t) => (
-        <a
+        <Link
           key={t.id}
           href={t.href}
           className="group border-base-300 bg-base-100 hover:border-primary/50 hover:bg-primary/5 block rounded-xl border p-6 text-center transition-all duration-200 hover:-translate-y-1">
@@ -179,7 +180,7 @@ const SectionGrid: FC<{ title: string; items: TournamentDef[] }> = ({
           <p className="text-base-content/60 mx-auto mt-3 max-w-sm text-xs leading-relaxed">
             {t.description}
           </p>
-        </a>
+        </Link>
       ))}
     </div>
   </div>

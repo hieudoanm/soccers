@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import type { FC } from 'react';
 
 export const ErrorState: FC<{
@@ -11,11 +12,11 @@ export const ErrorState: FC<{
       <div className="text-base-300 text-6xl font-bold">{symbol}</div>
       <div className="text-base-content/60 mt-2 text-lg">{message}</div>
       {backHref && backLabel && (
-        <a
+        <Link
           href={backHref}
           className="text-primary/70 hover:text-primary mt-4 inline-block text-sm transition-colors">
           ← {backLabel}
-        </a>
+        </Link>
       )}
     </div>
   </div>

@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import type { FC } from 'react';
 
 export interface TournamentDef {
@@ -12,7 +13,7 @@ export interface TournamentDef {
 }
 
 export const TournamentCard: FC<{ t: TournamentDef }> = ({ t }) => (
-  <a
+  <Link
     href={t.href}
     className="group border-base-300 bg-base-100 hover:border-primary/50 hover:bg-primary/5 block rounded-xl border p-6 text-center transition-all duration-200 hover:-translate-y-1">
     <div className="text-primary mb-1 text-xs uppercase">{t.subtitle}</div>
@@ -25,5 +26,5 @@ export const TournamentCard: FC<{ t: TournamentDef }> = ({ t }) => (
     <p className="text-base-content/60 mx-auto mt-3 max-w-sm text-xs leading-relaxed">
       {t.description}
     </p>
-  </a>
+  </Link>
 );
